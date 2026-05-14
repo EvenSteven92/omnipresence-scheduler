@@ -205,7 +205,7 @@ export function SchedulerPage() {
               <div className="mt-3 border border-dashed border-accent/60 bg-background/40 p-2.5">
                 <div className="label-mono mb-1.5 text-accent">scan_complete</div>
                 <div className="text-[0.65rem] leading-relaxed text-muted-foreground">
-                  Slotted <span className="text-foreground">{bulkAssets.length}</span> assets across <span className="text-foreground">{activePlatforms.length}</span> platforms over the next <span className="text-foreground">{spread}</span>.
+                  Slotted <span className="text-foreground">{autoSelected.length}</span> selected assets across their per-card platforms over the next <span className="text-foreground">{spread}</span>.
                 </div>
               </div>
             )}
