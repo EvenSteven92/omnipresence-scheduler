@@ -11,6 +11,9 @@ import {
   Layers,
   Clock,
   X,
+  Check,
+  Save,
+  FileVideo,
   Twitter,
   Facebook,
   Instagram,
@@ -61,13 +64,24 @@ const PEAK_WINDOWS: Record<PlatformName, string[]> = {
   "IG Story": ["09:30", "19:45"],
 };
 
-type BulkAsset = { id: string; name: string; size: string; format: string };
+type BulkAsset = {
+  id: string;
+  name: string;
+  size: string;
+  format: string;
+  platforms: PlatformName[];
+  caption: string;
+  hashtags: string;
+  transcript: string;
+  saved: boolean;
+  selectedForAuto: boolean;
+};
 
 const SAMPLE_BULK: BulkAsset[] = [
-  { id: "a1", name: "service_recap_w18.mp4", size: "84.2 MB", format: "Portrait" },
-  { id: "a2", name: "worship_clip_03.mp4", size: "62.1 MB", format: "Portrait" },
-  { id: "a3", name: "qa_segment_a.mp4", size: "120.8 MB", format: "Landscape" },
-  { id: "a4", name: "quote_card_set.png", size: "4.4 MB", format: "Story" },
+  { id: "a1", name: "service_recap_w18.mp4", size: "84.2 MB", format: "Portrait", platforms: ["Instagram", "TikTok"], caption: "", hashtags: "", transcript: "", saved: false, selectedForAuto: true },
+  { id: "a2", name: "worship_clip_03.mp4", size: "62.1 MB", format: "Portrait", platforms: ["Instagram"], caption: "", hashtags: "", transcript: "", saved: false, selectedForAuto: true },
+  { id: "a3", name: "qa_segment_a.mp4", size: "120.8 MB", format: "Landscape", platforms: ["YouTube", "Facebook"], caption: "", hashtags: "", transcript: "", saved: false, selectedForAuto: true },
+  { id: "a4", name: "quote_card_set.png", size: "4.4 MB", format: "Story", platforms: ["IG Story", "FB Story"], caption: "", hashtags: "", transcript: "", saved: false, selectedForAuto: false },
 ];
 
 export function SchedulerPage() {
@@ -103,12 +117,13 @@ export function SchedulerPage() {
     cells.push({ d: n, muted: true, key: `n${n}` });
   }
 
-  // Distribute bulk assets across days when auto-scheduled
+  // Distribute selected bulk assets across days when auto-scheduled
+  const autoSelected = bulkAssets.filter((a) => a.selectedForAuto);
   const autoMap = new Map<number, BulkAsset[]>();
   if (autoScheduled && mode === "bulk") {
     const span = spread === "7d" ? 7 : spread === "14d" ? 14 : 30;
-    bulkAssets.forEach((a, i) => {
-      const day = ((selectedDay - 1 + Math.floor((i / Math.max(bulkAssets.length, 1)) * span)) % 31) + 1;
+    autoSelected.forEach((a, i) => {
+      const day = ((selectedDay - 1 + Math.floor((i / Math.max(autoSelected.length, 1)) * span)) % 31) + 1;
       const arr = autoMap.get(day) ?? [];
       arr.push(a);
       autoMap.set(day, arr);
@@ -193,7 +208,7 @@ export function SchedulerPage() {
               <div className="mt-3 border border-dashed border-accent/60 bg-background/40 p-2.5">
                 <div className="label-mono mb-1.5 text-accent">scan_complete</div>
                 <div className="text-[0.65rem] leading-relaxed text-muted-foreground">
-                  Slotted <span className="text-foreground">{bulkAssets.length}</span> assets across <span className="text-foreground">{activePlatforms.length}</span> platforms over the next <span className="text-foreground">{spread}</span>.
+                  Slotted <span className="text-foreground">{autoSelected.length}</span> selected assets across their per-card platforms over the next <span className="text-foreground">{spread}</span>.
                 </div>
               </div>
             )}
@@ -393,47 +408,219 @@ function BulkUploader({
   assets: BulkAsset[];
   setAssets: (a: BulkAsset[]) => void;
 }) {
+  const update = (id: string, patch: Partial<BulkAsset>) =>
+    setAssets(assets.map((a) => (a.id === id ? { ...a, ...patch } : a)));
   const remove = (id: string) => setAssets(assets.filter((a) => a.id !== id));
+
+  const selectedCount = assets.filter((a) => a.selectedForAuto).length;
+  const savedCount = assets.filter((a) => a.saved).length;
+
   return (
     <>
-      <Block label="bulk_upload">
-        <button className="flex w-full flex-col items-center justify-center gap-2 border border-dashed border-border bg-background/40 py-10 text-muted-foreground hover:text-foreground">
-          <Upload className="h-6 w-6" strokeWidth={1.5} />
-          <span className="label-mono">drop_folder_or_select_files</span>
-          <span className="text-[0.6rem] text-muted-foreground">mp4, mov, png, jpg · up to 200 files</span>
-        </button>
-      </Block>
-
-      <Block label={`asset_queue (${assets.length})`}>
-        <div className="grid grid-cols-[2fr_auto_auto_auto] items-center gap-x-3 gap-y-1 text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground">
-          <span>file</span><span>format</span><span>size</span><span></span>
-        </div>
-        <div className="mt-1 divide-y divide-border/60">
-          {assets.map((a) => (
-            <div key={a.id} className="grid grid-cols-[2fr_auto_auto_auto] items-center gap-x-3 py-2 text-xs">
-              <span className="truncate text-foreground">{a.name}</span>
-              <span className="rounded-sm border border-border bg-background px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.12em]">{a.format}</span>
-              <span className="font-mono text-[0.65rem] text-muted-foreground">{a.size}</span>
-              <button onClick={() => remove(a.id)} className="text-muted-foreground hover:text-destructive">
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-          {assets.length === 0 && (
-            <div className="py-6 text-center label-mono">queue_empty</div>
-          )}
+      <Block label={`bulk_upload  ·  ${assets.length}_files  ·  ${savedCount}_saved  ·  ${selectedCount}_for_auto`}>
+        <div className="flex items-stretch gap-px bg-border">
+          <button className="flex flex-1 items-center justify-center gap-2 border border-dashed border-border bg-background/40 py-3 text-muted-foreground hover:text-foreground">
+            <Upload className="h-4 w-4" strokeWidth={1.5} />
+            <span className="label-mono">drop_or_select_files</span>
+            <span className="text-[0.55rem] text-muted-foreground">mp4 · mov · png · jpg</span>
+          </button>
+          <button
+            onClick={() => setAssets(assets.map((a) => ({ ...a, selectedForAuto: true })))}
+            className="bg-surface px-3 text-[0.6rem] uppercase tracking-[0.12em] hover:bg-secondary"
+          >
+            select_all
+          </button>
+          <button
+            onClick={() => setAssets(assets.map((a) => ({ ...a, selectedForAuto: false })))}
+            className="bg-surface px-3 text-[0.6rem] uppercase tracking-[0.12em] hover:bg-secondary"
+          >
+            clear
+          </button>
         </div>
       </Block>
 
-      <Block label="caption_template (applied_to_batch)">
-        <textarea
-          rows={2}
-          defaultValue="{{title}} — {{hook}} · #ToreccSocial"
-          className="w-full rounded-sm border border-border bg-background px-2.5 py-2 text-sm focus:border-accent focus:outline-none"
-        />
-        <div className="label-mono mt-1">tokens: title · hook · platform · date</div>
-      </Block>
+      <section className="bg-surface p-3">
+        {assets.length === 0 ? (
+          <div className="py-10 text-center label-mono">queue_empty</div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+            {assets.map((a) => (
+              <AssetCard key={a.id} asset={a} onChange={(p) => update(a.id, p)} onRemove={() => remove(a.id)} />
+            ))}
+          </div>
+        )}
+      </section>
     </>
+  );
+}
+
+/* ---------- per-asset card ---------- */
+
+function AssetCard({
+  asset,
+  onChange,
+  onRemove,
+}: {
+  asset: BulkAsset;
+  onChange: (patch: Partial<BulkAsset>) => void;
+  onRemove: () => void;
+}) {
+  const togglePlatform = (p: PlatformName) => {
+    const exists = asset.platforms.includes(p);
+    onChange({ platforms: exists ? asset.platforms.filter((x) => x !== p) : [...asset.platforms, p] });
+  };
+
+  const aiFill = (tool: string) => {
+    if (tool === "caption") onChange({ caption: `${asset.name.replace(/\.[^.]+$/, "")} — auto-caption draft.` });
+    if (tool === "hashtags") onChange({ hashtags: "#church #faith #shorts #reels" });
+    if (tool === "transcript") onChange({ transcript: "[ai-transcript placeholder for " + asset.name + "]" });
+    if (tool === "desc") onChange({ caption: (asset.caption || "") + "\n\nFull description generated by AI." });
+  };
+
+  return (
+    <article className={`relative flex flex-col border bg-background/40 ${asset.selectedForAuto ? "border-accent/70" : "border-border"}`}>
+      {/* thumbnail strip */}
+      <div className="flex aspect-[16/6] items-center justify-center border-b border-border bg-background/60 text-muted-foreground">
+        <FileVideo className="h-6 w-6" strokeWidth={1.25} />
+        <button
+          onClick={onRemove}
+          className="absolute right-1.5 top-1.5 rounded-sm border border-border bg-surface p-1 text-muted-foreground hover:text-destructive"
+          aria-label="remove"
+        >
+          <X className="h-3 w-3" />
+        </button>
+        <span className="absolute left-1.5 top-1.5 rounded-sm border border-border bg-surface px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.12em]">
+          {asset.format}
+        </span>
+      </div>
+
+      <div className="space-y-2.5 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-xs text-foreground">{asset.name}</span>
+          <span className="font-mono text-[0.6rem] text-muted-foreground">{asset.size}</span>
+        </div>
+
+        {/* format spec */}
+        <div>
+          <div className="label-mono mb-1">format_spec</div>
+          <div className="grid grid-cols-3 gap-px bg-border">
+            {FORMATS.map((f) => {
+              const active = asset.format === f.name;
+              return (
+                <button
+                  key={f.name}
+                  onClick={() => onChange({ format: f.name })}
+                  className={`px-1.5 py-1 text-[0.55rem] uppercase tracking-[0.1em] ${active ? "bg-foreground text-background" : "bg-surface hover:bg-secondary"}`}
+                >
+                  {f.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* platforms */}
+        <div>
+          <div className="label-mono mb-1">target_platforms</div>
+          <div className="flex flex-wrap gap-1">
+            {PLATFORMS.map((p) => {
+              const active = asset.platforms.includes(p);
+              const { Icon, short } = PLATFORM_META[p];
+              return (
+                <button
+                  key={p}
+                  onClick={() => togglePlatform(p)}
+                  className={`inline-flex items-center gap-1 rounded-sm border px-1.5 py-1 text-[0.55rem] uppercase tracking-[0.1em] ${active ? "border-foreground bg-foreground text-background" : "border-border bg-surface hover:bg-secondary"}`}
+                  title={p}
+                >
+                  <Icon className="h-2.5 w-2.5" strokeWidth={2} />
+                  {short}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* caption */}
+        <div>
+          <div className="label-mono mb-1 flex items-center justify-between">
+            <span>caption</span>
+            <div className="flex gap-1">
+              <AiChip onClick={() => aiFill("caption")}>caption</AiChip>
+              <AiChip onClick={() => aiFill("desc")}>yt_desc</AiChip>
+            </div>
+          </div>
+          <textarea
+            rows={2}
+            value={asset.caption}
+            onChange={(e) => onChange({ caption: e.target.value })}
+            placeholder="caption / description…"
+            className="w-full rounded-sm border border-border bg-background px-2 py-1.5 text-xs focus:border-accent focus:outline-none"
+          />
+        </div>
+
+        {/* hashtags */}
+        <div>
+          <div className="label-mono mb-1 flex items-center justify-between">
+            <span>hashtags</span>
+            <AiChip onClick={() => aiFill("hashtags")}>hashtags</AiChip>
+          </div>
+          <input
+            value={asset.hashtags}
+            onChange={(e) => onChange({ hashtags: e.target.value })}
+            placeholder="#tag #tag"
+            className="w-full rounded-sm border border-border bg-background px-2 py-1.5 text-xs focus:border-accent focus:outline-none"
+          />
+        </div>
+
+        {/* transcript */}
+        <div>
+          <div className="label-mono mb-1 flex items-center justify-between">
+            <span>transcript</span>
+            <AiChip onClick={() => aiFill("transcript")}>generate</AiChip>
+          </div>
+          <textarea
+            rows={2}
+            value={asset.transcript}
+            onChange={(e) => onChange({ transcript: e.target.value })}
+            placeholder="auto-transcribe or paste…"
+            className="w-full rounded-sm border border-dashed border-border bg-background px-2 py-1.5 text-xs focus:border-accent focus:outline-none"
+          />
+        </div>
+      </div>
+
+      {/* footer actions */}
+      <div className="mt-auto flex items-stretch gap-px border-t border-border bg-border">
+        <button
+          onClick={() => onChange({ saved: !asset.saved })}
+          className={`flex flex-1 items-center justify-center gap-1.5 px-2 py-2 text-[0.6rem] uppercase tracking-[0.12em] ${asset.saved ? "bg-foreground text-background" : "bg-surface hover:bg-secondary"}`}
+        >
+          {asset.saved ? <Check className="h-3 w-3" /> : <Save className="h-3 w-3" />}
+          {asset.saved ? "saved" : "save_draft"}
+        </button>
+        <button
+          onClick={() => onChange({ selectedForAuto: !asset.selectedForAuto })}
+          className={`flex flex-1 items-center justify-center gap-1.5 px-2 py-2 text-[0.6rem] uppercase tracking-[0.12em] ${asset.selectedForAuto ? "bg-accent text-accent-foreground" : "bg-surface hover:bg-secondary"}`}
+        >
+          <span className={`flex h-3 w-3 items-center justify-center border ${asset.selectedForAuto ? "border-accent-foreground bg-accent-foreground/20" : "border-border"}`}>
+            {asset.selectedForAuto && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+          </span>
+          ai_auto_schedule
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function AiChip({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.1em] text-muted-foreground hover:bg-secondary hover:text-foreground"
+    >
+      <Sparkles className="h-2.5 w-2.5" />
+      {children}
+    </button>
   );
 }
 
