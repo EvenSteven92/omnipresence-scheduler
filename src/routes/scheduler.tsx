@@ -114,12 +114,13 @@ export function SchedulerPage() {
     cells.push({ d: n, muted: true, key: `n${n}` });
   }
 
-  // Distribute bulk assets across days when auto-scheduled
+  // Distribute selected bulk assets across days when auto-scheduled
+  const autoSelected = bulkAssets.filter((a) => a.selectedForAuto);
   const autoMap = new Map<number, BulkAsset[]>();
   if (autoScheduled && mode === "bulk") {
     const span = spread === "7d" ? 7 : spread === "14d" ? 14 : 30;
-    bulkAssets.forEach((a, i) => {
-      const day = ((selectedDay - 1 + Math.floor((i / Math.max(bulkAssets.length, 1)) * span)) % 31) + 1;
+    autoSelected.forEach((a, i) => {
+      const day = ((selectedDay - 1 + Math.floor((i / Math.max(autoSelected.length, 1)) * span)) % 31) + 1;
       const arr = autoMap.get(day) ?? [];
       arr.push(a);
       autoMap.set(day, arr);
