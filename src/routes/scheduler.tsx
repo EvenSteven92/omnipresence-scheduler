@@ -61,13 +61,24 @@ const PEAK_WINDOWS: Record<PlatformName, string[]> = {
   "IG Story": ["09:30", "19:45"],
 };
 
-type BulkAsset = { id: string; name: string; size: string; format: string };
+type BulkAsset = {
+  id: string;
+  name: string;
+  size: string;
+  format: string;
+  platforms: PlatformName[];
+  caption: string;
+  hashtags: string;
+  transcript: string;
+  saved: boolean;
+  selectedForAuto: boolean;
+};
 
 const SAMPLE_BULK: BulkAsset[] = [
-  { id: "a1", name: "service_recap_w18.mp4", size: "84.2 MB", format: "Portrait" },
-  { id: "a2", name: "worship_clip_03.mp4", size: "62.1 MB", format: "Portrait" },
-  { id: "a3", name: "qa_segment_a.mp4", size: "120.8 MB", format: "Landscape" },
-  { id: "a4", name: "quote_card_set.png", size: "4.4 MB", format: "Story" },
+  { id: "a1", name: "service_recap_w18.mp4", size: "84.2 MB", format: "Portrait", platforms: ["Instagram", "TikTok"], caption: "", hashtags: "", transcript: "", saved: false, selectedForAuto: true },
+  { id: "a2", name: "worship_clip_03.mp4", size: "62.1 MB", format: "Portrait", platforms: ["Instagram"], caption: "", hashtags: "", transcript: "", saved: false, selectedForAuto: true },
+  { id: "a3", name: "qa_segment_a.mp4", size: "120.8 MB", format: "Landscape", platforms: ["YouTube", "Facebook"], caption: "", hashtags: "", transcript: "", saved: false, selectedForAuto: true },
+  { id: "a4", name: "quote_card_set.png", size: "4.4 MB", format: "Story", platforms: ["IG Story", "FB Story"], caption: "", hashtags: "", transcript: "", saved: false, selectedForAuto: false },
 ];
 
 export function SchedulerPage() {
