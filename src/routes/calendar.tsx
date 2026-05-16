@@ -5,13 +5,11 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Twitter,
   Facebook,
   Instagram,
   Youtube,
   Music2,
-  Clock,
   Image as ImageIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -29,35 +27,6 @@ export const Route = createFileRoute("/calendar")({
 
 const DOW = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
-type ComposerPlatform =
-  | "X / Twitter"
-  | "Facebook"
-  | "Instagram"
-  | "TikTok"
-  | "YouTube"
-  | "FB Story"
-  | "IG Story";
-
-const PLATFORMS: ComposerPlatform[] = [
-  "X / Twitter",
-  "Facebook",
-  "Instagram",
-  "TikTok",
-  "YouTube",
-  "FB Story",
-  "IG Story",
-];
-
-const PLATFORM_META: Record<ComposerPlatform, { short: string; Icon: LucideIcon }> = {
-  "X / Twitter": { short: "X", Icon: Twitter },
-  Facebook: { short: "FB", Icon: Facebook },
-  Instagram: { short: "IG", Icon: Instagram },
-  TikTok: { short: "TT", Icon: Music2 },
-  YouTube: { short: "YT", Icon: Youtube },
-  "FB Story": { short: "FBS", Icon: Facebook },
-  "IG Story": { short: "IGS", Icon: Instagram },
-};
-
 const PLATFORM_META_BY_SHORT: Record<string, { Icon: LucideIcon; full: string; peakTimes: string[] }> = {
   X: { Icon: Twitter, full: "X / Twitter", peakTimes: ["08:15", "12:40", "18:05"] },
   FB: { Icon: Facebook, full: "Facebook", peakTimes: ["09:00", "13:30", "20:00"] },
@@ -68,32 +37,14 @@ const PLATFORM_META_BY_SHORT: Record<string, { Icon: LucideIcon; full: string; p
   "FB STORY": { Icon: Facebook, full: "Facebook Story", peakTimes: ["10:00", "18:30"] },
 };
 
-const FORMATS = [
-  { name: "Landscape", spec: "16:9 — YouTube, Facebook, X", Icon: ImageIcon },
-  { name: "Portrait", spec: "9:16 — TikTok, Reels, Shorts", Icon: ImageIcon },
-  { name: "Story", spec: "9:16 — FB & IG Stories", Icon: ImageIcon },
-] as const;
-
-const AI_TOOLS = ["CAPTION", "SHORT", "YT_DESC", "YT_TITLE", "HASHTAGS"] as const;
+// Current focus month for the grid (May 2026, matches the mock data).
+const FOCUS_YEAR = 2026;
+const FOCUS_MONTH = 4; // 0-indexed (May)
 
 function CalendarPage() {
-  const [showEdit, setShowEdit] = useState(true);
+  const [showAgenda, setShowAgenda] = useState(true);
   const [detailPost, setDetailPost] = useState<(typeof scheduledPosts)[number] | null>(null);
-
-  // Composer (draft) state — drives the draft card on the calendar
   const [selectedDay, setSelectedDay] = useState<number>(14);
-  const [title, setTitle] = useState("Sunday Service Highlights - Week 18");
-  const [platforms, setPlatforms] = useState<ComposerPlatform[]>(["Facebook", "Instagram"]);
-  const [format, setFormat] = useState<(typeof FORMATS)[number]["name"]>("Landscape");
-  const [time, setTime] = useState("12:00");
-  const [caption, setCaption] = useState("");
-  const [hashtags, setHashtags] = useState("");
-  const [transcript, setTranscript] = useState("");
-  const [notes, setNotes] = useState("");
-  const [aiTool, setAiTool] = useState<(typeof AI_TOOLS)[number]>("CAPTION");
-
-  const togglePlatform = (p: ComposerPlatform) =>
-    setPlatforms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
 
   // Build May 2026 grid (Mon-start). May 1, 2026 = Friday.
   const cells = useMemo(() => {
@@ -111,7 +62,7 @@ function CalendarPage() {
     const map = new Map<number, typeof scheduledPosts>();
     scheduledPosts.forEach((p) => {
       const dt = new Date(p.date);
-      if (dt.getFullYear() === 2026 && dt.getMonth() === 4) {
+      if (dt.getFullYear() === FOCUS_YEAR && dt.getMonth() === FOCUS_MONTH) {
         const arr = map.get(dt.getDate()) ?? [];
         arr.push(p);
         map.set(dt.getDate(), arr);
@@ -119,9 +70,6 @@ function CalendarPage() {
     });
     return map;
   }, []);
-
-  const draftHasContent =
-    showEdit && (title.trim() || caption.trim() || platforms.length > 0);
 
   return (
     <div className="flex">
@@ -134,10 +82,10 @@ function CalendarPage() {
                 <Plus className="h-3 w-3" /> New_Post
               </button>
               <button
-                onClick={() => setShowEdit((v) => !v)}
+                onClick={() => setShowAgenda((v) => !v)}
                 className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] hover:bg-secondary"
               >
-                {showEdit ? "Hide" : "Show"}
+                {showAgenda ? "Hide_Agenda" : "Show_Agenda"}
               </button>
             </>
           }
@@ -166,7 +114,6 @@ function CalendarPage() {
             {cells.map((c) => {
               const posts = !c.muted ? byDay.get(c.d) : undefined;
               const isSelected = !c.muted && c.d === selectedDay;
-              const hasDraft = !c.muted && draftHasContent && c.d === selectedDay;
               return (
                 <div
                   key={c.key}
@@ -177,9 +124,7 @@ function CalendarPage() {
                 >
                   <div className="text-xs">{c.d}</div>
 
-                  {hasDraft && <DraftCard title={title} platforms={platforms} time={time} />}
-
-                  {posts && !hasDraft && (
+                  {posts && (
                     <div className="mt-1 flex flex-col gap-1">
                       {posts.map((p) => (
                         <button
@@ -217,160 +162,17 @@ function CalendarPage() {
           </div>
 
           <div className="label-mono mt-3 text-right">
-            (view) scheduled (solid) · draft (dashed)
+            (view) scheduled (solid) · current_month (highlighted in agenda)
           </div>
         </div>
       </div>
 
-      {showEdit && (
-        <aside className="hidden w-[360px] shrink-0 overflow-y-auto border-l border-border bg-surface lg:block">
-          <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <div className="label-mono">edit_post</div>
-            <span className="rounded-sm border border-dashed border-border px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
-              draft → may {selectedDay}
-            </span>
-          </div>
-
-          <div className="space-y-4 p-5">
-            <Section label="post_title">
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Sunday Service Highlights"
-                className="w-full rounded-sm border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
-              />
-            </Section>
-
-            <Section label="target_platforms">
-              <div className="grid grid-cols-4 gap-px bg-border">
-                {PLATFORMS.map((p) => {
-                  const active = platforms.includes(p);
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => togglePlatform(p)}
-                      className={`px-2 py-3 text-[0.6rem] uppercase tracking-[0.1em] transition-colors ${
-                        active
-                          ? "bg-foreground text-background"
-                          : "bg-surface text-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  );
-                })}
-                <div className="bg-surface" />
-              </div>
-            </Section>
-
-            <Section label="format_spec">
-              <div className="grid grid-cols-3 gap-px bg-border">
-                {FORMATS.map((f) => {
-                  const active = format === f.name;
-                  const Icon = f.Icon;
-                  return (
-                    <button
-                      key={f.name}
-                      onClick={() => setFormat(f.name)}
-                      className={`flex flex-col items-center gap-1.5 px-2 py-3 text-center transition-colors ${
-                        active
-                          ? "bg-foreground text-background"
-                          : "bg-surface text-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" strokeWidth={1.5} />
-                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em]">
-                        {f.name}
-                      </span>
-                      <span
-                        className={`text-[0.55rem] leading-tight ${active ? "text-background/70" : "text-muted-foreground"}`}
-                      >
-                        {f.spec}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </Section>
-
-            <Section label="schedule_time">
-              <div className="flex items-center gap-3">
-                <span className="label-mono">time:</span>
-                <div className="flex items-center gap-2 rounded-sm border border-border bg-background px-3 py-2">
-                  <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    className="bg-transparent text-sm focus:outline-none"
-                  />
-                  <Clock className="h-3 w-3 text-muted-foreground" />
-                </div>
-              </div>
-            </Section>
-
-            <Section label="caption">
-              <textarea
-                rows={3}
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                placeholder="Your social media caption…"
-                className="w-full rounded-sm border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
-              />
-              <div className="label-mono mt-1">{caption.length}_chars</div>
-            </Section>
-
-            <Section label="hashtags">
-              <textarea
-                rows={2}
-                value={hashtags}
-                onChange={(e) => setHashtags(e.target.value)}
-                placeholder="#church #faith #sermon…"
-                className="w-full rounded-sm border border-border bg-background px-3 py-2 text-xs focus:border-accent focus:outline-none"
-              />
-            </Section>
-
-            <Section label="transcript + ai">
-              <textarea
-                rows={3}
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
-                placeholder="Paste transcript here…"
-                className="w-full rounded-sm border border-dashed border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
-              />
-              <div className="mt-3 flex flex-wrap gap-px bg-border">
-                {AI_TOOLS.map((t) => {
-                  const active = aiTool === t;
-                  return (
-                    <button
-                      key={t}
-                      onClick={() => setAiTool(t)}
-                      className={`px-2.5 py-1.5 text-[0.6rem] uppercase tracking-[0.12em] ${
-                        active
-                          ? "bg-foreground text-background"
-                          : "bg-surface text-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  );
-                })}
-              </div>
-              <button className="mt-3 inline-flex items-center gap-2 rounded-sm bg-primary px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-primary-foreground">
-                <Sparkles className="h-3 w-3" /> Generate
-              </button>
-            </Section>
-
-            <Section label="internal_notes">
-              <textarea
-                rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notes for your team…"
-                className="w-full rounded-sm border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
-              />
-            </Section>
-          </div>
-        </aside>
+      {showAgenda && (
+        <AgendaSidebar
+          focusYear={FOCUS_YEAR}
+          focusMonth={FOCUS_MONTH}
+          onSelectPost={setDetailPost}
+        />
       )}
 
       {detailPost && (
@@ -415,7 +217,6 @@ function CalendarPage() {
                   const meta = PLATFORM_META_BY_SHORT[pl];
                   const Icon = meta?.Icon ?? ImageIcon;
                   const base = new Date(detailPost.date);
-                  // give each platform its own staggered time near the base time
                   const idx = detailPost.platforms.indexOf(pl);
                   const peak = meta?.peakTimes[idx % (meta?.peakTimes.length || 1)] ?? "—:—";
                   return (
@@ -429,9 +230,7 @@ function CalendarPage() {
                         </span>
                         <div>
                           <div className="text-xs text-foreground">{meta?.full ?? pl}</div>
-                          <div className="label-mono text-[0.55rem]">
-                            peak_optimised
-                          </div>
+                          <div className="label-mono text-[0.55rem]">peak_optimised</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -464,55 +263,228 @@ function CalendarPage() {
   );
 }
 
-function DraftCard({
-  title,
-  platforms,
-  time,
+// ─── Agenda sidebar ──────────────────────────────────────────────────────────
+
+type AgendaPost = (typeof scheduledPosts)[number];
+
+function AgendaSidebar({
+  focusYear,
+  focusMonth,
+  onSelectPost,
 }: {
-  title: string;
-  platforms: ComposerPlatform[];
-  time: string;
+  focusYear: number;
+  focusMonth: number;
+  onSelectPost: (p: AgendaPost) => void;
 }) {
+  // Window of months relative to focus month, expands as user scrolls.
+  const [range, setRange] = useState({ start: -2, end: 2 });
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const topSentinel = useRef<HTMLDivElement | null>(null);
+  const bottomSentinel = useRef<HTMLDivElement | null>(null);
+  const didInitialScroll = useRef(false);
+
+  // Group posts by year-month for fast lookup.
+  const postsByMonth = useMemo(() => {
+    const map = new Map<string, AgendaPost[]>();
+    scheduledPosts.forEach((p) => {
+      const dt = new Date(p.date);
+      const key = `${dt.getFullYear()}-${dt.getMonth()}`;
+      const arr = map.get(key) ?? [];
+      arr.push(p);
+      map.set(key, arr);
+    });
+    // sort each bucket chronologically
+    map.forEach((arr) => arr.sort((a, b) => +new Date(a.date) - +new Date(b.date)));
+    return map;
+  }, []);
+
+  const months = useMemo(() => {
+    const out: { year: number; month: number; key: string; isFocus: boolean }[] = [];
+    for (let off = range.start; off <= range.end; off++) {
+      const d = new Date(focusYear, focusMonth + off, 1);
+      out.push({
+        year: d.getFullYear(),
+        month: d.getMonth(),
+        key: `${d.getFullYear()}-${d.getMonth()}`,
+        isFocus: off === 0,
+      });
+    }
+    return out;
+  }, [range, focusYear, focusMonth]);
+
+  // Scroll the focus month into view on first paint.
+  useEffect(() => {
+    if (didInitialScroll.current) return;
+    const root = scrollRef.current;
+    if (!root) return;
+    const focus = root.querySelector<HTMLElement>("[data-focus='true']");
+    if (focus) {
+      focus.scrollIntoView({ block: "start" });
+      didInitialScroll.current = true;
+    }
+  }, []);
+
+  // Infinite scroll: extend range when sentinels enter view.
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          if (e.target === topSentinel.current) {
+            // preserve scroll position when prepending
+            const prevHeight = root.scrollHeight;
+            const prevTop = root.scrollTop;
+            setRange((r) => ({ ...r, start: r.start - 2 }));
+            requestAnimationFrame(() => {
+              root.scrollTop = prevTop + (root.scrollHeight - prevHeight);
+            });
+          } else if (e.target === bottomSentinel.current) {
+            setRange((r) => ({ ...r, end: r.end + 2 }));
+          }
+        }
+      },
+      { root, rootMargin: "200px" },
+    );
+    if (topSentinel.current) obs.observe(topSentinel.current);
+    if (bottomSentinel.current) obs.observe(bottomSentinel.current);
+    return () => obs.disconnect();
+  }, [range]);
+
   return (
-    <div className="mt-1 flex flex-1 flex-col overflow-hidden rounded-sm border border-dashed border-accent bg-background/60">
-      <div className="flex aspect-video items-center justify-center border-b border-dashed border-border bg-surface-elevated">
-        <ImageIcon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+    <aside className="hidden w-[360px] shrink-0 flex-col border-l border-border bg-surface lg:flex">
+      <div className="flex items-center justify-between border-b border-border px-5 py-4">
+        <div className="label-mono">agenda</div>
+        <span className="rounded-sm border border-dashed border-border px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
+          scroll ↕ months
+        </span>
       </div>
-      <div className="flex-1 px-1.5 py-1">
-        <div className="line-clamp-2 text-[0.6rem] leading-tight text-foreground">
-          {title || "untitled_draft"}
-        </div>
-        <div className="label-mono mt-0.5 text-[0.5rem] normal-case">{time}</div>
+
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div ref={topSentinel} className="h-1" />
+        {months.map((m) => {
+          const monthPosts = postsByMonth.get(m.key) ?? [];
+          return (
+            <MonthBlock
+              key={m.key}
+              year={m.year}
+              month={m.month}
+              posts={monthPosts}
+              muted={!m.isFocus}
+              isFocus={m.isFocus}
+              onSelectPost={onSelectPost}
+            />
+          );
+        })}
+        <div ref={bottomSentinel} className="h-1" />
       </div>
-      <div className="flex items-center gap-1 border-t border-border bg-background/60 px-1.5 py-1">
-        {platforms.length === 0 ? (
-          <span className="label-mono text-[0.5rem]">no_targets</span>
-        ) : (
-          platforms.map((p) => {
-            const { Icon, short } = PLATFORM_META[p];
-            return (
-              <span
-                key={p}
-                title={p}
-                className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background"
-              >
-                <Icon className="h-2.5 w-2.5" strokeWidth={2} />
-                <span className="sr-only">{short}</span>
-              </span>
-            );
-          })
-        )}
-      </div>
-    </div>
+    </aside>
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function MonthBlock({
+  year,
+  month,
+  posts,
+  muted,
+  isFocus,
+  onSelectPost,
+}: {
+  year: number;
+  month: number;
+  posts: AgendaPost[];
+  muted: boolean;
+  isFocus: boolean;
+  onSelectPost: (p: AgendaPost) => void;
+}) {
+  const monthLabel = new Date(year, month, 1).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+
+  // Group posts by day
+  const byDay = new Map<number, AgendaPost[]>();
+  posts.forEach((p) => {
+    const day = new Date(p.date).getDate();
+    const arr = byDay.get(day) ?? [];
+    arr.push(p);
+    byDay.set(day, arr);
+  });
+  const days = Array.from(byDay.keys()).sort((a, b) => a - b);
+
   return (
-    <div className="panel p-3">
-      <div className="label-mono mb-2">{label}</div>
-      {children}
-    </div>
+    <section
+      data-focus={isFocus ? "true" : "false"}
+      className={muted ? "opacity-40" : "opacity-100"}
+    >
+      <div
+        className={`sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-5 py-2 ${
+          isFocus ? "text-foreground" : "text-muted-foreground"
+        }`}
+      >
+        <span className="display-mono text-xs uppercase tracking-[0.14em]">{monthLabel}</span>
+        <span className="label-mono">{posts.length}_posts</span>
+      </div>
+
+      {days.length === 0 ? (
+        <div className="px-5 py-6 text-center label-mono text-muted-foreground/60">
+          no_scheduled_posts
+        </div>
+      ) : (
+        <div className="divide-y divide-border">
+          {days.map((day) => (
+            <div key={day} className="flex gap-3 px-5 py-3">
+              <div className="w-10 shrink-0 text-center">
+                <div className="display-mono text-lg leading-none">{day}</div>
+                <div className="label-mono mt-1 text-[0.55rem]">
+                  {new Date(year, month, day).toLocaleDateString(undefined, { weekday: "short" })}
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-2">
+                {byDay.get(day)!.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => onSelectPost(p)}
+                    className="block w-full rounded-sm border border-border bg-background/60 p-2 text-left hover:border-accent"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="line-clamp-2 text-[0.7rem] leading-tight text-foreground">
+                        {p.title}
+                      </div>
+                      <div className="font-mono text-[0.6rem] text-accent shrink-0">
+                        {new Date(p.date).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                        })}
+                      </div>
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-0.5">
+                      {p.platforms.map((pl, i) => {
+                        const meta = PLATFORM_META_BY_SHORT[pl];
+                        const Icon = meta?.Icon ?? ImageIcon;
+                        return (
+                          <span
+                            key={`${p.id}-${i}`}
+                            title={pl}
+                            className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background"
+                          >
+                            <Icon className="h-2.5 w-2.5" strokeWidth={2} />
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
