@@ -158,11 +158,10 @@ function CalendarPage() {
               const isSelected = !c.muted && c.d === selectedDay;
               const hasDraft = !c.muted && draftHasContent && c.d === selectedDay;
               return (
-                <button
+                <div
                   key={c.key}
-                  type="button"
                   onClick={() => !c.muted && setSelectedDay(c.d)}
-                  className={`relative flex min-h-[120px] flex-col gap-1.5 bg-surface p-2 text-left transition-colors ${
+                  className={`relative flex min-h-[120px] cursor-pointer flex-col gap-1.5 bg-surface p-2 text-left transition-colors ${
                     c.muted ? "text-muted-foreground/40" : "text-foreground hover:bg-secondary/40"
                   } ${isSelected ? "outline outline-1 outline-accent" : ""}`}
                 >
@@ -171,26 +170,38 @@ function CalendarPage() {
                   {hasDraft && <DraftCard title={title} platforms={platforms} time={time} />}
 
                   {posts && !hasDraft && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {posts.flatMap((p) =>
-                        p.platforms.slice(0, 4).map((pl, i) => (
-                          <span
-                            key={`${p.id}-${i}`}
-                            className="rounded-full bg-background px-1.5 py-0.5 text-[0.55rem] uppercase tracking-wide"
-                          >
-                            {pl === "TIKTOK"
-                              ? "TT"
-                              : pl === "IG STORY"
-                                ? "IGS"
-                                : pl === "FB STORY"
-                                  ? "FBS"
-                                  : pl}
-                          </span>
-                        )),
-                      )}
+                    <div className="mt-1 flex flex-col gap-1">
+                      {posts.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDetailPost(p);
+                          }}
+                          className="group flex flex-col gap-1 rounded-sm border border-border bg-background/60 p-1.5 text-left hover:border-accent"
+                        >
+                          <div className="line-clamp-2 text-[0.6rem] leading-tight">{p.title}</div>
+                          <div className="flex flex-wrap gap-0.5">
+                            {p.platforms.slice(0, 5).map((pl, i) => {
+                              const meta = PLATFORM_META_BY_SHORT[pl];
+                              const Icon = meta?.Icon ?? ImageIcon;
+                              return (
+                                <span
+                                  key={`${p.id}-${i}`}
+                                  title={pl}
+                                  className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background"
+                                >
+                                  <Icon className="h-2.5 w-2.5" strokeWidth={2} />
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
