@@ -53,6 +53,21 @@ const FORMATS = [
 
 const AI_TOOLS = ["Caption", "Short", "YT_Desc", "YT_Title", "Hashtags"] as const;
 
+type Orientation = "landscape" | "portrait" | "square";
+
+const PLATFORM_REQS: Record<PlatformName, Orientation[]> = {
+  "X / Twitter": ["landscape", "square", "portrait"],
+  Facebook: ["landscape", "square", "portrait"],
+  Instagram: ["square", "portrait"],
+  TikTok: ["portrait"],
+  YouTube: ["landscape"],
+  "FB Story": ["portrait"],
+  "IG Story": ["portrait"],
+};
+
+const formatToOrientation = (f: string): Orientation =>
+  f === "Landscape" ? "landscape" : f === "Square" ? "square" : "portrait";
+
 // Mock AI-detected peak windows per platform (24h)
 const PEAK_WINDOWS: Record<PlatformName, string[]> = {
   "X / Twitter": ["08:15", "12:40", "18:05"],
