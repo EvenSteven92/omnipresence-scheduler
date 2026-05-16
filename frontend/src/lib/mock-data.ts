@@ -1,4 +1,4 @@
-export type Platform = "X" | "FB" | "IG" | "YT" | "TIKTOK" | "IG STORY" | "FB STORY";
+export type Platform = "X" | "FB" | "IG" | "YT" | "YT SHORTS" | "TIKTOK" | "IG STORY" | "FB STORY";
 
 export interface ScheduledPost {
   id: string;
@@ -85,6 +85,7 @@ export type ConnectionStatus = "ok" | "expiring" | "disconnected";
 
 export const platformConnections: { platform: Platform; status: ConnectionStatus; expiresInDays?: number }[] = [
   { platform: "YT", status: "ok" },
+  { platform: "YT SHORTS", status: "ok" },
   { platform: "FB", status: "ok" },
   { platform: "IG", status: "expiring", expiresInDays: 4 },
   { platform: "X", status: "ok" },

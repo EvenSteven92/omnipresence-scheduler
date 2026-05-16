@@ -19,13 +19,14 @@ export interface PlatformMeta {
 }
 
 export const PLATFORMS: readonly PlatformMeta[] = [
-  { short: "X",        full: "X / Twitter",       Icon: Twitter,   peakTimes: ["08:15", "12:40", "18:05"], formats: ["landscape", "portrait"] },
-  { short: "FB",       full: "Facebook",          Icon: Facebook,  peakTimes: ["09:00", "13:30", "20:00"], formats: ["landscape", "portrait"] },
-  { short: "IG",       full: "Instagram",         Icon: Instagram, peakTimes: ["11:00", "17:30", "21:15"], formats: ["landscape", "portrait"] },
-  { short: "YT",       full: "YouTube",           Icon: Youtube,   peakTimes: ["15:00", "20:30"],          formats: ["landscape", "portrait"] },
-  { short: "TIKTOK",   full: "TikTok",            Icon: Music2,    peakTimes: ["07:45", "19:00", "22:30"], formats: ["portrait"] },
-  { short: "IG STORY", full: "Instagram Story",   Icon: Instagram, peakTimes: ["09:30", "19:45"],          formats: ["story"] },
-  { short: "FB STORY", full: "Facebook Story",    Icon: Facebook,  peakTimes: ["10:00", "18:30"],          formats: ["story"] },
+  { short: "X",         full: "X / Twitter",       Icon: Twitter,   peakTimes: ["08:15", "12:40", "18:05"], formats: ["landscape", "portrait"] },
+  { short: "FB",        full: "Facebook",          Icon: Facebook,  peakTimes: ["09:00", "13:30", "20:00"], formats: ["landscape", "portrait"] },
+  { short: "IG",        full: "Instagram",         Icon: Instagram, peakTimes: ["11:00", "17:30", "21:15"], formats: ["landscape", "portrait"] },
+  { short: "YT",        full: "YouTube",           Icon: Youtube,   peakTimes: ["15:00", "20:30"],          formats: ["landscape", "portrait"] },
+  { short: "YT SHORTS", full: "YouTube Shorts",    Icon: Youtube,   peakTimes: ["12:00", "17:00", "21:00"], formats: ["portrait"] },
+  { short: "TIKTOK",    full: "TikTok",            Icon: Music2,    peakTimes: ["07:45", "19:00", "22:30"], formats: ["portrait"] },
+  { short: "IG STORY",  full: "Instagram Story",   Icon: Instagram, peakTimes: ["09:30", "19:45"],          formats: ["story"] },
+  { short: "FB STORY",  full: "Facebook Story",    Icon: Facebook,  peakTimes: ["10:00", "18:30"],          formats: ["story"] },
 ] as const;
 
 export const PLATFORMS_BY_SHORT: Record<string, PlatformMeta> = Object.fromEntries(

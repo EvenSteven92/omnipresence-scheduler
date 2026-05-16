@@ -7,6 +7,7 @@ export const CHAR_LIMITS: Record<Platform, number> = {
   FB: 63_206,
   IG: 2_200,
   YT: 5_000,
+  "YT SHORTS": 100,
   TIKTOK: 4_000,
   "IG STORY": 200,
   "FB STORY": 200,
