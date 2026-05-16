@@ -34,3 +34,61 @@ export const growthMatrix = [
   { platform: "IG STORY", views: 7100, likes: 0, shares: 0 },
   { platform: "FB STORY", views: 5300, likes: 0, shares: 0 },
 ];
+
+// ─── Published posts (for "top performers" dashboard widget) ───────────────────
+
+export interface PublishedPost {
+  id: string;
+  title: string;
+  platforms: Platform[];
+  date: string;
+  views: number;
+  likes: number;
+  shares: number;
+  engagementRate: number; // 0..1
+}
+
+export const publishedPosts: PublishedPost[] = [
+  {
+    id: "p1",
+    title: "Devotional rhythms — 3 practices to anchor your week",
+    platforms: ["IG", "TIKTOK", "YT"],
+    date: "2026-05-08T11:00:00",
+    views: 48_320, likes: 4_812, shares: 612, engagementRate: 0.112,
+  },
+  {
+    id: "p2",
+    title: "Behind the worship band — soundcheck vlog",
+    platforms: ["YT", "IG", "FB"],
+    date: "2026-05-06T19:00:00",
+    views: 22_440, likes: 1_204, shares: 188, engagementRate: 0.062,
+  },
+  {
+    id: "p3",
+    title: "Sunday Q&A — your top 5 questions answered",
+    platforms: ["X", "IG", "FB"],
+    date: "2026-05-03T18:00:00",
+    views: 17_980, likes: 988, shares: 144, engagementRate: 0.063,
+  },
+  {
+    id: "p4",
+    title: "Spring conference replay — opening night",
+    platforms: ["YT", "FB"],
+    date: "2026-04-28T20:00:00",
+    views: 14_210, likes: 612, shares: 92, engagementRate: 0.050,
+  },
+];
+
+// ─── Platform connections (for "health strip" dashboard widget) ────────────────
+
+export type ConnectionStatus = "ok" | "expiring" | "disconnected";
+
+export const platformConnections: { platform: Platform; status: ConnectionStatus; expiresInDays?: number }[] = [
+  { platform: "YT", status: "ok" },
+  { platform: "FB", status: "ok" },
+  { platform: "IG", status: "expiring", expiresInDays: 4 },
+  { platform: "X", status: "ok" },
+  { platform: "TIKTOK", status: "disconnected" },
+  { platform: "IG STORY", status: "ok" },
+  { platform: "FB STORY", status: "ok" },
+];

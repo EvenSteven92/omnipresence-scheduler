@@ -84,6 +84,7 @@ function SchedulerPage() {
   const [scheduleTime, setScheduleTime] = useState<string>("12:00");
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const savedCount = useMemo(() => drafts.filter((d) => d.caption.trim() && d.platforms.length > 0).length, [drafts]);
   const autoCount = drafts.length - savedCount;
@@ -107,6 +108,53 @@ function SchedulerPage() {
   }
   function clearAll() {
     setDrafts([]);
+  }
+  function reorder(fromId: string, toId: string) {
+    if (fromId === toId) return;
+    setDrafts((cur) => {
+      const from = cur.findIndex((d) => d.id === fromId);
+      const to = cur.findIndex((d) => d.id === toId);
+      if (from === -1 || to === -1) return cur;
+      const next = cur.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }
+
+  // Generate proposed schedule across the chosen spread (7/14/30 days),
+  // slotting each draft into the next peak window of its primary platform.
+  function generateSchedule() {
+    if (drafts.length === 0) return;
+    const days = spread === "spread_7d" ? 7 : spread === "spread_14d" ? 14 : 30;
+    const start = new Date(scheduleDate);
+    const next = drafts.map((d, idx) => {
+      const dayOffset = Math.round((idx * days) / Math.max(drafts.length, 1));
+      const slot = new Date(start);
+      slot.setDate(slot.getDate() + dayOffset);
+      // Pick first peak time of primary platform
+      const primary = d.platforms[0];
+      const meta = primary ? PLATFORMS_BY_SHORT[primary] : undefined;
+      const peak = meta?.peakTimes[idx % (meta?.peakTimes.length ?? 1)] ?? scheduleTime;
+      const [hh, mm] = peak.split(":").map((s) => parseInt(s, 10));
+      slot.setHours(hh, mm, 0, 0);
+      return { ...d, proposedDate: slot.toISOString() };
+    });
+    setDrafts(next);
+  }
+
+  function autoScheduleSingle(id: string) {
+    setDrafts((cur) => {
+      const d = cur.find((x) => x.id === id);
+      if (!d) return cur;
+      const primary = d.platforms[0];
+      const meta = primary ? PLATFORMS_BY_SHORT[primary] : undefined;
+      const peak = meta?.peakTimes[0] ?? scheduleTime;
+      const slot = new Date(scheduleDate);
+      const [hh, mm] = peak.split(":").map((s) => parseInt(s, 10));
+      slot.setHours(hh, mm, 0, 0);
+      return cur.map((x) => (x.id === id ? { ...x, proposedDate: slot.toISOString() } : x));
+    });
   }
   function addDemoSet() {
     const demo: { name: string; sizeBytes: number }[] = [
@@ -147,6 +195,7 @@ function SchedulerPage() {
                 type="button"
                 data-testid="schedule-all-btn"
                 disabled={empty}
+                onClick={generateSchedule}
                 className="flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground hover:opacity-90 disabled:opacity-50"
               >
                 <Wand2 className="h-3 w-3" /> Schedule_All
@@ -231,8 +280,32 @@ function SchedulerPage() {
                   onChange={(next) => updateDraft(d.id, next)}
                   onRemove={() => removeDraft(d.id)}
                   onSaveDraft={() => {/* placeholder — persistence not wired */}}
-                  onAutoSchedule={() => {/* placeholder — schedule queued */}}
+                  onAutoSchedule={() => autoScheduleSingle(d.id)}
                   expanded={single}
+                  isDragging={draggingId === d.id}
+                  dragHandlers={
+                    single
+                      ? undefined
+                      : {
+                          draggable: true,
+                          onDragStart: (e) => {
+                            setDraggingId(d.id);
+                            e.dataTransfer.effectAllowed = "move";
+                            e.dataTransfer.setData("text/plain", d.id);
+                          },
+                          onDragOver: (e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                          },
+                          onDragEnd: () => setDraggingId(null),
+                          onDrop: (e) => {
+                            e.preventDefault();
+                            const fromId = e.dataTransfer.getData("text/plain");
+                            if (fromId) reorder(fromId, d.id);
+                            setDraggingId(null);
+                          },
+                        }
+                  }
                 />
               ))}
             </div>
@@ -272,6 +345,7 @@ function SchedulerPage() {
           <button
             type="button"
             disabled={empty}
+            onClick={generateSchedule}
             data-testid="generate-schedule-btn"
             className="mt-3 flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-3 py-3 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
@@ -297,7 +371,20 @@ function SchedulerPage() {
                   data-testid={`queue-row-${d.id}`}
                   className="flex items-center justify-between gap-2 rounded-sm border border-border bg-background/60 px-2.5 py-1.5"
                 >
-                  <span className="truncate text-[0.65rem] text-foreground">{d.filename}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[0.65rem] text-foreground">{d.filename}</div>
+                    {d.proposedDate && (
+                      <div className="label-mono mt-0.5 text-[0.5rem] text-accent">
+                        {new Date(d.proposedDate).toLocaleString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                        })}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex shrink-0 items-center gap-1">
                     {d.platforms.slice(0, 4).map((p, i) => {
                       const Icon = PLATFORMS_BY_SHORT[p]?.Icon;

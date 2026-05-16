@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
-import { Wand2, Save, Sparkles, X, FileVideo, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Wand2, Save, Sparkles, X, FileVideo, Image as ImageIcon, Loader2, GripVertical, AlertTriangle } from "lucide-react";
 import { PLATFORMS, FORMAT_META, type PostFormat } from "@/lib/platforms";
 import { aiGenerate, type AiKind } from "@/lib/ai-client";
 import type { Platform } from "@/lib/mock-data";
 import { PlatformRow } from "./PlatformRow";
+import { CharCounters } from "./CharCounters";
+import { PlatformPreview } from "./PlatformPreview";
+import { detectConflicts } from "@/lib/conflicts";
 
 export interface DraftPost {
   id: string;
@@ -17,6 +20,8 @@ export interface DraftPost {
   caption: string;
   hashtags: string;
   transcript: string;
+  /** Proposed scheduled time once auto-schedule has run. */
+  proposedDate?: string;
 }
 
 const PLATFORM_CHIP_BASE =
@@ -29,6 +34,8 @@ export function ComposerCard({
   onSaveDraft,
   onAutoSchedule,
   expanded,
+  dragHandlers,
+  isDragging,
 }: {
   post: DraftPost;
   onChange: (next: DraftPost) => void;
@@ -36,6 +43,15 @@ export function ComposerCard({
   onSaveDraft: () => void;
   onAutoSchedule: () => void;
   expanded: boolean;
+  /** Native HTML5 drag handlers passed from the parent grid. */
+  dragHandlers?: {
+    draggable: boolean;
+    onDragStart: (e: React.DragEvent) => void;
+    onDragOver: (e: React.DragEvent) => void;
+    onDragEnd: (e: React.DragEvent) => void;
+    onDrop: (e: React.DragEvent) => void;
+  };
+  isDragging?: boolean;
 }) {
   const [busy, setBusy] = useState<AiKind | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +63,12 @@ export function ComposerCard({
       ),
     [post.format],
   );
+
+  // Conflict detection — only runs once a proposed date is set
+  const conflicts = useMemo(() => {
+    if (!post.proposedDate) return [];
+    return detectConflicts(new Date(post.proposedDate), post.platforms, post.id);
+  }, [post.proposedDate, post.platforms, post.id]);
 
   function toggleFormat(f: PostFormat) {
     // Auto-drop platforms that don't accept the new format
@@ -84,16 +106,34 @@ export function ComposerCard({
     }
   }
 
-  const platformEntries = post.platforms.map((p) => ({ platform: p, state: "pending" as const }));
+  const platformEntries = post.platforms.map((p) => ({
+    platform: p,
+    state: "pending" as const,
+    at: post.proposedDate
+      ? new Date(post.proposedDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+      : undefined,
+  }));
 
   return (
     <article
       data-testid={`composer-card-${post.id}`}
-      className="flex flex-col overflow-hidden rounded-sm border border-border bg-surface"
+      {...(dragHandlers ?? {})}
+      className={`flex flex-col overflow-hidden rounded-sm border border-border bg-surface transition-opacity ${
+        isDragging ? "opacity-40" : "opacity-100"
+      }`}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
+          {dragHandlers && (
+            <span
+              title="Drag to reorder"
+              data-testid="drag-handle"
+              className="cursor-grab text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing"
+            >
+              <GripVertical className="h-4 w-4" strokeWidth={1.5} />
+            </span>
+          )}
           <span className="rounded-sm border border-border bg-background/60 px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground">
             {FORMAT_META[post.format].label}
           </span>
@@ -219,6 +259,7 @@ export function ComposerCard({
           rows={3}
           className="w-full resize-y rounded-sm border border-border bg-background/60 px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
         />
+        <CharCounters text={post.caption} platforms={post.platforms} />
       </div>
 
       {/* Hashtags */}
@@ -266,16 +307,47 @@ export function ComposerCard({
         </div>
       )}
 
+      {/* Conflict warnings (post auto-schedule) */}
+      {conflicts.length > 0 && (
+        <div
+          data-testid={`conflict-banner-${post.id}`}
+          className="mx-4 mt-3 rounded-sm border border-warning/60 bg-warning/10 px-3 py-2 text-[0.65rem] text-warning"
+        >
+          <div className="mb-1 flex items-center gap-1.5 font-mono uppercase tracking-[0.14em]">
+            <AlertTriangle className="h-3 w-3" strokeWidth={2} />
+            schedule_conflict · {conflicts.length}
+          </div>
+          {conflicts.map((c) => (
+            <div key={c.withId} className="leading-snug">
+              · {c.sharedPlatforms.join("/")} overlap with “{c.withTitle}” (±{c.deltaMinutes}min)
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Selected platform row preview */}
       {post.platforms.length > 0 && (
         <div className="mt-4 px-4">
-          <div className="label-mono mb-2">scheduled_to</div>
+          <div className="label-mono mb-2">
+            {post.proposedDate ? "scheduled_to" : "will_post_to"}
+          </div>
           <PlatformRow entries={platformEntries} size="sm" compact />
         </div>
       )}
 
+      {/* Live platform previews (collapsible) */}
+      <div className="mt-4">
+        <PlatformPreview
+          platforms={post.platforms}
+          caption={post.caption}
+          hashtags={post.hashtags}
+          filename={post.filename}
+          format={post.format}
+        />
+      </div>
+
       {/* Footer actions */}
-      <div className="mt-4 grid grid-cols-2 border-t border-border">
+      <div className="grid grid-cols-2 border-t border-border">
         <button
           type="button"
           onClick={onSaveDraft}
