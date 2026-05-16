@@ -309,9 +309,13 @@ export function SchedulerPage() {
                   >
                     {c.d}
                     {auto && auto.length > 0 && (
-                      <span className="absolute bottom-0.5 right-0.5 rounded-full bg-accent px-1 text-[0.5rem] font-bold text-accent-foreground">
-                        {auto.length}
-                      </span>
+                      <div className="absolute inset-x-0.5 bottom-0.5 flex flex-wrap justify-end gap-0.5">
+                        {auto.map((n) => (
+                          <span key={n} className="rounded-full bg-accent px-1 text-[0.5rem] font-bold text-accent-foreground">
+                            #{n}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </button>
                 );
