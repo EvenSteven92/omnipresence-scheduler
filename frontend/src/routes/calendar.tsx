@@ -72,8 +72,8 @@ function CalendarPage() {
   }, []);
 
   return (
-    <div className="flex">
-      <div className="flex-1 pb-20">
+    <div className="flex h-screen overflow-hidden">
+      <div className="flex-1 overflow-y-auto pb-20">
         <PageHeader
           title="Calendar"
           actions={
