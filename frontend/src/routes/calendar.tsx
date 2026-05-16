@@ -5,16 +5,15 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  Twitter,
-  Facebook,
-  Instagram,
-  Youtube,
-  Music2,
   Image as ImageIcon,
-  type LucideIcon,
+  X as XIcon,
+  ExternalLink,
+  Pencil,
 } from "lucide-react";
 import { scheduledPosts, type Platform } from "@/lib/mock-data";
 import { PostCard, type DisplayPost } from "@/components/post/PostCard";
+import { PlatformRow, type PlatformEntry } from "@/components/post/PlatformRow";
+import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 
 export const Route = createFileRoute("/calendar")({
   head: () => ({
@@ -28,49 +27,62 @@ export const Route = createFileRoute("/calendar")({
 
 const DOW = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
-const PLATFORM_META_BY_SHORT: Record<string, { Icon: LucideIcon; full: string; peakTimes: string[] }> = {
-  X: { Icon: Twitter, full: "X / Twitter", peakTimes: ["08:15", "12:40", "18:05"] },
-  FB: { Icon: Facebook, full: "Facebook", peakTimes: ["09:00", "13:30", "20:00"] },
-  IG: { Icon: Instagram, full: "Instagram", peakTimes: ["11:00", "17:30", "21:15"] },
-  YT: { Icon: Youtube, full: "YouTube", peakTimes: ["15:00", "20:30"] },
-  TIKTOK: { Icon: Music2, full: "TikTok", peakTimes: ["07:45", "19:00", "22:30"] },
-  "IG STORY": { Icon: Instagram, full: "Instagram Story", peakTimes: ["09:30", "19:45"] },
-  "FB STORY": { Icon: Facebook, full: "Facebook Story", peakTimes: ["10:00", "18:30"] },
-};
-
-// Current focus month for the grid (May 2026, matches the mock data).
-const FOCUS_YEAR = 2026;
-const FOCUS_MONTH = 4; // 0-indexed (May)
+// "Today" anchor for the demo — matches the mock data window
+const TODAY = new Date(2026, 4, 13);
+const INITIAL_MONTH = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
 
 function CalendarPage() {
   const [showAgenda, setShowAgenda] = useState(true);
   const [detailPost, setDetailPost] = useState<(typeof scheduledPosts)[number] | null>(null);
-  const [selectedDay, setSelectedDay] = useState<number>(14);
+  const [viewMonth, setViewMonth] = useState<Date>(INITIAL_MONTH);
+  const [selectedDay, setSelectedDay] = useState<number>(TODAY.getDate());
 
-  // Build May 2026 grid (Mon-start). May 1, 2026 = Friday.
+  function shiftMonth(delta: number) {
+    setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() + delta, 1));
+  }
+  function jumpToday() {
+    setViewMonth(INITIAL_MONTH);
+    setSelectedDay(TODAY.getDate());
+  }
+
+  const focusYear = viewMonth.getFullYear();
+  const focusMonth = viewMonth.getMonth();
+
+  // Build month grid (Mon-start). Pads with prev/next month days so it's always 6 rows of 7.
   const cells = useMemo(() => {
-    const arr: { d: number; muted: boolean; key: string }[] = [];
-    for (let i = 27; i <= 30; i++) arr.push({ d: i, muted: true, key: `p${i}` });
-    for (let d = 1; d <= 31; d++) arr.push({ d, muted: false, key: `m${d}` });
+    const arr: { d: number; muted: boolean; key: string; date: Date }[] = [];
+    const first = new Date(focusYear, focusMonth, 1);
+    const startDow = (first.getDay() + 6) % 7;
+    const daysInMonth = new Date(focusYear, focusMonth + 1, 0).getDate();
+    const daysInPrev = new Date(focusYear, focusMonth, 0).getDate();
+    for (let i = startDow - 1; i >= 0; i--) {
+      const d = daysInPrev - i;
+      arr.push({ d, muted: true, key: `p${d}`, date: new Date(focusYear, focusMonth - 1, d) });
+    }
+    for (let d = 1; d <= daysInMonth; d++) arr.push({ d, muted: false, key: `m${d}`, date: new Date(focusYear, focusMonth, d) });
+    let n = 1;
     while (arr.length % 7 !== 0) {
-      const n = arr.length - 34;
-      arr.push({ d: n, muted: true, key: `n${n}` });
+      arr.push({ d: n, muted: true, key: `n${n}`, date: new Date(focusYear, focusMonth + 1, n) });
+      n++;
     }
     return arr;
-  }, []);
+  }, [focusYear, focusMonth]);
 
   const byDay = useMemo(() => {
     const map = new Map<number, typeof scheduledPosts>();
     scheduledPosts.forEach((p) => {
       const dt = new Date(p.date);
-      if (dt.getFullYear() === FOCUS_YEAR && dt.getMonth() === FOCUS_MONTH) {
+      if (dt.getFullYear() === focusYear && dt.getMonth() === focusMonth) {
         const arr = map.get(dt.getDate()) ?? [];
         arr.push(p);
         map.set(dt.getDate(), arr);
       }
     });
     return map;
-  }, []);
+  }, [focusYear, focusMonth]);
+
+  const monthHasPosts = byDay.size > 0;
+  const isCurrentMonth = focusYear === TODAY.getFullYear() && focusMonth === TODAY.getMonth();
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -79,10 +91,16 @@ function CalendarPage() {
           title="Calendar"
           actions={
             <>
-              <button className="flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground">
-                <Plus className="h-3 w-3" /> New_Post
+              <button
+                type="button"
+                onClick={jumpToday}
+                data-testid="today-btn"
+                className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
+              >
+                Today
               </button>
               <button
+                type="button"
                 onClick={() => setShowAgenda((v) => !v)}
                 data-testid="toggle-agenda-btn"
                 className="overflow-hidden rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] transition-colors hover:bg-secondary"
@@ -94,177 +112,287 @@ function CalendarPage() {
                   {showAgenda ? "Hide_Agenda" : "Show_Agenda"}
                 </span>
               </button>
+              <button
+                type="button"
+                className="flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground hover:opacity-90"
+              >
+                <Plus className="h-3 w-3" /> New_Post
+              </button>
             </>
           }
         />
 
         <div className="px-10 pt-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button className="rounded-sm border border-border p-1.5 hover:bg-secondary">
+          {/* Month nav row */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => shiftMonth(-1)}
+                data-testid="prev-month-btn"
+                aria-label="previous month"
+                className="rounded-sm border border-border bg-surface p-1.5 text-foreground transition-colors hover:bg-secondary"
+              >
                 <ChevronLeft className="h-3 w-3" />
               </button>
-              <span className="display-mono text-sm">May 2026</span>
-              <button className="rounded-sm border border-border p-1.5 hover:bg-secondary">
+              <span className="display-mono px-1 text-sm uppercase tracking-[0.06em]">
+                {viewMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+              </span>
+              <button
+                type="button"
+                onClick={() => shiftMonth(1)}
+                data-testid="next-month-btn"
+                aria-label="next month"
+                className="rounded-sm border border-border bg-surface p-1.5 text-foreground transition-colors hover:bg-secondary"
+              >
                 <ChevronRight className="h-3 w-3" />
               </button>
+              {!monthHasPosts && (
+                <span className="ml-2 label-mono text-muted-foreground/60">no_posts_this_month</span>
+              )}
             </div>
-            <div className="label-mono">month ⌄</div>
+            <div className="flex items-center gap-2">
+              <Legend swatch="bg-accent" label="today" />
+              <Legend swatch="bg-foreground" label="scheduled" />
+              <Legend swatch="bg-muted-foreground/30" label="outside_month" />
+            </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-7 gap-px border border-border bg-border">
-            {DOW.map((d) => (
-              <div key={d} className="bg-surface py-2 text-center label-mono">
-                {d}
-              </div>
-            ))}
-            {cells.map((c) => {
-              const posts = !c.muted ? byDay.get(c.d) : undefined;
-              const isSelected = !c.muted && c.d === selectedDay;
-              return (
-                <div
-                  key={c.key}
-                  onClick={() => !c.muted && setSelectedDay(c.d)}
-                  className={`relative flex min-h-[120px] cursor-pointer flex-col gap-1.5 bg-surface p-2 text-left transition-colors ${
-                    c.muted ? "text-muted-foreground/40" : "text-foreground hover:bg-secondary/40"
-                  } ${isSelected ? "outline outline-1 outline-accent" : ""}`}
-                >
-                  <div className="text-xs">{c.d}</div>
-
-                  {posts && (
-                    <div className="mt-1 flex flex-col gap-1">
-                      {posts.map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDetailPost(p);
-                          }}
-                          className="group flex flex-col gap-1 rounded-sm border border-border bg-background/60 p-1.5 text-left hover:border-accent"
-                        >
-                          <div className="line-clamp-2 text-[0.6rem] leading-tight">{p.title}</div>
-                          <div className="flex flex-wrap gap-0.5">
-                            {p.platforms.slice(0, 5).map((pl, i) => {
-                              const meta = PLATFORM_META_BY_SHORT[pl];
-                              const Icon = meta?.Icon ?? ImageIcon;
-                              return (
-                                <span
-                                  key={`${p.id}-${i}`}
-                                  title={pl}
-                                  className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background"
-                                >
-                                  <Icon className="h-2.5 w-2.5" strokeWidth={2} />
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+          {/* Month grid */}
+          <div className="mt-4 overflow-hidden rounded-sm border border-border bg-border">
+            <div className="grid grid-cols-7 gap-px">
+              {DOW.map((d) => (
+                <div key={d} className="bg-surface py-2 text-center label-mono">
+                  {d}
                 </div>
-              );
-            })}
-          </div>
+              ))}
+              {cells.map((c) => {
+                const posts = !c.muted ? byDay.get(c.d) : undefined;
+                const isToday = isCurrentMonth && !c.muted && c.d === TODAY.getDate();
+                const isSelected = !c.muted && c.d === selectedDay;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => !c.muted && setSelectedDay(c.d)}
+                    data-testid={c.muted ? undefined : `cal-day-${c.d}`}
+                    className={`group relative flex min-h-[120px] cursor-pointer flex-col gap-1.5 bg-surface p-2 text-left transition-colors ${
+                      c.muted
+                        ? "text-muted-foreground/40"
+                        : isSelected
+                          ? "ring-1 ring-inset ring-accent"
+                          : "hover:bg-secondary/40"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`inline-flex h-5 min-w-5 items-center justify-center rounded-sm px-1 text-[0.65rem] font-mono ${
+                          isToday
+                            ? "bg-accent text-accent-foreground font-semibold"
+                            : c.muted
+                              ? "text-muted-foreground/40"
+                              : "text-foreground"
+                        }`}
+                      >
+                        {c.d}
+                      </span>
+                      {posts && posts.length > 0 && (
+                        <span className="label-mono text-[0.5rem] text-muted-foreground/70">
+                          {posts.length}_post{posts.length === 1 ? "" : "s"}
+                        </span>
+                      )}
+                    </div>
 
-          <div className="label-mono mt-3 text-right">
-            (view) scheduled (solid) · current_month (highlighted in agenda)
+                    {posts && (
+                      <div className="mt-0.5 flex flex-col gap-1">
+                        {posts.map((p) => {
+                          const entries: PlatformEntry[] = p.platforms.slice(0, 5).map((pl) => ({
+                            platform: pl,
+                            state: "scheduled" as const,
+                          }));
+                          return (
+                            <span
+                              key={p.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDetailPost(p);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setDetailPost(p);
+                                }
+                              }}
+                              className="flex flex-col gap-1 rounded-sm border border-border bg-background/60 p-1.5 text-left transition-colors hover:border-accent"
+                            >
+                              <span className="line-clamp-2 text-[0.6rem] leading-tight text-foreground">
+                                {p.title}
+                              </span>
+                              <PlatformRow entries={entries} size="sm" compact />
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
       <AgendaSidebar
         open={showAgenda}
-        focusYear={FOCUS_YEAR}
-        focusMonth={FOCUS_MONTH}
+        focusYear={focusYear}
+        focusMonth={focusMonth}
         onSelectPost={setDetailPost}
       />
 
-      {detailPost && (
-        <div
-          onClick={() => setDetailPost(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg overflow-hidden rounded-sm border border-border bg-surface shadow-2xl"
-          >
-            <div className="flex items-start justify-between border-b border-border px-5 py-4">
-              <div>
-                <div className="label-mono mb-1">scheduled_post</div>
-                <div className="display-mono text-base text-foreground">{detailPost.title}</div>
-                <div className="label-mono mt-1">
-                  {new Date(detailPost.date).toLocaleDateString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </div>
-              </div>
-              <button
-                onClick={() => setDetailPost(null)}
-                className="rounded-sm border border-border bg-background p-1.5 text-muted-foreground hover:text-foreground"
-                aria-label="close"
-              >
-                <span className="block h-3 w-3 text-center text-xs leading-3">×</span>
-              </button>
-            </div>
+      {detailPost && <PostDetailModal post={detailPost} onClose={() => setDetailPost(null)} />}
+    </div>
+  );
+}
 
-            <div className="flex aspect-video items-center justify-center border-b border-border bg-background/60">
-              <ImageIcon className="h-8 w-8 text-muted-foreground" strokeWidth={1.25} />
-            </div>
+// ─── Small bits ─────────────────────────────────────────────────────────────
 
-            <div className="space-y-3 p-5">
-              <div className="label-mono">platforms · scheduled_times</div>
-              <div className="space-y-1.5">
-                {detailPost.platforms.map((pl) => {
-                  const meta = PLATFORM_META_BY_SHORT[pl];
-                  const Icon = meta?.Icon ?? ImageIcon;
-                  const base = new Date(detailPost.date);
-                  const idx = detailPost.platforms.indexOf(pl);
-                  const peak = meta?.peakTimes[idx % (meta?.peakTimes.length || 1)] ?? "—:—";
-                  return (
-                    <div
-                      key={pl}
-                      className="flex items-center justify-between border border-border bg-background/40 px-3 py-2"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background">
-                          <Icon className="h-3 w-3" strokeWidth={2} />
-                        </span>
-                        <div>
-                          <div className="text-xs text-foreground">{meta?.full ?? pl}</div>
-                          <div className="label-mono text-[0.55rem]">peak_optimised</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-mono text-sm text-accent">{peak}</div>
-                        <div className="label-mono text-[0.55rem]">
-                          {base.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                        </div>
-                      </div>
-                    </div>
-                  );
+function Legend({ swatch, label }: { swatch: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2 py-1 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
+      <span className={`inline-block h-2 w-2 rounded-sm ${swatch}`} />
+      {label}
+    </span>
+  );
+}
+
+// ─── Post detail modal ──────────────────────────────────────────────────────
+
+function PostDetailModal({
+  post,
+  onClose,
+}: {
+  post: (typeof scheduledPosts)[number];
+  onClose: () => void;
+}) {
+  // Close on ESC
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const base = new Date(post.date);
+  const entries: PlatformEntry[] = post.platforms.map((pl) => {
+    const meta = PLATFORMS_BY_SHORT[pl];
+    const peak = meta?.peakTimes[0] ?? base.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+    return { platform: pl, state: "scheduled" as const, at: peak };
+  });
+
+  return (
+    <div
+      onClick={onClose}
+      data-testid="post-detail-modal"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg overflow-hidden rounded-sm border border-border bg-surface shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="rounded-sm border border-accent px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-accent">
+                {post.status}
+              </span>
+              <div className="label-mono">
+                {base.toLocaleDateString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
                 })}
               </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  onClick={() => setDetailPost(null)}
-                  className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] hover:bg-secondary"
-                >
-                  Close
-                </button>
-                <button className="rounded-sm bg-primary px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-primary-foreground">
-                  Edit_Post
-                </button>
-              </div>
             </div>
+            <div className="mt-2 text-base text-foreground">{post.title}</div>
+          </div>
+          <button
+            onClick={onClose}
+            data-testid="post-detail-close"
+            className="rounded-sm border border-border bg-background p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="close"
+          >
+            <XIcon className="h-3 w-3" />
+          </button>
+        </div>
+
+        <div className="flex aspect-video items-center justify-center border-b border-border bg-background/60">
+          <div className="flex flex-col items-center gap-1 text-muted-foreground">
+            <ImageIcon className="h-6 w-6" strokeWidth={1.25} />
+            <span className="label-mono text-[0.55rem]">no_media_preview</span>
           </div>
         </div>
-      )}
+
+        <div className="space-y-4 p-5">
+          <div>
+            <div className="label-mono mb-2">platforms · peak_optimised</div>
+            <div className="space-y-1.5">
+              {post.platforms.map((pl, idx) => {
+                const meta = PLATFORMS_BY_SHORT[pl];
+                const Icon = meta?.Icon ?? ImageIcon;
+                const peak = meta?.peakTimes[idx % (meta?.peakTimes.length || 1)] ?? "—:—";
+                return (
+                  <div
+                    key={pl}
+                    className="flex items-center justify-between rounded-sm border border-border bg-background/40 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background">
+                        <Icon className="h-3 w-3" strokeWidth={2} />
+                      </span>
+                      <div>
+                        <div className="text-xs text-foreground">{meta?.full ?? pl}</div>
+                        <div className="label-mono text-[0.55rem]">peak_window</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono text-sm text-accent">{peak}</div>
+                      <div className="label-mono text-[0.55rem]">
+                        {base.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-3">
+              <PlatformRow entries={entries} size="sm" compact />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-border pt-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Open_in_calendar
+            </button>
+            <button
+              type="button"
+              className="flex items-center gap-1.5 rounded-sm bg-primary px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <Pencil className="h-3 w-3" />
+              Edit_Post
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

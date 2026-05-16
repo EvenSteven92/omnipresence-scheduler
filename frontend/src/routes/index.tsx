@@ -52,7 +52,6 @@ function DashboardPage() {
         title="Core Performance"
         actions={
           <>
-            <Link to="/ai-studio" className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary">AI_Studio</Link>
             <Link to="/analytics" className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary">Analytics</Link>
             <Link to="/scheduler" className="flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground">
               <Plus className="h-3 w-3" /> New_Post

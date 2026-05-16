@@ -4,7 +4,6 @@ import {
   Home,
   CalendarDays,
   LayoutGrid,
-  Sparkles,
   BarChart3,
   Plus,
   LogOut,
@@ -16,30 +15,39 @@ const nav = [
   { to: "/", label: "Dashboard", icon: Home },
   { to: "/scheduler", label: "Scheduler", icon: LayoutGrid },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/ai-studio", label: "AI Studio", icon: Sparkles },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
 ] as const;
 
 const STORAGE_KEY = "torcc.sidebar.collapsed";
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(STORAGE_KEY) === "1";
-  });
+  // Always start expanded; sync from localStorage AFTER mount to avoid SSR/hydration
+  // mismatch. We also disable the width transition on the initial snap so the
+  // sidebar doesn't visibly "pop" when restoring the collapsed state.
+  const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [animated, setAnimated] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(STORAGE_KEY) === "1";
+    if (stored) setCollapsed(true);
+    // Enable transitions one frame after the initial sync so user-driven toggles still animate.
+    const id = requestAnimationFrame(() => setAnimated(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !animated) return;
     window.localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0");
-  }, [collapsed]);
+  }, [collapsed, animated]);
 
   return (
     <aside
       data-testid="app-sidebar"
       data-collapsed={collapsed ? "true" : "false"}
-      className={`relative flex h-screen shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200 ease-out ${
-        collapsed ? "w-16" : "w-60"
-      }`}
+      className={`relative flex h-screen shrink-0 flex-col border-r border-border bg-surface ease-out ${
+        animated ? "transition-[width] duration-200" : ""
+      } ${collapsed ? "w-16" : "w-60"}`}
     >
       {/* Logo / wordmark */}
       <div
