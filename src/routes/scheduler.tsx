@@ -216,7 +216,7 @@ export function SchedulerPage() {
               className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-sm bg-accent px-3 py-2.5 text-[0.65rem] uppercase tracking-[0.14em] text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
             >
               <Wand2 className="h-3.5 w-3.5" />
-              {autoScheduling ? "AI scanning peak windows…" : autoScheduled ? "Re-run auto_schedule" : "Auto_populate_calendar"}
+              {autoScheduling ? "AI scanning peak windows…" : autoScheduled ? "Re-run generate_schedule" : "Generate_posting_schedule"}
             </button>
 
             {autoScheduled && (
@@ -225,6 +225,35 @@ export function SchedulerPage() {
                 <div className="text-[0.65rem] leading-relaxed text-muted-foreground">
                   Slotted <span className="text-foreground">{autoSelected.length}</span> selected assets across their per-card platforms over the next <span className="text-foreground">{spread}</span>.
                 </div>
+              </div>
+            )}
+
+            {mode === "bulk" && autoSelected.length > 0 && (
+              <div className="mt-3 border border-border bg-background/40 p-2.5">
+                <div className="label-mono mb-2 flex items-center justify-between">
+                  <span>auto_schedule_queue</span>
+                  <span className="text-accent">{autoSelected.length}_posts</span>
+                </div>
+                <ol className="space-y-1.5">
+                  {autoSelected.map((a, i) => (
+                    <li key={a.id} className="flex items-center gap-2 text-[0.65rem]">
+                      <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-accent-foreground">
+                        {i + 1}
+                      </span>
+                      <span className="flex-1 truncate text-foreground">{a.name}</span>
+                      <div className="flex gap-0.5">
+                        {a.platforms.slice(0, 4).map((p) => {
+                          const { Icon } = PLATFORM_META[p];
+                          return (
+                            <span key={p} className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-foreground text-background">
+                              <Icon className="h-2 w-2" strokeWidth={2.5} />
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
               </div>
             )}
           </Block>
