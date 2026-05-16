@@ -595,6 +595,15 @@ function AssetCard({
               );
             })}
           </div>
+          {incompatible.length > 0 && (
+            <div className="mt-1.5 flex items-start gap-1.5 border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-[0.6rem] text-destructive">
+              <span className="font-bold">!</span>
+              <span>
+                ratio_warning: <span className="font-mono">{orientation}</span> doesn't fit{" "}
+                <span className="font-mono">{incompatible.join(", ")}</span>. consider re-cropping.
+              </span>
+            </div>
+          )}
         </div>
 
         {/* caption */}
