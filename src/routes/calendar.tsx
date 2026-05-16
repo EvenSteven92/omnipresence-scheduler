@@ -58,6 +58,16 @@ const PLATFORM_META: Record<ComposerPlatform, { short: string; Icon: LucideIcon 
   "IG Story": { short: "IGS", Icon: Instagram },
 };
 
+const PLATFORM_META_BY_SHORT: Record<string, { Icon: LucideIcon; full: string; peakTimes: string[] }> = {
+  X: { Icon: Twitter, full: "X / Twitter", peakTimes: ["08:15", "12:40", "18:05"] },
+  FB: { Icon: Facebook, full: "Facebook", peakTimes: ["09:00", "13:30", "20:00"] },
+  IG: { Icon: Instagram, full: "Instagram", peakTimes: ["11:00", "17:30", "21:15"] },
+  YT: { Icon: Youtube, full: "YouTube", peakTimes: ["15:00", "20:30"] },
+  TIKTOK: { Icon: Music2, full: "TikTok", peakTimes: ["07:45", "19:00", "22:30"] },
+  "IG STORY": { Icon: Instagram, full: "Instagram Story", peakTimes: ["09:30", "19:45"] },
+  "FB STORY": { Icon: Facebook, full: "Facebook Story", peakTimes: ["10:00", "18:30"] },
+};
+
 const FORMATS = [
   { name: "Landscape", spec: "16:9 — YouTube, Facebook, X", Icon: ImageIcon },
   { name: "Portrait", spec: "9:16 — TikTok, Reels, Shorts", Icon: ImageIcon },
