@@ -21,31 +21,44 @@ const nav = [
 const STORAGE_KEY = "torcc.sidebar.collapsed";
 
 export function Sidebar() {
-  // Always start expanded; sync from localStorage AFTER mount to avoid SSR/hydration
-  // mismatch. We also disable the width transition on the initial snap so the
-  // sidebar doesn't visibly "pop" when restoring the collapsed state.
-  const [collapsed, setCollapsed] = useState<boolean>(false);
-  const [animated, setAnimated] = useState<boolean>(false);
+  // Read the persisted state synchronously in the initializer so the very first
+  // client render is already correct. We rely on suppressHydrationWarning on the
+  // <aside> so React silently patches the SSR output (which always emits the
+  // expanded width) without the user ever seeing the wider state. Hydration's
+  // DOM reconciliation happens before paint, so there is no visible pop.
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
 
+  // Disable the width transition during the very first paint after hydration —
+  // we only want animation on user-driven toggles, not on the silent SSR patch.
+  const [animated, setAnimated] = useState<boolean>(false);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(STORAGE_KEY) === "1";
-    if (stored) setCollapsed(true);
-    // Enable transitions one frame after the initial sync so user-driven toggles still animate.
     const id = requestAnimationFrame(() => setAnimated(true));
     return () => cancelAnimationFrame(id);
   }, []);
 
+  // Persist user toggles.
   useEffect(() => {
-    if (typeof window === "undefined" || !animated) return;
-    window.localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0");
-  }, [collapsed, animated]);
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0");
+    } catch {
+      /* ignore quota / privacy errors */
+    }
+  }, [collapsed]);
 
   return (
     <aside
+      suppressHydrationWarning
       data-testid="app-sidebar"
       data-collapsed={collapsed ? "true" : "false"}
-      className={`relative flex h-screen shrink-0 flex-col border-r border-border bg-surface ease-out ${
+      className={`relative flex h-full shrink-0 flex-col border-r border-border bg-surface ease-out ${
         animated ? "transition-[width] duration-200" : ""
       } ${collapsed ? "w-16" : "w-60"}`}
     >

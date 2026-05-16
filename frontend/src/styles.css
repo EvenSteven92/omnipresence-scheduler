@@ -133,3 +133,12 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes newsTickerScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.pause-on-hover:hover {
+  animation-play-state: paused !important;
+}
+

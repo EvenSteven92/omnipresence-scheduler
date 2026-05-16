@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { Sidebar } from "@/components/Sidebar";
+import { NewsTicker } from "@/components/NewsTicker";
 
 function NotFoundComponent() {
   return (
@@ -86,11 +87,14 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen bg-background text-foreground">
-        <Sidebar />
-        <main className="flex-1 overflow-x-hidden">
-          <Outlet />
-        </main>
+      <div className="flex h-screen flex-col bg-background text-foreground">
+        <NewsTicker />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar />
+          <main className="flex-1 overflow-x-hidden">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </QueryClientProvider>
   );

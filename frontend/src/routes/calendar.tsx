@@ -85,7 +85,7 @@ function CalendarPage() {
   const isCurrentMonth = focusYear === TODAY.getFullYear() && focusMonth === TODAY.getMonth();
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto pb-20">
         <PageHeader
           title="Calendar"
@@ -487,7 +487,7 @@ function AgendaSidebar({
     <aside
       data-testid="agenda-sidebar"
       aria-hidden={!open}
-      className={`relative hidden h-screen shrink-0 overflow-hidden border-l border-border bg-surface transition-[width,opacity] duration-300 ease-out lg:block ${
+      className={`relative hidden h-full shrink-0 overflow-hidden border-l border-border bg-surface transition-[width,opacity] duration-300 ease-out lg:block ${
         open ? "w-[360px] opacity-100" : "pointer-events-none w-0 opacity-0"
       }`}
     >

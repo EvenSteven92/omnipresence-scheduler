@@ -10,6 +10,8 @@ import {
   FileVideo,
   Image as ImageIcon,
   Globe2,
+  Timer,
+  Layers,
   CheckCircle2,
 } from "lucide-react";
 import { ComposerCard, type DraftPost } from "@/components/post/ComposerCard";
@@ -118,6 +120,8 @@ function SchedulerPage() {
   // Anchor day for "Generate Optimal Schedule". Clamped to today or later.
   const [anchor, setAnchor] = useState<Date>(() => new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate()));
   const [timezone, setTimezone] = useState<string>("auto");
+  // Minimum gap (hours) between two posts on the SAME platform across all cards.
+  const [cadenceGapHours, setCadenceGapHours] = useState<number>(4);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -169,31 +173,77 @@ function SchedulerPage() {
    * Generate an optimal per-platform schedule for every draft.
    *  - Cards stagger by 1 day (so card #1 lands on anchor, #2 next day, etc.)
    *  - For each platform on a card, pick the next future peak time
+   *  - Same-platform slots respect `cadenceGapHours` minimum spacing
    *  - All times strictly in the future (>= NOW + 1 minute)
    */
   function generateSchedule() {
     if (drafts.length === 0) return;
     const minTime = new Date(NOW.getTime() + 60 * 1000);
+    // Track last slot used per platform so we can enforce the cadence gap.
+    const lastByPlatform: Partial<Record<Platform, Date>> = {};
+    const gapMs = Math.max(0, cadenceGapHours) * 60 * 60 * 1000;
     const next = drafts.map((d, idx) => {
       if (d.scheduled) return d;
       const cardDay = new Date(anchor);
       cardDay.setDate(cardDay.getDate() + idx);
-      // Reasoning chip per platform: "peak" if next peak slot, "shifted" if pushed off the day
       const proposedTimes: Partial<Record<Platform, string>> = {};
       const proposedReasons: Partial<Record<Platform, string>> = {};
-      // Sort platforms so longer-form gets earlier in the day (rough proxy)
       d.platforms.forEach((p) => {
-        const slot = nextPeakFor(p, minTime, cardDay);
+        const lastSlot = lastByPlatform[p];
+        const platformFloor = lastSlot ? new Date(lastSlot.getTime() + gapMs) : minTime;
+        const lowerBound = platformFloor.getTime() > minTime.getTime() ? platformFloor : minTime;
+        const slot = nextPeakFor(p, lowerBound, cardDay);
         const sameDay =
           slot.getFullYear() === cardDay.getFullYear() &&
           slot.getMonth() === cardDay.getMonth() &&
           slot.getDate() === cardDay.getDate();
+        const wasGapShifted = lastSlot && slot.getTime() - lastSlot.getTime() < gapMs + 60_000;
         proposedTimes[p] = slot.toISOString();
-        proposedReasons[p] = sameDay ? "peak_window" : "next_available_peak";
+        proposedReasons[p] = wasGapShifted
+          ? "gap_shifted"
+          : sameDay
+            ? "peak_window"
+            : "next_available_peak";
+        lastByPlatform[p] = slot;
       });
       return { ...d, proposedTimes, proposedReasons };
     });
     setDrafts(next);
+  }
+
+  // ─── Bulk actions ─────────────────────────────────────────────────────────
+  function matchCaptions() {
+    if (drafts.length < 2) return;
+    const src = drafts[0];
+    setDrafts((cur) =>
+      cur.map((d, i) =>
+        i === 0
+          ? d
+          : { ...d, caption: src.caption, hashtags: src.hashtags || d.hashtags },
+      ),
+    );
+  }
+  function applySamePlatforms() {
+    if (drafts.length < 2) return;
+    const src = drafts[0];
+    // Respect each card's format — only copy platforms that support it.
+    setDrafts((cur) =>
+      cur.map((d, i) => {
+        if (i === 0) return d;
+        const allowed = src.platforms.filter((p) => {
+          const meta = PLATFORMS_BY_SHORT[p];
+          return meta?.formats.includes(d.format);
+        });
+        return { ...d, platforms: allowed };
+      }),
+    );
+  }
+  function clearAllSchedules() {
+    setDrafts((cur) =>
+      cur.map((d) =>
+        d.scheduled ? d : { ...d, proposedTimes: undefined, proposedReasons: undefined },
+      ),
+    );
   }
 
   function schedulePost(id: string) {
@@ -221,7 +271,7 @@ function SchedulerPage() {
   const empty = drafts.length === 0;
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-full overflow-hidden">
       {/* Main column */}
       <div className="flex-1 overflow-y-auto pb-20">
         <PageHeader
@@ -366,7 +416,7 @@ function SchedulerPage() {
       {/* Right rail — Calendar + Generate */}
       <aside
         data-testid="schedule-rail"
-        className="hidden h-screen w-[360px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface lg:flex"
+        className="hidden h-full w-[360px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface lg:flex"
       >
         <div className="border-b border-border px-5 py-4">
           <div className="label-mono mb-1">anchor_day</div>
@@ -421,6 +471,76 @@ function SchedulerPage() {
           <p className="label-mono mt-2 leading-relaxed normal-case tracking-normal text-muted-foreground/80">
             Peaks are computed against this audience clock so the wave of engagement is real, not local.
           </p>
+        </div>
+
+        {/* Cadence guardrails */}
+        <div className="border-b border-border px-5 py-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Timer className="h-3 w-3 text-muted-foreground" />
+            <span className="label-mono">cadence_guardrails</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[0.65rem] text-muted-foreground">min_gap</span>
+            <input
+              type="number"
+              min={0}
+              max={48}
+              value={cadenceGapHours}
+              onChange={(e) =>
+                setCadenceGapHours(Math.max(0, Math.min(48, parseInt(e.target.value, 10) || 0)))
+              }
+              data-testid="cadence-gap-input"
+              aria-label="minimum hours between same-platform posts"
+              className="w-14 rounded-sm border border-border bg-background/60 px-2 py-1.5 text-center font-mono text-[0.65rem] text-foreground focus:border-accent focus:outline-none"
+            />
+            <span className="label-mono">hours · same_platform</span>
+          </div>
+          <p className="label-mono mt-2 leading-relaxed normal-case tracking-normal text-muted-foreground/80">
+            Stops the generator from stacking two TikToks at 07:45 and 08:00 across cards.
+          </p>
+        </div>
+
+        {/* Bulk actions */}
+        <div className="border-b border-border px-5 py-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Layers className="h-3 w-3 text-muted-foreground" />
+            <span className="label-mono">bulk_actions</span>
+          </div>
+          <div className="grid grid-cols-1 gap-1.5">
+            <button
+              type="button"
+              onClick={matchCaptions}
+              disabled={drafts.length < 2}
+              data-testid="bulk-match-captions"
+              className="flex items-center justify-between gap-2 rounded-sm border border-border bg-background/60 px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+              title="Copy card #1's caption + hashtags to all others"
+            >
+              <span>Match_Captions</span>
+              <span className="label-mono text-muted-foreground/70">#1→rest</span>
+            </button>
+            <button
+              type="button"
+              onClick={applySamePlatforms}
+              disabled={drafts.length < 2}
+              data-testid="bulk-apply-platforms"
+              className="flex items-center justify-between gap-2 rounded-sm border border-border bg-background/60 px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+              title="Broadcast card #1's target platforms to all others (format-aware)"
+            >
+              <span>Apply_Same_Platforms</span>
+              <span className="label-mono text-muted-foreground/70">#1→rest</span>
+            </button>
+            <button
+              type="button"
+              onClick={clearAllSchedules}
+              disabled={generatedCount === 0}
+              data-testid="bulk-clear-schedules"
+              className="flex items-center justify-between gap-2 rounded-sm border border-border bg-background/60 px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+              title="Wipe all proposed times so you can regenerate from a new anchor"
+            >
+              <span>Clear_All_Schedules</span>
+              <span className="label-mono text-muted-foreground/70">wipe_times</span>
+            </button>
+          </div>
         </div>
 
         {/* Schedule summary list — numbered, sticky reference */}
