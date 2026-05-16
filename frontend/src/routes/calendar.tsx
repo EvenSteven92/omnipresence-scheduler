@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { scheduledPosts, type Platform } from "@/lib/mock-data";
+import { PostCard, type DisplayPost } from "@/components/post/PostCard";
 
 export const Route = createFileRoute("/calendar")({
   head: () => ({
@@ -468,42 +469,30 @@ function MonthBlock({
               </div>
 
               <div className="flex-1 space-y-2">
-                {byDay.get(day)!.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => onSelectPost(p)}
-                    className="block w-full rounded-sm border border-border bg-background/60 p-2 text-left hover:border-accent"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="line-clamp-2 text-[0.7rem] leading-tight text-foreground">
-                        {p.title}
-                      </div>
-                      <div className="font-mono text-[0.6rem] text-accent shrink-0">
-                        {new Date(p.date).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        })}
-                      </div>
-                    </div>
-                    <div className="mt-1.5 flex flex-wrap gap-0.5">
-                      {p.platforms.map((pl, i) => {
-                        const meta = PLATFORM_META_BY_SHORT[pl];
-                        const Icon = meta?.Icon ?? ImageIcon;
-                        return (
-                          <span
-                            key={`${p.id}-${i}`}
-                            title={pl}
-                            className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background"
-                          >
-                            <Icon className="h-2.5 w-2.5" strokeWidth={2} />
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </button>
-                ))}
+                {byDay.get(day)!.map((p) => {
+                  const display: DisplayPost = {
+                    id: p.id,
+                    title: p.title,
+                    status: p.status,
+                    when: new Date(p.date).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    }),
+                    platforms: p.platforms.map((pl) => ({
+                      platform: pl,
+                      state: "scheduled" as const,
+                    })),
+                  };
+                  return (
+                    <PostCard
+                      key={p.id}
+                      post={display}
+                      variant="compact"
+                      onClick={() => onSelectPost(p)}
+                    />
+                  );
+                })}
               </div>
             </div>
           ))}

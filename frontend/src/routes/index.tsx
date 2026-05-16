@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
 import { scheduledPosts, metrics, growthMatrix } from "@/lib/mock-data";
-import { Eye, Heart, Share2, Activity, Link2, Users, UserCheck, Plus, ImageIcon, ArrowRight } from "lucide-react";
+import { Eye, Heart, Share2, Activity, Link2, Users, UserCheck, Plus } from "lucide-react";
+import { PostCard, type DisplayPost } from "@/components/post/PostCard";
 
 const metricIcons = [Eye, Heart, Share2, Activity, Link2, Users, UserCheck];
 const ranges = ["1 wk", "1 mnth", "3 mnths", "6 mnths", "1 yr", "Custom", "All-time"];
@@ -102,23 +103,48 @@ function DashboardPage() {
         {/* Queues */}
         <div className="mt-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
           <div className="panel p-6">
-            <div className="label-mono mb-4">scheduled_queue</div>
-            <div className="grid grid-cols-[1fr_auto_auto] gap-4 border-b border-border pb-2 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
-              <span>Title</span><span>Platforms</span><span>Date</span>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="label-mono">scheduled_queue</div>
+              <Link to="/calendar" className="label-mono hover:text-foreground">view_all →</Link>
             </div>
-            {scheduledPosts.map((p) => (
-              <div key={p.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-b border-border/60 py-3 text-sm">
-                <span className="text-foreground">{p.title}</span>
-                <div className="flex gap-1.5">{p.platforms.map((pl) => <span key={pl} className="chip">{pl}</span>)}</div>
-                <span className="label-mono normal-case tracking-wide">{new Date(p.date).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
-              </div>
-            ))}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {scheduledPosts.map((p) => {
+                const display: DisplayPost = {
+                  id: p.id,
+                  title: p.title,
+                  status: p.status,
+                  when: new Date(p.date).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  }),
+                  mediaKind: "video",
+                  platforms: p.platforms.map((pl) => ({
+                    platform: pl,
+                    state: "scheduled" as const,
+                    at: new Date(p.date).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    }),
+                  })),
+                };
+                return <PostCard key={p.id} post={display} variant="compact" />;
+              })}
+            </div>
           </div>
 
           <div className="panel flex flex-col p-6">
             <div className="label-mono mb-4">draft_queue</div>
-            <div className="flex flex-1 items-center justify-center">
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
               <span className="label-mono">no_drafts</span>
+              <Link
+                to="/scheduler"
+                className="mt-2 inline-flex items-center gap-1 rounded-sm border border-border bg-background/60 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] hover:bg-secondary"
+              >
+                <Plus className="h-3 w-3" /> Compose
+              </Link>
             </div>
           </div>
         </div>
@@ -129,21 +155,26 @@ function DashboardPage() {
             <div className="label-mono">media_card_grid — click to manage</div>
             <div className="label-mono">{scheduledPosts.length}_total_records</div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {scheduledPosts.map((p) => (
-              <div key={p.id} className="panel overflow-hidden">
-                <div className="flex items-center justify-between border-b border-border p-3">
-                  <span className="rounded-sm border border-accent px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.14em] text-accent">Scheduled</span>
-                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                </div>
-                <div className="flex aspect-video items-center justify-center bg-background/60">
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <ImageIcon className="h-5 w-5" strokeWidth={1.5} />
-                    <span className="label-mono">no_media_asset</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {scheduledPosts.map((p) => {
+              const display: DisplayPost = {
+                id: p.id,
+                title: p.title,
+                status: p.status,
+                when: new Date(p.date).toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                }),
+                mediaKind: "video",
+                platforms: p.platforms.map((pl) => ({
+                  platform: pl,
+                  state: "scheduled" as const,
+                })),
+              };
+              return <PostCard key={p.id} post={display} variant="media" onClick={() => {}} />;
+            })}
           </div>
         </div>
       </div>
