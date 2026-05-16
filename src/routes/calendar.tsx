@@ -372,6 +372,94 @@ function CalendarPage() {
           </div>
         </aside>
       )}
+
+      {detailPost && (
+        <div
+          onClick={() => setDetailPost(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg overflow-hidden rounded-sm border border-border bg-surface shadow-2xl"
+          >
+            <div className="flex items-start justify-between border-b border-border px-5 py-4">
+              <div>
+                <div className="label-mono mb-1">scheduled_post</div>
+                <div className="display-mono text-base text-foreground">{detailPost.title}</div>
+                <div className="label-mono mt-1">
+                  {new Date(detailPost.date).toLocaleDateString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
+              <button
+                onClick={() => setDetailPost(null)}
+                className="rounded-sm border border-border bg-background p-1.5 text-muted-foreground hover:text-foreground"
+                aria-label="close"
+              >
+                <span className="block h-3 w-3 text-center text-xs leading-3">×</span>
+              </button>
+            </div>
+
+            <div className="flex aspect-video items-center justify-center border-b border-border bg-background/60">
+              <ImageIcon className="h-8 w-8 text-muted-foreground" strokeWidth={1.25} />
+            </div>
+
+            <div className="space-y-3 p-5">
+              <div className="label-mono">platforms · scheduled_times</div>
+              <div className="space-y-1.5">
+                {detailPost.platforms.map((pl) => {
+                  const meta = PLATFORM_META_BY_SHORT[pl];
+                  const Icon = meta?.Icon ?? ImageIcon;
+                  const base = new Date(detailPost.date);
+                  // give each platform its own staggered time near the base time
+                  const idx = detailPost.platforms.indexOf(pl);
+                  const peak = meta?.peakTimes[idx % (meta?.peakTimes.length || 1)] ?? "—:—";
+                  return (
+                    <div
+                      key={pl}
+                      className="flex items-center justify-between border border-border bg-background/40 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background">
+                          <Icon className="h-3 w-3" strokeWidth={2} />
+                        </span>
+                        <div>
+                          <div className="text-xs text-foreground">{meta?.full ?? pl}</div>
+                          <div className="label-mono text-[0.55rem]">
+                            peak_optimised
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono text-sm text-accent">{peak}</div>
+                        <div className="label-mono text-[0.55rem]">
+                          {base.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setDetailPost(null)}
+                  className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] hover:bg-secondary"
+                >
+                  Close
+                </button>
+                <button className="rounded-sm bg-primary px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-primary-foreground">
+                  Edit_Post
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
