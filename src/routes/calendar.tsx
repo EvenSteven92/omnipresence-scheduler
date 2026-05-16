@@ -68,6 +68,7 @@ const AI_TOOLS = ["CAPTION", "SHORT", "YT_DESC", "YT_TITLE", "HASHTAGS"] as cons
 
 function CalendarPage() {
   const [showEdit, setShowEdit] = useState(true);
+  const [detailPost, setDetailPost] = useState<(typeof scheduledPosts)[number] | null>(null);
 
   // Composer (draft) state — drives the draft card on the calendar
   const [selectedDay, setSelectedDay] = useState<number>(14);
