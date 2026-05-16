@@ -53,6 +53,21 @@ const FORMATS = [
 
 const AI_TOOLS = ["Caption", "Short", "YT_Desc", "YT_Title", "Hashtags"] as const;
 
+type Orientation = "landscape" | "portrait" | "square";
+
+const PLATFORM_REQS: Record<PlatformName, Orientation[]> = {
+  "X / Twitter": ["landscape", "square", "portrait"],
+  Facebook: ["landscape", "square", "portrait"],
+  Instagram: ["square", "portrait"],
+  TikTok: ["portrait"],
+  YouTube: ["landscape"],
+  "FB Story": ["portrait"],
+  "IG Story": ["portrait"],
+};
+
+const formatToOrientation = (f: string): Orientation =>
+  f === "Landscape" ? "landscape" : f === "Square" ? "square" : "portrait";
+
 // Mock AI-detected peak windows per platform (24h)
 const PEAK_WINDOWS: Record<PlatformName, string[]> = {
   "X / Twitter": ["08:15", "12:40", "18:05"],
@@ -119,13 +134,13 @@ export function SchedulerPage() {
 
   // Distribute selected bulk assets across days when auto-scheduled
   const autoSelected = bulkAssets.filter((a) => a.selectedForAuto);
-  const autoMap = new Map<number, BulkAsset[]>();
+  const autoMap = new Map<number, number[]>(); // day -> queue index numbers (1-based)
   if (autoScheduled && mode === "bulk") {
     const span = spread === "7d" ? 7 : spread === "14d" ? 14 : 30;
-    autoSelected.forEach((a, i) => {
+    autoSelected.forEach((_, i) => {
       const day = ((selectedDay - 1 + Math.floor((i / Math.max(autoSelected.length, 1)) * span)) % 31) + 1;
       const arr = autoMap.get(day) ?? [];
-      arr.push(a);
+      arr.push(i + 1);
       autoMap.set(day, arr);
     });
   }
@@ -201,7 +216,7 @@ export function SchedulerPage() {
               className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-sm bg-accent px-3 py-2.5 text-[0.65rem] uppercase tracking-[0.14em] text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
             >
               <Wand2 className="h-3.5 w-3.5" />
-              {autoScheduling ? "AI scanning peak windows…" : autoScheduled ? "Re-run auto_schedule" : "Auto_populate_calendar"}
+              {autoScheduling ? "AI scanning peak windows…" : autoScheduled ? "Re-run generate_schedule" : "Generate_posting_schedule"}
             </button>
 
             {autoScheduled && (
@@ -210,6 +225,35 @@ export function SchedulerPage() {
                 <div className="text-[0.65rem] leading-relaxed text-muted-foreground">
                   Slotted <span className="text-foreground">{autoSelected.length}</span> selected assets across their per-card platforms over the next <span className="text-foreground">{spread}</span>.
                 </div>
+              </div>
+            )}
+
+            {mode === "bulk" && autoSelected.length > 0 && (
+              <div className="mt-3 border border-border bg-background/40 p-2.5">
+                <div className="label-mono mb-2 flex items-center justify-between">
+                  <span>auto_schedule_queue</span>
+                  <span className="text-accent">{autoSelected.length}_posts</span>
+                </div>
+                <ol className="space-y-1.5">
+                  {autoSelected.map((a, i) => (
+                    <li key={a.id} className="flex items-center gap-2 text-[0.65rem]">
+                      <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-accent-foreground">
+                        {i + 1}
+                      </span>
+                      <span className="flex-1 truncate text-foreground">{a.name}</span>
+                      <div className="flex gap-0.5">
+                        {a.platforms.slice(0, 4).map((p) => {
+                          const { Icon } = PLATFORM_META[p];
+                          return (
+                            <span key={p} className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-foreground text-background">
+                              <Icon className="h-2 w-2" strokeWidth={2.5} />
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
               </div>
             )}
           </Block>
@@ -265,9 +309,13 @@ export function SchedulerPage() {
                   >
                     {c.d}
                     {auto && auto.length > 0 && (
-                      <span className="absolute bottom-0.5 right-0.5 rounded-full bg-accent px-1 text-[0.5rem] font-bold text-accent-foreground">
-                        {auto.length}
-                      </span>
+                      <div className="absolute inset-x-0.5 bottom-0.5 flex flex-wrap justify-end gap-0.5">
+                        {auto.map((n) => (
+                          <span key={n} className="rounded-full bg-accent px-1 text-[0.5rem] font-bold text-accent-foreground">
+                            #{n}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </button>
                 );
@@ -477,10 +525,13 @@ function AssetCard({
     if (tool === "desc") onChange({ caption: (asset.caption || "") + "\n\nFull description generated by AI." });
   };
 
+  const orientation = formatToOrientation(asset.format);
+  const incompatible = asset.platforms.filter((p) => !PLATFORM_REQS[p].includes(orientation));
+
   return (
     <article className={`relative flex flex-col border bg-background/40 ${asset.selectedForAuto ? "border-accent/70" : "border-border"}`}>
       {/* thumbnail strip */}
-      <div className="flex aspect-[16/6] items-center justify-center border-b border-border bg-background/60 text-muted-foreground">
+      <div className="relative flex aspect-[16/6] items-center justify-center border-b border-border bg-background/60 text-muted-foreground">
         <FileVideo className="h-6 w-6" strokeWidth={1.25} />
         <button
           onClick={onRemove}
@@ -489,9 +540,14 @@ function AssetCard({
         >
           <X className="h-3 w-3" />
         </button>
-        <span className="absolute left-1.5 top-1.5 rounded-sm border border-border bg-surface px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.12em]">
-          {asset.format}
-        </span>
+        <div className="absolute left-1.5 top-1.5 flex gap-1">
+          <span className="rounded-sm border border-border bg-surface px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.12em]">
+            {asset.format}
+          </span>
+          <span className="rounded-sm border border-accent/60 bg-surface px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.12em] text-accent">
+            auto · {orientation}
+          </span>
+        </div>
       </div>
 
       <div className="space-y-2.5 p-3">
@@ -539,6 +595,15 @@ function AssetCard({
               );
             })}
           </div>
+          {incompatible.length > 0 && (
+            <div className="mt-1.5 flex items-start gap-1.5 border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-[0.6rem] text-destructive">
+              <span className="font-bold">!</span>
+              <span>
+                ratio_warning: <span className="font-mono">{orientation}</span> doesn't fit{" "}
+                <span className="font-mono">{incompatible.join(", ")}</span>. consider re-cropping.
+              </span>
+            </div>
+          )}
         </div>
 
         {/* caption */}

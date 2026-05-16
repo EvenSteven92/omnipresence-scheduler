@@ -58,6 +58,16 @@ const PLATFORM_META: Record<ComposerPlatform, { short: string; Icon: LucideIcon 
   "IG Story": { short: "IGS", Icon: Instagram },
 };
 
+const PLATFORM_META_BY_SHORT: Record<string, { Icon: LucideIcon; full: string; peakTimes: string[] }> = {
+  X: { Icon: Twitter, full: "X / Twitter", peakTimes: ["08:15", "12:40", "18:05"] },
+  FB: { Icon: Facebook, full: "Facebook", peakTimes: ["09:00", "13:30", "20:00"] },
+  IG: { Icon: Instagram, full: "Instagram", peakTimes: ["11:00", "17:30", "21:15"] },
+  YT: { Icon: Youtube, full: "YouTube", peakTimes: ["15:00", "20:30"] },
+  TIKTOK: { Icon: Music2, full: "TikTok", peakTimes: ["07:45", "19:00", "22:30"] },
+  "IG STORY": { Icon: Instagram, full: "Instagram Story", peakTimes: ["09:30", "19:45"] },
+  "FB STORY": { Icon: Facebook, full: "Facebook Story", peakTimes: ["10:00", "18:30"] },
+};
+
 const FORMATS = [
   { name: "Landscape", spec: "16:9 — YouTube, Facebook, X", Icon: ImageIcon },
   { name: "Portrait", spec: "9:16 — TikTok, Reels, Shorts", Icon: ImageIcon },
@@ -68,6 +78,7 @@ const AI_TOOLS = ["CAPTION", "SHORT", "YT_DESC", "YT_TITLE", "HASHTAGS"] as cons
 
 function CalendarPage() {
   const [showEdit, setShowEdit] = useState(true);
+  const [detailPost, setDetailPost] = useState<(typeof scheduledPosts)[number] | null>(null);
 
   // Composer (draft) state — drives the draft card on the calendar
   const [selectedDay, setSelectedDay] = useState<number>(14);
@@ -157,11 +168,10 @@ function CalendarPage() {
               const isSelected = !c.muted && c.d === selectedDay;
               const hasDraft = !c.muted && draftHasContent && c.d === selectedDay;
               return (
-                <button
+                <div
                   key={c.key}
-                  type="button"
                   onClick={() => !c.muted && setSelectedDay(c.d)}
-                  className={`relative flex min-h-[120px] flex-col gap-1.5 bg-surface p-2 text-left transition-colors ${
+                  className={`relative flex min-h-[120px] cursor-pointer flex-col gap-1.5 bg-surface p-2 text-left transition-colors ${
                     c.muted ? "text-muted-foreground/40" : "text-foreground hover:bg-secondary/40"
                   } ${isSelected ? "outline outline-1 outline-accent" : ""}`}
                 >
@@ -170,26 +180,38 @@ function CalendarPage() {
                   {hasDraft && <DraftCard title={title} platforms={platforms} time={time} />}
 
                   {posts && !hasDraft && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {posts.flatMap((p) =>
-                        p.platforms.slice(0, 4).map((pl, i) => (
-                          <span
-                            key={`${p.id}-${i}`}
-                            className="rounded-full bg-background px-1.5 py-0.5 text-[0.55rem] uppercase tracking-wide"
-                          >
-                            {pl === "TIKTOK"
-                              ? "TT"
-                              : pl === "IG STORY"
-                                ? "IGS"
-                                : pl === "FB STORY"
-                                  ? "FBS"
-                                  : pl}
-                          </span>
-                        )),
-                      )}
+                    <div className="mt-1 flex flex-col gap-1">
+                      {posts.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDetailPost(p);
+                          }}
+                          className="group flex flex-col gap-1 rounded-sm border border-border bg-background/60 p-1.5 text-left hover:border-accent"
+                        >
+                          <div className="line-clamp-2 text-[0.6rem] leading-tight">{p.title}</div>
+                          <div className="flex flex-wrap gap-0.5">
+                            {p.platforms.slice(0, 5).map((pl, i) => {
+                              const meta = PLATFORM_META_BY_SHORT[pl];
+                              const Icon = meta?.Icon ?? ImageIcon;
+                              return (
+                                <span
+                                  key={`${p.id}-${i}`}
+                                  title={pl}
+                                  className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background"
+                                >
+                                  <Icon className="h-2.5 w-2.5" strokeWidth={2} />
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -349,6 +371,94 @@ function CalendarPage() {
             </Section>
           </div>
         </aside>
+      )}
+
+      {detailPost && (
+        <div
+          onClick={() => setDetailPost(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg overflow-hidden rounded-sm border border-border bg-surface shadow-2xl"
+          >
+            <div className="flex items-start justify-between border-b border-border px-5 py-4">
+              <div>
+                <div className="label-mono mb-1">scheduled_post</div>
+                <div className="display-mono text-base text-foreground">{detailPost.title}</div>
+                <div className="label-mono mt-1">
+                  {new Date(detailPost.date).toLocaleDateString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
+              <button
+                onClick={() => setDetailPost(null)}
+                className="rounded-sm border border-border bg-background p-1.5 text-muted-foreground hover:text-foreground"
+                aria-label="close"
+              >
+                <span className="block h-3 w-3 text-center text-xs leading-3">×</span>
+              </button>
+            </div>
+
+            <div className="flex aspect-video items-center justify-center border-b border-border bg-background/60">
+              <ImageIcon className="h-8 w-8 text-muted-foreground" strokeWidth={1.25} />
+            </div>
+
+            <div className="space-y-3 p-5">
+              <div className="label-mono">platforms · scheduled_times</div>
+              <div className="space-y-1.5">
+                {detailPost.platforms.map((pl) => {
+                  const meta = PLATFORM_META_BY_SHORT[pl];
+                  const Icon = meta?.Icon ?? ImageIcon;
+                  const base = new Date(detailPost.date);
+                  // give each platform its own staggered time near the base time
+                  const idx = detailPost.platforms.indexOf(pl);
+                  const peak = meta?.peakTimes[idx % (meta?.peakTimes.length || 1)] ?? "—:—";
+                  return (
+                    <div
+                      key={pl}
+                      className="flex items-center justify-between border border-border bg-background/40 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background">
+                          <Icon className="h-3 w-3" strokeWidth={2} />
+                        </span>
+                        <div>
+                          <div className="text-xs text-foreground">{meta?.full ?? pl}</div>
+                          <div className="label-mono text-[0.55rem]">
+                            peak_optimised
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono text-sm text-accent">{peak}</div>
+                        <div className="label-mono text-[0.55rem]">
+                          {base.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setDetailPost(null)}
+                  className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] hover:bg-secondary"
+                >
+                  Close
+                </button>
+                <button className="rounded-sm bg-primary px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-primary-foreground">
+                  Edit_Post
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
