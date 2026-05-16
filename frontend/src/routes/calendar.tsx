@@ -83,9 +83,15 @@ function CalendarPage() {
               </button>
               <button
                 onClick={() => setShowAgenda((v) => !v)}
-                className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] hover:bg-secondary"
+                data-testid="toggle-agenda-btn"
+                className="overflow-hidden rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] transition-colors hover:bg-secondary"
               >
-                {showAgenda ? "Hide_Agenda" : "Show_Agenda"}
+                <span
+                  key={showAgenda ? "hide" : "show"}
+                  className="inline-block animate-[fadeSwap_180ms_ease-out]"
+                >
+                  {showAgenda ? "Hide_Agenda" : "Show_Agenda"}
+                </span>
               </button>
             </>
           }
@@ -167,13 +173,12 @@ function CalendarPage() {
         </div>
       </div>
 
-      {showAgenda && (
-        <AgendaSidebar
-          focusYear={FOCUS_YEAR}
-          focusMonth={FOCUS_MONTH}
-          onSelectPost={setDetailPost}
-        />
-      )}
+      <AgendaSidebar
+        open={showAgenda}
+        focusYear={FOCUS_YEAR}
+        focusMonth={FOCUS_MONTH}
+        onSelectPost={setDetailPost}
+      />
 
       {detailPost && (
         <div
@@ -268,20 +273,24 @@ function CalendarPage() {
 type AgendaPost = (typeof scheduledPosts)[number];
 
 function AgendaSidebar({
+  open,
   focusYear,
   focusMonth,
   onSelectPost,
 }: {
+  open: boolean;
   focusYear: number;
   focusMonth: number;
   onSelectPost: (p: AgendaPost) => void;
 }) {
-  // Window of months relative to focus month, expands as user scrolls.
-  const [range, setRange] = useState({ start: -2, end: 2 });
+  // Bounded range: focus month ±6 months (13 months total). No infinite scroll.
+  const RANGE_BACK = 6;
+  const RANGE_FWD = 6;
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const topSentinel = useRef<HTMLDivElement | null>(null);
-  const bottomSentinel = useRef<HTMLDivElement | null>(null);
   const didInitialScroll = useRef(false);
+
+  // Scroll-edge fade state — show top fade when not at top, bottom fade when not at bottom.
+  const [fade, setFade] = useState({ top: false, bottom: true });
 
   // Group posts by year-month for fast lookup.
   const postsByMonth = useMemo(() => {
@@ -300,7 +309,7 @@ function AgendaSidebar({
 
   const months = useMemo(() => {
     const out: { year: number; month: number; key: string; isFocus: boolean }[] = [];
-    for (let off = range.start; off <= range.end; off++) {
+    for (let off = -RANGE_BACK; off <= RANGE_FWD; off++) {
       const d = new Date(focusYear, focusMonth + off, 1);
       out.push({
         year: d.getFullYear(),
@@ -310,7 +319,7 @@ function AgendaSidebar({
       });
     }
     return out;
-  }, [range, focusYear, focusMonth]);
+  }, [focusYear, focusMonth]);
 
   // Scroll the focus month into view on first paint.
   useEffect(() => {
@@ -324,60 +333,76 @@ function AgendaSidebar({
     }
   }, []);
 
-  // Infinite scroll: extend range when sentinels enter view.
+  // Track scroll position to drive top/bottom edge fades.
   useEffect(() => {
     const root = scrollRef.current;
     if (!root) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (!e.isIntersecting) continue;
-          if (e.target === topSentinel.current) {
-            // preserve scroll position when prepending
-            const prevHeight = root.scrollHeight;
-            const prevTop = root.scrollTop;
-            setRange((r) => ({ ...r, start: r.start - 2 }));
-            requestAnimationFrame(() => {
-              root.scrollTop = prevTop + (root.scrollHeight - prevHeight);
-            });
-          } else if (e.target === bottomSentinel.current) {
-            setRange((r) => ({ ...r, end: r.end + 2 }));
-          }
-        }
-      },
-      { root, rootMargin: "200px" },
-    );
-    if (topSentinel.current) obs.observe(topSentinel.current);
-    if (bottomSentinel.current) obs.observe(bottomSentinel.current);
-    return () => obs.disconnect();
-  }, [range]);
+    const onScroll = () => {
+      const top = root.scrollTop > 4;
+      const bottom = root.scrollTop + root.clientHeight < root.scrollHeight - 4;
+      setFade((f) => (f.top === top && f.bottom === bottom ? f : { top, bottom }));
+    };
+    onScroll();
+    root.addEventListener("scroll", onScroll, { passive: true });
+    // ResizeObserver to refresh when content height changes (e.g., layout shifts)
+    const ro = new ResizeObserver(onScroll);
+    ro.observe(root);
+    Array.from(root.children).forEach((c) => ro.observe(c as Element));
+    return () => {
+      root.removeEventListener("scroll", onScroll);
+      ro.disconnect();
+    };
+  }, []);
 
   return (
-    <aside className="hidden w-[360px] shrink-0 flex-col border-l border-border bg-surface lg:flex">
-      <div className="flex items-center justify-between border-b border-border px-5 py-4">
-        <div className="label-mono">agenda</div>
-        <span className="rounded-sm border border-dashed border-border px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
-          scroll ↕ months
-        </span>
-      </div>
+    <aside
+      data-testid="agenda-sidebar"
+      aria-hidden={!open}
+      className={`relative hidden h-screen shrink-0 overflow-hidden border-l border-border bg-surface transition-[width,opacity] duration-300 ease-out lg:block ${
+        open ? "w-[360px] opacity-100" : "pointer-events-none w-0 opacity-0"
+      }`}
+    >
+      <div className="flex h-full w-[360px] flex-col">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div className="label-mono">agenda</div>
+          <span className="rounded-sm border border-dashed border-border px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
+            {RANGE_BACK + RANGE_FWD + 1}_months
+          </span>
+        </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div ref={topSentinel} className="h-1" />
-        {months.map((m) => {
-          const monthPosts = postsByMonth.get(m.key) ?? [];
-          return (
-            <MonthBlock
-              key={m.key}
-              year={m.year}
-              month={m.month}
-              posts={monthPosts}
-              muted={!m.isFocus}
-              isFocus={m.isFocus}
-              onSelectPost={onSelectPost}
-            />
-          );
-        })}
-        <div ref={bottomSentinel} className="h-1" />
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          <div ref={scrollRef} className="absolute inset-0 overflow-y-auto">
+            {months.map((m) => {
+              const monthPosts = postsByMonth.get(m.key) ?? [];
+              return (
+                <MonthBlock
+                  key={m.key}
+                  year={m.year}
+                  month={m.month}
+                  posts={monthPosts}
+                  muted={!m.isFocus}
+                  isFocus={m.isFocus}
+                  onSelectPost={onSelectPost}
+                />
+              );
+            })}
+          </div>
+
+          {/* Top edge fade */}
+          <div
+            aria-hidden
+            className={`pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-surface to-transparent transition-opacity duration-200 ${
+              fade.top ? "opacity-100" : "opacity-0"
+            }`}
+          />
+          {/* Bottom edge fade */}
+          <div
+            aria-hidden
+            className={`pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-surface to-transparent transition-opacity duration-200 ${
+              fade.bottom ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        </div>
       </div>
     </aside>
   );
