@@ -1,151 +1,114 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import {
-  Home,
-  CalendarDays,
-  LayoutGrid,
-  BarChart3,
-  Plus,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Home, CalendarDays, LayoutGrid, BarChart3, Plus, LogOut } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-const nav = [
+const nav: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/", label: "Dashboard", icon: Home },
   { to: "/scheduler", label: "Scheduler", icon: LayoutGrid },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
-] as const;
+];
 
-const STORAGE_KEY = "torcc.sidebar.collapsed";
-
+/**
+ * Permanently narrow sidebar — icons only.
+ * Hovering an icon reveals its label as a popout to the right (no width change).
+ */
 export function Sidebar() {
-  // Read the persisted state synchronously in the initializer so the very first
-  // client render is already correct. We rely on suppressHydrationWarning on the
-  // <aside> so React silently patches the SSR output (which always emits the
-  // expanded width) without the user ever seeing the wider state. Hydration's
-  // DOM reconciliation happens before paint, so there is no visible pop.
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.localStorage.getItem(STORAGE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
-
-  // Disable the width transition during the very first paint after hydration —
-  // we only want animation on user-driven toggles, not on the silent SSR patch.
-  const [animated, setAnimated] = useState<boolean>(false);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setAnimated(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-
-  // Persist user toggles.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0");
-    } catch {
-      /* ignore quota / privacy errors */
-    }
-  }, [collapsed]);
-
   return (
     <aside
-      suppressHydrationWarning
       data-testid="app-sidebar"
-      data-collapsed={collapsed ? "true" : "false"}
-      className={`relative flex h-full shrink-0 flex-col border-r border-border bg-surface ease-out ${
-        animated ? "transition-[width] duration-200" : ""
-      } ${collapsed ? "w-16" : "w-60"}`}
+      className="relative flex h-full w-16 shrink-0 flex-col border-r border-border bg-surface"
     >
-      {/* Logo / wordmark */}
-      <div
-        className={`flex items-center border-b border-border/60 ${
-          collapsed ? "h-[78px] justify-center px-2" : "h-[78px] px-5"
-        }`}
-      >
-        {collapsed ? (
-          <div className="display-mono text-sm text-foreground">T</div>
-        ) : (
-          <div>
-            <div className="display-mono text-base text-foreground">TORCC</div>
-            <div className="label-mono mt-1">OmniSocial</div>
-          </div>
-        )}
+      {/* Brand mark */}
+      <div className="flex h-[78px] items-center justify-center border-b border-border/60">
+        <span className="display-mono text-sm text-foreground">T</span>
       </div>
 
-      {/* Top-anchored stack: nav + actions (≈top third of viewport) */}
+      {/* Nav stack */}
       <nav className="flex flex-col gap-1 px-2 pt-3">
         {nav.map(({ to, label, icon: Icon }) => (
-          <Link
-            key={to}
-            to={to}
-            activeOptions={{ exact: to === "/" }}
-            title={collapsed ? label : undefined}
-            data-testid={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
-            className={`group flex items-center rounded-sm text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground ${
-              collapsed ? "h-10 w-full justify-center" : "gap-3 px-3 py-2.5"
-            }`}
-            activeProps={{
-              className: "!bg-secondary !text-foreground border-l-2 border-accent",
-            }}
-          >
-            <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-            {!collapsed && <span className="truncate">{label}</span>}
-          </Link>
+          <SidebarItem key={to} to={to} label={label} Icon={Icon} exact={to === "/"} />
         ))}
       </nav>
 
-      {/* Actions sit right under nav (no flex-1 gap) */}
-      <div className={`mt-3 space-y-2 ${collapsed ? "px-2" : "p-3"}`}>
-        <Link
+      {/* Primary action + sign out */}
+      <div className="mt-3 space-y-2 px-2">
+        <SidebarItem
           to="/scheduler"
-          title={collapsed ? "New Post" : undefined}
-          data-testid="sidebar-new-post-btn"
-          className={`flex items-center rounded-sm bg-primary text-[0.7rem] uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 ${
-            collapsed ? "h-10 w-full justify-center" : "justify-center gap-2 px-3 py-3"
-          }`}
-        >
-          <Plus className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-          {!collapsed && <span>New Post</span>}
-        </Link>
-        <button
-          type="button"
-          title={collapsed ? "Sign out" : undefined}
-          data-testid="sidebar-sign-out-btn"
-          className={`flex items-center text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground ${
-            collapsed ? "h-10 w-full justify-center" : "w-full gap-3 px-3 py-2"
-          }`}
-        >
-          <LogOut className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-          {!collapsed && <span>Sign out</span>}
-        </button>
+          label="New Post"
+          Icon={Plus}
+          variant="primary"
+          testid="sidebar-new-post-btn"
+        />
+        <SidebarButton label="Sign out" Icon={LogOut} testid="sidebar-sign-out-btn" />
       </div>
 
-      {/* Empty space below — keeps actions anchored near the top third */}
       <div className="flex-1" />
-
-      {/* Floating edge tab (collapse/expand handle) */}
-      <button
-        type="button"
-        onClick={() => setCollapsed((c) => !c)}
-        aria-label={collapsed ? "expand sidebar" : "collapse sidebar"}
-        aria-expanded={!collapsed}
-        title={collapsed ? "Expand" : "Collapse"}
-        data-testid="sidebar-toggle-btn"
-        className="group absolute top-1/2 z-30 flex h-12 w-5 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-r-sm border border-l-0 border-border bg-surface text-muted-foreground shadow-sm transition-colors hover:bg-secondary hover:text-foreground"
-        style={{ right: 0 }}
-      >
-        {collapsed ? (
-          <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
-        ) : (
-          <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" strokeWidth={1.75} />
-        )}
-      </button>
     </aside>
+  );
+}
+
+// ─── Items ──────────────────────────────────────────────────────────────────
+
+interface ItemProps {
+  label: string;
+  Icon: LucideIcon;
+}
+
+function HoverLabel({ label }: { label: string }) {
+  return (
+    <span
+      role="tooltip"
+      className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-sm border border-border bg-surface px-2.5 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+    >
+      {label}
+    </span>
+  );
+}
+
+function SidebarItem({
+  to,
+  label,
+  Icon,
+  exact,
+  variant = "ghost",
+  testid,
+}: ItemProps & { to: string; exact?: boolean; variant?: "ghost" | "primary"; testid?: string }) {
+  const base = "group relative flex h-10 w-full items-center justify-center rounded-sm transition-colors";
+  const styles =
+    variant === "primary"
+      ? "bg-primary text-primary-foreground hover:opacity-90"
+      : "text-muted-foreground hover:bg-secondary hover:text-foreground";
+
+  return (
+    <Link
+      to={to}
+      activeOptions={exact ? { exact: true } : undefined}
+      data-testid={testid ?? `nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      className={`${base} ${styles}`}
+      activeProps={
+        variant === "ghost"
+          ? { className: "!bg-secondary !text-foreground border-l-2 border-accent" }
+          : undefined
+      }
+      aria-label={label}
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={variant === "primary" ? 2 : 1.5} />
+      <HoverLabel label={label} />
+    </Link>
+  );
+}
+
+function SidebarButton({ label, Icon, testid }: ItemProps & { testid?: string }) {
+  return (
+    <button
+      type="button"
+      data-testid={testid}
+      aria-label={label}
+      className="group relative flex h-10 w-full items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+      <HoverLabel label={label} />
+    </button>
   );
 }
