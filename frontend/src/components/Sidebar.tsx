@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Home, CalendarDays, LayoutGrid, BarChart3, Plus, LogOut } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -14,6 +15,17 @@ const nav: { to: string; label: string; icon: LucideIcon }[] = [
  * Hovering an icon reveals its label as a popout to the right (no width change).
  */
 export function Sidebar() {
+  // One-time migration: scrub the orphaned localStorage key from any browser
+  // that used the older collapsible sidebar. Safe to remove this effect in a
+  // future release once the user-base has cycled through at least once.
+  useEffect(() => {
+    try {
+      window.localStorage.removeItem("torcc.sidebar.collapsed");
+    } catch {
+      /* private mode / quota — ignore */
+    }
+  }, []);
+
   return (
     <aside
       data-testid="app-sidebar"
