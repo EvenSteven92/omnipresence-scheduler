@@ -10,7 +10,7 @@ import {
   ExternalLink,
   Pencil,
 } from "lucide-react";
-import { scheduledPosts, type Platform } from "@/lib/mock-data";
+import { scheduledPosts } from "@/lib/mock-data";
 import { PostCard, type DisplayPost } from "@/components/post/PostCard";
 import { PlatformRow, type PlatformEntry } from "@/components/post/PlatformRow";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
@@ -629,6 +629,3 @@ function MonthBlock({
     </section>
   );
 }
-
-// silence unused-import warning: Platform type kept for future shared usage
-export type _PlatformAlias = Platform;
