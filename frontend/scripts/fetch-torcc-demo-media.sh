@@ -35,8 +35,13 @@ to_jpg() {
   local tmp
   tmp="$(mktemp)"
   curl -fsSL "$url" -o "$tmp"
-  sips -s format jpeg -s formatOptions 82 -Z 1280 "$tmp" --out "$out" >/dev/null 2>&1
-  rm -f "$tmp"
+  if command -v sips >/dev/null 2>&1; then
+    sips -s format jpeg -s formatOptions 82 -Z 1280 "$tmp" --out "$out" >/dev/null 2>&1
+    rm -f "$tmp"
+  else
+    # Vercel/Linux builders: keep downloaded bytes (demo art is already committed for deploys).
+    mv "$tmp" "$out"
+  fi
   echo "  ✓ $(basename "$out")"
 }
 
