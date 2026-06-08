@@ -59,7 +59,7 @@ export function TimeframeSelector({
   const isAll = isAllTime(value);
 
   return (
-    <div className={`flex flex-wrap items-center gap-2 ${className}`} data-testid="timeframe-selector">
+    <div className={`flex flex-wrap items-center gap-3 ${className}`} data-testid="timeframe-selector">
       {PRESETS.map((p) => {
         const active = value.kind === "preset" && value.preset === p.id;
         return (
@@ -68,7 +68,7 @@ export function TimeframeSelector({
             type="button"
             onClick={() => onChange({ kind: "preset", preset: p.id })}
             data-testid={`tf-preset-${p.id}`}
-            className={`rounded-sm border border-border px-3 py-1.5 text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
+            className={`rounded-sm border border-border px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
               active
                 ? "bg-foreground text-background"
                 : "bg-surface text-foreground hover:bg-secondary"
@@ -83,7 +83,7 @@ export function TimeframeSelector({
         type="button"
         onClick={() => onChange({ kind: "custom", count: customCount, unit: customUnit })}
         data-testid="tf-preset-custom"
-        className={`rounded-sm border border-border px-3 py-1.5 text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
+        className={`rounded-sm border border-border px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
           isCustom
             ? "bg-foreground text-background"
             : "bg-surface text-foreground hover:bg-secondary"
@@ -96,7 +96,7 @@ export function TimeframeSelector({
         type="button"
         onClick={() => onChange({ kind: "all" })}
         data-testid="tf-preset-all"
-        className={`rounded-sm border border-border px-3 py-1.5 text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
+        className={`rounded-sm border border-border px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
           isAll ? "bg-foreground text-background" : "bg-surface text-foreground hover:bg-secondary"
         }`}
       >
@@ -105,7 +105,7 @@ export function TimeframeSelector({
 
       {/* Custom count + unit (only enabled when Custom is active) */}
       <div
-        className={`ml-2 flex items-center gap-1 transition-opacity ${
+        className={`ml-1 flex items-center gap-2 transition-opacity ${
           isCustom ? "opacity-100" : "opacity-40"
         }`}
       >
@@ -122,7 +122,7 @@ export function TimeframeSelector({
           }}
           data-testid="tf-custom-count"
           aria-label="custom count"
-          className="w-12 rounded-sm border border-border bg-surface px-2 py-1.5 text-center font-mono text-[0.65rem] text-foreground focus:border-accent focus:outline-none disabled:cursor-not-allowed"
+          className="w-14 rounded-sm border border-border bg-surface px-2.5 py-2 text-center font-mono text-[0.65rem] text-foreground focus:border-accent focus:outline-none disabled:cursor-not-allowed"
         />
         <div ref={unitRef} className="relative">
           <button
@@ -130,7 +130,7 @@ export function TimeframeSelector({
             disabled={!isCustom}
             onClick={() => setUnitOpen((o) => !o)}
             data-testid="tf-custom-unit"
-            className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed"
           >
             {UNITS.find((u) => u.id === customUnit)?.label}
             <ChevronDown className="h-2.5 w-2.5" />
@@ -147,7 +147,7 @@ export function TimeframeSelector({
                     commitCustom(customCount, u.id);
                   }}
                   data-testid={`tf-unit-${u.id}`}
-                  className={`block w-full px-3 py-2 text-left text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
+                  className={`block w-full px-4 py-2.5 text-left text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
                     customUnit === u.id
                       ? "bg-foreground text-background"
                       : "text-foreground hover:bg-secondary"

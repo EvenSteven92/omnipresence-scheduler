@@ -1,4 +1,5 @@
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
+import { PlatformChip } from "./PlatformChip";
 import type { Platform } from "@/lib/mock-data";
 
 /** Hard caption-character ceilings per platform (varies by surface). */
@@ -7,6 +8,7 @@ export const CHAR_LIMITS: Record<Platform, number> = {
   FB: 63_206,
   IG: 2_200,
   YT: 5_000,
+  RUMBLE: 5_000,
   "YT SHORTS": 100,
   TIKTOK: 4_000,
   "IG STORY": 200,
@@ -41,20 +43,20 @@ export function CharCounters({
     <div data-testid="char-counters" className="mt-1.5 flex flex-wrap gap-1">
       {platforms.map((p) => {
         const meta = PLATFORMS_BY_SHORT[p];
-        const Icon = meta?.Icon;
         const max = CHAR_LIMITS[p];
         const t = tone(used, max);
         const display = max >= 1000 ? `${used}/${(max / 1000).toFixed(max % 1000 === 0 ? 0 : 1)}k` : `${used}/${max}`;
+        const pct = max > 0 ? used / max : 0;
         return (
-          <span
+          <PlatformChip
             key={p}
-            data-testid={`char-counter-${p.replace(/\s+/g, "-")}`}
-            className={`inline-flex items-center gap-1 rounded-sm border bg-background/60 px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-wide ${t.color}`}
+            platform={p}
+            label={display}
+            size="xs"
+            variant={pct >= 1 ? "danger" : "default"}
+            className={`font-mono ${t.color}`}
             title={`${meta?.full ?? p} · ${used.toLocaleString()} / ${max.toLocaleString()}`}
-          >
-            {Icon && <Icon className="h-2.5 w-2.5" strokeWidth={2} />}
-            {display}
-          </span>
+          />
         );
       })}
     </div>

@@ -15,8 +15,13 @@ from typing import Literal, Optional
 
 import feedparser
 from dotenv import load_dotenv
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 from fastapi import FastAPI, HTTPException
+
+try:
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+except ImportError:
+    LlmChat = None  # type: ignore[misc, assignment]
+    UserMessage = None  # type: ignore[misc, assignment]
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -77,7 +82,7 @@ class GenerateRequest(BaseModel):
     kind: Kind
     brief: str = Field(..., min_length=1, max_length=10000, description="Short description / transcript / context")
     tone: Optional[str] = Field(default=None, description="e.g. casual, devotional, hype, formal")
-    platforms: Optional[list[str]] = Field(default=None, description="Target platforms: X, FB, IG, YT, TIKTOK, IG STORY, FB STORY")
+    platforms: Optional[list[str]] = Field(default=None, description="Target platforms: X, FB, IG, YT, RUMBLE, TIKTOK, IG STORY, FB STORY, YT SHORTS")
     title: Optional[str] = Field(default=None, description="Optional post title for additional context")
 
 
@@ -88,6 +93,11 @@ class GenerateResponse(BaseModel):
 
 @app.post("/api/ai/generate", response_model=GenerateResponse)
 async def ai_generate(req: GenerateRequest):
+    if LlmChat is None or UserMessage is None:
+        raise HTTPException(
+            status_code=503,
+            detail="emergentintegrations not installed (AI copy generation unavailable locally)",
+        )
     if not EMERGENT_LLM_KEY:
         raise HTTPException(status_code=503, detail="EMERGENT_LLM_KEY not configured on server")
 

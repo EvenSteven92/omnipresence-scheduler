@@ -27,7 +27,8 @@ User asked to build/run the repo `glance-schedule-go-main.zip` (originally https
 - UI renders with proper dark theme, sidebar nav, JetBrains Mono typography, metric cards, scheduled posts
 
 ## Backlog / Future
+- See **`docs/PROJECT_LAYOUT.md`** for the full system blueprint (data model, API, Dropbox media, phases, deployment).
 - P2: Build production version (`vite build`) and serve via wrangler/Cloudflare for deployment
 - P2: Replace mock data with real backend if user wants persistence
 - P2: Implement actual social platform connectors (X, FB, IG, YT, TikTok)
-- P2: Wire up AI Studio + Analytics pages with real charts (recharts already installed)
+- P2: Wire up Analytics page with real charts (recharts already installed). AI lives in ComposerCard, not a separate `/ai-studio` route.

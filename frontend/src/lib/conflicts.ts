@@ -1,5 +1,4 @@
-import { scheduledPosts } from "@/lib/mock-data";
-import type { Platform } from "@/lib/mock-data";
+import type { Platform, ScheduledPost } from "@/lib/mock-data";
 
 const CONFLICT_WINDOW_MS = 15 * 60 * 1000; // ±15 min
 
@@ -16,6 +15,7 @@ export interface Conflict {
  * @returns array of conflicts (empty if none)
  */
 export function detectConflicts(
+  scheduledPosts: ScheduledPost[],
   candidateDate: Date,
   candidatePlatforms: Platform[],
   excludeId?: string,

@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { Sidebar } from "@/components/Sidebar";
 import { NewsTicker } from "@/components/NewsTicker";
+import { WorkspaceProvider } from "@/lib/workspace-context";
 
 function NotFoundComponent() {
   return (
@@ -87,15 +88,17 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex h-screen flex-col bg-background text-foreground">
-        <NewsTicker />
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar />
-          <main className="flex-1 overflow-x-hidden">
-            <Outlet />
-          </main>
+      <WorkspaceProvider>
+        <div className="flex h-screen flex-col bg-background text-foreground">
+          <NewsTicker />
+          <div className="flex flex-1 overflow-hidden">
+            <Sidebar />
+            <main className="min-h-0 flex-1 overflow-y-auto">
+              <Outlet />
+            </main>
+          </div>
         </div>
-      </div>
+      </WorkspaceProvider>
     </QueryClientProvider>
   );
 }

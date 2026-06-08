@@ -1,93 +1,237 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
+import { useEventAssociations } from "@/hooks/useEventAssociations";
+import { AgendaEventRow } from "@/components/calendar/AgendaEventRow";
+import { CalendarDayEventsModal } from "@/components/calendar/CalendarDayEventsModal";
+import { CalendarDayIntentModal } from "@/components/calendar/CalendarDayIntentModal";
+import { CalendarDayMixedModal } from "@/components/calendar/CalendarDayMixedModal";
 import {
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Image as ImageIcon,
-  X as XIcon,
-  ExternalLink,
-  Pencil,
-} from "lucide-react";
-import { scheduledPosts } from "@/lib/mock-data";
-import { PostCard, type DisplayPost } from "@/components/post/PostCard";
-import { PlatformRow, type PlatformEntry } from "@/components/post/PlatformRow";
-import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
+  parseCalendarDateSearch,
+  resolveCalendarDayClick,
+} from "@/lib/calendar-day-click";
+import { EventQueuedPostsModal } from "@/components/calendar/EventQueuedPostsModal";
+import { CalendarLegendBar } from "@/components/calendar/CalendarLegendBar";
+import { CalendarMonthDayCell } from "@/components/calendar/CalendarMonthDayCell";
+import { NewEventPostActions } from "@/components/NewEventPostActions";
+import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
+import { EventAssociateModal } from "@/components/events/EventAssociateModal";
+import { groupEventsByCalendarDay, queuedPostsForEvent } from "@/lib/events/display";
+import type { ContentEvent } from "@/lib/workspaces/types";
+import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
+import { useWorkspace } from "@/lib/workspace-context";
+import type { ScheduledPost } from "@/lib/mock-data";
+import { CalendarPostModals } from "@/components/post/CalendarPostModals";
+import { countPostsForEvent } from "@/components/post/CalendarDayPostContent";
+import { DayPostCountChip } from "@/components/post/DayPostCountChip";
+import { useCalendarPostSelection } from "@/hooks/useCalendarPostSelection";
+import { isSameCalendarDay, today, todayStart } from "@/lib/demo-clock";
+import { buildMonthWeeks, CALENDAR_DOW } from "@/lib/calendar-grid";
+import {
+  contentCardAnchorDate,
+  groupContentCardsByDay,
+} from "@/lib/scheduled-post-display";
+
+type CalendarSearch = {
+  event?: string;
+  date?: string;
+};
 
 export const Route = createFileRoute("/calendar")({
+  validateSearch: (search: Record<string, unknown>): CalendarSearch => ({
+    event: typeof search.event === "string" && search.event.length > 0 ? search.event : undefined,
+    date: typeof search.date === "string" && search.date.length > 0 ? search.date : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Calendar — TORCC OmniSocial" },
-      { name: "description", content: "Month view of every scheduled post across all platforms." },
+      {
+        name: "description",
+        content: "Month view of unique content cards — one per file, with per-platform publish times.",
+      },
     ],
   }),
   component: CalendarPage,
 });
 
-const DOW = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-
-// "Today" anchor for the demo — matches the mock data window
-const TODAY = new Date(2026, 4, 13);
-const INITIAL_MONTH = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
-
 function CalendarPage() {
+  const navigate = useNavigate();
+  const { event: focusEventId, date: focusDateParam } = Route.useSearch();
+  const [deepLinkNotice, setDeepLinkNotice] = useState<string | null>(null);
+  const { workspace, workspaceId } = useWorkspace();
+  const scheduledPosts = workspace.scheduledPosts;
+  const { customEvents } = useCustomEvents(workspaceId);
+  const createEventFlow = useCreateEventFlow();
+  const events = useMemo(
+    () => mergeWorkspaceEvents(workspace.events, customEvents),
+    [workspace.events, customEvents],
+  );
+  const { isAssociated, resolveEventId, associate } = useEventAssociations(workspaceId);
   const [showAgenda, setShowAgenda] = useState(true);
-  const [detailPost, setDetailPost] = useState<(typeof scheduledPosts)[number] | null>(null);
-  const [viewMonth, setViewMonth] = useState<Date>(INITIAL_MONTH);
-  const [selectedDay, setSelectedDay] = useState<number>(TODAY.getDate());
+  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
+  const [highlightUnassociated, setHighlightUnassociated] = useState(false);
+  const [associateTarget, setAssociateTarget] = useState<ScheduledPost | null>(null);
+  const [eventDayPicker, setEventDayPicker] = useState<{
+    date: Date;
+    events: ContentEvent[];
+  } | null>(null);
+  const [eventPostsModal, setEventPostsModal] = useState<ContentEvent | null>(null);
+  const [dayIntentDate, setDayIntentDate] = useState<Date | null>(null);
+  const [dayMixed, setDayMixed] = useState<{
+    date: Date;
+    events: ContentEvent[];
+    posts: ScheduledPost[];
+  } | null>(null);
+
+  const {
+    dayGrid,
+    detailPost,
+    openPosts,
+    selectFromGrid,
+    openDetailFromEvent,
+    closeDayGrid,
+    closeDetail,
+  } = useCalendarPostSelection();
+  const [viewMonth, setViewMonth] = useState(() => {
+    const now = todayStart();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(() =>
+    today().toDateString(),
+  );
+
+  useEffect(() => {
+    if (!focusEventId) return;
+    const target = events.find((e) => e.id === focusEventId);
+    if (!target) {
+      setDeepLinkNotice("event_not_found · link cleared");
+      navigate({ to: "/calendar", replace: true });
+      return;
+    }
+
+    const dt = new Date(target.date);
+    setViewMonth(new Date(dt.getFullYear(), dt.getMonth(), 1));
+    setSelectedDateKey(dt.toDateString());
+    setShowAgenda(true);
+    setEventPostsModal(target);
+    setDeepLinkNotice(null);
+    navigate({ to: "/calendar", replace: true });
+  }, [focusEventId, events, navigate]);
+
+  useEffect(() => {
+    if (!focusDateParam) return;
+    const dt = parseCalendarDateSearch(focusDateParam);
+    if (!dt) {
+      setDeepLinkNotice("invalid_date · link cleared");
+      navigate({ to: "/calendar", replace: true });
+      return;
+    }
+    setViewMonth(new Date(dt.getFullYear(), dt.getMonth(), 1));
+    setSelectedDateKey(dt.toDateString());
+    setDeepLinkNotice(null);
+    navigate({ to: "/calendar", replace: true });
+  }, [focusDateParam, navigate]);
 
   function shiftMonth(delta: number) {
     setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() + delta, 1));
+    setSelectedDateKey(null);
   }
   function jumpToday() {
-    setViewMonth(INITIAL_MONTH);
-    setSelectedDay(TODAY.getDate());
+    const now = today();
+    setViewMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+    setSelectedDateKey(now.toDateString());
+  }
+
+  function handleCloseDetail() {
+    const restoreEvent = closeDetail();
+    if (restoreEvent) setEventPostsModal(restoreEvent);
+  }
+
+  function applyDayClick(date: Date, dayEvents: ContentEvent[], dayPosts: ScheduledPost[]) {
+    setSelectedDateKey(date.toDateString());
+    const result = resolveCalendarDayClick(date, dayEvents, dayPosts);
+    switch (result.action) {
+      case "empty":
+        setDayIntentDate(result.date);
+        break;
+      case "mixed":
+        setDayMixed({
+          date: result.date,
+          events: result.events,
+          posts: result.posts,
+        });
+        break;
+      case "posts":
+        openPosts(result.posts, result.date);
+        break;
+      case "singleEvent":
+        setEventPostsModal(result.event);
+        break;
+      case "multiEvent":
+        setEventDayPicker({ date: result.date, events: result.events });
+        break;
+    }
   }
 
   const focusYear = viewMonth.getFullYear();
   const focusMonth = viewMonth.getMonth();
 
-  // Build month grid (Mon-start). Pads with prev/next month days so it's always 6 rows of 7.
-  const cells = useMemo(() => {
-    const arr: { d: number; muted: boolean; key: string; date: Date }[] = [];
-    const first = new Date(focusYear, focusMonth, 1);
-    const startDow = (first.getDay() + 6) % 7;
-    const daysInMonth = new Date(focusYear, focusMonth + 1, 0).getDate();
-    const daysInPrev = new Date(focusYear, focusMonth, 0).getDate();
-    for (let i = startDow - 1; i >= 0; i--) {
-      const d = daysInPrev - i;
-      arr.push({ d, muted: true, key: `p${d}`, date: new Date(focusYear, focusMonth - 1, d) });
-    }
-    for (let d = 1; d <= daysInMonth; d++) arr.push({ d, muted: false, key: `m${d}`, date: new Date(focusYear, focusMonth, d) });
-    let n = 1;
-    while (arr.length % 7 !== 0) {
-      arr.push({ d: n, muted: true, key: `n${n}`, date: new Date(focusYear, focusMonth + 1, n) });
-      n++;
-    }
-    return arr;
-  }, [focusYear, focusMonth]);
+  const weeks = useMemo(() => buildMonthWeeks(focusYear, focusMonth), [focusYear, focusMonth]);
 
-  const byDay = useMemo(() => {
-    const map = new Map<number, typeof scheduledPosts>();
-    scheduledPosts.forEach((p) => {
-      const dt = new Date(p.date);
-      if (dt.getFullYear() === focusYear && dt.getMonth() === focusMonth) {
-        const arr = map.get(dt.getDate()) ?? [];
-        arr.push(p);
-        map.set(dt.getDate(), arr);
-      }
-    });
-    return map;
-  }, [focusYear, focusMonth]);
+  const byDay = useMemo(
+    () => groupContentCardsByDay(scheduledPosts, focusYear, focusMonth),
+    [scheduledPosts, focusYear, focusMonth],
+  );
+
+  const eventsByDay = useMemo(
+    () => groupEventsByCalendarDay(events, focusYear, focusMonth),
+    [events, focusYear, focusMonth],
+  );
 
   const monthHasPosts = byDay.size > 0;
-  const isCurrentMonth = focusYear === TODAY.getFullYear() && focusMonth === TODAY.getMonth();
+  const now = today();
+
+  const monthPosts = useMemo(() => {
+    const all: ScheduledPost[] = [];
+    byDay.forEach((arr) => all.push(...arr));
+    return all;
+  }, [byDay]);
+
+  const unassociatedCount = useMemo(
+    () => monthPosts.filter((p) => !isAssociated(p)).length,
+    [monthPosts, isAssociated],
+  );
+
+  function openAssociate(post: ScheduledPost, e: React.MouseEvent) {
+    e.stopPropagation();
+    setAssociateTarget(post);
+  }
+
+  function openEventPosts(event: ContentEvent) {
+    setEventPostsModal(event);
+  }
+
+  const eventQueuedPosts = useMemo(
+    () =>
+      eventPostsModal
+        ? queuedPostsForEvent(scheduledPosts, eventPostsModal.id, resolveEventId)
+        : [],
+    [eventPostsModal, scheduledPosts, resolveEventId],
+  );
+
+  function handleDateClick(day: number, date: Date) {
+    const dayEvents = eventsByDay.get(day) ?? [];
+    const dayPosts = byDay.get(day) ?? [];
+    applyDayClick(date, dayEvents, dayPosts);
+  }
 
   return (
     <div className="flex h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="min-w-0 flex-1 overflow-y-auto">
         <PageHeader
+          eyebrow={<WorkspaceEyebrow />}
           title="Calendar"
           actions={
             <>
@@ -112,17 +256,27 @@ function CalendarPage() {
                   {showAgenda ? "Hide_Agenda" : "Show_Agenda"}
                 </span>
               </button>
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground hover:opacity-90"
-              >
-                <Plus className="h-3 w-3" /> New_Post
-              </button>
+              <NewEventPostActions
+                flow={createEventFlow}
+                eventDate={
+                  selectedDateKey
+                    ? new Date(selectedDateKey)
+                    : new Date(focusYear, focusMonth, today().getDate())
+                }
+              />
             </>
           }
         />
 
-        <div className="px-10 pt-8">
+        <div className="page-content">
+          {deepLinkNotice ? (
+            <p
+              data-testid="calendar-deep-link-notice"
+              className="mb-4 rounded-sm border border-warning/50 bg-warning/10 px-3 py-2 text-xs text-warning"
+            >
+              {deepLinkNotice}
+            </p>
+          ) : null}
           {/* Month nav row */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -151,95 +305,61 @@ function CalendarPage() {
                 <span className="ml-2 label-mono text-muted-foreground/60">no_posts_this_month</span>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <Legend swatch="bg-accent" label="today" />
-              <Legend swatch="bg-foreground" label="scheduled" />
-              <Legend swatch="bg-muted-foreground/30" label="outside_month" />
-            </div>
+            <CalendarLegendBar
+              highlightUnassociated={highlightUnassociated}
+              onToggleHighlight={() => setHighlightUnassociated((v) => !v)}
+              unassociatedCount={unassociatedCount}
+            />
           </div>
 
           {/* Month grid */}
-          <div className="mt-4 overflow-hidden rounded-sm border border-border bg-border">
-            <div className="grid grid-cols-7 gap-px">
-              {DOW.map((d) => (
+          <div className="mt-4 overflow-x-auto">
+            <div className="min-w-[48rem] overflow-hidden rounded-sm border border-border bg-border">
+              <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] gap-px">
+              <div className="bg-surface py-2 text-center label-mono text-[0.5rem] text-muted-foreground">
+                wk
+              </div>
+              {CALENDAR_DOW.map((d) => (
                 <div key={d} className="bg-surface py-2 text-center label-mono">
                   {d}
                 </div>
               ))}
-              {cells.map((c) => {
-                const posts = !c.muted ? byDay.get(c.d) : undefined;
-                const isToday = isCurrentMonth && !c.muted && c.d === TODAY.getDate();
-                const isSelected = !c.muted && c.d === selectedDay;
-                return (
-                  <button
-                    key={c.key}
-                    type="button"
-                    onClick={() => !c.muted && setSelectedDay(c.d)}
-                    data-testid={c.muted ? undefined : `cal-day-${c.d}`}
-                    className={`group relative flex min-h-[120px] cursor-pointer flex-col gap-1.5 bg-surface p-2 text-left transition-colors ${
-                      c.muted
-                        ? "text-muted-foreground/40"
-                        : isSelected
-                          ? "ring-1 ring-inset ring-accent"
-                          : "hover:bg-secondary/40"
-                    }`}
+              {weeks.map((week) => (
+                <div key={`week-${week.weekNumber}-${week.cells[0]!.key}`} className="contents">
+                  <div
+                    data-testid={`cal-week-${week.weekNumber}`}
+                    className="flex min-h-[168px] items-start justify-center bg-surface px-1 py-3"
                   >
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`inline-flex h-5 min-w-5 items-center justify-center rounded-sm px-1 text-[0.65rem] font-mono ${
-                          isToday
-                            ? "bg-accent text-accent-foreground font-semibold"
-                            : c.muted
-                              ? "text-muted-foreground/40"
-                              : "text-foreground"
-                        }`}
-                      >
-                        {c.d}
-                      </span>
-                      {posts && posts.length > 0 && (
-                        <span className="label-mono text-[0.5rem] text-muted-foreground/70">
-                          {posts.length}_post{posts.length === 1 ? "" : "s"}
-                        </span>
-                      )}
-                    </div>
-
-                    {posts && (
-                      <div className="mt-0.5 flex flex-col gap-1">
-                        {posts.map((p) => {
-                          const entries: PlatformEntry[] = p.platforms.slice(0, 5).map((pl) => ({
-                            platform: pl,
-                            state: "scheduled" as const,
-                          }));
-                          return (
-                            <span
-                              key={p.id}
-                              role="button"
-                              tabIndex={0}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDetailPost(p);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setDetailPost(p);
-                                }
-                              }}
-                              className="flex flex-col gap-1 rounded-sm border border-border bg-background/60 p-1.5 text-left transition-colors hover:border-accent"
-                            >
-                              <span className="line-clamp-2 text-[0.6rem] leading-tight text-foreground">
-                                {p.title}
-                              </span>
-                              <PlatformRow entries={entries} size="sm" compact />
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+                    <span className="font-mono text-[0.65rem] tabular-nums text-muted-foreground">
+                      {week.weekNumber}
+                    </span>
+                  </div>
+                  {week.cells.map((c) => {
+                    const posts = !c.muted ? byDay.get(c.d) : undefined;
+                    const dayEvents = !c.muted ? eventsByDay.get(c.d) : undefined;
+                    const isToday = isSameCalendarDay(c.date, now);
+                    const isSelected = !c.muted && selectedDateKey === c.date.toDateString();
+                    return (
+                      <CalendarMonthDayCell
+                        key={c.key}
+                        day={c.d}
+                        date={c.date}
+                        muted={c.muted}
+                        isToday={isToday}
+                        isSelected={isSelected}
+                        events={dayEvents}
+                        posts={posts}
+                        isAssociated={isAssociated}
+                        hoveredEventId={hoveredEventId}
+                        resolveEventId={resolveEventId}
+                        onDateClick={() => handleDateClick(c.d, c.date)}
+                        onOpenPosts={openPosts}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+              </div>
             </div>
           </div>
         </div>
@@ -247,176 +367,134 @@ function CalendarPage() {
 
       <AgendaSidebar
         open={showAgenda}
+        onClose={() => setShowAgenda(false)}
         focusYear={focusYear}
         focusMonth={focusMonth}
-        onSelectPost={setDetailPost}
+        scheduledPosts={scheduledPosts}
+        events={events}
+        isAssociated={isAssociated}
+        hoveredEventId={hoveredEventId}
+        resolveEventId={resolveEventId}
+        onEventHover={setHoveredEventId}
+        onSelectEvent={openEventPosts}
+        onOpenPosts={openPosts}
       />
 
-      {detailPost && <PostDetailModal post={detailPost} onClose={() => setDetailPost(null)} />}
-    </div>
-  );
-}
+      <CalendarPostModals
+        dayGrid={dayGrid}
+        detailPost={detailPost}
+        events={events}
+        resolveEventId={resolveEventId}
+        onCloseDayGrid={closeDayGrid}
+        onCloseDetail={handleCloseDetail}
+        onSelectFromGrid={selectFromGrid}
+        highlightUnassociated={highlightUnassociated}
+        isAssociated={isAssociated}
+        onAssociatePost={openAssociate}
+      />
 
-// ─── Small bits ─────────────────────────────────────────────────────────────
+      {associateTarget ? (
+        <EventAssociateModal
+          post={associateTarget}
+          events={events}
+          currentEventId={resolveEventId(associateTarget)}
+          onAssociate={(eventId) => associate(associateTarget.id, eventId)}
+          onClose={() => setAssociateTarget(null)}
+        />
+      ) : null}
 
-function Legend({ swatch, label }: { swatch: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2 py-1 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
-      <span className={`inline-block h-2 w-2 rounded-sm ${swatch}`} />
-      {label}
-    </span>
-  );
-}
+      {eventDayPicker ? (
+        <CalendarDayEventsModal
+          date={eventDayPicker.date}
+          events={eventDayPicker.events}
+          onClose={() => setEventDayPicker(null)}
+          onScheduleEvent={() => {
+            const date = eventDayPicker.date;
+            setEventDayPicker(null);
+            createEventFlow.openCreateEvent(date);
+          }}
+          onSelectEvent={(event) => {
+            setEventDayPicker(null);
+            openEventPosts(event);
+          }}
+        />
+      ) : null}
 
-// ─── Post detail modal ──────────────────────────────────────────────────────
+      {eventPostsModal ? (
+        <EventQueuedPostsModal
+          event={eventPostsModal}
+          posts={eventQueuedPosts}
+          onClose={() => setEventPostsModal(null)}
+          onSelectPost={(post) => {
+            setEventPostsModal(null);
+            openDetailFromEvent(post, eventPostsModal);
+          }}
+        />
+      ) : null}
 
-function PostDetailModal({
-  post,
-  onClose,
-}: {
-  post: (typeof scheduledPosts)[number];
-  onClose: () => void;
-}) {
-  // Close on ESC
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+      {dayIntentDate ? (
+        <CalendarDayIntentModal
+          date={dayIntentDate}
+          onClose={() => setDayIntentDate(null)}
+          onCreateEvent={() => createEventFlow.openCreateEvent(dayIntentDate)}
+        />
+      ) : null}
 
-  const base = new Date(post.date);
-  const entries: PlatformEntry[] = post.platforms.map((pl) => {
-    const meta = PLATFORMS_BY_SHORT[pl];
-    const peak = meta?.peakTimes[0] ?? base.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-    return { platform: pl, state: "scheduled" as const, at: peak };
-  });
-
-  return (
-    <div
-      onClick={onClose}
-      data-testid="post-detail-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg overflow-hidden rounded-sm border border-border bg-surface shadow-2xl"
-      >
-        <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="rounded-sm border border-accent px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-accent">
-                {post.status}
-              </span>
-              <div className="label-mono">
-                {base.toLocaleDateString(undefined, {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </div>
-            </div>
-            <div className="mt-2 text-base text-foreground">{post.title}</div>
-          </div>
-          <button
-            onClick={onClose}
-            data-testid="post-detail-close"
-            className="rounded-sm border border-border bg-background p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="close"
-          >
-            <XIcon className="h-3 w-3" />
-          </button>
-        </div>
-
-        <div className="flex aspect-video items-center justify-center border-b border-border bg-background/60">
-          <div className="flex flex-col items-center gap-1 text-muted-foreground">
-            <ImageIcon className="h-6 w-6" strokeWidth={1.25} />
-            <span className="label-mono text-[0.55rem]">no_media_preview</span>
-          </div>
-        </div>
-
-        <div className="space-y-4 p-5">
-          <div>
-            <div className="label-mono mb-2">platforms · peak_optimised</div>
-            <div className="space-y-1.5">
-              {post.platforms.map((pl, idx) => {
-                const meta = PLATFORMS_BY_SHORT[pl];
-                const Icon = meta?.Icon ?? ImageIcon;
-                const peak = meta?.peakTimes[idx % (meta?.peakTimes.length || 1)] ?? "—:—";
-                return (
-                  <div
-                    key={pl}
-                    className="flex items-center justify-between rounded-sm border border-border bg-background/40 px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background">
-                        <Icon className="h-3 w-3" strokeWidth={2} />
-                      </span>
-                      <div>
-                        <div className="text-xs text-foreground">{meta?.full ?? pl}</div>
-                        <div className="label-mono text-[0.55rem]">peak_window</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-mono text-sm text-accent">{peak}</div>
-                      <div className="label-mono text-[0.55rem]">
-                        {base.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="mt-3">
-              <PlatformRow entries={entries} size="sm" compact />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 border-t border-border pt-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
-            >
-              <ExternalLink className="h-3 w-3" />
-              Open_in_calendar
-            </button>
-            <button
-              type="button"
-              className="flex items-center gap-1.5 rounded-sm bg-primary px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              <Pencil className="h-3 w-3" />
-              Edit_Post
-            </button>
-          </div>
-        </div>
-      </div>
+      {dayMixed ? (
+        <CalendarDayMixedModal
+          date={dayMixed.date}
+          events={dayMixed.events}
+          posts={dayMixed.posts}
+          onClose={() => setDayMixed(null)}
+          onViewPosts={() => openPosts(dayMixed.posts, dayMixed.date)}
+          onViewEvents={() => {
+            if (dayMixed.events.length === 1) {
+              setEventPostsModal(dayMixed.events[0]!);
+            } else {
+              setEventDayPicker({ date: dayMixed.date, events: dayMixed.events });
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
 // ─── Agenda sidebar ──────────────────────────────────────────────────────────
 
-type AgendaPost = (typeof scheduledPosts)[number];
+type AgendaPost = ScheduledPost;
 
 function AgendaSidebar({
   open,
+  onClose,
   focusYear,
   focusMonth,
-  onSelectPost,
+  scheduledPosts,
+  events,
+  isAssociated,
+  hoveredEventId,
+  resolveEventId,
+  onEventHover,
+  onSelectEvent,
+  onOpenPosts,
 }: {
   open: boolean;
+  onClose: () => void;
   focusYear: number;
   focusMonth: number;
-  onSelectPost: (p: AgendaPost) => void;
+  scheduledPosts: ScheduledPost[];
+  events: ContentEvent[];
+  isAssociated: (post: ScheduledPost) => boolean;
+  hoveredEventId: string | null;
+  resolveEventId: (post: Pick<ScheduledPost, "id" | "eventId">) => string | undefined;
+  onEventHover: (eventId: string | null) => void;
+  onSelectEvent: (event: ContentEvent) => void;
+  onOpenPosts: (posts: ScheduledPost[], date: Date) => void;
 }) {
   // Bounded range: focus month ±6 months (13 months total). No infinite scroll.
   const RANGE_BACK = 6;
   const RANGE_FWD = 6;
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const didInitialScroll = useRef(false);
 
   // Scroll-edge fade state — show top fade when not at top, bottom fade when not at bottom.
   const [fade, setFade] = useState({ top: false, bottom: true });
@@ -425,16 +503,28 @@ function AgendaSidebar({
   const postsByMonth = useMemo(() => {
     const map = new Map<string, AgendaPost[]>();
     scheduledPosts.forEach((p) => {
-      const dt = new Date(p.date);
+      const dt = contentCardAnchorDate(p);
       const key = `${dt.getFullYear()}-${dt.getMonth()}`;
       const arr = map.get(key) ?? [];
       arr.push(p);
       map.set(key, arr);
     });
-    // sort each bucket chronologically
+    map.forEach((arr) => arr.sort((a, b) => +contentCardAnchorDate(a) - +contentCardAnchorDate(b)));
+    return map;
+  }, [scheduledPosts]);
+
+  const eventsByMonth = useMemo(() => {
+    const map = new Map<string, ContentEvent[]>();
+    events.forEach((event) => {
+      const dt = new Date(event.date);
+      const key = `${dt.getFullYear()}-${dt.getMonth()}`;
+      const arr = map.get(key) ?? [];
+      arr.push(event);
+      map.set(key, arr);
+    });
     map.forEach((arr) => arr.sort((a, b) => +new Date(a.date) - +new Date(b.date)));
     return map;
-  }, []);
+  }, [events]);
 
   const months = useMemo(() => {
     const out: { year: number; month: number; key: string; isFocus: boolean }[] = [];
@@ -450,17 +540,15 @@ function AgendaSidebar({
     return out;
   }, [focusYear, focusMonth]);
 
-  // Scroll the focus month into view on first paint.
+  // Keep the focus month in view when navigating months.
   useEffect(() => {
-    if (didInitialScroll.current) return;
     const root = scrollRef.current;
     if (!root) return;
     const focus = root.querySelector<HTMLElement>("[data-focus='true']");
     if (focus) {
       focus.scrollIntoView({ block: "start" });
-      didInitialScroll.current = true;
     }
-  }, []);
+  }, [focusYear, focusMonth]);
 
   // Track scroll position to drive top/bottom edge fades.
   useEffect(() => {
@@ -484,34 +572,61 @@ function AgendaSidebar({
   }, []);
 
   return (
-    <aside
-      data-testid="agenda-sidebar"
-      aria-hidden={!open}
-      className={`relative hidden h-full shrink-0 overflow-hidden border-l border-border bg-surface transition-[width,opacity] duration-300 ease-out lg:block ${
-        open ? "w-[360px] opacity-100" : "pointer-events-none w-0 opacity-0"
-      }`}
-    >
-      <div className="flex h-full w-[360px] flex-col">
+    <>
+      {open ? (
+        <button
+          type="button"
+          aria-label="close agenda"
+          onClick={onClose}
+          className="fixed inset-0 z-30 bg-background/60 backdrop-blur-[1px] lg:hidden"
+        />
+      ) : null}
+      <aside
+        data-testid="agenda-sidebar"
+        aria-hidden={!open}
+        className={`fixed inset-y-0 right-0 z-40 flex h-full w-[min(360px,100vw)] shrink-0 flex-col overflow-hidden border-l border-border bg-surface transition-[transform,width,opacity] duration-300 ease-out lg:relative lg:z-0 lg:translate-x-0 ${
+          open
+            ? "translate-x-0 lg:w-[360px] lg:opacity-100"
+            : "pointer-events-none translate-x-full lg:w-0 lg:opacity-0"
+        }`}
+      >
+        <div className="flex h-full w-full flex-col lg:w-[360px]">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div className="label-mono">agenda</div>
-          <span className="rounded-sm border border-dashed border-border px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
-            {RANGE_BACK + RANGE_FWD + 1}_months
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-sm border border-dashed border-border px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
+              {RANGE_BACK + RANGE_FWD + 1}_months
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-sm border border-border bg-background px-2 py-1 text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground lg:hidden"
+            >
+              Close
+            </button>
+          </div>
         </div>
 
         <div className="relative min-h-0 flex-1 overflow-hidden">
           <div ref={scrollRef} className="absolute inset-0 overflow-y-auto">
             {months.map((m) => {
               const monthPosts = postsByMonth.get(m.key) ?? [];
+              const monthEvents = eventsByMonth.get(m.key) ?? [];
               return (
                 <MonthBlock
                   key={m.key}
                   year={m.year}
                   month={m.month}
                   posts={monthPosts}
+                  events={monthEvents}
                   muted={!m.isFocus}
                   isFocus={m.isFocus}
-                  onSelectPost={onSelectPost}
+                  isAssociated={isAssociated}
+                  hoveredEventId={hoveredEventId}
+                  resolveEventId={resolveEventId}
+                  onEventHover={onEventHover}
+                  onSelectEvent={onSelectEvent}
+                  onOpenPosts={onOpenPosts}
                 />
               );
             })}
@@ -534,6 +649,7 @@ function AgendaSidebar({
         </div>
       </div>
     </aside>
+    </>
   );
 }
 
@@ -541,31 +657,60 @@ function MonthBlock({
   year,
   month,
   posts,
+  events,
   muted,
   isFocus,
-  onSelectPost,
+  isAssociated,
+  hoveredEventId,
+  resolveEventId,
+  onEventHover,
+  onSelectEvent,
+  onOpenPosts,
 }: {
   year: number;
   month: number;
   posts: AgendaPost[];
+  events: ContentEvent[];
   muted: boolean;
   isFocus: boolean;
-  onSelectPost: (p: AgendaPost) => void;
+  isAssociated: (post: ScheduledPost) => boolean;
+  hoveredEventId: string | null;
+  resolveEventId: (post: Pick<ScheduledPost, "id" | "eventId">) => string | undefined;
+  onEventHover: (eventId: string | null) => void;
+  onSelectEvent: (event: ContentEvent) => void;
+  onOpenPosts: (posts: ScheduledPost[], date: Date) => void;
 }) {
   const monthLabel = new Date(year, month, 1).toLocaleDateString(undefined, {
     month: "long",
     year: "numeric",
   });
 
-  // Group posts by day
-  const byDay = new Map<number, AgendaPost[]>();
+  const postsByDay = new Map<number, AgendaPost[]>();
   posts.forEach((p) => {
-    const day = new Date(p.date).getDate();
-    const arr = byDay.get(day) ?? [];
+    const day = contentCardAnchorDate(p).getDate();
+    const arr = postsByDay.get(day) ?? [];
     arr.push(p);
-    byDay.set(day, arr);
+    postsByDay.set(day, arr);
   });
-  const days = Array.from(byDay.keys()).sort((a, b) => a - b);
+
+  const eventsByDay = new Map<number, ContentEvent[]>();
+  events.forEach((event) => {
+    const day = new Date(event.date).getDate();
+    const arr = eventsByDay.get(day) ?? [];
+    arr.push(event);
+    eventsByDay.set(day, arr);
+  });
+
+  const days = Array.from(new Set([...postsByDay.keys(), ...eventsByDay.keys()])).sort(
+    (a, b) => a - b,
+  );
+
+  const monthSummary = [
+    posts.length > 0 ? `${posts.length}_card${posts.length === 1 ? "" : "s"}` : null,
+    events.length > 0 ? `${events.length}_events` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <section
@@ -578,52 +723,64 @@ function MonthBlock({
         }`}
       >
         <span className="display-mono text-xs uppercase tracking-[0.14em]">{monthLabel}</span>
-        <span className="label-mono">{posts.length}_posts</span>
+        {monthSummary ? <span className="label-mono">{monthSummary}</span> : null}
       </div>
 
       {days.length === 0 ? (
         <div className="px-5 py-6 text-center label-mono text-muted-foreground/60">
-          no_scheduled_posts
+          no_posts_or_events
         </div>
       ) : (
         <div className="divide-y divide-border">
-          {days.map((day) => (
-            <div key={day} className="flex gap-3 px-5 py-3">
-              <div className="w-10 shrink-0 text-center">
-                <div className="display-mono text-lg leading-none">{day}</div>
-                <div className="label-mono mt-1 text-[0.55rem]">
-                  {new Date(year, month, day).toLocaleDateString(undefined, { weekday: "short" })}
+          {days.map((day) => {
+            const dayPosts = [...(postsByDay.get(day) ?? [])].sort(
+              (a, b) => +contentCardAnchorDate(a) - +contentCardAnchorDate(b),
+            );
+            const dayEvents = [...(eventsByDay.get(day) ?? [])].sort(
+              (a, b) => +new Date(a.date) - +new Date(b.date),
+            );
+            const hasEvents = dayEvents.length > 0;
+
+            return (
+              <div key={day} className="flex gap-3 px-5 py-3">
+                <div className="w-10 shrink-0 pt-0.5 text-center">
+                  <div
+                    className={`display-mono text-lg leading-none ${
+                      hasEvents ? "text-accent" : "text-muted-foreground"
+                    }`}
+                  >
+                    {day}
+                  </div>
+                </div>
+
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  {dayEvents.map((event) => (
+                    <AgendaEventRow
+                      key={event.id}
+                      event={event}
+                      highlighted={hoveredEventId === event.id}
+                      onHoverStart={() => onEventHover(event.id)}
+                      onHoverEnd={() => onEventHover(null)}
+                      onSelect={() => onSelectEvent(event)}
+                    />
+                  ))}
+                  {dayPosts.length > 0 ? (
+                    <DayPostCountChip
+                      count={dayPosts.length}
+                      dense
+                      unassociatedCount={dayPosts.filter((post) => !isAssociated(post)).length}
+                      eventHighlightCount={countPostsForEvent(
+                        dayPosts,
+                        hoveredEventId,
+                        resolveEventId,
+                      )}
+                      onOpen={() => onOpenPosts(dayPosts, new Date(year, month, day))}
+                    />
+                  ) : null}
                 </div>
               </div>
-
-              <div className="flex-1 space-y-2">
-                {byDay.get(day)!.map((p) => {
-                  const display: DisplayPost = {
-                    id: p.id,
-                    title: p.title,
-                    status: p.status,
-                    when: new Date(p.date).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                    }),
-                    platforms: p.platforms.map((pl) => ({
-                      platform: pl,
-                      state: "scheduled" as const,
-                    })),
-                  };
-                  return (
-                    <PostCard
-                      key={p.id}
-                      post={display}
-                      variant="compact"
-                      onClick={() => onSelectPost(p)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

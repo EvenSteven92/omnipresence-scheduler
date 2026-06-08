@@ -1,22 +1,28 @@
 import { useMemo, useState } from "react";
 import {
-  Wand2,
   Save,
   Sparkles,
   X,
   FileVideo,
   Image as ImageIcon,
+  Cloud,
   Loader2,
   GripVertical,
   AlertTriangle,
-  CheckCircle2,
 } from "lucide-react";
 import { PLATFORMS, PLATFORMS_BY_SHORT, FORMAT_META, type PostFormat } from "@/lib/platforms";
 import { aiGenerate, type AiKind } from "@/lib/ai-client";
 import type { Platform } from "@/lib/mock-data";
 import { CharCounters } from "./CharCounters";
 import { PlatformPreview } from "./PlatformPreview";
+import { ContentPublishSchedule } from "./ContentPublishSchedule";
+import { PlatformSelectChip } from "./PlatformChip";
+import { CollapsibleSection } from "./CollapsibleSection";
 import { detectConflicts } from "@/lib/conflicts";
+import { useWorkspace } from "@/lib/workspace-context";
+import { EventAssociationPicker } from "@/components/events/EventAssociationPicker";
+import { mergeWorkspaceEvents, useCustomEvents } from "@/hooks/useCustomEvents";
+import { formatEventTime, getEventById } from "@/lib/events/display";
 
 export interface DraftPost {
   id: string;
@@ -30,16 +36,13 @@ export interface DraftPost {
   caption: string;
   hashtags: string;
   transcript: string;
-  /** Per-platform proposed times (ISO). Populated by Generate_Optimal_Schedule. */
+  /** Per-platform proposed times (ISO). Populated by Suggest_times. */
   proposedTimes?: Partial<Record<Platform, string>>;
-  /** Per-platform reason chip text. */
-  proposedReasons?: Partial<Record<Platform, string>>;
-  /** True once user has clicked Schedule_Post on this card. */
-  scheduled?: boolean;
+  /** Unix ms when the user saved this card to the draft dropzone. */
+  savedAt?: number;
+  /** Associated event album — groups this file with related ministry media. */
+  eventId?: string;
 }
-
-const PLATFORM_CHIP_BASE =
-  "flex items-center gap-1.5 rounded-sm border px-2 py-1 text-[0.6rem] uppercase tracking-[0.12em] transition-colors";
 
 export function ComposerCard({
   post,
@@ -47,8 +50,8 @@ export function ComposerCard({
   onChange,
   onRemove,
   onSaveDraft,
-  onSchedulePost,
   expanded,
+  focused = false,
   dragHandlers,
   isDragging,
 }: {
@@ -58,8 +61,9 @@ export function ComposerCard({
   onChange: (next: DraftPost) => void;
   onRemove: () => void;
   onSaveDraft: () => void;
-  onSchedulePost: () => void;
   expanded: boolean;
+  /** Master–detail editor: slimmer chrome, sections tuned for one card at a time. */
+  focused?: boolean;
   /** Native HTML5 drag handlers passed from the parent grid. */
   dragHandlers?: {
     draggable: boolean;
@@ -73,15 +77,24 @@ export function ComposerCard({
   const [busy, setBusy] = useState<AiKind | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const { workspace, workspaceId } = useWorkspace();
+  const { customEvents } = useCustomEvents(workspaceId);
+  const workspaceEvents = mergeWorkspaceEvents(workspace.events, customEvents);
+
+  const availablePlatforms = useMemo(
+    () => PLATFORMS.filter((p) => workspace.platforms.includes(p.short)),
+    [workspace.platforms],
+  );
+
   const incompatiblePlatforms = useMemo(
     () =>
       new Set(
-        PLATFORMS.filter((p) => !p.formats.includes(post.format)).map((p) => p.short),
+        availablePlatforms
+          .filter((p) => !p.formats.includes(post.format))
+          .map((p) => p.short),
       ),
-    [post.format],
+    [post.format, availablePlatforms],
   );
-
-  const hasProposedTimes = !!post.proposedTimes && Object.keys(post.proposedTimes).length > 0;
 
   // Earliest proposed datetime across platforms (used by conflict detection).
   const earliestProposed = useMemo(() => {
@@ -94,12 +107,19 @@ export function ComposerCard({
   // Conflict detection — uses the earliest proposed slot
   const conflicts = useMemo(() => {
     if (!earliestProposed) return [];
-    return detectConflicts(new Date(earliestProposed), post.platforms, post.id);
-  }, [earliestProposed, post.platforms, post.id]);
+    return detectConflicts(
+      workspace.scheduledPosts,
+      new Date(earliestProposed),
+      post.platforms,
+      post.id,
+    );
+  }, [earliestProposed, post.platforms, post.id, workspace.scheduledPosts]);
 
   function toggleFormat(f: PostFormat) {
     // Auto-drop platforms that don't accept the new format
-    const allowed = new Set(PLATFORMS.filter((p) => p.formats.includes(f)).map((p) => p.short));
+    const allowed = new Set(
+      availablePlatforms.filter((p) => p.formats.includes(f)).map((p) => p.short),
+    );
     onChange({
       ...post,
       format: f,
@@ -133,88 +153,104 @@ export function ComposerCard({
     }
   }
 
-  // (per-platform display now lives inside <SuggestedTimes /> below)
-
+  const linkedEvent = post.eventId ? getEventById(workspaceEvents, post.eventId) : undefined;
 
   return (
     <article
       data-testid={`composer-card-${post.id}`}
       {...(dragHandlers ?? {})}
-      className={`flex flex-col overflow-hidden rounded-sm border bg-surface transition-opacity ${
-        post.scheduled ? "border-success/60" : "border-border"
-      } ${isDragging ? "opacity-40" : "opacity-100"}`}
+      className={`flex flex-col overflow-hidden rounded-sm border border-border bg-surface transition-opacity ${
+        isDragging ? "opacity-40" : "opacity-100"
+      }`}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          {dragHandlers && (
-            <span
-              title="Drag to reorder"
-              data-testid="drag-handle"
-              className="cursor-grab text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing"
-            >
-              <GripVertical className="h-4 w-4" strokeWidth={1.5} />
-            </span>
-          )}
-          <span
-            data-testid={`card-index-${post.id}`}
-            className="flex h-5 min-w-5 items-center justify-center rounded-sm bg-foreground px-1.5 font-mono text-[0.6rem] font-semibold text-background"
-            title={`Card position ${index}`}
+      {/* Header — one file = one content piece */}
+      <div className={`border-b border-border ${focused ? "px-5 py-3" : "px-5 py-4"}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            {!focused && dragHandlers && (
+              <span
+                title="Drag to reorder"
+                data-testid="drag-handle"
+                className="mt-1 cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
+              >
+                <GripVertical className="h-4 w-4" strokeWidth={1.5} />
+              </span>
+            )}
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  data-testid={`card-index-${post.id}`}
+                  className="label-mono text-muted-foreground"
+                >
+                  {focused ? "editing" : `content #${index}`}
+                </span>
+                {linkedEvent ? (
+                  <span className="rounded-sm border border-accent/50 bg-accent/10 px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-accent">
+                    {linkedEvent.title} · {formatEventTime(linkedEvent.date)}
+                  </span>
+                ) : null}
+              </div>
+              <h2
+                className={`break-words font-semibold leading-snug text-foreground ${
+                  focused ? "mt-1 text-base" : "mt-2 text-sm"
+                }`}
+              >
+                {post.filename}
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {post.mediaKind === "video" ? "Video" : "Image"} · {FORMAT_META[post.format].label}
+                {post.sizeMB != null ? ` · ${post.sizeMB.toFixed(1)} MB` : ""}
+                {post.platforms.length > 0
+                  ? ` · ${post.platforms.length} platform${post.platforms.length === 1 ? "" : "s"}`
+                  : ""}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label="remove card"
+            className="shrink-0 rounded-sm border border-border bg-background/60 p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+            data-testid="composer-remove-btn"
           >
-            #{index}
-          </span>
-          <span className="rounded-sm border border-border bg-background/60 px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground">
-            {FORMAT_META[post.format].label}
-          </span>
-          <span className="rounded-sm border border-accent/60 bg-accent/10 px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-accent">
-            auto · {post.autoFormat}
-          </span>
-          {post.scheduled && (
-            <span className="rounded-sm border border-success/60 bg-success/10 px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-success">
-              scheduled
-            </span>
-          )}
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label="remove card"
-          className="rounded-sm border border-border bg-background/60 p-1 text-muted-foreground transition-colors hover:text-foreground"
-          data-testid="composer-remove-btn"
-        >
-          <X className="h-3 w-3" />
-        </button>
       </div>
 
-      {/* Preview */}
-      <div
-        className={`flex items-center justify-center border-b border-border bg-background/40 ${
-          post.format === "landscape" ? "aspect-video" : expanded ? "aspect-[3/4]" : "aspect-square"
-        }`}
+      <CollapsibleSection
+        title="media_&_format"
+        subtitle="Local upload or Dropbox link (coming soon)"
+        defaultOpen
       >
-        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-          {post.mediaKind === "video" ? (
-            <FileVideo className="h-6 w-6" strokeWidth={1.4} />
-          ) : (
-            <ImageIcon className="h-6 w-6" strokeWidth={1.4} />
-          )}
-          <span className="label-mono text-[0.55rem]">preview_placeholder</span>
+        <div
+          className={`mb-4 flex items-center justify-center rounded-sm border border-dashed border-border bg-background/40 ${
+            post.format === "landscape" ? "aspect-video max-h-44" : "aspect-[4/5] max-h-52"
+          }`}
+        >
+          <div className="flex flex-col items-center gap-3 px-4 text-center text-muted-foreground">
+            {post.mediaKind === "video" ? (
+              <FileVideo className="h-6 w-6" strokeWidth={1.4} />
+            ) : (
+              <ImageIcon className="h-6 w-6" strokeWidth={1.4} />
+            )}
+            <span className="max-w-full truncate font-mono text-[0.65rem] text-foreground/80">
+              {post.filename}
+            </span>
+            <button
+              type="button"
+              disabled
+              data-testid="add-from-dropbox-btn"
+              title="Dropbox picker — coming soon"
+              aria-label="Add from Dropbox (coming soon)"
+              className="flex items-center gap-2 rounded-sm border border-border bg-surface px-4 py-2.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <Cloud className="h-3.5 w-3.5" strokeWidth={1.75} />
+              Add_From_Dropbox
+            </button>
+            <span className="label-mono text-[0.5rem] text-muted-foreground/60">placeholder · not wired</span>
+          </div>
         </div>
-      </div>
-
-      {/* Filename + size */}
-      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
-        <span className="truncate text-xs text-foreground">{post.filename}</span>
-        {post.sizeMB != null && (
-          <span className="shrink-0 font-mono text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-            {post.sizeMB.toFixed(1)} MB
-          </span>
-        )}
-      </div>
-
-      {/* Format spec */}
-      <div className="px-4 pt-3">
-        <div className="label-mono mb-2">format_spec</div>
         <div className="grid grid-cols-3 gap-0 overflow-hidden rounded-sm border border-border">
           {(Object.keys(FORMAT_META) as PostFormat[]).map((f) => (
             <button
@@ -222,7 +258,7 @@ export function ComposerCard({
               type="button"
               onClick={() => toggleFormat(f)}
               data-testid={`format-${f}`}
-              className={`px-3 py-2 text-center text-[0.6rem] uppercase tracking-[0.14em] transition-colors ${
+              className={`px-4 py-3 text-center text-[0.6rem] uppercase tracking-[0.14em] transition-colors ${
                 post.format === f
                   ? "bg-foreground text-background"
                   : "bg-background/60 text-muted-foreground hover:bg-secondary"
@@ -232,111 +268,146 @@ export function ComposerCard({
             </button>
           ))}
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* Target platforms */}
-      <div className="px-4 pt-4">
-        <div className="label-mono mb-2">target_platforms</div>
-        <div className="flex flex-wrap gap-1.5">
-          {PLATFORMS.map((meta) => {
+      <CollapsibleSection
+        title="platforms"
+        subtitle="Where this file will publish"
+        defaultOpen
+        badge={
+          <span className="rounded-sm border border-border px-2 py-0.5 text-[0.55rem] text-foreground">
+            {post.platforms.length}
+          </span>
+        }
+      >
+        <div className="flex flex-wrap gap-2">
+          {availablePlatforms.map((meta) => {
             const active = post.platforms.includes(meta.short);
             const disabled = incompatiblePlatforms.has(meta.short);
-            const { Icon } = meta;
             return (
-              <button
+              <PlatformSelectChip
                 key={meta.short}
-                type="button"
+                platform={meta.short}
+                active={active}
                 disabled={disabled}
                 onClick={() => !disabled && togglePlatform(meta.short)}
-                data-testid={`platform-${meta.short.replace(/\s+/g, "-")}`}
                 title={disabled ? `${meta.full} doesn't support ${post.format}` : meta.full}
-                className={`${PLATFORM_CHIP_BASE} ${
-                  disabled
-                    ? "cursor-not-allowed border-border/40 bg-background/30 text-muted-foreground/40"
-                    : active
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border bg-background/60 text-foreground hover:bg-secondary"
-                }`}
-              >
-                <Icon className="h-3 w-3" strokeWidth={2} />
-                {meta.short}
-              </button>
+                data-testid={`platform-${meta.short.replace(/\s+/g, "-")}`}
+              />
             );
           })}
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* Caption */}
-      <div className="px-4 pt-4">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="label-mono">caption</span>
-          <div className="flex items-center gap-1">
-            <AiButton
-              label="caption"
-              busy={busy === "caption"}
-              onClick={() => runAi("caption")}
-              testid={`ai-caption-${post.id}`}
-            />
-            <AiButton
-              label="yt_desc"
-              busy={busy === "yt_desc"}
-              onClick={() => runAi("yt_desc")}
-              testid={`ai-yt-desc-${post.id}`}
-            />
-          </div>
-        </div>
-        <textarea
-          value={post.caption}
-          onChange={(e) => onChange({ ...post, caption: e.target.value })}
-          placeholder="caption / description…"
-          data-testid={`caption-input-${post.id}`}
-          rows={3}
-          className="w-full resize-y rounded-sm border border-border bg-background/60 px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+      <CollapsibleSection
+        title="event_album"
+        subtitle="Associate this file with a ministry event"
+        defaultOpen={!!post.eventId}
+        badge={
+          post.eventId ? (
+            <span className="rounded-sm border border-accent/50 bg-accent/10 px-2 py-0.5 text-[0.55rem] text-accent">
+              linked
+            </span>
+          ) : undefined
+        }
+      >
+        <EventAssociationPicker
+          events={workspaceEvents}
+          value={post.eventId}
+          onChange={(eventId) => onChange({ ...post, eventId })}
         />
-        <CharCounters text={post.caption} platforms={post.platforms} />
-      </div>
+      </CollapsibleSection>
 
-      {/* Hashtags */}
-      <div className="px-4 pt-3">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="label-mono">hashtags</span>
+      <CollapsibleSection
+        title="publish_times"
+        subtitle="One date & time per selected platform"
+        defaultOpen={!focused}
+        badge={
+          post.platforms.length > 0 ? (
+            <span className="rounded-sm border border-border px-2 py-0.5 text-[0.55rem] text-foreground">
+              {post.platforms.length}
+            </span>
+          ) : undefined
+        }
+      >
+        <ContentPublishSchedule
+          fileId={post.id}
+          platforms={post.platforms}
+          proposedTimes={post.proposedTimes}
+          scheduledPosts={workspace.scheduledPosts}
+          editable
+          onSuggestTimes={(times) => {
+            onChange({
+              ...post,
+              proposedTimes: { ...(post.proposedTimes ?? {}), ...times },
+            });
+          }}
+          onApplyTimes={(times) => {
+            onChange({
+              ...post,
+              proposedTimes: { ...(post.proposedTimes ?? {}), ...times },
+            });
+          }}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="caption_&_copy" defaultOpen>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <AiButton
+            label="caption"
+            busy={busy === "caption"}
+            onClick={() => runAi("caption")}
+            testid={`ai-caption-${post.id}`}
+          />
           <AiButton
             label="hashtags"
             busy={busy === "hashtags"}
             onClick={() => runAi("hashtags")}
             testid={`ai-hashtags-${post.id}`}
           />
+          <AiButton
+            label="yt_desc"
+            busy={busy === "yt_desc"}
+            onClick={() => runAi("yt_desc")}
+            testid={`ai-yt-desc-${post.id}`}
+          />
         </div>
+        <textarea
+          value={post.caption}
+          onChange={(e) => onChange({ ...post, caption: e.target.value })}
+          placeholder="Caption shared across platforms (tweak per network later if needed)…"
+          data-testid={`caption-input-${post.id}`}
+          rows={4}
+          className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+        />
+        <CharCounters text={post.caption} platforms={post.platforms} />
         <textarea
           value={post.hashtags}
           onChange={(e) => onChange({ ...post, hashtags: e.target.value })}
-          placeholder="#tag #tag"
+          placeholder="Hashtags (optional)"
           data-testid={`hashtags-input-${post.id}`}
           rows={2}
-          className="w-full resize-y rounded-sm border border-border bg-background/60 px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+          className="mt-3 w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
         />
-      </div>
+      </CollapsibleSection>
 
-      {/* Transcript */}
-      <div className="px-4 pt-3">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="label-mono">transcript</span>
-          <span className="label-mono text-muted-foreground/60">
-            paste to power AI generation
-          </span>
-        </div>
+      <CollapsibleSection
+        title="transcript_&_ai_context"
+        subtitle="Optional — powers AI buttons"
+        defaultOpen={false}
+      >
         <textarea
           value={post.transcript}
           onChange={(e) => onChange({ ...post, transcript: e.target.value })}
-          placeholder="auto-transcribe or paste…"
+          placeholder="Paste transcript or talking points…"
           data-testid={`transcript-input-${post.id}`}
-          rows={2}
-          className="w-full resize-y rounded-sm border border-border bg-background/60 px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+          rows={3}
+          className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
         />
-      </div>
+      </CollapsibleSection>
 
       {error && (
-        <div className="mx-4 mt-3 rounded-sm border border-danger/60 bg-danger/10 px-3 py-2 text-[0.65rem] text-danger">
+        <div className="composer-section rounded-sm border border-danger/60 bg-danger/10 px-4 py-3 text-[0.65rem] leading-relaxed text-danger">
           {error}
         </div>
       )}
@@ -345,7 +416,7 @@ export function ComposerCard({
       {conflicts.length > 0 && (
         <div
           data-testid={`conflict-banner-${post.id}`}
-          className="mx-4 mt-3 rounded-sm border border-warning/60 bg-warning/10 px-3 py-2 text-[0.65rem] text-warning"
+          className="composer-section rounded-sm border border-warning/60 bg-warning/10 px-4 py-3 text-[0.65rem] leading-relaxed text-warning"
         >
           <div className="mb-1 flex items-center gap-1.5 font-mono uppercase tracking-[0.14em]">
             <AlertTriangle className="h-3 w-3" strokeWidth={2} />
@@ -359,151 +430,31 @@ export function ComposerCard({
         </div>
       )}
 
-      {/* Suggested times (per platform, editable) */}
-      <SuggestedTimes
-        post={post}
-        onChangeTime={(platform, isoLocal) => {
-          const next = { ...(post.proposedTimes ?? {}) } as Partial<Record<Platform, string>>;
-          next[platform] = isoLocal;
-          onChange({ ...post, proposedTimes: next });
-        }}
-      />
+      {!focused ? (
+        <div className="pb-2">
+          <PlatformPreview
+            platforms={post.platforms}
+            caption={post.caption}
+            hashtags={post.hashtags}
+            filename={post.filename}
+            format={post.format}
+          />
+        </div>
+      ) : null}
 
-      {/* Live platform previews (collapsible) */}
-      <div className="mt-4">
-        <PlatformPreview
-          platforms={post.platforms}
-          caption={post.caption}
-          hashtags={post.hashtags}
-          filename={post.filename}
-          format={post.format}
-        />
-      </div>
-
-      {/* Footer actions */}
-      <div className="grid grid-cols-2 border-t border-border">
+      <div className="border-t border-border">
         <button
           type="button"
           onClick={onSaveDraft}
           data-testid={`save-draft-${post.id}`}
-          className="flex items-center justify-center gap-2 border-r border-border bg-surface px-4 py-3 text-[0.65rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
+          className="flex w-full items-center justify-center gap-2 bg-surface px-5 py-4 text-[0.65rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
         >
           <Save className="h-3 w-3" strokeWidth={2} />
           Save_Draft
         </button>
-        <button
-          type="button"
-          onClick={onSchedulePost}
-          disabled={!hasProposedTimes || post.platforms.length === 0 || post.scheduled}
-          data-testid={`schedule-post-${post.id}`}
-          title={
-            post.scheduled
-              ? "Already scheduled"
-              : !hasProposedTimes
-                ? "Generate optimal schedule first"
-                : "Commit this card to the schedule"
-          }
-          className="flex items-center justify-center gap-2 bg-primary px-4 py-3 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground"
-        >
-          {post.scheduled ? (
-            <>
-              <CheckCircle2 className="h-3 w-3" strokeWidth={2} />
-              Scheduled
-            </>
-          ) : (
-            <>
-              <Wand2 className="h-3 w-3" strokeWidth={2} />
-              Schedule_Post
-            </>
-          )}
-        </button>
       </div>
     </article>
   );
-}
-
-// ─── Suggested times sub-section ────────────────────────────────────────────
-
-function SuggestedTimes({
-  post,
-  onChangeTime,
-}: {
-  post: DraftPost;
-  onChangeTime: (platform: Platform, isoLocal: string) => void;
-}) {
-  if (post.platforms.length === 0) return null;
-  const hasTimes = !!post.proposedTimes && Object.keys(post.proposedTimes).length > 0;
-
-  return (
-    <section className="mt-4 px-4">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="label-mono">suggested_times_per_platform</span>
-        {!hasTimes && (
-          <span className="label-mono text-muted-foreground/70">
-            click_generate_in_sidebar
-          </span>
-        )}
-      </div>
-      <div className="overflow-hidden rounded-sm border border-border bg-background/40">
-        {post.platforms.map((p, i) => {
-          const meta = PLATFORMS_BY_SHORT[p];
-          const Icon = meta?.Icon;
-          const iso = post.proposedTimes?.[p];
-          const reason = post.proposedReasons?.[p];
-          return (
-            <div
-              key={p}
-              data-testid={`slot-${post.id}-${p.replace(/\s+/g, "-")}`}
-              className={`flex items-center gap-3 px-3 py-2 ${
-                i > 0 ? "border-t border-border/60" : ""
-              }`}
-            >
-              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-foreground text-background">
-                {Icon && <Icon className="h-3 w-3" strokeWidth={2} />}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="truncate text-xs text-foreground">{meta?.full ?? p}</div>
-                {iso ? (
-                  <div className="label-mono mt-0.5 text-[0.55rem] text-muted-foreground/80">
-                    {reason ?? "peak_window"}
-                  </div>
-                ) : (
-                  <div className="label-mono mt-0.5 text-[0.55rem] text-muted-foreground/50">
-                    not_yet_generated
-                  </div>
-                )}
-              </div>
-              {iso ? (
-                <input
-                  type="datetime-local"
-                  value={toLocalInput(iso)}
-                  onChange={(e) => onChangeTime(p, fromLocalInput(e.target.value))}
-                  data-testid={`slot-input-${post.id}-${p.replace(/\s+/g, "-")}`}
-                  className="rounded-sm border border-border bg-surface px-2 py-1 font-mono text-[0.6rem] text-foreground focus:border-accent focus:outline-none"
-                />
-              ) : (
-                <span className="rounded-sm border border-dashed border-border px-2 py-1 font-mono text-[0.6rem] text-muted-foreground/60">
-                  --
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-/** Convert ISO string to value compatible with <input type="datetime-local">. */
-function toLocalInput(iso: string): string {
-  const d = new Date(iso);
-  const off = d.getTimezoneOffset();
-  const local = new Date(d.getTime() - off * 60_000);
-  return local.toISOString().slice(0, 16);
-}
-function fromLocalInput(local: string): string {
-  // Treat input as local time → ISO
-  return new Date(local).toISOString();
 }
 
 function AiButton({
@@ -523,7 +474,7 @@ function AiButton({
       onClick={onClick}
       disabled={busy}
       data-testid={testid}
-      className="flex items-center gap-1 rounded-sm border border-border bg-background/60 px-2 py-1 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-60"
+      className="flex items-center gap-1.5 rounded-sm border border-border bg-background/60 px-2.5 py-1.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-60"
     >
       {busy ? (
         <Loader2 className="h-2.5 w-2.5 animate-spin" />

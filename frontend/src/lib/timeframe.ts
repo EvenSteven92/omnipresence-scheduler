@@ -1,3 +1,13 @@
+import { isWithinPastDays, todayStart } from "@/lib/demo-clock";
+import type { PublishedPost } from "@/lib/mock-data";
+import type {
+  ContentEvent,
+  GrowthRow,
+  Platform,
+  WorkspaceMetricsBase,
+  WorkspaceProfile,
+} from "@/lib/workspaces/types";
+
 /**
  * Shared timeframe primitive used by Dashboard + Analytics.
  *
@@ -46,30 +56,10 @@ export function isAllTime(tf: Timeframe): boolean {
   return tf.kind === "all";
 }
 
-// ─── Metric scaling (mock) ──────────────────────────────────────────────────
-
-const BASE_METRICS_30D = {
-  views: 12_480,
-  likes: 842,
-  shares: 298,
-  engagement: 0.038,
-  linkClicks: 1_904,
-  profileVisits: 3_402,
-  followers: 428_950, // cumulative — does NOT scale
-};
-
-const BASE_DELTA = {
-  views: 6.8,
-  likes: 2.1,
-  shares: -4.3,
-  engagement: 0.3,
-  linkClicks: 12.2,
-  profileVisits: -2.1,
-  followers: 1.1,
-};
+// ─── Metric scaling (mock, per workspace) ─────────────────────────────────
 
 export interface MetricRow {
-  key: keyof typeof BASE_METRICS_30D;
+  key: keyof Omit<WorkspaceMetricsBase, "delta">;
   label: string;
   value: string;
   /** Pre-formatted delta string with sign + unit. Empty when isAllTime. */
@@ -84,11 +74,7 @@ function nf(n: number): string {
   return Math.round(n).toLocaleString();
 }
 
-/**
- * Returns the 7 dashboard metrics scaled for the given timeframe.
- * Mock-only: scales linearly by days/30 for flow metrics; followers cumulative; rates unchanged.
- */
-export function getMetrics(tf: Timeframe): MetricRow[] {
+function metricHelpers(tf: Timeframe) {
   const all = isAllTime(tf);
   const days = timeframeDays(tf);
   const factor = days / 30;
@@ -104,56 +90,67 @@ export function getMetrics(tf: Timeframe): MetricRow[] {
     return pct > 0 ? "up" : "down";
   }
 
+  return { all, factor, delta, trend };
+}
+
+/**
+ * Returns the 7 dashboard metrics scaled for the given timeframe and workspace.
+ */
+export function getMetrics(tf: Timeframe, workspace: WorkspaceProfile): MetricRow[] {
+  const base = workspace.metrics;
+  const { factor, delta, trend } = metricHelpers(tf);
+  const platformList = workspace.platforms.join(", ");
+
   return [
+    {
+      key: "followers",
+      label: "Total Followers",
+      value: nf(base.followers),
+      delta: delta(base.delta.followers, "%"),
+      trend: trend(base.delta.followers),
+      note: `${workspace.name} · connected: ${platformList}`,
+    },
     {
       key: "views",
       label: "Total Views",
-      value: nf(BASE_METRICS_30D.views * factor),
-      delta: delta(BASE_DELTA.views, "%"),
-      trend: trend(BASE_DELTA.views),
+      value: nf(base.views * factor),
+      delta: delta(base.delta.views, "%"),
+      trend: trend(base.delta.views),
     },
     {
       key: "likes",
       label: "Total Likes",
-      value: nf(BASE_METRICS_30D.likes * factor),
-      delta: delta(BASE_DELTA.likes, "%"),
-      trend: trend(BASE_DELTA.likes),
+      value: nf(base.likes * factor),
+      delta: delta(base.delta.likes, "%"),
+      trend: trend(base.delta.likes),
     },
     {
       key: "shares",
       label: "Total Shares",
-      value: nf(BASE_METRICS_30D.shares * factor),
-      delta: delta(BASE_DELTA.shares, "%"),
-      trend: trend(BASE_DELTA.shares),
+      value: nf(base.shares * factor),
+      delta: delta(base.delta.shares, "%"),
+      trend: trend(base.delta.shares),
     },
     {
       key: "engagement",
       label: "Engagement Rate",
-      value: `${(BASE_METRICS_30D.engagement * 100).toFixed(1)}%`,
-      delta: delta(BASE_DELTA.engagement, "pp"),
-      trend: trend(BASE_DELTA.engagement),
+      value: `${(base.engagement * 100).toFixed(1)}%`,
+      delta: delta(base.delta.engagement, "pp"),
+      trend: trend(base.delta.engagement),
     },
     {
       key: "linkClicks",
       label: "Link Clicks",
-      value: nf(BASE_METRICS_30D.linkClicks * factor),
-      delta: delta(BASE_DELTA.linkClicks, "%"),
-      trend: trend(BASE_DELTA.linkClicks),
+      value: nf(base.linkClicks * factor),
+      delta: delta(base.delta.linkClicks, "%"),
+      trend: trend(base.delta.linkClicks),
     },
     {
       key: "profileVisits",
       label: "Profile Visits",
-      value: nf(BASE_METRICS_30D.profileVisits * factor),
-      delta: delta(BASE_DELTA.profileVisits, "%"),
-      trend: trend(BASE_DELTA.profileVisits),
-    },
-    {
-      key: "followers",
-      label: "Total Followers",
-      value: nf(BASE_METRICS_30D.followers),
-      delta: delta(BASE_DELTA.followers, "%"),
-      trend: trend(BASE_DELTA.followers),
-      note: "Sum across every connected account (YT, Meta, X, TikTok, etc.)",
+      value: nf(base.profileVisits * factor),
+      delta: delta(base.delta.profileVisits, "%"),
+      trend: trend(base.delta.profileVisits),
     },
   ];
 }
@@ -173,20 +170,46 @@ export interface SeriesPoint {
  * Builds a daily series for the requested timeframe with a slight upward drift
  * and weekday seasonality (Sat/Sun bumps).
  */
-export function getDailySeries(tf: Timeframe, anchor = new Date(2026, 4, 13)): SeriesPoint[] {
+export function filterPublishedInTimeframe(
+  posts: PublishedPost[],
+  tf: Timeframe,
+  anchor: Date = todayStart(),
+): PublishedPost[] {
+  if (isAllTime(tf)) return posts;
+  const days = timeframeDays(tf);
+  return posts.filter((p) => isWithinPastDays(p.date, days, anchor));
+}
+
+export function filterEventsInTimeframe(
+  events: ContentEvent[],
+  tf: Timeframe,
+  anchor: Date = todayStart(),
+): ContentEvent[] {
+  if (isAllTime(tf)) return events;
+  const days = timeframeDays(tf);
+  return events.filter((e) => isWithinPastDays(e.date, days, anchor));
+}
+
+export function getDailySeries(
+  tf: Timeframe,
+  workspace: WorkspaceProfile,
+  anchor: Date = todayStart(),
+): SeriesPoint[] {
   const days = Math.min(timeframeDays(tf), 365 * 2); // cap series length
   const out: SeriesPoint[] = [];
-  const baseViews = 380;
-  const baseLikes = 28;
-  const baseShares = 9;
-  let followers = 428_950 - Math.round(days * 110);
+  const wsSeed = workspace.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const scale = Math.max(1, workspace.metrics.views / 12_480);
+  const baseViews = Math.round(380 * scale);
+  const baseLikes = Math.round(28 * scale);
+  const baseShares = Math.round(9 * scale);
+  let followers = workspace.metrics.followers - Math.round(days * (80 + (wsSeed % 40)));
 
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(anchor);
     d.setDate(anchor.getDate() - i);
     const dow = d.getDay();
     const weekend = dow === 0 || dow === 6;
-    const seed = (d.getFullYear() * 1000 + d.getMonth() * 31 + d.getDate()) % 97;
+    const seed = (d.getFullYear() * 1000 + d.getMonth() * 31 + d.getDate() + wsSeed) % 97;
     const noise = (seed / 97 - 0.5) * 0.4 + 1; // 0.8..1.2
     const drift = 1 + (days - i) / (days * 4); // gentle upward trend
     const weekendBoost = weekend ? 1.25 : 1;
@@ -216,24 +239,82 @@ export interface PlatformBreakdown {
   posts: number;
 }
 
-/** Aggregated per-platform performance for the timeframe. */
-export function getPlatformBreakdown(tf: Timeframe): PlatformBreakdown[] {
-  const factor = timeframeDays(tf) / 30;
-  return [
-    { platform: "YT",       views: 8_200,  likes: 540,   shares: 120, engagement: 0.087, posts: 4 },
-    { platform: "FB",       views: 6_400,  likes: 410,   shares: 88,  engagement: 0.072, posts: 8 },
-    { platform: "IG",       views: 11_200, likes: 980,   shares: 240, engagement: 0.108, posts: 12 },
-    { platform: "X",        views: 3_800,  likes: 220,   shares: 64,  engagement: 0.061, posts: 22 },
-    { platform: "TIKTOK",   views: 28_400, likes: 2_240, shares: 612, engagement: 0.124, posts: 9 },
-    { platform: "IG STORY", views: 7_100,  likes: 0,     shares: 0,   engagement: 0.041, posts: 16 },
-    { platform: "FB STORY", views: 5_300,  likes: 0,     shares: 0,   engagement: 0.029, posts: 11 },
-  ].map((p) => ({
-    ...p,
-    views: Math.round(p.views * factor),
-    likes: Math.round(p.likes * factor),
-    shares: Math.round(p.shares * factor),
-    posts: Math.round(p.posts * factor),
+export type MetricTrend = "up" | "down" | "flat";
+
+export interface GrowthMatrixMetricDelta {
+  pct: number;
+  trend: MetricTrend;
+  /** Pre-formatted delta, e.g. "+12.4%". Empty for all-time. */
+  label: string;
+}
+
+export interface GrowthMatrixRow extends GrowthRow {
+  deltas: Record<"views" | "likes" | "shares", GrowthMatrixMetricDelta>;
+}
+
+function platformMetricDelta(
+  platform: Platform,
+  metric: "views" | "likes" | "shares",
+  basePct: number,
+  all: boolean,
+): GrowthMatrixMetricDelta {
+  if (all) return { pct: 0, trend: "flat", label: "" };
+  const seed =
+    platform.split("").reduce((a, c) => a + c.charCodeAt(0), 0) + metric.charCodeAt(0);
+  const variance = ((seed % 21) - 10) * 1.2;
+  const pct = Math.round((basePct + variance) * 10) / 10;
+  const trend: MetricTrend =
+    Math.abs(pct) < 0.05 ? "flat" : pct > 0 ? "up" : "down";
+  const sign = pct > 0 ? "+" : "";
+  return { pct, trend, label: `${sign}${pct.toFixed(1)}%` };
+}
+
+/** Growth matrix rows scaled to the selected timeframe with period-over-period deltas. */
+export function getGrowthMatrixForTimeframe(
+  tf: Timeframe,
+  workspace: WorkspaceProfile,
+): GrowthMatrixRow[] {
+  const { all, factor } = metricHelpers(tf);
+  const baseDelta = workspace.metrics.delta;
+
+  return workspace.growthMatrix.map((row) => ({
+    platform: row.platform,
+    views: Math.round(row.views * factor),
+    likes: Math.round(row.likes * factor),
+    shares: Math.round(row.shares * factor),
+    deltas: {
+      views: platformMetricDelta(row.platform, "views", baseDelta.views, all),
+      likes: platformMetricDelta(row.platform, "likes", baseDelta.likes, all),
+      shares: platformMetricDelta(row.platform, "shares", baseDelta.shares, all),
+    },
   }));
+}
+
+/** Aggregated per-platform performance for the timeframe (workspace-scoped). */
+export function getPlatformBreakdown(
+  tf: Timeframe,
+  workspace: WorkspaceProfile,
+): PlatformBreakdown[] {
+  const factor = timeframeDays(tf) / 30;
+  return workspace.growthMatrix.map((row) => {
+    const engagement =
+      row.views > 0 ? (row.likes + row.shares) / row.views : 0;
+    const posts = Math.max(
+      1,
+      workspace.scheduledPosts.filter((p) => p.platforms.includes(row.platform))
+        .length +
+        workspace.publishedPosts.filter((p) => p.platforms.includes(row.platform))
+          .length,
+    );
+    return {
+      platform: row.platform,
+      views: Math.round(row.views * factor),
+      likes: Math.round(row.likes * factor),
+      shares: Math.round(row.shares * factor),
+      engagement,
+      posts: Math.round(posts * factor) || 1,
+    };
+  });
 }
 
 /** 7×24 grid of normalized engagement scores for the heatmap (Sun..Sat × 0..23). */

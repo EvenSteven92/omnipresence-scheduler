@@ -1,11 +1,32 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
+import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
+import { useWorkspace } from "@/lib/workspace-context";
+import type { PublishedPost, ScheduledPost } from "@/lib/mock-data";
+import { CalendarDayEventsModal } from "@/components/calendar/CalendarDayEventsModal";
+import { CalendarDayIntentModal } from "@/components/calendar/CalendarDayIntentModal";
+import { CalendarDayMixedModal } from "@/components/calendar/CalendarDayMixedModal";
+import { resolveCalendarDayClick } from "@/lib/calendar-day-click";
+import { EventQueuedPostsModal } from "@/components/calendar/EventQueuedPostsModal";
+import { CalendarLegendBar } from "@/components/calendar/CalendarLegendBar";
+import { CalendarMonthDayCell } from "@/components/calendar/CalendarMonthDayCell";
+import { CalendarPostModals } from "@/components/post/CalendarPostModals";
+import { EventAssociateModal } from "@/components/events/EventAssociateModal";
+import { PostDetailModal } from "@/components/post/PostDetailModal";
+import { useCalendarPostSelection } from "@/hooks/useCalendarPostSelection";
+import { mergeWorkspaceEvents, useCustomEvents } from "@/hooks/useCustomEvents";
+import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
+import { useEventAssociations } from "@/hooks/useEventAssociations";
+import { getEventsOnCalendarDay, queuedPostsForEvent } from "@/lib/events/display";
+import type { ContentEvent } from "@/lib/workspaces/types";
+import { todayStart } from "@/lib/demo-clock";
 import {
-  scheduledPosts,
-  publishedPosts,
-  platformConnections,
-  growthMatrix,
-} from "@/lib/mock-data";
+  getQuietDaysInUpcomingWindow,
+  getUpcomingContentCards,
+  getUpcomingDaySlots,
+  UPCOMING_WINDOW_DAYS,
+} from "@/lib/scheduled-post-display";
+import type { PlatformConnectionRow } from "@/lib/workspaces/types";
 import {
   Eye,
   Heart,
@@ -19,15 +40,27 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  TrendingUp,
-} from "lucide-react";
-import { PostCard, type DisplayPost } from "@/components/post/PostCard";
-import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
-import { useMemo, useState } from "react";
-import { TimeframeSelector } from "@/components/TimeframeSelector";
-import { getMetrics, isAllTime, timeframeLabel, type Timeframe } from "@/lib/timeframe";
 
-const metricIcons = [Eye, Heart, Share2, Activity, Link2, Users, UserCheck];
+} from "lucide-react";
+import { TopPerformerCard } from "@/components/post/TopPerformerCard";
+import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
+import { PlatformChip } from "@/components/post/PlatformChip";
+import { useMemo, useState } from "react";
+import { AddPlatformStencilCard } from "@/components/AddPlatformStencilCard";
+import { NewEventPostActions } from "@/components/NewEventPostActions";
+import { TopEventPerformersSection } from "@/components/events/TopEventPerformersSection";
+import { GrowthMatrixChart } from "@/components/GrowthMatrixChart";
+import { TimeframeSelector } from "@/components/TimeframeSelector";
+import {
+  filterPublishedInTimeframe,
+  getGrowthMatrixForTimeframe,
+  getMetrics,
+  isAllTime,
+  timeframeLabel,
+  type Timeframe,
+} from "@/lib/timeframe";
+
+const metricIcons = [UserCheck, Eye, Heart, Share2, Activity, Link2, Users];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,49 +73,54 @@ export const Route = createFileRoute("/")({
 });
 
 function DashboardPage() {
+  const { workspace } = useWorkspace();
   const [timeframe, setTimeframe] = useState<Timeframe>({ kind: "preset", preset: "1m" });
-  const maxViews = Math.max(...growthMatrix.map((g) => g.views));
-  const metrics = useMemo(() => getMetrics(timeframe), [timeframe]);
+  const { scheduledPosts, publishedPosts, platformConnections } = workspace;
+  const metrics = useMemo(() => getMetrics(timeframe, workspace), [timeframe, workspace]);
+  const growthRows = useMemo(
+    () => getGrowthMatrixForTimeframe(timeframe, workspace),
+    [timeframe, workspace],
+  );
   const allTime = isAllTime(timeframe);
 
   return (
-    <div className="pb-20">
+    <div>
       <PageHeader
-        eyebrow="intel_dashboard_v2.0"
+        eyebrow={<WorkspaceEyebrow />}
         title="Core Performance"
         actions={
           <>
-            <Link to="/analytics" className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary">Analytics</Link>
-            <Link to="/scheduler" className="flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground">
-              <Plus className="h-3 w-3" /> New_Post
-            </Link>
+            <Link to="/analytics" className="btn-action">Analytics</Link>
+            <NewEventPostActions />
           </>
         }
       />
 
-      <div className="px-10 pt-8">
-        {/* Range selector */}
-        <TimeframeSelector value={timeframe} onChange={setTimeframe} />
-        <p className="label-mono mt-3">
+      <div className="page-content">
+        {/* Range selector — drives KPI row + growth matrix below */}
+        <div id="dashboard-timeframe">
+          <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+        </div>
+        <p className="label-mono mt-4">
           {allTime
             ? "lifetime totals · no period comparison"
             : `vs prior ${timeframeLabel(timeframe)} · % change reflects same-length prior window`}
         </p>
 
         {/* Metric cards */}
-        <div className="mt-6 grid grid-cols-2 gap-px bg-border md:grid-cols-3 xl:grid-cols-7">
+        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
           {metrics.map((m, i) => {
             const Icon = metricIcons[i];
             return (
-              <div key={m.label} data-testid={`metric-${m.key}`} className="bg-surface p-5">
+              <div key={m.label} data-testid={`metric-${m.key}`} className="kpi-card metric-cell">
                 <div className="flex items-start justify-between">
                   <div className="label-mono">{m.label.replace(/ /g, "_")}</div>
                   <Icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
                 </div>
-                <div className="mt-4 text-3xl font-semibold tracking-tight text-foreground">{m.value}</div>
+                <div className="mt-5 text-3xl font-semibold tracking-tight text-foreground">{m.value}</div>
                 {m.delta && (
                   <div
-                    className={`mt-2 text-xs ${
+                    className={`mt-2.5 text-xs ${
                       m.trend === "up" ? "text-success" : m.trend === "down" ? "text-danger" : "text-muted-foreground"
                     }`}
                   >
@@ -96,38 +134,20 @@ function DashboardPage() {
         </div>
 
         {/* Growth matrix */}
-        <div className="panel mt-8 p-6">
-          <div className="flex items-center justify-between">
-            <div className="label-mono">cross_platform_growth_matrix</div>
-            <div className="flex items-center gap-4 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 bg-foreground" /> Views</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 bg-muted-foreground" /> Likes</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 bg-border" /> Shares</span>
-            </div>
-          </div>
-
-          <div className="mt-8 flex h-64 items-stretch gap-6 border-b border-border pb-2">
-            {growthMatrix.map((g) => (
-              <div key={g.platform} className="flex flex-1 flex-col items-center gap-2">
-                <div className="flex w-full flex-1 items-end justify-center gap-1">
-                  <div className="w-3 bg-foreground transition-all" style={{ height: `${(g.views / maxViews) * 100}%` }} />
-                  <div className="w-3 bg-muted-foreground" style={{ height: `${(g.likes / maxViews) * 100}%` }} />
-                  <div className="w-3 bg-border" style={{ height: `${(g.shares / maxViews) * 100}%` }} />
-                </div>
-                <div className="label-mono">{g.platform}</div>
-              </div>
-            ))}
-          </div>
+        <div className="panel section-block p-8">
+          <GrowthMatrixChart rows={growthRows} timeframe={timeframe} />
         </div>
 
         {/* Upcoming this week */}
         <UpcomingSection />
 
         {/* Top performers */}
-        <TopPerformersSection />
+        <TopPerformersSection publishedPosts={publishedPosts} timeframe={timeframe} />
+
+        <TopEventPerformersSection timeframe={timeframe} />
 
         {/* Connection health */}
-        <HealthStrip />
+        <HealthStrip platformConnections={platformConnections} />
       </div>
     </div>
   );
@@ -136,117 +156,271 @@ function DashboardPage() {
 // ─── Upcoming this week ─────────────────────────────────────────────────────
 
 function UpcomingSection() {
-  const upcoming = useMemo(() => {
-    const now = new Date(2026, 4, 13); // demo "now"
-    return [...scheduledPosts]
-      .filter((p) => new Date(p.date).getTime() >= now.getTime())
-      .sort((a, b) => +new Date(a.date) - +new Date(b.date))
-      .slice(0, 6);
-  }, []);
+  const { workspace, workspaceId } = useWorkspace();
+  const scheduledPosts = workspace.scheduledPosts;
+  const { customEvents } = useCustomEvents(workspaceId);
+  const events = useMemo(
+    () => mergeWorkspaceEvents(workspace.events, customEvents),
+    [workspace.events, customEvents],
+  );
+  const { isAssociated, resolveEventId, associate } = useEventAssociations(workspaceId);
+  const createEventFlow = useCreateEventFlow();
+  const [highlightUnassociated, setHighlightUnassociated] = useState(false);
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [eventDayPicker, setEventDayPicker] = useState<{
+    date: Date;
+    events: ContentEvent[];
+  } | null>(null);
+  const [eventPostsModal, setEventPostsModal] = useState<ContentEvent | null>(null);
+  const [associateTarget, setAssociateTarget] = useState<ScheduledPost | null>(null);
+  const [dayIntentDate, setDayIntentDate] = useState<Date | null>(null);
+  const [dayMixed, setDayMixed] = useState<{
+    date: Date;
+    events: ContentEvent[];
+    posts: ScheduledPost[];
+  } | null>(null);
+  const upcoming = useMemo(
+    () => getUpcomingContentCards(scheduledPosts, todayStart(), UPCOMING_WINDOW_DAYS),
+    [scheduledPosts],
+  );
+  const daySlots = useMemo(
+    () => getUpcomingDaySlots(scheduledPosts, todayStart(), UPCOMING_WINDOW_DAYS),
+    [scheduledPosts],
+  );
+  const gapWarning = useMemo(
+    () => getQuietDaysInUpcomingWindow(scheduledPosts, todayStart(), UPCOMING_WINDOW_DAYS),
+    [scheduledPosts],
+  );
+  const unassociatedCount = useMemo(
+    () => daySlots.flatMap((slot) => slot.posts).filter((post) => !isAssociated(post)).length,
+    [daySlots, isAssociated],
+  );
+  const {
+    dayGrid,
+    detailPost,
+    openPosts,
+    selectFromGrid,
+    openDetailFromEvent,
+    closeDayGrid,
+    closeDetail,
+  } = useCalendarPostSelection();
 
-  // Detect agenda gaps in the next 7 days (no posts on a given day)
-  const gapWarning = useMemo(() => {
-    const today = new Date(2026, 4, 13);
-    const dates = new Set(upcoming.map((p) => new Date(p.date).toDateString()));
-    const gaps: string[] = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      if (!dates.has(d.toDateString())) gaps.push(d.toLocaleDateString(undefined, { weekday: "short" }));
+  function handleCloseDetail() {
+    const restoreEvent = closeDetail();
+    if (restoreEvent) setEventPostsModal(restoreEvent);
+  }
+
+  function openAssociate(post: ScheduledPost, e: React.MouseEvent) {
+    e.stopPropagation();
+    setAssociateTarget(post);
+  }
+
+  const eventQueuedPosts = useMemo(
+    () =>
+      eventPostsModal
+        ? queuedPostsForEvent(scheduledPosts, eventPostsModal.id, resolveEventId)
+        : [],
+    [eventPostsModal, scheduledPosts, resolveEventId],
+  );
+
+  function handleDateClick(date: Date) {
+    setSelectedDateKey(date.toDateString());
+    const dayEvents = getEventsOnCalendarDay(events, date);
+    const dayPosts =
+      daySlots.find((slot) => slot.date.toDateString() === date.toDateString())?.posts ?? [];
+    const result = resolveCalendarDayClick(date, dayEvents, dayPosts);
+    switch (result.action) {
+      case "empty":
+        setDayIntentDate(result.date);
+        break;
+      case "mixed":
+        setDayMixed({ date: result.date, events: result.events, posts: result.posts });
+        break;
+      case "posts":
+        openPosts(result.posts, result.date);
+        break;
+      case "singleEvent":
+        setEventPostsModal(result.event);
+        break;
+      case "multiEvent":
+        setEventDayPicker({ date: result.date, events: result.events });
+        break;
     }
-    return gaps;
-  }, [upcoming]);
+  }
 
   return (
-    <section className="mt-8">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <section className="section-block">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="label-mono">upcoming · next_7d</div>
           <p className="mt-1 text-xs text-muted-foreground">
             {upcoming.length === 0
-              ? "Nothing in the queue — drop assets in Scheduler to fill peak windows."
-              : `${upcoming.length} posts scheduled across your connected platforms.`}
+              ? "Nothing in the queue — drop assets in New Post to fill the next week."
+              : `${upcoming.length} content card${upcoming.length === 1 ? "" : "s"} in the next ${UPCOMING_WINDOW_DAYS} days — same interactions as Calendar.`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {gapWarning.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {gapWarning.length > 0 && upcoming.length > 0 ? (
             <span
               data-testid="queue-gap-warning"
               className="inline-flex items-center gap-1.5 rounded-sm border border-warning/60 bg-warning/10 px-2 py-1 text-[0.6rem] uppercase tracking-[0.14em] text-warning"
             >
               <AlertTriangle className="h-3 w-3" />
-              {gapWarning.length}_quiet_day{gapWarning.length === 1 ? "" : "s"}: {gapWarning.join("·")}
+              {gapWarning.length}_gap{gapWarning.length === 1 ? "" : "s"}_in_queue: {gapWarning.join("·")}
             </span>
-          )}
+          ) : null}
           <Link
             to="/calendar"
             className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
           >
             View_Calendar <ArrowRight className="h-3 w-3" />
           </Link>
-          <Link
-            to="/scheduler"
-            className="inline-flex items-center gap-1 rounded-sm bg-primary px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-primary-foreground hover:opacity-90"
-          >
-            <Plus className="h-3 w-3" /> New_Post
-          </Link>
+          <NewEventPostActions flow={createEventFlow} />
         </div>
       </div>
 
-      {upcoming.length === 0 ? (
-        <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center label-mono">
-          queue_is_empty — head to the scheduler to drop assets
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {upcoming.map((p) => {
-            const display: DisplayPost = {
-              id: p.id,
-              title: p.title,
-              status: p.status,
-              when: new Date(p.date).toLocaleString("en-US", {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              }),
-              platforms: p.platforms.map((pl) => ({
-                platform: pl,
-                state: "scheduled" as const,
-                at: new Date(p.date).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                }),
-              })),
-            };
-            return <PostCard key={p.id} post={display} variant="compact" />;
+      <div className="mb-4">
+        <CalendarLegendBar
+          highlightUnassociated={highlightUnassociated}
+          onToggleHighlight={() => setHighlightUnassociated((value) => !value)}
+          unassociatedCount={unassociatedCount}
+        />
+      </div>
+
+      <div className="overflow-x-auto">
+        <div
+          data-testid="upcoming-week-row"
+          className="grid min-w-[56rem] grid-cols-7 gap-px overflow-hidden rounded-sm border border-border bg-border"
+        >
+          {daySlots.map((slot) => {
+            const dayEvents = getEventsOnCalendarDay(events, slot.date);
+            const posts = slot.posts.length > 0 ? slot.posts : undefined;
+            const dateKey = slot.date.toDateString();
+
+            const isQuietDay = slot.posts.length === 0;
+
+            return (
+              <CalendarMonthDayCell
+                key={dateKey}
+                day={slot.date.getDate()}
+                date={slot.date}
+                muted={false}
+                isToday={slot.isToday}
+                isSelected={selectedDateKey === dateKey}
+                isQuietDay={isQuietDay}
+                events={dayEvents.length > 0 ? dayEvents : undefined}
+                posts={posts}
+                isAssociated={isAssociated}
+                resolveEventId={resolveEventId}
+                onDateClick={() => handleDateClick(slot.date)}
+                onOpenPosts={openPosts}
+              />
+            );
           })}
         </div>
-      )}
+      </div>
+
+      <CalendarPostModals
+        dayGrid={dayGrid}
+        detailPost={detailPost}
+        events={events}
+        resolveEventId={resolveEventId}
+        onCloseDayGrid={closeDayGrid}
+        onCloseDetail={handleCloseDetail}
+        onSelectFromGrid={selectFromGrid}
+        highlightUnassociated={highlightUnassociated}
+        isAssociated={isAssociated}
+        onAssociatePost={openAssociate}
+      />
+
+      {associateTarget ? (
+        <EventAssociateModal
+          post={associateTarget}
+          events={events}
+          currentEventId={resolveEventId(associateTarget)}
+          onAssociate={(eventId) => associate(associateTarget.id, eventId)}
+          onClose={() => setAssociateTarget(null)}
+        />
+      ) : null}
+
+      {eventDayPicker ? (
+        <CalendarDayEventsModal
+          date={eventDayPicker.date}
+          events={eventDayPicker.events}
+          onClose={() => setEventDayPicker(null)}
+          onScheduleEvent={() => {
+            const date = eventDayPicker.date;
+            setEventDayPicker(null);
+            createEventFlow.openCreateEvent(date);
+          }}
+          onSelectEvent={(event) => {
+            setEventDayPicker(null);
+            setEventPostsModal(event);
+          }}
+        />
+      ) : null}
+
+      {eventPostsModal ? (
+        <EventQueuedPostsModal
+          event={eventPostsModal}
+          posts={eventQueuedPosts}
+          onClose={() => setEventPostsModal(null)}
+          onSelectPost={(post) => {
+            const event = eventPostsModal;
+            setEventPostsModal(null);
+            if (event) openDetailFromEvent(post, event);
+          }}
+        />
+      ) : null}
+
+      {dayIntentDate ? (
+        <CalendarDayIntentModal
+          date={dayIntentDate}
+          onClose={() => setDayIntentDate(null)}
+          onCreateEvent={() => createEventFlow.openCreateEvent(dayIntentDate)}
+        />
+      ) : null}
+
+      {dayMixed ? (
+        <CalendarDayMixedModal
+          date={dayMixed.date}
+          events={dayMixed.events}
+          posts={dayMixed.posts}
+          onClose={() => setDayMixed(null)}
+          onViewPosts={() => openPosts(dayMixed.posts, dayMixed.date)}
+          onViewEvents={() => {
+            if (dayMixed.events.length === 1) {
+              setEventPostsModal(dayMixed.events[0]!);
+            } else {
+              setEventDayPicker({ date: dayMixed.date, events: dayMixed.events });
+            }
+          }}
+        />
+      ) : null}
     </section>
   );
 }
 
 // ─── Top performing posts ────────────────────────────────────────────────────
 
-function fmtNum(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return n.toString();
-}
-
-function TopPerformersSection() {
-  const top = useMemo(
-    () => [...publishedPosts].sort((a, b) => b.engagementRate - a.engagementRate),
-    [],
-  );
+function TopPerformersSection({
+  publishedPosts,
+  timeframe,
+}: {
+  publishedPosts: PublishedPost[];
+  timeframe: Timeframe;
+}) {
+  const [detailPost, setDetailPost] = useState<PublishedPost | null>(null);
+  const top = useMemo(() => {
+    const recent = filterPublishedInTimeframe(publishedPosts, timeframe);
+    return [...recent].sort((a, b) => b.engagementRate - a.engagementRate);
+  }, [publishedPosts, timeframe]);
 
   return (
-    <section className="mt-10">
-      <div className="mb-4 flex items-end justify-between">
+    <section className="section-block">
+      <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <div className="label-mono">top_performers · last_30d</div>
+          <div className="label-mono">top_performers · {timeframeLabel(timeframe)}</div>
           <p className="mt-1 text-xs text-muted-foreground">
             Ranked by engagement rate — pull insights into your next campaign.
           </p>
@@ -259,99 +433,105 @@ function TopPerformersSection() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {top.map((p, i) => {
-          const display: DisplayPost = {
-            id: p.id,
-            title: p.title,
-            status: "published",
-            when: new Date(p.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-            mediaKind: "video",
-            platforms: p.platforms.map((pl) => ({
-              platform: pl,
-              state: "published" as const,
-            })),
-          };
-          return (
-            <div key={p.id} className="relative">
-              {i === 0 && (
-                <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-sm border border-success/60 bg-success/10 px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-success">
-                  <TrendingUp className="h-2.5 w-2.5" /> top
-                </span>
-              )}
-              <PostCard post={display} variant="media" onClick={() => {}} />
-              <div className="mt-2 grid grid-cols-3 gap-1 rounded-sm border border-border bg-surface px-2 py-1.5 text-center">
-                <Stat label="views" value={fmtNum(p.views)} />
-                <Stat label="likes" value={fmtNum(p.likes)} />
-                <Stat label="eng" value={`${(p.engagementRate * 100).toFixed(1)}%`} highlight />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
+      {top.length === 0 ? (
+        <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center label-mono">
+          no_published_posts_in_range
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-3">
+          {top.map((p, i) => (
+            <TopPerformerCard
+              key={p.id}
+              post={p}
+              isTop={i === 0}
+              onOpen={() => setDetailPost(p)}
+            />
+          ))}
+        </div>
+      )}
 
-function Stat({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div>
-      <div className={`font-mono text-sm ${highlight ? "text-accent" : "text-foreground"}`}>{value}</div>
-      <div className="label-mono text-[0.55rem]">{label}</div>
-    </div>
+      {detailPost ? (
+        <PostDetailModal post={detailPost} onClose={() => setDetailPost(null)} />
+      ) : null}
+    </section>
   );
 }
 
 // ─── Connection health strip ────────────────────────────────────────────────
 
-function HealthStrip() {
+function HealthStrip({
+  platformConnections,
+}: {
+  platformConnections: PlatformConnectionRow[];
+}) {
   return (
-    <section className="mt-10">
-      <div className="mb-3 flex items-end justify-between">
+    <section className="section-block">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="label-mono">platform_connections</div>
-        <span className="label-mono text-muted-foreground/70">click to manage</span>
+        <Link
+          to="/workspaces"
+          className="label-mono text-muted-foreground/70 transition-colors hover:text-foreground"
+        >
+          click to manage →
+        </Link>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-        {platformConnections.map((c) => {
-          const meta = PLATFORMS_BY_SHORT[c.platform];
-          const Icon = meta?.Icon;
-          const ok = c.status === "ok";
-          const expiring = c.status === "expiring";
-          const down = c.status === "disconnected";
-          return (
-            <div
-              key={c.platform}
-              data-testid={`connection-${c.platform.replace(/\s+/g, "-")}`}
-              className={`flex items-center justify-between rounded-sm border bg-surface px-3 py-2.5 transition-colors hover:bg-secondary/40 ${
-                ok ? "border-border" : expiring ? "border-warning/60" : "border-danger/60"
-              }`}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                {Icon && (
-                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-foreground text-background">
-                    <Icon className="h-3 w-3" strokeWidth={2} />
-                  </span>
-                )}
-                <div className="min-w-0">
-                  <div className="truncate text-xs font-semibold text-foreground">{c.platform}</div>
-                  <div
-                    className={`label-mono text-[0.5rem] ${
-                      ok ? "text-success" : expiring ? "text-warning" : "text-danger"
-                    }`}
-                  >
-                    {ok && "connected"}
-                    {expiring && `expires_${c.expiresInDays}d`}
-                    {down && "reconnect"}
-                  </div>
-                </div>
-              </div>
-              {ok && <CheckCircle2 className="h-3 w-3 shrink-0 text-success" />}
-              {expiring && <AlertTriangle className="h-3 w-3 shrink-0 text-warning" />}
-              {down && <XCircle className="h-3 w-3 shrink-0 text-danger" />}
-            </div>
-          );
-        })}
+      <div className="flex flex-wrap gap-4">
+        {platformConnections.map((c) => (
+          <ConnectionCard key={c.platform} connection={c} />
+        ))}
+        <AddPlatformStencilCard
+          testId="connections-add-platform"
+          variant="strip"
+          description="Link another account via OAuth."
+        />
       </div>
     </section>
+  );
+}
+
+function ConnectionCard({ connection: c }: { connection: PlatformConnectionRow }) {
+  const meta = PLATFORMS_BY_SHORT[c.platform];
+  const ok = c.status === "ok";
+  const expiring = c.status === "expiring";
+  const down = c.status === "disconnected";
+
+  const borderClass = ok
+    ? "border-border"
+    : expiring
+      ? "border-warning/60"
+      : "border-danger/60";
+
+  const statusText = ok
+    ? "connected"
+    : expiring
+      ? `expires in ${c.expiresInDays ?? "?"} days`
+      : "reconnect required";
+
+  const statusColor = ok ? "text-success" : expiring ? "text-warning" : "text-danger";
+
+  return (
+    <Link
+      to="/workspaces"
+      data-testid={`connection-${c.platform.replace(/\s+/g, "-")}`}
+      className={`kpi-card flex min-w-[10.5rem] max-w-[13rem] flex-1 basis-[calc(25%-0.75rem)] flex-col gap-3 px-5 py-4 transition-colors hover:bg-secondary/30 sm:basis-[calc(20%-0.8rem)] lg:min-w-[11.5rem] ${borderClass}`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        {meta ? (
+          <PlatformChip platform={c.platform} size="lg" />
+        ) : (
+          <span className="h-8 w-8 shrink-0 rounded-full bg-muted" />
+        )}
+        {ok && <CheckCircle2 className="h-4 w-4 shrink-0 text-success" strokeWidth={1.75} />}
+        {expiring && <AlertTriangle className="h-4 w-4 shrink-0 text-warning" strokeWidth={1.75} />}
+        {down && <XCircle className="h-4 w-4 shrink-0 text-danger" strokeWidth={1.75} />}
+      </div>
+      <div className="space-y-1.5">
+        <div className="text-xs font-semibold leading-snug text-foreground">{c.platform}</div>
+        {meta?.full && meta.full !== c.platform && (
+          <div className="text-[0.6rem] leading-snug text-muted-foreground">{meta.full}</div>
+        )}
+        <div className={`label-mono normal-case tracking-normal ${statusColor}`}>{statusText}</div>
+      </div>
+    </Link>
   );
 }

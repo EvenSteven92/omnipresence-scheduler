@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { draftFromPostDetail, stashRepublishDraft } from "@/lib/republish";
 import { PageHeader } from "@/components/PageHeader";
 import { useMemo, useState } from "react";
 import {
@@ -18,9 +19,10 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Eye, Heart, Share2, Activity, Link2, Users, UserCheck, Download, TrendingUp, ArrowRight } from "lucide-react";
+import { Eye, Heart, Share2, Activity, Link2, Users, UserCheck, Download, ArrowRight } from "lucide-react";
 import { TimeframeSelector } from "@/components/TimeframeSelector";
 import {
+  filterPublishedInTimeframe,
   getMetrics,
   getDailySeries,
   getPlatformBreakdown,
@@ -29,9 +31,15 @@ import {
   timeframeLabel,
   type Timeframe,
 } from "@/lib/timeframe";
-import { publishedPosts } from "@/lib/mock-data";
-import { PostCard, type DisplayPost } from "@/components/post/PostCard";
+import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
+import { useWorkspace } from "@/lib/workspace-context";
+import { TopPerformerCard } from "@/components/post/TopPerformerCard";
+import { PostDetailModal } from "@/components/post/PostDetailModal";
+import type { PublishedPost } from "@/lib/mock-data";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
+import { PlatformChip } from "@/components/post/PlatformChip";
+import { NewEventPostActions } from "@/components/NewEventPostActions";
+import { TopEventPerformersSection } from "@/components/events/TopEventPerformersSection";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
@@ -47,7 +55,7 @@ export const Route = createFileRoute("/analytics")({
   component: AnalyticsPage,
 });
 
-const metricIcons = [Eye, Heart, Share2, Activity, Link2, Users, UserCheck];
+const metricIcons = [UserCheck, Eye, Heart, Share2, Activity, Link2, Users];
 
 // Aesthetic — terminal monochrome with the signal-orange accent
 const C = {
@@ -71,59 +79,75 @@ const PALETTE = [
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 function AnalyticsPage() {
+  const navigate = useNavigate();
+  const { workspace, workspaceId } = useWorkspace();
+  const { publishedPosts } = workspace;
   const [timeframe, setTimeframe] = useState<Timeframe>({ kind: "preset", preset: "1m" });
-  const metrics = useMemo(() => getMetrics(timeframe), [timeframe]);
-  const series = useMemo(() => getDailySeries(timeframe), [timeframe]);
-  const breakdown = useMemo(() => getPlatformBreakdown(timeframe), [timeframe]);
+  const [detailPost, setDetailPost] = useState<PublishedPost | null>(null);
+  const metrics = useMemo(() => getMetrics(timeframe, workspace), [timeframe, workspace]);
+  const series = useMemo(() => getDailySeries(timeframe, workspace), [timeframe, workspace]);
+  const breakdown = useMemo(() => getPlatformBreakdown(timeframe, workspace), [timeframe, workspace]);
   const heatmap = useMemo(() => getEngagementHeatmap(), []);
   const allTime = isAllTime(timeframe);
+  const topPublished = useMemo(
+    () =>
+      filterPublishedInTimeframe(publishedPosts, timeframe)
+        .slice()
+        .sort((a, b) => b.engagementRate - a.engagementRate),
+    [publishedPosts, timeframe],
+  );
 
   // Aggregate series into ~30 buckets for legibility on longer timeframes
   const trendData = useMemo(() => bucketSeries(series, 30), [series]);
 
+  function handleScheduleSimilar() {
+    const top = topPublished[0];
+    if (!top) return;
+    const draft = draftFromPostDetail(top, { allowedPlatforms: workspace.platforms });
+    stashRepublishDraft(workspaceId, draft);
+    navigate({ to: "/scheduler" });
+  }
+
   return (
-    <div className="pb-20">
+    <div>
       <PageHeader
-        eyebrow="cross_platform_analytics"
+        eyebrow={<WorkspaceEyebrow />}
         title="Analytics"
         actions={
           <>
             <button
               type="button"
               data-testid="export-csv-btn"
-              className="flex items-center gap-2 rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary"
+              disabled
+              title="CSV export ships with live analytics — coming soon"
+              className="flex cursor-not-allowed items-center gap-2 rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground opacity-50"
             >
               <Download className="h-3 w-3" /> Export_CSV
             </button>
-            <Link
-              to="/scheduler"
-              className="flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground hover:opacity-90"
-            >
-              New_Post <ArrowRight className="h-3 w-3" />
-            </Link>
+            <NewEventPostActions />
           </>
         }
       />
 
-      <div className="px-10 pt-8">
+      <div className="page-content">
         <TimeframeSelector value={timeframe} onChange={setTimeframe} />
-        <p className="label-mono mt-3">
+        <p className="label-mono mt-4">
           {allTime
             ? "lifetime totals · no period comparison"
             : `vs prior ${timeframeLabel(timeframe)} · ${trendData.length}_buckets`}
         </p>
 
         {/* KPI strip */}
-        <div className="mt-6 grid grid-cols-2 gap-px bg-border md:grid-cols-3 xl:grid-cols-7">
+        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
           {metrics.map((m, i) => {
             const Icon = metricIcons[i];
             return (
-              <div key={m.label} data-testid={`kpi-${m.key}`} className="bg-surface p-4">
+              <div key={m.label} data-testid={`kpi-${m.key}`} className="kpi-card metric-cell">
                 <div className="flex items-start justify-between">
                   <div className="label-mono">{m.label.replace(/ /g, "_")}</div>
                   <Icon className="h-3 w-3 text-muted-foreground" strokeWidth={1.5} />
                 </div>
-                <div className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{m.value}</div>
+                <div className="mt-5 text-2xl font-semibold tracking-tight text-foreground">{m.value}</div>
                 {m.delta && (
                   <div
                     className={`mt-1 text-[0.65rem] ${
@@ -139,7 +163,7 @@ function AnalyticsPage() {
         </div>
 
         {/* Engagement trend + Audience growth */}
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="section-block grid gap-8 lg:grid-cols-2">
           <Panel title="engagement_trend" sub="views · likes · shares over time">
             <div className="h-72">
               <ResponsiveContainer>
@@ -259,61 +283,49 @@ function AnalyticsPage() {
           </Panel>
         </div>
 
-        {/* Top performers (reuse PostCard) */}
-        <section className="mt-8">
+        {/* Top performers */}
+        <section className="section-block">
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <div className="label-mono">top_performers</div>
-              <p className="mt-1 text-xs text-muted-foreground">Click into a post to drill down (coming soon).</p>
+              <div className="label-mono">top_performers · {timeframeLabel(timeframe)}</div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Click a post to view its per-platform publish history.
+              </p>
             </div>
-            <Link
-              to="/scheduler"
-              className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary"
+            <button
+              type="button"
+              onClick={handleScheduleSimilar}
+              disabled={topPublished.length === 0}
+              data-testid="schedule-similar-btn"
+              className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Schedule_Similar <ArrowRight className="h-3 w-3" />
-            </Link>
+            </button>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {publishedPosts
-              .slice()
-              .sort((a, b) => b.engagementRate - a.engagementRate)
-              .map((p, i) => {
-                const display: DisplayPost = {
-                  id: p.id,
-                  title: p.title,
-                  status: "published",
-                  when: new Date(p.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-                  mediaKind: "video",
-                  platforms: p.platforms.map((pl) => ({ platform: pl, state: "published" as const })),
-                };
-                return (
-                  <div key={p.id} className="relative">
-                    {i === 0 && (
-                      <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-sm border border-success/60 bg-success/10 px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-success">
-                        <TrendingUp className="h-2.5 w-2.5" /> top
-                      </span>
-                    )}
-                    <PostCard post={display} variant="media" onClick={() => {}} />
-                    <div className="mt-2 grid grid-cols-3 gap-1 rounded-sm border border-border bg-surface px-2 py-1.5 text-center">
-                      <div>
-                        <div className="font-mono text-sm text-foreground">{fmtNum(p.views)}</div>
-                        <div className="label-mono text-[0.55rem]">views</div>
-                      </div>
-                      <div>
-                        <div className="font-mono text-sm text-foreground">{fmtNum(p.likes)}</div>
-                        <div className="label-mono text-[0.55rem]">likes</div>
-                      </div>
-                      <div>
-                        <div className="font-mono text-sm text-accent">{(p.engagementRate * 100).toFixed(1)}%</div>
-                        <div className="label-mono text-[0.55rem]">eng</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+          {topPublished.length === 0 ? (
+            <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center label-mono">
+              no_published_posts_in_range
+            </div>
+          ) : (
+          <div className="flex flex-wrap gap-3">
+            {topPublished.map((p, i) => (
+              <TopPerformerCard
+                key={p.id}
+                post={p}
+                isTop={i === 0}
+                onOpen={() => setDetailPost(p)}
+              />
+            ))}
           </div>
+          )}
         </section>
+
+        <TopEventPerformersSection timeframe={timeframe} />
       </div>
+
+      {detailPost ? (
+        <PostDetailModal post={detailPost} onClose={() => setDetailPost(null)} />
+      ) : null}
     </div>
   );
 }
@@ -347,12 +359,6 @@ function shortLabel(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function fmtNum(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return n.toString();
-}
-
 function Panel({
   title,
   sub,
@@ -366,11 +372,11 @@ function Panel({
 }) {
   return (
     <section className={`overflow-hidden rounded-sm border border-border bg-surface ${className}`}>
-      <header className="flex items-baseline justify-between border-b border-border px-5 py-3">
+      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border px-6 py-4">
         <div className="label-mono">{title}</div>
         {sub && <span className="label-mono text-muted-foreground/70 normal-case tracking-normal">{sub}</span>}
       </header>
-      <div className="p-4">{children}</div>
+      <div className="p-6">{children}</div>
     </section>
   );
 }
@@ -494,16 +500,11 @@ function PlatformTable({ rows }: { rows: ReturnType<typeof getPlatformBreakdown>
         <tbody>
           {rows.map((r) => {
             const meta = PLATFORMS_BY_SHORT[r.platform as keyof typeof PLATFORMS_BY_SHORT];
-            const Icon = meta?.Icon;
             return (
               <tr key={r.platform} className="border-b border-border/60 last:border-b-0">
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
-                    {Icon && (
-                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background">
-                        <Icon className="h-3 w-3" strokeWidth={2} />
-                      </span>
-                    )}
+                    {meta && <PlatformChip platform={r.platform} size="xs" />}
                     <span className="text-foreground">{r.platform}</span>
                   </div>
                 </td>

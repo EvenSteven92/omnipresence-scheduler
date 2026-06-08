@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Heart, MessageCircle, Repeat2, Send, Bookmark, MoreHorizontal, Play, ChevronDown, ChevronRight, Image as ImageIcon } from "lucide-react";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
+import { PlatformSelectChip } from "./PlatformChip";
 import type { Platform } from "@/lib/mock-data";
 
 /**
@@ -60,26 +61,16 @@ export function PlatformPreview({
           ) : (
             <>
               <div className="mb-3 flex flex-wrap gap-1">
-                {platforms.map((p) => {
-                  const Icon = PLATFORMS_BY_SHORT[p]?.Icon;
-                  const isActive = effective === p;
-                  return (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setActive(p)}
-                      data-testid={`preview-tab-${p.replace(/\s+/g, "-")}`}
-                      className={`flex items-center gap-1 rounded-sm border px-2 py-1 text-[0.55rem] uppercase tracking-[0.14em] transition-colors ${
-                        isActive
-                          ? "border-foreground bg-foreground text-background"
-                          : "border-border bg-background/60 text-muted-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      {Icon && <Icon className="h-2.5 w-2.5" strokeWidth={2} />}
-                      {p}
-                    </button>
-                  );
-                })}
+                {platforms.map((p) => (
+                  <PlatformSelectChip
+                    key={p}
+                    platform={p}
+                    size="sm"
+                    active={effective === p}
+                    onClick={() => setActive(p)}
+                    data-testid={`preview-tab-${p.replace(/\s+/g, "-")}`}
+                  />
+                ))}
               </div>
 
               {effective && (
@@ -147,7 +138,9 @@ function PlatformMock({
   if (platform === "FB" || platform === "FB STORY") return <FBMock caption={display} tags={tags} filename={filename} format={format} story={platform === "FB STORY"} />;
   if (platform === "IG" || platform === "IG STORY") return <IGMock caption={display} tags={tags} filename={filename} format={format} story={platform === "IG STORY"} />;
   if (platform === "TIKTOK") return <TikTokMock caption={display} tags={tags} />;
-  if (platform === "YT") return <YTMock caption={display} tags={tags} filename={filename} />;
+  if (platform === "YT" || platform === "YT SHORTS")
+    return <YTMock caption={display} tags={tags} filename={filename} shorts={platform === "YT SHORTS"} />;
+  if (platform === "RUMBLE") return <RumbleMock caption={display} tags={tags} filename={filename} />;
   return null;
 }
 
@@ -273,10 +266,45 @@ function TikTokMock({ caption, tags }: { caption: string; tags: string }) {
   );
 }
 
-function YTMock({ caption, tags, filename }: { caption: string; tags: string; filename: string }) {
+function RumbleMock({ caption, tags, filename }: { caption: string; tags: string; filename: string }) {
   const title = filename.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ");
   return (
-    <div data-testid="mock-YT" className="overflow-hidden rounded-sm border border-border bg-background/60">
+    <div data-testid="mock-RUMBLE" className="overflow-hidden rounded-sm border border-border bg-background/60">
+      <div className="relative">
+        <MediaPlaceholder ratio="16/9" />
+        <span className="absolute bottom-1.5 right-1.5 rounded-sm bg-success/90 px-1.5 py-0.5 font-mono text-[0.55rem] text-background">
+          LIVE
+        </span>
+      </div>
+      <div className="flex gap-2 p-3">
+        <Avatar />
+        <div className="min-w-0 flex-1">
+          <div className="line-clamp-2 text-sm font-semibold text-foreground">{title}</div>
+          <div className="label-mono mt-1">torcc · 18k views · 1 day ago</div>
+          <p className="mt-2 whitespace-pre-wrap break-words text-[0.65rem] text-muted-foreground line-clamp-3">
+            {caption}
+            {tags && <span className="block text-success">{tags}</span>}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function YTMock({
+  caption,
+  tags,
+  filename,
+  shorts = false,
+}: {
+  caption: string;
+  tags: string;
+  filename: string;
+  shorts?: boolean;
+}) {
+  const title = filename.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ");
+  return (
+    <div data-testid={shorts ? "mock-YT-SHORTS" : "mock-YT"} className="overflow-hidden rounded-sm border border-border bg-background/60">
       <div className="relative">
         <MediaPlaceholder ratio="16/9" />
         <span className="absolute bottom-1.5 right-1.5 rounded-sm bg-background/80 px-1.5 py-0.5 font-mono text-[0.55rem] text-foreground">

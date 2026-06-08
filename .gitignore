@@ -5,3 +5,21 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# Dependencies & build output
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vercel/
+.vercel/
+
+# Python backend
+backend/.venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

@@ -1,22 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { NewEventPostActions } from "@/components/NewEventPostActions";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Upload,
-  Wand2,
-  Save,
-  ChevronLeft,
-  ChevronRight,
-  FileVideo,
-  Image as ImageIcon,
-  Globe2,
-  Timer,
-  Layers,
-  CheckCircle2,
-} from "lucide-react";
+  dismissRepublishDraft,
+  normalizeRepublishDraft,
+  peekRepublishDraft,
+} from "@/lib/republish";
+import { CalendarClock, Upload } from "lucide-react";
 import { ComposerCard, type DraftPost } from "@/components/post/ComposerCard";
-import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
+import { BulkScheduleModal } from "@/components/scheduler/BulkScheduleModal";
+import { ContentQueueItem } from "@/components/scheduler/ContentQueueItem";
+import { ScheduleWeekPanel } from "@/components/scheduler/ScheduleWeekPanel";
+import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
+import type { BulkScheduleResult } from "@/lib/schedule-engine";
+import { DraftDropStencil } from "@/components/scheduler/DraftDropStencil";
+import { PotentialPostsDropStencil } from "@/components/scheduler/PotentialPostsDropStencil";
 import type { Platform } from "@/lib/mock-data";
+import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
+import { useWorkspace } from "@/lib/workspace-context";
+import type { WorkspaceId } from "@/lib/workspaces/types";
 
 export const Route = createFileRoute("/scheduler")({
   head: () => ({
@@ -24,18 +27,15 @@ export const Route = createFileRoute("/scheduler")({
       { title: "New Post — TORCC OmniSocial" },
       {
         name: "description",
-        content:
-          "Bulk-upload, compose, and let AI auto-schedule posts at peak engagement windows per platform.",
+        content: "Upload media, compose copy, and choose platforms — one file per content card.",
       },
     ],
   }),
-  component: SchedulerPage,
+  component: NewPostPage,
 });
 
-// "Now" anchor — matches the rest of the demo data
-const NOW = new Date(2026, 4, 13, 9, 0, 0); // Wed May 13 2026, 09:00 local
-
-// ────────────────────────────────────────────────────────────────────────────
+const QUEUE_DRAG_TYPE = "application/x-queue-post";
+const DRAFT_DRAG_TYPE = "application/x-draft-post";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -44,7 +44,9 @@ function uid() {
 function detectFormat(filename: string): "landscape" | "portrait" | "story" {
   const lower = filename.toLowerCase();
   if (lower.includes("story") || lower.includes("ig_story") || lower.includes("fb_story")) return "story";
-  if (lower.includes("reel") || lower.includes("short") || lower.includes("tiktok") || lower.includes("portrait")) return "portrait";
+  if (lower.includes("reel") || lower.includes("short") || lower.includes("tiktok") || lower.includes("portrait"))
+    return "portrait";
+  if (lower.includes("rumble")) return "landscape";
   return "landscape";
 }
 
@@ -53,16 +55,19 @@ function detectMediaKind(filename: string): "image" | "video" {
   return /\.(mp4|mov|webm|m4v|avi|mkv)$/.test(lower) ? "video" : "image";
 }
 
-function defaultDraftFromFile(file: { name: string; sizeBytes: number }): DraftPost {
+function defaultDraftFromFile(
+  file: { name: string; sizeBytes: number },
+  allowed: Platform[],
+): DraftPost {
   const fmt = detectFormat(file.name);
   const mediaKind = detectMediaKind(file.name);
-  // Default platform set based on format
   const platforms: Platform[] =
     fmt === "story"
-      ? ["IG STORY", "FB STORY"]
+      ? (["IG STORY", "FB STORY"] as Platform[]).filter((p) => allowed.includes(p))
       : fmt === "portrait"
-        ? ["IG", "TIKTOK", "YT SHORTS"]
-        : ["YT", "FB", "X"];
+        ? (["IG", "TIKTOK", "YT SHORTS"] as Platform[]).filter((p) => allowed.includes(p))
+        : (["YT", "RUMBLE", "FB", "X"] as Platform[]).filter((p) => allowed.includes(p));
+  if (platforms.length === 0 && allowed.length > 0) platforms.push(allowed[0]!);
   return {
     id: uid(),
     filename: file.name,
@@ -77,88 +82,167 @@ function defaultDraftFromFile(file: { name: string; sizeBytes: number }): DraftP
   };
 }
 
-const TIMEZONES = [
-  { id: "auto", label: "auto · local" },
-  { id: "America/New_York", label: "America / NY" },
-  { id: "America/Los_Angeles", label: "America / LA" },
-  { id: "Europe/London", label: "Europe / London" },
-  { id: "Asia/Singapore", label: "Asia / Singapore" },
-  { id: "Australia/Sydney", label: "AU / Sydney" },
-] as const;
-
-/**
- * Compute the next future peak time for `platform`, on or after `from`,
- * preferring `preferredDay` when supplied. Peak times in PLATFORMS_BY_SHORT.peakTimes.
- */
-function nextPeakFor(platform: Platform, from: Date, preferredDay?: Date): Date {
-  const meta = PLATFORMS_BY_SHORT[platform];
-  const peaks = (meta?.peakTimes && meta.peakTimes.length > 0 ? meta.peakTimes : ["12:00"]).map((t) => {
-    const [hh, mm] = t.split(":").map((s) => parseInt(s, 10));
-    return { hh, mm };
-  });
-
-  const startDay = preferredDay ? new Date(preferredDay.getFullYear(), preferredDay.getMonth(), preferredDay.getDate()) : new Date(from.getFullYear(), from.getMonth(), from.getDate());
-
-  for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
-    const candidate = new Date(startDay);
-    candidate.setDate(candidate.getDate() + dayOffset);
-    for (const { hh, mm } of peaks) {
-      const slot = new Date(candidate);
-      slot.setHours(hh, mm, 0, 0);
-      if (slot.getTime() > from.getTime()) return slot;
-    }
-  }
-  // Fallback — same day noon, ≥ from
-  const fb = new Date(from.getTime() + 60 * 60 * 1000);
-  return fb;
+function sortSavedDrafts(drafts: DraftPost[]): DraftPost[] {
+  return [...drafts].sort((a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0));
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+type RepublishLocationState = {
+  republishDraft?: DraftPost;
+};
 
-function SchedulerPage() {
-  const [drafts, setDrafts] = useState<DraftPost[]>([]);
-  // Anchor day for "Generate Optimal Schedule". Clamped to today or later.
-  const [anchor, setAnchor] = useState<Date>(() => new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate()));
-  const [timezone, setTimezone] = useState<string>("auto");
-  // Minimum gap (hours) between two posts on the SAME platform across all cards.
-  const [cadenceGapHours, setCadenceGapHours] = useState<number>(4);
+function NewPostPage() {
+  const { workspace, workspaceId, addScheduledPosts } = useWorkspace();
+  const republishFromNavigation = useRouterState({
+    select: (state) =>
+      state.location.pathname === "/scheduler"
+        ? (state.location.state as RepublishLocationState | undefined)?.republishDraft ?? null
+        : null,
+  });
+  const [queue, setQueue] = useState<DraftPost[]>([]);
+  const [savedDrafts, setSavedDrafts] = useState<DraftPost[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [draftZoneActive, setDraftZoneActive] = useState(false);
+  const [queueZoneActive, setQueueZoneActive] = useState(false);
   const fileInput = useRef<HTMLInputElement | null>(null);
+  const queueFileInput = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkScheduleOpen, setBulkScheduleOpen] = useState(false);
 
-  const scheduledCount = drafts.filter((d) => d.scheduled).length;
-  const generatedCount = drafts.filter((d) => d.proposedTimes && Object.keys(d.proposedTimes).length > 0).length;
+  const allPosts = useMemo(() => [...queue, ...savedDrafts], [queue, savedDrafts]);
+  const bulkScheduleFiles = useMemo(
+    () => queue.filter((d) => selectedIds.has(d.id)),
+    [queue, selectedIds],
+  );
+  const hasSidebar = queue.length > 0 || savedDrafts.length > 0;
+  const readyToApply = useMemo(
+    () => queue.filter((d) => draftToScheduledPost(d) != null),
+    [queue],
+  );
 
-  function addFiles(files: FileList | File[]) {
-    const arr = Array.from(files).map((f) => ({ name: f.name, sizeBytes: f.size }));
-    setDrafts((cur) => [...cur, ...arr.map(defaultDraftFromFile)]);
+  const prevWorkspaceIdRef = useRef<WorkspaceId | null>(null);
+
+  useEffect(() => {
+    const raw = republishFromNavigation ?? peekRepublishDraft(workspaceId);
+    if (!raw) return;
+    const draft = normalizeRepublishDraft(raw);
+    setSavedDrafts([]);
+    setQueue([draft]);
+    setSelectedIds(new Set([draft.id]));
+    setActiveId(draft.id);
+    const dismissId = window.setTimeout(() => dismissRepublishDraft(workspaceId), 0);
+    return () => window.clearTimeout(dismissId);
+  }, [workspaceId, republishFromNavigation]);
+
+  useEffect(() => {
+    if (prevWorkspaceIdRef.current === workspaceId) return;
+    prevWorkspaceIdRef.current = workspaceId;
+    if (peekRepublishDraft(workspaceId)) return;
+    setQueue([]);
+    setSavedDrafts([]);
+    setActiveId(null);
+    setSelectedIds(new Set());
+  }, [workspaceId]);
+
+  useEffect(() => {
+    setSelectedIds((cur) => {
+      const inQueue = new Set(queue.map((d) => d.id));
+      return new Set([...cur].filter((id) => inQueue.has(id)));
+    });
+  }, [queue]);
+
+  const addFiles = useCallback(
+    (files: FileList | File[]) => {
+      const arr = Array.from(files).map((f) => ({ name: f.name, sizeBytes: f.size }));
+      const created = arr.map((f) => defaultDraftFromFile(f, workspace.platforms));
+      setQueue((cur) => [...cur, ...created]);
+      setSelectedIds((cur) => {
+        const next = new Set(cur);
+        created.forEach((d) => next.add(d.id));
+        return next;
+      });
+      if (created[0]) setActiveId(created[0].id);
+    },
+    [workspace.platforms],
+  );
+
+  function handleFileInputChange(files: FileList | null, input: HTMLInputElement | null) {
+    if (files?.length) addFiles(files);
+    if (input) input.value = "";
   }
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
-  }, []);
+
+  function toggleSelect(id: string) {
+    setSelectedIds((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAllQueue() {
+    setSelectedIds(new Set(queue.map((d) => d.id)));
+  }
+
+  function applyBulkSchedule(result: BulkScheduleResult) {
+    setQueue((cur) =>
+      cur.map((d) => {
+        const times = result.byFile[d.id];
+        if (!times) return d;
+        return { ...d, proposedTimes: { ...(d.proposedTimes ?? {}), ...times } };
+      }),
+    );
+    setBulkScheduleOpen(false);
+  }
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
+    },
+    [workspace.platforms, addFiles],
+  );
+
   function updateDraft(id: string, next: DraftPost) {
-    setDrafts((cur) => cur.map((d) => (d.id === id ? next : d)));
+    setQueue((cur) => cur.map((d) => (d.id === id ? next : d)));
+    setSavedDrafts((cur) => cur.map((d) => (d.id === id ? { ...next, savedAt: d.savedAt } : d)));
   }
+
   function removeDraft(id: string) {
-    setDrafts((cur) => cur.filter((d) => d.id !== id));
+    setQueue((cur) => cur.filter((d) => d.id !== id));
+    setSavedDrafts((cur) => cur.filter((d) => d.id !== id));
+    setActiveId((current) => (current === id ? null : current));
   }
+
   function clearAll() {
-    setDrafts([]);
+    const count = queue.length + savedDrafts.length;
+    if (count > 0) {
+      const ok = window.confirm(
+        `Clear ${count} item${count === 1 ? "" : "s"} from the queue and draft zone? This cannot be undone.`,
+      );
+      if (!ok) return;
+    }
+    setQueue([]);
+    setSavedDrafts([]);
+    setActiveId(null);
+    setSelectedIds(new Set());
   }
-  function reorder(fromId: string, toId: string) {
+
+  function reorderQueue(fromId: string, toId: string) {
     if (fromId === toId) return;
-    setDrafts((cur) => {
+    setQueue((cur) => {
       const from = cur.findIndex((d) => d.id === fromId);
       const to = cur.findIndex((d) => d.id === toId);
       if (from === -1 || to === -1) return cur;
       const next = cur.slice();
       const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
+      next.splice(to, 0, moved!);
       return next;
     });
   }
+
   function addDemoSet() {
     const demo = [
       { name: "service_recap_w18.mp4", sizeBytes: 56 * 1024 * 1024 },
@@ -166,115 +250,333 @@ function SchedulerPage() {
       { name: "qa_segment_a.mp4", sizeBytes: 125 * 1024 * 1024 },
       { name: "quote_card_set.png", sizeBytes: 4.4 * 1024 * 1024 },
     ];
-    setDrafts((cur) => [...cur, ...demo.map(defaultDraftFromFile)]);
-  }
-
-  /**
-   * Generate an optimal per-platform schedule for every draft.
-   *  - Cards stagger by 1 day (so card #1 lands on anchor, #2 next day, etc.)
-   *  - For each platform on a card, pick the next future peak time
-   *  - Same-platform slots respect `cadenceGapHours` minimum spacing
-   *  - All times strictly in the future (>= NOW + 1 minute)
-   */
-  function generateSchedule() {
-    if (drafts.length === 0) return;
-    const minTime = new Date(NOW.getTime() + 60 * 1000);
-    // Track last slot used per platform so we can enforce the cadence gap.
-    const lastByPlatform: Partial<Record<Platform, Date>> = {};
-    const gapMs = Math.max(0, cadenceGapHours) * 60 * 60 * 1000;
-    const next = drafts.map((d, idx) => {
-      if (d.scheduled) return d;
-      const cardDay = new Date(anchor);
-      cardDay.setDate(cardDay.getDate() + idx);
-      const proposedTimes: Partial<Record<Platform, string>> = {};
-      const proposedReasons: Partial<Record<Platform, string>> = {};
-      d.platforms.forEach((p) => {
-        const lastSlot = lastByPlatform[p];
-        const platformFloor = lastSlot ? new Date(lastSlot.getTime() + gapMs) : minTime;
-        const lowerBound = platformFloor.getTime() > minTime.getTime() ? platformFloor : minTime;
-        const slot = nextPeakFor(p, lowerBound, cardDay);
-        const sameDay =
-          slot.getFullYear() === cardDay.getFullYear() &&
-          slot.getMonth() === cardDay.getMonth() &&
-          slot.getDate() === cardDay.getDate();
-        const wasGapShifted = lastSlot && slot.getTime() - lastSlot.getTime() < gapMs + 60_000;
-        proposedTimes[p] = slot.toISOString();
-        proposedReasons[p] = wasGapShifted
-          ? "gap_shifted"
-          : sameDay
-            ? "peak_window"
-            : "next_available_peak";
-        lastByPlatform[p] = slot;
-      });
-      return { ...d, proposedTimes, proposedReasons };
+    const created = demo.map((f) => defaultDraftFromFile(f, workspace.platforms));
+    setQueue((cur) => [...cur, ...created]);
+    setSelectedIds((cur) => {
+      const next = new Set(cur);
+      created.forEach((d) => next.add(d.id));
+      return next;
     });
-    setDrafts(next);
+    if (created[0]) setActiveId(created[0].id);
   }
 
-  // ─── Bulk actions ─────────────────────────────────────────────────────────
-  function matchCaptions() {
-    if (drafts.length < 2) return;
-    const src = drafts[0];
-    setDrafts((cur) =>
-      cur.map((d, i) =>
-        i === 0
-          ? d
-          : { ...d, caption: src.caption, hashtags: src.hashtags || d.hashtags },
-      ),
-    );
-  }
-  function applySamePlatforms() {
-    if (drafts.length < 2) return;
-    const src = drafts[0];
-    // Respect each card's format — only copy platforms that support it.
-    setDrafts((cur) =>
-      cur.map((d, i) => {
-        if (i === 0) return d;
-        const allowed = src.platforms.filter((p) => {
-          const meta = PLATFORMS_BY_SHORT[p];
-          return meta?.formats.includes(d.format);
-        });
-        return { ...d, platforms: allowed };
-      }),
-    );
-  }
-  function clearAllSchedules() {
-    setDrafts((cur) =>
-      cur.map((d) =>
-        d.scheduled ? d : { ...d, proposedTimes: undefined, proposedReasons: undefined },
-      ),
-    );
+  function saveToDraftZone(post: DraftPost) {
+    const saved: DraftPost = { ...post, savedAt: Date.now() };
+    setQueue((cur) => cur.filter((d) => d.id !== post.id));
+    setSavedDrafts((cur) => sortSavedDrafts([saved, ...cur.filter((d) => d.id !== post.id)]));
   }
 
-  function schedulePost(id: string) {
-    setDrafts((cur) => cur.map((d) => (d.id === id ? { ...d, scheduled: true } : d)));
-  }
-
-  // Map of "YYYY-MM-DD" → list of card position numbers, for the mini-calendar
-  const dayMarkers = useMemo(() => {
-    const map = new Map<string, number[]>();
-    drafts.forEach((d, idx) => {
-      if (!d.proposedTimes) return;
-      // Use the earliest proposed time of this card to mark its calendar day
-      const isos = Object.values(d.proposedTimes).filter(Boolean) as string[];
-      if (isos.length === 0) return;
-      const earliest = new Date(isos.sort()[0]);
-      const key = `${earliest.getFullYear()}-${earliest.getMonth()}-${earliest.getDate()}`;
-      const arr = map.get(key) ?? [];
-      arr.push(idx + 1);
-      map.set(key, arr);
+  function moveToQueue(post: DraftPost, insertBeforeId?: string) {
+    const { savedAt: _savedAt, ...rest } = post;
+    const revived: DraftPost = rest;
+    setSavedDrafts((cur) => cur.filter((d) => d.id !== post.id));
+    setQueue((cur) => {
+      if (!insertBeforeId) return [...cur, revived];
+      const idx = cur.findIndex((d) => d.id === insertBeforeId);
+      if (idx === -1) return [...cur, revived];
+      const next = cur.slice();
+      next.splice(idx, 0, revived);
+      return next;
     });
-    return map;
-  }, [drafts]);
+  }
 
-  const single = drafts.length === 1;
-  const empty = drafts.length === 0;
+  function reorderSavedDrafts(fromId: string, toId: string) {
+    if (fromId === toId) return;
+    setSavedDrafts((cur) => {
+      const from = cur.findIndex((d) => d.id === fromId);
+      const to = cur.findIndex((d) => d.id === toId);
+      if (from === -1 || to === -1) return cur;
+      const next = cur.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved!);
+      return next;
+    });
+  }
+
+  function bumpDraftToTop(id: string) {
+    setSavedDrafts((cur) => {
+      const post = cur.find((d) => d.id === id);
+      if (!post) return cur;
+      return [post, ...cur.filter((d) => d.id !== id)];
+    });
+  }
+
+  function readDragId(e: React.DragEvent): { kind: "queue" | "draft"; id: string } | null {
+    const draftId = e.dataTransfer.getData(DRAFT_DRAG_TYPE);
+    if (draftId) return { kind: "draft", id: draftId };
+    const queueId = e.dataTransfer.getData(QUEUE_DRAG_TYPE) || e.dataTransfer.getData("text/plain");
+    if (queueId) return { kind: "queue", id: queueId };
+    return null;
+  }
+
+  function handleDraftZoneDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDraftZoneActive(false);
+    setDraggingId(null);
+    const drag = readDragId(e);
+    if (!drag) return;
+    if (drag.kind === "queue") {
+      const post = queue.find((d) => d.id === drag.id);
+      if (post) saveToDraftZone(post);
+      return;
+    }
+    bumpDraftToTop(drag.id);
+  }
+
+  function handleQueueZoneDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setQueueZoneActive(false);
+    setDraggingId(null);
+    const drag = readDragId(e);
+    if (!drag || drag.kind !== "draft") return;
+    const post = savedDrafts.find((d) => d.id === drag.id);
+    if (post) moveToQueue(post);
+  }
+
+  function clearDragState() {
+    setDraggingId(null);
+    setDraftZoneActive(false);
+    setQueueZoneActive(false);
+  }
+
+  function applyPendingSchedule() {
+    const posts = readyToApply
+      .map((d) => draftToScheduledPost(d))
+      .filter((p): p is NonNullable<typeof p> => p != null);
+    if (posts.length === 0) return;
+    addScheduledPosts(posts);
+    const appliedIds = new Set(posts.map((p) => p.id));
+    setQueue((cur) => cur.filter((d) => !appliedIds.has(d.id)));
+    setSelectedIds((cur) => {
+      const next = new Set(cur);
+      appliedIds.forEach((id) => next.delete(id));
+      return next;
+    });
+    setActiveId((cur) => (cur && appliedIds.has(cur) ? null : cur));
+  }
+
+  useEffect(() => {
+    if (allPosts.length === 0) {
+      setActiveId(null);
+      return;
+    }
+    if (!activeId || !allPosts.some((d) => d.id === activeId)) {
+      setActiveId(queue[0]?.id ?? savedDrafts[0]?.id ?? null);
+    }
+  }, [allPosts, queue, savedDrafts, activeId]);
+
+  const activeDraft = useMemo(
+    () => allPosts.find((d) => d.id === activeId) ?? queue[0] ?? savedDrafts[0],
+    [allPosts, queue, savedDrafts, activeId],
+  );
+  const activeIndex = activeDraft ? allPosts.findIndex((d) => d.id === activeDraft.id) + 1 : 0;
+  const activeInDraftZone = activeDraft ? savedDrafts.some((d) => d.id === activeDraft.id) : false;
+
+  const empty = allPosts.length === 0;
+
+  const queueDragHandlers = (postId: string) => ({
+    draggable: true,
+    onDragStart: (e: React.DragEvent) => {
+      setDraggingId(postId);
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData(QUEUE_DRAG_TYPE, postId);
+      e.dataTransfer.setData("text/plain", postId);
+    },
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    },
+    onDragEnd: clearDragState,
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const drag = readDragId(e);
+      if (!drag) return;
+      if (drag.kind === "draft") {
+        const post = savedDrafts.find((d) => d.id === drag.id);
+        if (post) moveToQueue(post, postId);
+      } else if (drag.id !== postId) {
+        reorderQueue(drag.id, postId);
+      }
+      clearDragState();
+    },
+  });
+
+  const draftDragHandlers = (postId: string) => ({
+    draggable: true,
+    onDragStart: (e: React.DragEvent) => {
+      setDraggingId(postId);
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData(DRAFT_DRAG_TYPE, postId);
+      e.dataTransfer.setData("text/plain", postId);
+    },
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    },
+    onDragEnd: clearDragState,
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const drag = readDragId(e);
+      if (!drag) return;
+      if (drag.kind === "queue") {
+        const post = queue.find((d) => d.id === drag.id);
+        if (post) saveToDraftZone(post);
+      } else if (drag.id !== postId) {
+        reorderSavedDrafts(drag.id, postId);
+      }
+      clearDragState();
+    },
+  });
 
   return (
     <div className="flex h-full overflow-hidden">
-      {/* Main column */}
-      <div className="flex-1 overflow-y-auto pb-20">
+      {hasSidebar && (
+        <aside
+          data-testid="content-queue"
+          className="flex h-full w-[300px] shrink-0 flex-col border-r border-border bg-surface"
+        >
+          <div className="border-b border-border px-4 py-4">
+            <div className="label-mono text-muted-foreground">unique_content</div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {queue.length} potential · {savedDrafts.length} draft{savedDrafts.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <div className="border-b border-border px-4 py-3">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => queueFileInput.current?.click()}
+                data-testid="queue-add-files-btn"
+                className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-dashed border-border bg-background/40 px-3 py-2.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-accent/60 hover:bg-secondary/30 hover:text-foreground"
+              >
+                <Upload className="h-3 w-3" strokeWidth={1.5} />
+                Add
+              </button>
+              <button
+                type="button"
+                onClick={clearAll}
+                data-testid="clear-all-btn"
+                className="rounded-sm border border-border bg-background/40 px-3 py-2.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                Clear
+              </button>
+            </div>
+            {queue.length > 0 ? (
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBulkScheduleOpen(true)}
+                  disabled={bulkScheduleFiles.length === 0}
+                  data-testid="bulk-schedule-btn"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-accent/60 bg-accent/10 px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+                >
+                  <CalendarClock className="h-3 w-3" strokeWidth={1.75} />
+                  Schedule ({bulkScheduleFiles.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={selectAllQueue}
+                  data-testid="select-all-queue-btn"
+                  className="rounded-sm border border-border bg-background/40 px-2 py-2 text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground hover:bg-secondary hover:text-foreground"
+                >
+                  All
+                </button>
+              </div>
+            ) : null}
+            <input
+              ref={queueFileInput}
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={(e) => handleFileInputChange(e.target.files, e.target)}
+            />
+          </div>
+
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div
+              data-testid="potential-posts-zone"
+              className="flex min-h-0 flex-1 flex-col border-b border-border"
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes(DRAFT_DRAG_TYPE)) {
+                  e.preventDefault();
+                  setQueueZoneActive(true);
+                }
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setQueueZoneActive(false);
+              }}
+              onDrop={handleQueueZoneDrop}
+            >
+              <div className="border-b border-border/60 px-4 py-2">
+                <div className="label-mono text-[0.55rem] text-muted-foreground">potential_posts</div>
+              </div>
+              <div className="flex-1 space-y-2 overflow-y-auto p-3">
+                <PotentialPostsDropStencil active={queueZoneActive} />
+                {queue.map((d, idx) => (
+                  <ContentQueueItem
+                    key={d.id}
+                    post={d}
+                    index={idx + 1}
+                    active={d.id === activeDraft?.id}
+                    onSelect={() => setActiveId(d.id)}
+                    isDragging={draggingId === d.id}
+                    dragHandlers={queueDragHandlers(d.id)}
+                    selectable
+                    selected={selectedIds.has(d.id)}
+                    onToggleSelect={() => toggleSelect(d.id)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div
+              data-testid="draft-dropzone"
+              className="flex min-h-[42%] flex-col bg-background/20"
+              onDragOver={(e) => {
+                if (
+                  e.dataTransfer.types.includes(QUEUE_DRAG_TYPE) ||
+                  e.dataTransfer.types.includes(DRAFT_DRAG_TYPE) ||
+                  e.dataTransfer.types.includes("text/plain")
+                ) {
+                  e.preventDefault();
+                  setDraftZoneActive(true);
+                }
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setDraftZoneActive(false);
+              }}
+              onDrop={handleDraftZoneDrop}
+            >
+              <div className="border-b border-border/60 px-4 py-2">
+                <div className="label-mono text-[0.55rem] text-muted-foreground">draft_dropzone</div>
+              </div>
+              <div className="flex-1 space-y-2 overflow-y-auto p-3">
+                <DraftDropStencil active={draftZoneActive} />
+                {savedDrafts.map((d, idx) => (
+                  <ContentQueueItem
+                    key={d.id}
+                    post={d}
+                    index={idx + 1}
+                    active={d.id === activeDraft?.id}
+                    onSelect={() => setActiveId(d.id)}
+                    isDragging={draggingId === d.id}
+                    dragHandlers={draftDragHandlers(d.id)}
+                    variant="draft"
+                    savedAt={d.savedAt}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </aside>
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <PageHeader
+          eyebrow={<WorkspaceEyebrow />}
           title="New Post"
           actions={
             <>
@@ -282,498 +584,100 @@ function SchedulerPage() {
                 className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
                 data-testid="status-pill"
               >
-                Status:{" "}
-                {empty
-                  ? "Empty"
-                  : scheduledCount === drafts.length
-                    ? "All_Scheduled"
-                    : generatedCount > 0
-                      ? "Generated"
-                      : "Draft"}
+                {empty ? "Empty" : `${queue.length} in_queue`}
               </span>
-              <button
-                type="button"
-                data-testid="save-all-drafts-btn"
-                disabled={empty}
-                className="flex items-center gap-2 rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] hover:bg-secondary disabled:opacity-50"
-              >
-                <Save className="h-3 w-3" /> Save_All_Drafts
-              </button>
+              <NewEventPostActions showPostLink={false} />
             </>
           }
         />
 
-        <div className="px-10 pt-8">
-          {/* Breadcrumb */}
-          <div className="label-mono mb-3">
-            bulk_upload · {drafts.length}_files · {generatedCount}_generated · {scheduledCount}_scheduled
-          </div>
-
-          {/* Dropzone */}
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={onDrop}
-            onClick={() => fileInput.current?.click()}
-            data-testid="dropzone"
-            className={`flex cursor-pointer items-center justify-between rounded-sm border border-dashed bg-surface px-5 py-4 transition-colors ${
-              isDragging ? "border-accent bg-accent/5" : "border-border hover:bg-secondary/30"
-            }`}
-          >
-            <div className="flex items-center gap-3 text-muted-foreground">
-              <Upload className="h-4 w-4" strokeWidth={1.5} />
-              <span className="label-mono">drop_or_select_files</span>
-              <span className="font-mono text-[0.6rem] uppercase tracking-wide">mp4 · mov · jpg · png</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  addDemoSet();
-                }}
-                data-testid="add-demo-set-btn"
-                className="rounded-sm border border-border bg-background/60 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary"
-              >
-                Add_Demo_Set
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  clearAll();
-                }}
-                data-testid="clear-all-btn"
-                disabled={empty}
-                className="rounded-sm border border-border bg-background/60 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary disabled:opacity-50"
-              >
-                Clear
-              </button>
-            </div>
-            <input
-              ref={fileInput}
-              type="file"
-              multiple
-              accept="image/*,video/*"
-              className="hidden"
-              onChange={(e) => e.target.files && addFiles(e.target.files)}
-            />
-          </div>
-
-          {/* Cards grid */}
-          {empty ? (
-            <EmptyState onAddDemo={addDemoSet} />
-          ) : (
-            <div
-              className={`mt-6 grid gap-6 ${
-                single ? "grid-cols-1 max-w-3xl" : "grid-cols-1 xl:grid-cols-2"
-              }`}
-            >
-              {drafts.map((d, idx) => (
-                <ComposerCard
-                  key={d.id}
-                  index={idx + 1}
-                  post={d}
-                  onChange={(next) => updateDraft(d.id, next)}
-                  onRemove={() => removeDraft(d.id)}
-                  onSaveDraft={() => {/* persistence not wired */}}
-                  onSchedulePost={() => schedulePost(d.id)}
-                  expanded={single}
-                  isDragging={draggingId === d.id}
-                  dragHandlers={
-                    single
-                      ? undefined
-                      : {
-                          draggable: true,
-                          onDragStart: (e) => {
-                            setDraggingId(d.id);
-                            e.dataTransfer.effectAllowed = "move";
-                            e.dataTransfer.setData("text/plain", d.id);
-                          },
-                          onDragOver: (e) => {
-                            e.preventDefault();
-                            e.dataTransfer.dropEffect = "move";
-                          },
-                          onDragEnd: () => setDraggingId(null),
-                          onDrop: (e) => {
-                            e.preventDefault();
-                            const fromId = e.dataTransfer.getData("text/plain");
-                            if (fromId) reorder(fromId, d.id);
-                            setDraggingId(null);
-                          },
-                        }
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Right rail — Calendar + Generate */}
-      <aside
-        data-testid="schedule-rail"
-        className="hidden h-full w-[360px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface lg:flex"
-      >
-        <div className="border-b border-border px-5 py-4">
-          <div className="label-mono mb-1">anchor_day</div>
-          <p className="text-xs text-muted-foreground">
-            Tap a future day. Card #1 lands here; subsequent cards stagger forward.
-          </p>
-        </div>
-
-        <div className="border-b border-border px-5 py-4">
-          <MiniMonth
-            value={anchor}
-            onChange={setAnchor}
-            now={NOW}
-            markers={dayMarkers}
-          />
-        </div>
-
-        {/* Primary generate button */}
-        <div className="border-b border-border px-5 py-4">
-          <button
-            type="button"
-            disabled={empty}
-            onClick={generateSchedule}
-            data-testid="generate-schedule-btn"
-            className="flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-3 py-3 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            <Wand2 className="h-3 w-3" /> Generate_Optimal_Schedule
-          </button>
-          <p className="label-mono mt-2 leading-relaxed normal-case tracking-normal text-muted-foreground/80">
-            Suggests the best future peak time per platform for every card. Review &amp; tweak inside each card, then hit Schedule_Post.
-          </p>
-        </div>
-
-        {/* Audience timezone */}
-        <div className="border-b border-border px-5 py-4">
-          <div className="mb-2 flex items-center gap-2">
-            <Globe2 className="h-3 w-3 text-muted-foreground" />
-            <span className="label-mono">audience_timezone</span>
-          </div>
-          <select
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-            data-testid="timezone-select"
-            className="w-full rounded-sm border border-border bg-background/60 px-2 py-2 font-mono text-[0.65rem] text-foreground focus:border-accent focus:outline-none"
-          >
-            {TIMEZONES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-          <p className="label-mono mt-2 leading-relaxed normal-case tracking-normal text-muted-foreground/80">
-            Peaks are computed against this audience clock so the wave of engagement is real, not local.
-          </p>
-        </div>
-
-        {/* Cadence guardrails */}
-        <div className="border-b border-border px-5 py-4">
-          <div className="mb-2 flex items-center gap-2">
-            <Timer className="h-3 w-3 text-muted-foreground" />
-            <span className="label-mono">cadence_guardrails</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[0.65rem] text-muted-foreground">min_gap</span>
-            <input
-              type="number"
-              min={0}
-              max={48}
-              value={cadenceGapHours}
-              onChange={(e) =>
-                setCadenceGapHours(Math.max(0, Math.min(48, parseInt(e.target.value, 10) || 0)))
-              }
-              data-testid="cadence-gap-input"
-              aria-label="minimum hours between same-platform posts"
-              className="w-14 rounded-sm border border-border bg-background/60 px-2 py-1.5 text-center font-mono text-[0.65rem] text-foreground focus:border-accent focus:outline-none"
-            />
-            <span className="label-mono">hours · same_platform</span>
-          </div>
-          <p className="label-mono mt-2 leading-relaxed normal-case tracking-normal text-muted-foreground/80">
-            Stops the generator from stacking two TikToks at 07:45 and 08:00 across cards.
-          </p>
-        </div>
-
-        {/* Bulk actions */}
-        <div className="border-b border-border px-5 py-4">
-          <div className="mb-2 flex items-center gap-2">
-            <Layers className="h-3 w-3 text-muted-foreground" />
-            <span className="label-mono">bulk_actions</span>
-          </div>
-          <div className="grid grid-cols-1 gap-1.5">
-            <button
-              type="button"
-              onClick={matchCaptions}
-              disabled={drafts.length < 2}
-              data-testid="bulk-match-captions"
-              className="flex items-center justify-between gap-2 rounded-sm border border-border bg-background/60 px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
-              title="Copy card #1's caption + hashtags to all others"
-            >
-              <span>Match_Captions</span>
-              <span className="label-mono text-muted-foreground/70">#1→rest</span>
-            </button>
-            <button
-              type="button"
-              onClick={applySamePlatforms}
-              disabled={drafts.length < 2}
-              data-testid="bulk-apply-platforms"
-              className="flex items-center justify-between gap-2 rounded-sm border border-border bg-background/60 px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
-              title="Broadcast card #1's target platforms to all others (format-aware)"
-            >
-              <span>Apply_Same_Platforms</span>
-              <span className="label-mono text-muted-foreground/70">#1→rest</span>
-            </button>
-            <button
-              type="button"
-              onClick={clearAllSchedules}
-              disabled={generatedCount === 0}
-              data-testid="bulk-clear-schedules"
-              className="flex items-center justify-between gap-2 rounded-sm border border-border bg-background/60 px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
-              title="Wipe all proposed times so you can regenerate from a new anchor"
-            >
-              <span>Clear_All_Schedules</span>
-              <span className="label-mono text-muted-foreground/70">wipe_times</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Schedule summary list — numbered, sticky reference */}
-        <div className="px-5 py-4">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="label-mono">cards · numbered</span>
-            <span className="font-mono text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-              {drafts.length}_cards
-            </span>
-          </div>
-          {drafts.length === 0 ? (
-            <div className="label-mono text-muted-foreground/60">no_cards_yet</div>
-          ) : (
-            <ol className="space-y-1.5">
-              {drafts.map((d, idx) => {
-                const isos = d.proposedTimes ? (Object.values(d.proposedTimes).filter(Boolean) as string[]) : [];
-                const earliest = isos.length ? new Date(isos.sort()[0]) : undefined;
-                return (
-                  <li
-                    key={d.id}
-                    data-testid={`rail-card-${idx + 1}`}
-                    className={`flex items-center justify-between gap-2 rounded-sm border bg-background/60 px-2.5 py-1.5 ${
-                      d.scheduled ? "border-success/60" : "border-border"
-                    }`}
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-foreground font-mono text-[0.6rem] font-semibold text-background">
-                        {idx + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="truncate text-[0.65rem] text-foreground">{d.filename}</div>
-                        {earliest ? (
-                          <div className="label-mono mt-0.5 text-[0.5rem] text-accent">
-                            {earliest.toLocaleString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: false,
-                            })}
-                          </div>
-                        ) : (
-                          <div className="label-mono mt-0.5 text-[0.5rem] text-muted-foreground/60">
-                            not_generated
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {d.scheduled && <CheckCircle2 className="h-3 w-3 shrink-0 text-success" />}
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-
-function EmptyState({ onAddDemo }: { onAddDemo: () => void }) {
-  return (
-    <div
-      data-testid="scheduler-empty"
-      className="mt-10 flex flex-col items-center justify-center gap-4 rounded-sm border border-dashed border-border bg-surface/40 px-6 py-16 text-center"
-    >
-      <div className="flex gap-2 text-muted-foreground">
-        <ImageIcon className="h-6 w-6" strokeWidth={1.3} />
-        <FileVideo className="h-6 w-6" strokeWidth={1.3} />
-      </div>
-      <div className="display-mono text-lg text-foreground">No assets yet</div>
-      <p className="max-w-md text-xs leading-relaxed text-muted-foreground">
-        Drop one or many files above. Single post or 50, the editor scales — each asset becomes its own numbered card. Pick an anchor day on the right and tap{" "}
-        <span className="text-foreground">Generate_Optimal_Schedule</span> to get per-platform peak suggestions.
-      </p>
-      <button
-        type="button"
-        onClick={onAddDemo}
-        data-testid="empty-add-demo-btn"
-        className="rounded-sm border border-border bg-background/60 px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary"
-      >
-        + Add_Demo_Set
-      </button>
-    </div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-
-function MiniMonth({
-  value,
-  onChange,
-  now,
-  markers,
-}: {
-  value: Date;
-  onChange: (d: Date) => void;
-  /** Anchor for "today" + minimum selectable day */
-  now: Date;
-  /** Map of "YYYY-M-D" → array of card position numbers to render in the day cell */
-  markers: Map<string, number[]>;
-}) {
-  const [view, setView] = useState(new Date(value.getFullYear(), value.getMonth(), 1));
-  const dow = ["m", "t", "w", "t", "f", "s", "s"];
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const cells: { d: number; muted: boolean; date: Date; past: boolean; isToday: boolean }[] = [];
-  const first = new Date(view.getFullYear(), view.getMonth(), 1);
-  const startDow = (first.getDay() + 6) % 7; // Monday-start
-  const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
-  const daysInPrev = new Date(view.getFullYear(), view.getMonth(), 0).getDate();
-
-  function push(d: number, monthDelta: number, muted: boolean) {
-    const date = new Date(view.getFullYear(), view.getMonth() + monthDelta, d);
-    const past = date.getTime() < today.getTime();
-    const isToday =
-      date.getFullYear() === today.getFullYear() &&
-      date.getMonth() === today.getMonth() &&
-      date.getDate() === today.getDate();
-    cells.push({ d, muted, date, past, isToday });
-  }
-  for (let i = startDow - 1; i >= 0; i--) push(daysInPrev - i, -1, true);
-  for (let d = 1; d <= daysInMonth; d++) push(d, 0, false);
-  let n = 1;
-  while (cells.length % 7 !== 0) push(n++, 1, true);
-
-  function shift(delta: number) {
-    setView((v) => new Date(v.getFullYear(), v.getMonth() + delta, 1));
-  }
-
-  const isSel = (d: Date) =>
-    d.getFullYear() === value.getFullYear() && d.getMonth() === value.getMonth() && d.getDate() === value.getDate();
-
-  return (
-    <div>
-      <div className="mb-2 flex items-center justify-between">
-        <button
-          type="button"
-          aria-label="prev month"
-          onClick={() => shift(-1)}
-          data-testid="mini-prev-month"
-          className="rounded-sm border border-border bg-background/40 p-1 text-foreground hover:bg-secondary"
-        >
-          <ChevronLeft className="h-3 w-3" />
-        </button>
-        <span className="display-mono text-xs uppercase tracking-[0.06em]">
-          {view.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-        </span>
-        <button
-          type="button"
-          aria-label="next month"
-          onClick={() => shift(1)}
-          data-testid="mini-next-month"
-          className="rounded-sm border border-border bg-background/40 p-1 text-foreground hover:bg-secondary"
-        >
-          <ChevronRight className="h-3 w-3" />
-        </button>
-      </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-[0.5rem] uppercase tracking-[0.14em] text-muted-foreground">
-        {dow.map((d, i) => (
-          <div key={i}>{d}</div>
-        ))}
-      </div>
-      <div className="mt-1 grid grid-cols-7 gap-1">
-        {cells.map((c, i) => {
-          const key = `${c.date.getFullYear()}-${c.date.getMonth()}-${c.date.getDate()}`;
-          const cardNumbers = markers.get(key);
-          const disabled = c.past;
-          const selected = !disabled && isSel(c.date);
-          return (
-            <button
-              key={i}
-              type="button"
-              disabled={disabled}
-              onClick={() => !disabled && onChange(c.date)}
-              data-testid={disabled ? undefined : `mini-day-${c.date.getMonth() + 1}-${c.d}`}
-              title={c.date.toDateString()}
-              className={`relative flex aspect-square flex-col items-center justify-center rounded-sm text-[0.6rem] transition-colors ${
-                disabled
-                  ? "cursor-not-allowed text-muted-foreground/25"
-                  : c.muted
-                    ? "text-muted-foreground/40 hover:bg-secondary/40"
-                    : selected
-                      ? "bg-accent text-accent-foreground font-semibold"
-                      : c.isToday
-                        ? "border border-accent/60 text-foreground hover:bg-secondary"
-                        : "text-foreground hover:bg-secondary"
-              }`}
-            >
-              <span>{c.d}</span>
-              {cardNumbers && cardNumbers.length > 0 && (
-                <span
-                  className={`mt-0.5 flex flex-wrap items-center justify-center gap-0.5 leading-none ${
-                    selected ? "text-accent-foreground" : "text-accent"
+        <div className="flex-1 overflow-y-auto">
+          <div className={empty ? "page-content" : "px-8 py-6"}>
+            {empty ? (
+              <>
+                <p className="mb-6 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                  Each upload is one content card on your calendar, even when you post the same file to several platforms. Add files, pick networks, write copy, and set publish times per platform.
+                </p>
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={onDrop}
+                  onClick={() => fileInput.current?.click()}
+                  data-testid="dropzone"
+                  className={`flex cursor-pointer flex-col items-center justify-center gap-4 rounded-sm border border-dashed bg-surface px-8 py-14 transition-colors ${
+                    isDragging ? "border-accent bg-accent/5" : "border-border hover:bg-secondary/30"
                   }`}
                 >
-                  {cardNumbers.slice(0, 3).map((n, idx) => (
-                    <span
-                      key={idx}
-                      className={`inline-flex h-3 min-w-3 items-center justify-center rounded-full px-0.5 font-mono text-[0.5rem] font-semibold ${
-                        selected ? "bg-accent-foreground text-accent" : "bg-foreground text-background"
-                      }`}
-                    >
-                      {n}
-                    </span>
-                  ))}
-                  {cardNumbers.length > 3 && (
-                    <span className="font-mono text-[0.45rem]">+{cardNumbers.length - 3}</span>
-                  )}
-                </span>
-              )}
-            </button>
-          );
-        })}
+                  <Upload className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+                  <div className="text-center">
+                    <div className="display-mono text-sm text-foreground">Drop files to start</div>
+                    <p className="mt-2 font-mono text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+                      mp4 · mov · jpg · png
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addDemoSet();
+                    }}
+                    data-testid="add-demo-set-btn"
+                    className="rounded-sm border border-border bg-background/60 px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary"
+                  >
+                    Add_Demo_Set
+                  </button>
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(e) => handleFileInputChange(e.target.files, e.target)}
+                  />
+                </div>
+              </>
+            ) : activeDraft ? (
+              <div className="mx-auto max-w-3xl">
+                <p className="label-mono mb-4 text-muted-foreground">
+                  card {activeIndex} of {allPosts.length}
+                  {activeInDraftZone ? " · in_draft_zone" : " · potential"}
+                </p>
+                <ComposerCard
+                  key={activeDraft.id}
+                  index={activeIndex}
+                  post={activeDraft}
+                  focused
+                  onChange={(next) => updateDraft(activeDraft.id, next)}
+                  onRemove={() => removeDraft(activeDraft.id)}
+                  onSaveDraft={() => saveToDraftZone(activeDraft)}
+                  expanded
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
-      <div className="mt-2 flex items-center gap-3 text-[0.5rem] uppercase tracking-[0.14em] text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-sm bg-accent" />
-          anchor
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-sm border border-accent/60" />
-          today
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-flex h-3 w-3 items-center justify-center rounded-full bg-foreground text-[0.5rem] font-semibold text-background">
-            1
-          </span>
-          card
-        </span>
-      </div>
+
+      <ScheduleWeekPanel
+        queue={queue}
+        scheduledPosts={workspace.scheduledPosts}
+        activeFileId={activeDraft?.id}
+        readyCount={readyToApply.length}
+        onSelectFile={setActiveId}
+        onApply={applyPendingSchedule}
+      />
+
+      {bulkScheduleOpen ? (
+        <BulkScheduleModal
+          files={bulkScheduleFiles}
+          scheduledPosts={workspace.scheduledPosts}
+          onClose={() => setBulkScheduleOpen(false)}
+          onApprove={applyBulkSchedule}
+        />
+      ) : null}
     </div>
   );
 }

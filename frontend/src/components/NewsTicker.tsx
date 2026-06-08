@@ -48,10 +48,10 @@ export function NewsTicker() {
   return (
     <div
       data-testid="news-ticker"
-      className="relative flex h-8 w-full shrink-0 items-stretch overflow-hidden border-b border-border bg-surface text-foreground"
+      className="relative flex h-9 w-full shrink-0 items-stretch overflow-hidden border-b border-border bg-surface text-foreground"
     >
       {/* Source label */}
-      <div className="z-10 flex shrink-0 items-center gap-2 border-r border-border bg-background/80 px-3 backdrop-blur">
+      <div className="z-10 flex shrink-0 items-center gap-2.5 border-r border-border bg-background/80 px-4 backdrop-blur">
         <span className="relative flex h-2 w-2">
           <span className="absolute inset-0 animate-ping rounded-full bg-accent/80" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />

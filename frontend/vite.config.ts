@@ -9,6 +9,10 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
+  // Nitro bundles the SSR app for Vercel (or Cloudflare via NITRO_PRESET).
+  nitro: {
+    preset: process.env.NITRO_PRESET ?? "vercel",
+  },
   tanstackStart: {
     server: { entry: "server" },
   },
@@ -18,9 +22,11 @@ export default defineConfig({
       port: 3000,
       strictPort: true,
       allowedHosts: true,
-      hmr: {
-        clientPort: 443,
-        protocol: "wss",
+      proxy: {
+        "/api": {
+          target: "http://127.0.0.1:8001",
+          changeOrigin: true,
+        },
       },
     },
   },
