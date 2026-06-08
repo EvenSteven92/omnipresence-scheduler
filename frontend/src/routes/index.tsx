@@ -46,6 +46,7 @@ import { TopPerformerCard } from "@/components/post/TopPerformerCard";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import { PlatformChip } from "@/components/post/PlatformChip";
 import { useMemo, useState } from "react";
+import { useYouTubeMetrics, youtubeVideosToPublishedPosts } from "@/hooks/useYouTubeMetrics";
 import { AddPlatformStencilCard } from "@/components/AddPlatformStencilCard";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { TopEventPerformersSection } from "@/components/events/TopEventPerformersSection";
@@ -76,11 +77,26 @@ function DashboardPage() {
   const { workspace } = useWorkspace();
   const [timeframe, setTimeframe] = useState<Timeframe>({ kind: "preset", preset: "1m" });
   const { scheduledPosts, publishedPosts, platformConnections } = workspace;
+  const { data: youtubeMetrics } = useYouTubeMetrics(workspace.id);
   const metrics = useMemo(() => getMetrics(timeframe, workspace), [timeframe, workspace]);
-  const growthRows = useMemo(
-    () => getGrowthMatrixForTimeframe(timeframe, workspace),
-    [timeframe, workspace],
-  );
+  const growthRows = useMemo(() => {
+    const rows = getGrowthMatrixForTimeframe(timeframe, workspace);
+    if (!youtubeMetrics?.connected || youtubeMetrics.videos.length === 0) return rows;
+    const views = youtubeMetrics.videos.reduce((sum, v) => sum + v.views, 0);
+    const likes = youtubeMetrics.videos.reduce((sum, v) => sum + v.likes, 0);
+    const shares = youtubeMetrics.videos.reduce((sum, v) => sum + v.comments, 0);
+    return rows.map((row) =>
+      row.platform === "YT" ? { ...row, views, likes, shares } : row,
+    );
+  }, [timeframe, workspace, youtubeMetrics]);
+  const livePublishedPosts = useMemo(() => {
+    if (!youtubeMetrics?.connected || youtubeMetrics.videos.length === 0) {
+      return publishedPosts;
+    }
+    const liveYt = youtubeVideosToPublishedPosts(youtubeMetrics.videos);
+    const mockNonYt = publishedPosts.filter((p) => !p.platforms.includes("YT"));
+    return [...liveYt, ...mockNonYt];
+  }, [publishedPosts, youtubeMetrics]);
   const allTime = isAllTime(timeframe);
 
   return (
@@ -105,6 +121,7 @@ function DashboardPage() {
           {allTime
             ? "lifetime totals · no period comparison"
             : `vs prior ${timeframeLabel(timeframe)} · % change reflects same-length prior window`}
+          {youtubeMetrics?.connected ? " · YouTube row + top performers use live synced data" : ""}
         </p>
 
         {/* Metric cards */}
@@ -142,7 +159,7 @@ function DashboardPage() {
         <UpcomingSection />
 
         {/* Top performers */}
-        <TopPerformersSection publishedPosts={publishedPosts} timeframe={timeframe} />
+        <TopPerformersSection publishedPosts={livePublishedPosts} timeframe={timeframe} />
 
         <TopEventPerformersSection timeframe={timeframe} />
 

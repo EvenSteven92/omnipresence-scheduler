@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { ConnectPlatformSection } from "@/components/ConnectPlatformSection";
+import { TeamAccessGate } from "@/components/TeamAccessGate";
 import { useWorkspace } from "@/lib/workspace-context";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import { PlatformChip } from "@/components/post/PlatformChip";
@@ -30,10 +31,23 @@ export const Route = createFileRoute("/workspaces")({
 
 function WorkspacesPage() {
   const { workspace, workspaces, setWorkspaceId } = useWorkspace();
+  const [teamAuthed, setTeamAuthed] = useState(
+    () => typeof window !== "undefined" && sessionStorage.getItem("team_authed") === "1",
+  );
+  const [banner, setBanner] = useState<string | null>(null);
 
   useEffect(() => {
     if (window.location.hash === "#connect-platform") {
       document.getElementById("connect-platform")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    const params = new URLSearchParams(window.location.search);
+    const youtube = params.get("youtube");
+    if (youtube === "connected") {
+      setBanner("YouTube connected. Live metrics will appear on the dashboard after sync.");
+    } else if (youtube === "denied") {
+      setBanner("YouTube connect was cancelled.");
+    } else if (youtube === "error") {
+      setBanner(params.get("message") ?? "YouTube connect failed.");
     }
   }, []);
 
@@ -62,7 +76,22 @@ function WorkspacesPage() {
           </p>
         </div>
 
-        <ConnectPlatformSection workspace={workspace} />
+        {banner ? (
+          <div className="panel border border-accent/30 bg-accent/5 p-4 text-sm text-foreground">
+            {banner}
+          </div>
+        ) : null}
+
+        {!teamAuthed ? (
+          <TeamAccessGate
+            onAuthed={() => {
+              sessionStorage.setItem("team_authed", "1");
+              setTeamAuthed(true);
+            }}
+          />
+        ) : null}
+
+        <ConnectPlatformSection workspace={workspace} teamAuthed={teamAuthed} />
 
         <section className="section-block space-y-4">
           <div className="label-mono">your_workspaces · {workspaces.length}</div>
