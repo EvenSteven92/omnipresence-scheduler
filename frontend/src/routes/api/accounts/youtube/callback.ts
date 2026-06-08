@@ -4,7 +4,6 @@ import { getAppBaseUrl } from "@/server/youtube/config";
 import {
   clearOAuthStateCookie,
   exchangeYouTubeCode,
-  readOAuthStateCookie,
   verifyOAuthState,
 } from "@/server/youtube/oauth";
 import { fetchMyChannel } from "@/server/youtube/api";
@@ -36,14 +35,10 @@ export const Route = createFileRoute("/api/accounts/youtube/callback")({
           return Response.json({ detail: "Missing OAuth code or state" }, { status: 400 });
         }
 
-        const cookieState = readOAuthStateCookie(request);
-        if (!cookieState || cookieState !== state) {
-          return Response.json({ detail: "Invalid OAuth state" }, { status: 400 });
-        }
-
+        // State is HMAC-signed — no cookie required (cookies often drop on Google redirect).
         const parsedState = verifyOAuthState(state);
         if (!parsedState) {
-          return Response.json({ detail: "Invalid OAuth state signature" }, { status: 400 });
+          return Response.json({ detail: "Invalid OAuth state" }, { status: 400 });
         }
 
         try {
