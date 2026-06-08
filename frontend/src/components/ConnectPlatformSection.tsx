@@ -4,7 +4,10 @@ import { PLATFORMS, PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import { PlatformChip } from "@/components/post/PlatformChip";
 import type { WorkspaceProfile } from "@/lib/workspaces/types";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
+import type { Platform } from "@/lib/mock-data";
 import { Link2, RefreshCw } from "lucide-react";
+
+const META_PLATFORMS = new Set<Platform>(["FB", "IG"]);
 
 export function ConnectPlatformSection({
   workspace,
@@ -18,8 +21,12 @@ export function ConnectPlatformSection({
   const queryClient = useQueryClient();
   const { data: accountStatus, refetch } = usePlatformConnections(workspace.id);
   const youtubeConnected = accountStatus?.youtube.connected ?? false;
-  const livePlatforms = new Set(accountStatus?.livePlatforms ?? ["YT"]);
-  const [syncing, setSyncing] = useState(false);
+  const metaFacebookConnected = accountStatus?.meta.facebook.connected ?? false;
+  const metaInstagramConnected = accountStatus?.meta.instagram.connected ?? false;
+  const metaConnected = metaFacebookConnected || metaInstagramConnected;
+  const livePlatforms = new Set(accountStatus?.livePlatforms ?? ["YT", "FB", "IG"]);
+  const [syncingYouTube, setSyncingYouTube] = useState(false);
+  const [syncingMeta, setSyncingMeta] = useState(false);
   const [syncMessage, setSyncMessage] = useState<{ tone: "success" | "error"; text: string } | null>(
     null,
   );
@@ -27,7 +34,7 @@ export function ConnectPlatformSection({
   const integrationCards = PLATFORMS.filter((p) => workspace.platforms.includes(p.short));
 
   async function syncYouTube() {
-    setSyncing(true);
+    setSyncingYouTube(true);
     setSyncMessage(null);
     try {
       const res = await fetch(`/api/youtube/sync?workspace=${workspace.id}`, {
@@ -52,7 +59,7 @@ export function ConnectPlatformSection({
         : "just now";
       setSyncMessage({
         tone: "success",
-        text: `Synced ${data.videoCount ?? 0} videos · ${syncedLabel}`,
+        text: `YouTube synced ${data.videoCount ?? 0} videos · ${syncedLabel}`,
       });
     } catch (error) {
       setSyncMessage({
@@ -60,7 +67,63 @@ export function ConnectPlatformSection({
         text: error instanceof Error ? error.message : "YouTube sync failed",
       });
     } finally {
-      setSyncing(false);
+      setSyncingYouTube(false);
+    }
+  }
+
+  async function syncMeta() {
+    setSyncingMeta(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch(`/api/meta/sync?workspace=${workspace.id}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        detail?: string;
+        syncedAt?: string;
+        facebook?: { postCount?: number; pageName?: string };
+        instagram?: { mediaCount?: number; username?: string } | null;
+      };
+      if (!res.ok) {
+        throw new Error(data.detail ?? `Sync failed (${res.status})`);
+      }
+      await Promise.all([
+        refetch(),
+        queryClient.invalidateQueries({ queryKey: ["meta-metrics", workspace.id] }),
+        queryClient.invalidateQueries({ queryKey: ["platform-connections", workspace.id] }),
+      ]);
+      const syncedLabel = data.syncedAt
+        ? new Date(data.syncedAt).toLocaleString()
+        : "just now";
+      const fbPart = data.facebook
+        ? `FB ${data.facebook.postCount ?? 0} posts`
+        : "FB";
+      const igPart = data.instagram
+        ? `IG ${data.instagram.mediaCount ?? 0} media`
+        : "IG skipped";
+      setSyncMessage({
+        tone: "success",
+        text: `Meta synced · ${fbPart} · ${igPart} · ${syncedLabel}`,
+      });
+    } catch (error) {
+      setSyncMessage({
+        tone: "error",
+        text: error instanceof Error ? error.message : "Meta sync failed",
+      });
+    } finally {
+      setSyncingMeta(false);
+    }
+  }
+
+  function handleConnect(platform: Platform) {
+    if (!teamAuthed) return;
+    if (platform === "YT") {
+      window.location.href = `/api/accounts/youtube/connect?workspace=${workspace.id}`;
+      return;
+    }
+    if (META_PLATFORMS.has(platform)) {
+      window.location.href = `/api/accounts/meta/connect?workspace=${workspace.id}`;
     }
   }
 
@@ -71,8 +134,8 @@ export function ConnectPlatformSection({
           <div>
             <div className="label-mono mb-2">platform_integrations</div>
             <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Connect real accounts one at a time. YouTube is live (read-only). Other platforms
-              stay in demo mode until we wire OAuth for each.
+              Connect real accounts one at a time. YouTube and Meta (Facebook + Instagram) are
+              live read-only. Other platforms stay in demo mode until we wire OAuth for each.
             </p>
           </div>
           <span className="rounded-sm border border-border bg-background/60 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
@@ -97,37 +160,80 @@ export function ConnectPlatformSection({
               <button
                 type="button"
                 onClick={() => void syncYouTube()}
-                disabled={!teamAuthed || syncing}
+                disabled={!teamAuthed || syncingYouTube}
                 className="btn-action inline-flex items-center gap-2 disabled:opacity-50"
                 title={teamAuthed ? "Pull latest YouTube metrics" : "Unlock team access first"}
               >
-                <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "Syncing…" : "Sync now"}
+                <RefreshCw className={`h-3 w-3 ${syncingYouTube ? "animate-spin" : ""}`} />
+                {syncingYouTube ? "Syncing…" : "Sync YouTube"}
               </button>
             </div>
-            {syncMessage ? (
-              <p
-                className={`mt-3 text-sm ${
-                  syncMessage.tone === "success" ? "text-success" : "text-destructive"
-                }`}
-              >
-                {syncMessage.text}
-              </p>
-            ) : null}
           </div>
+        ) : null}
+
+        {metaConnected ? (
+          <div className="mt-6 rounded-sm border border-success/30 bg-success/5 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-foreground">
+                  Meta connected
+                  {metaFacebookConnected && accountStatus?.meta.facebook.pageName
+                    ? ` · ${accountStatus.meta.facebook.pageName}`
+                    : ""}
+                  {metaInstagramConnected && accountStatus?.meta.instagram.username
+                    ? ` · @${accountStatus.meta.instagram.username}`
+                    : ""}
+                </div>
+                <div className="label-mono mt-1 text-[0.55rem] text-muted-foreground">
+                  live_oauth · facebook
+                  {metaInstagramConnected ? " + instagram" : " only"}
+                  {accountStatus?.meta.facebook.syncedAt
+                    ? ` · synced ${new Date(accountStatus.meta.facebook.syncedAt).toLocaleString()}`
+                    : " · awaiting first sync"}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => void syncMeta()}
+                disabled={!teamAuthed || syncingMeta}
+                className="btn-action inline-flex items-center gap-2 disabled:opacity-50"
+                title={teamAuthed ? "Pull latest Meta metrics" : "Unlock team access first"}
+              >
+                <RefreshCw className={`h-3 w-3 ${syncingMeta ? "animate-spin" : ""}`} />
+                {syncingMeta ? "Syncing…" : "Sync Meta"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {syncMessage ? (
+          <p
+            className={`mt-4 text-sm ${
+              syncMessage.tone === "success" ? "text-success" : "text-destructive"
+            }`}
+          >
+            {syncMessage.text}
+          </p>
         ) : null}
 
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {integrationCards.map((meta) => {
             const isLive = livePlatforms.has(meta.short);
             const isYouTube = meta.short === "YT";
-            const connected =
-              isYouTube && youtubeConnected
-                ? true
+            const isMeta = META_PLATFORMS.has(meta.short);
+            const connected = isYouTube
+              ? youtubeConnected
+              : isMeta
+                ? meta.short === "FB"
+                  ? metaFacebookConnected
+                  : metaInstagramConnected
                 : accountStatus?.connections.find((c) => c.platform === meta.short)?.status ===
                   "ok";
 
-            if (isLive && isYouTube) {
+            if (isLive && (isYouTube || isMeta)) {
+              const connectLabel = isYouTube
+                ? "connect_oauth · read_only"
+                : "connect_meta · fb + ig";
               return (
                 <button
                   key={meta.short}
@@ -136,16 +242,14 @@ export function ConnectPlatformSection({
                   data-testid={`connect-platform-${meta.short.replace(/\s+/g, "-")}`}
                   title={
                     connected
-                      ? "YouTube already connected"
+                      ? `${meta.full} already connected`
                       : teamAuthed
-                        ? "Connect YouTube (read-only)"
+                        ? isYouTube
+                          ? "Connect YouTube (read-only)"
+                          : "Connect Meta Business (Facebook Page + linked Instagram)"
                         : "Unlock team access first"
                   }
-                  onClick={() => {
-                    if (teamAuthed && !connected) {
-                      window.location.href = `/api/accounts/youtube/connect?workspace=${workspace.id}`;
-                    }
-                  }}
+                  onClick={() => handleConnect(meta.short)}
                   className={`kpi-card flex items-center gap-3 px-4 py-4 text-left ${
                     !teamAuthed || connected
                       ? "cursor-default opacity-80"
@@ -159,7 +263,7 @@ export function ConnectPlatformSection({
                       {connected
                         ? "live · connected"
                         : teamAuthed
-                          ? "connect_oauth · read_only"
+                          ? connectLabel
                           : "unlock_team_access"}
                     </div>
                   </div>
@@ -187,7 +291,7 @@ export function ConnectPlatformSection({
         </div>
 
         <p className="label-mono mt-6 text-muted-foreground/70">
-          live: youtube · next: meta · x
+          live: youtube · meta (fb+ig) · next: x
         </p>
       </div>
     </section>

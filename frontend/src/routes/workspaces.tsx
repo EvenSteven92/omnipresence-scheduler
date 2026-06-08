@@ -38,12 +38,19 @@ function WorkspacesPage() {
     }
     const params = new URLSearchParams(window.location.search);
     const youtube = params.get("youtube");
+    const meta = params.get("meta");
     if (youtube === "connected") {
       setBanner("YouTube connected. Live metrics will appear on the dashboard after sync.");
     } else if (youtube === "denied") {
       setBanner("YouTube connect was cancelled.");
     } else if (youtube === "error") {
       setBanner(params.get("message") ?? "YouTube connect failed.");
+    } else if (meta === "connected") {
+      setBanner("Meta connected. Facebook and linked Instagram metrics will sync to the dashboard.");
+    } else if (meta === "denied") {
+      setBanner("Meta connect was cancelled.");
+    } else if (meta === "error") {
+      setBanner(params.get("message") ?? "Meta connect failed.");
     }
   }, []);
 

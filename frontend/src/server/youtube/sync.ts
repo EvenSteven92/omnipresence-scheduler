@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import { getDb } from "@/server/db/client";
-import { youtubeChannelSnapshots, youtubeVideos } from "@/server/db/schema";
+import { connectedAccounts, youtubeChannelSnapshots, youtubeVideos } from "@/server/db/schema";
 
 import { getYouTubeAccessToken } from "./accounts";
 import { fetchMyChannel, fetchRecentUploads } from "./api";
@@ -76,6 +76,38 @@ export async function syncYouTubeWorkspace(workspaceId = DEFAULT_WORKSPACE_ID) {
     videoCount: videos.length,
     syncedAt: syncedAt.toISOString(),
   };
+}
+
+export async function syncAllYouTubeWorkspaces() {
+  const db = getDb();
+  const rows = await db
+    .select({ workspaceId: connectedAccounts.workspaceId })
+    .from(connectedAccounts)
+    .where(eq(connectedAccounts.platform, "YT"));
+
+  const results: Array<
+    | { workspaceId: string; videoCount: number; syncedAt: string; channelTitle: string }
+    | { workspaceId: string; error: string }
+  > = [];
+
+  for (const row of rows) {
+    try {
+      const result = await syncYouTubeWorkspace(row.workspaceId);
+      results.push({
+        workspaceId: row.workspaceId,
+        videoCount: result.videoCount,
+        syncedAt: result.syncedAt,
+        channelTitle: result.channel.channelTitle,
+      });
+    } catch (error) {
+      results.push({
+        workspaceId: row.workspaceId,
+        error: error instanceof Error ? error.message : "YouTube sync failed",
+      });
+    }
+  }
+
+  return { synced: results.filter((r) => !("error" in r)).length, results };
 }
 
 export async function getYouTubeMetrics(workspaceId = DEFAULT_WORKSPACE_ID) {

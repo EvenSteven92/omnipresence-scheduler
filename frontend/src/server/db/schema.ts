@@ -51,3 +51,47 @@ export const youtubeVideos = pgTable("youtube_videos", {
   thumbnailUrl: text("thumbnail_url"),
   syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const facebookPageSnapshots = pgTable("facebook_page_snapshots", {
+  workspaceId: text("workspace_id").primaryKey(),
+  pageId: text("page_id").notNull(),
+  pageName: text("page_name").notNull(),
+  followerCount: integer("follower_count").notNull().default(0),
+  fanCount: integer("fan_count").notNull().default(0),
+  syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const facebookPosts = pgTable("facebook_posts", {
+  postId: text("post_id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  pageId: text("page_id").notNull(),
+  message: text("message").notNull().default(""),
+  publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
+  likeCount: integer("like_count").notNull().default(0),
+  commentCount: integer("comment_count").notNull().default(0),
+  shareCount: integer("share_count").notNull().default(0),
+  syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const instagramAccountSnapshots = pgTable("instagram_account_snapshots", {
+  workspaceId: text("workspace_id").primaryKey(),
+  igUserId: text("ig_user_id").notNull(),
+  username: text("username").notNull(),
+  followerCount: integer("follower_count").notNull().default(0),
+  mediaCount: integer("media_count").notNull().default(0),
+  syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const instagramMedia = pgTable("instagram_media", {
+  mediaId: text("media_id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  igUserId: text("ig_user_id").notNull(),
+  caption: text("caption").notNull().default(""),
+  mediaType: text("media_type").notNull().default("UNKNOWN"),
+  permalink: text("permalink"),
+  thumbnailUrl: text("thumbnail_url"),
+  publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
+  likeCount: integer("like_count").notNull().default(0),
+  commentCount: integer("comment_count").notNull().default(0),
+  syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
+});

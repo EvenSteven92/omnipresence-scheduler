@@ -21,10 +21,14 @@ import { Route as ApiYoutubeSyncRouteImport } from './routes/api/youtube/sync'
 import { Route as ApiYoutubeMetricsRouteImport } from './routes/api/youtube/metrics'
 import { Route as ApiTeamSessionRouteImport } from './routes/api/team/session'
 import { Route as ApiTeamLoginRouteImport } from './routes/api/team/login'
+import { Route as ApiMetaSyncRouteImport } from './routes/api/meta/sync'
+import { Route as ApiMetaMetricsRouteImport } from './routes/api/meta/metrics'
 import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
 import { Route as ApiAccountsStatusRouteImport } from './routes/api/accounts/status'
 import { Route as ApiAccountsYoutubeConnectRouteImport } from './routes/api/accounts/youtube/connect'
 import { Route as ApiAccountsYoutubeCallbackRouteImport } from './routes/api/accounts/youtube/callback'
+import { Route as ApiAccountsMetaConnectRouteImport } from './routes/api/accounts/meta/connect'
+import { Route as ApiAccountsMetaCallbackRouteImport } from './routes/api/accounts/meta/callback'
 
 const WorkspacesRoute = WorkspacesRouteImport.update({
   id: '/workspaces',
@@ -86,6 +90,16 @@ const ApiTeamLoginRoute = ApiTeamLoginRouteImport.update({
   path: '/api/team/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMetaSyncRoute = ApiMetaSyncRouteImport.update({
+  id: '/api/meta/sync',
+  path: '/api/meta/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMetaMetricsRoute = ApiMetaMetricsRouteImport.update({
+  id: '/api/meta/metrics',
+  path: '/api/meta/metrics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAiGenerateRoute = ApiAiGenerateRouteImport.update({
   id: '/api/ai/generate',
   path: '/api/ai/generate',
@@ -108,6 +122,16 @@ const ApiAccountsYoutubeCallbackRoute =
     path: '/api/accounts/youtube/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAccountsMetaConnectRoute = ApiAccountsMetaConnectRouteImport.update({
+  id: '/api/accounts/meta/connect',
+  path: '/api/accounts/meta/connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAccountsMetaCallbackRoute = ApiAccountsMetaCallbackRouteImport.update({
+  id: '/api/accounts/meta/callback',
+  path: '/api/accounts/meta/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -120,10 +144,14 @@ export interface FileRoutesByFullPath {
   '/events/': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
+  '/api/meta/metrics': typeof ApiMetaMetricsRoute
+  '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/team/login': typeof ApiTeamLoginRoute
   '/api/team/session': typeof ApiTeamSessionRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
+  '/api/accounts/meta/callback': typeof ApiAccountsMetaCallbackRoute
+  '/api/accounts/meta/connect': typeof ApiAccountsMetaConnectRoute
   '/api/accounts/youtube/callback': typeof ApiAccountsYoutubeCallbackRoute
   '/api/accounts/youtube/connect': typeof ApiAccountsYoutubeConnectRoute
 }
@@ -137,10 +165,14 @@ export interface FileRoutesByTo {
   '/events': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
+  '/api/meta/metrics': typeof ApiMetaMetricsRoute
+  '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/team/login': typeof ApiTeamLoginRoute
   '/api/team/session': typeof ApiTeamSessionRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
+  '/api/accounts/meta/callback': typeof ApiAccountsMetaCallbackRoute
+  '/api/accounts/meta/connect': typeof ApiAccountsMetaConnectRoute
   '/api/accounts/youtube/callback': typeof ApiAccountsYoutubeCallbackRoute
   '/api/accounts/youtube/connect': typeof ApiAccountsYoutubeConnectRoute
 }
@@ -156,10 +188,14 @@ export interface FileRoutesById {
   '/events/': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
+  '/api/meta/metrics': typeof ApiMetaMetricsRoute
+  '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/team/login': typeof ApiTeamLoginRoute
   '/api/team/session': typeof ApiTeamSessionRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
+  '/api/accounts/meta/callback': typeof ApiAccountsMetaCallbackRoute
+  '/api/accounts/meta/connect': typeof ApiAccountsMetaConnectRoute
   '/api/accounts/youtube/callback': typeof ApiAccountsYoutubeCallbackRoute
   '/api/accounts/youtube/connect': typeof ApiAccountsYoutubeConnectRoute
 }
@@ -176,10 +212,14 @@ export interface FileRouteTypes {
     | '/events/'
     | '/api/accounts/status'
     | '/api/ai/generate'
+    | '/api/meta/metrics'
+    | '/api/meta/sync'
     | '/api/team/login'
     | '/api/team/session'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
+    | '/api/accounts/meta/callback'
+    | '/api/accounts/meta/connect'
     | '/api/accounts/youtube/callback'
     | '/api/accounts/youtube/connect'
   fileRoutesByTo: FileRoutesByTo
@@ -193,10 +233,14 @@ export interface FileRouteTypes {
     | '/events'
     | '/api/accounts/status'
     | '/api/ai/generate'
+    | '/api/meta/metrics'
+    | '/api/meta/sync'
     | '/api/team/login'
     | '/api/team/session'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
+    | '/api/accounts/meta/callback'
+    | '/api/accounts/meta/connect'
     | '/api/accounts/youtube/callback'
     | '/api/accounts/youtube/connect'
   id:
@@ -211,10 +255,14 @@ export interface FileRouteTypes {
     | '/events/'
     | '/api/accounts/status'
     | '/api/ai/generate'
+    | '/api/meta/metrics'
+    | '/api/meta/sync'
     | '/api/team/login'
     | '/api/team/session'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
+    | '/api/accounts/meta/callback'
+    | '/api/accounts/meta/connect'
     | '/api/accounts/youtube/callback'
     | '/api/accounts/youtube/connect'
   fileRoutesById: FileRoutesById
@@ -228,10 +276,14 @@ export interface RootRouteChildren {
   WorkspacesRoute: typeof WorkspacesRoute
   ApiAccountsStatusRoute: typeof ApiAccountsStatusRoute
   ApiAiGenerateRoute: typeof ApiAiGenerateRoute
+  ApiMetaMetricsRoute: typeof ApiMetaMetricsRoute
+  ApiMetaSyncRoute: typeof ApiMetaSyncRoute
   ApiTeamLoginRoute: typeof ApiTeamLoginRoute
   ApiTeamSessionRoute: typeof ApiTeamSessionRoute
   ApiYoutubeMetricsRoute: typeof ApiYoutubeMetricsRoute
   ApiYoutubeSyncRoute: typeof ApiYoutubeSyncRoute
+  ApiAccountsMetaCallbackRoute: typeof ApiAccountsMetaCallbackRoute
+  ApiAccountsMetaConnectRoute: typeof ApiAccountsMetaConnectRoute
   ApiAccountsYoutubeCallbackRoute: typeof ApiAccountsYoutubeCallbackRoute
   ApiAccountsYoutubeConnectRoute: typeof ApiAccountsYoutubeConnectRoute
 }
@@ -322,6 +374,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTeamLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/meta/sync': {
+      id: '/api/meta/sync'
+      path: '/api/meta/sync'
+      fullPath: '/api/meta/sync'
+      preLoaderRoute: typeof ApiMetaSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/meta/metrics': {
+      id: '/api/meta/metrics'
+      path: '/api/meta/metrics'
+      fullPath: '/api/meta/metrics'
+      preLoaderRoute: typeof ApiMetaMetricsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ai/generate': {
       id: '/api/ai/generate'
       path: '/api/ai/generate'
@@ -350,6 +416,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAccountsYoutubeCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/accounts/meta/connect': {
+      id: '/api/accounts/meta/connect'
+      path: '/api/accounts/meta/connect'
+      fullPath: '/api/accounts/meta/connect'
+      preLoaderRoute: typeof ApiAccountsMetaConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/accounts/meta/callback': {
+      id: '/api/accounts/meta/callback'
+      path: '/api/accounts/meta/callback'
+      fullPath: '/api/accounts/meta/callback'
+      preLoaderRoute: typeof ApiAccountsMetaCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -375,10 +455,14 @@ const rootRouteChildren: RootRouteChildren = {
   WorkspacesRoute: WorkspacesRoute,
   ApiAccountsStatusRoute: ApiAccountsStatusRoute,
   ApiAiGenerateRoute: ApiAiGenerateRoute,
+  ApiMetaMetricsRoute: ApiMetaMetricsRoute,
+  ApiMetaSyncRoute: ApiMetaSyncRoute,
   ApiTeamLoginRoute: ApiTeamLoginRoute,
   ApiTeamSessionRoute: ApiTeamSessionRoute,
   ApiYoutubeMetricsRoute: ApiYoutubeMetricsRoute,
   ApiYoutubeSyncRoute: ApiYoutubeSyncRoute,
+  ApiAccountsMetaCallbackRoute: ApiAccountsMetaCallbackRoute,
+  ApiAccountsMetaConnectRoute: ApiAccountsMetaConnectRoute,
   ApiAccountsYoutubeCallbackRoute: ApiAccountsYoutubeCallbackRoute,
   ApiAccountsYoutubeConnectRoute: ApiAccountsYoutubeConnectRoute,
 }

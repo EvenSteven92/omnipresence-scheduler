@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { decryptSecret, encryptSecret } from "@/server/crypto/tokens";
 import { getDb } from "@/server/db/client";
@@ -11,9 +11,14 @@ export async function getYouTubeAccount(workspaceId: string) {
   const [row] = await db
     .select()
     .from(connectedAccounts)
-    .where(eq(connectedAccounts.workspaceId, workspaceId))
+    .where(
+      and(
+        eq(connectedAccounts.workspaceId, workspaceId),
+        eq(connectedAccounts.platform, "YT"),
+      ),
+    )
     .limit(1);
-  if (!row || row.platform !== "YT") return null;
+  if (!row) return null;
   return row;
 }
 
