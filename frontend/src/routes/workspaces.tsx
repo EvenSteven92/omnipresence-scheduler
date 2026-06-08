@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/PageHeader";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { ConnectPlatformSection, LiveConnectionStrip } from "@/components/ConnectPlatformSection";
 import { TeamAccessGate } from "@/components/TeamAccessGate";
+import { useTeamSession } from "@/hooks/useTeamSession";
 import { useWorkspace } from "@/lib/workspace-context";
 import {
   Building2,
@@ -26,9 +28,8 @@ export const Route = createFileRoute("/workspaces")({
 
 function WorkspacesPage() {
   const { workspace, workspaces, setWorkspaceId } = useWorkspace();
-  const [teamAuthed, setTeamAuthed] = useState(
-    () => typeof window !== "undefined" && sessionStorage.getItem("team_authed") === "1",
-  );
+  const queryClient = useQueryClient();
+  const { data: teamAuthed = false } = useTeamSession();
   const [banner, setBanner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -81,7 +82,7 @@ function WorkspacesPage() {
           <TeamAccessGate
             onAuthed={() => {
               sessionStorage.setItem("team_authed", "1");
-              setTeamAuthed(true);
+              queryClient.setQueryData(["team-session"], true);
             }}
           />
         ) : null}

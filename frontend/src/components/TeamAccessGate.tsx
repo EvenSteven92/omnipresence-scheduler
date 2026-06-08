@@ -13,6 +13,7 @@ export function TeamAccessGate({ onAuthed }: { onAuthed: () => void }) {
     try {
       const res = await fetch("/api/team/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
       });

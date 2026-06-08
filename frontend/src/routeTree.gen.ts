@@ -19,6 +19,7 @@ import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
 import { Route as ApiYoutubeSyncRouteImport } from './routes/api/youtube/sync'
 import { Route as ApiYoutubeMetricsRouteImport } from './routes/api/youtube/metrics'
+import { Route as ApiTeamSessionRouteImport } from './routes/api/team/session'
 import { Route as ApiTeamLoginRouteImport } from './routes/api/team/login'
 import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
 import { Route as ApiAccountsStatusRouteImport } from './routes/api/accounts/status'
@@ -75,6 +76,11 @@ const ApiYoutubeMetricsRoute = ApiYoutubeMetricsRouteImport.update({
   path: '/api/youtube/metrics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTeamSessionRoute = ApiTeamSessionRouteImport.update({
+  id: '/api/team/session',
+  path: '/api/team/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTeamLoginRoute = ApiTeamLoginRouteImport.update({
   id: '/api/team/login',
   path: '/api/team/login',
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/team/login': typeof ApiTeamLoginRoute
+  '/api/team/session': typeof ApiTeamSessionRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
   '/api/accounts/youtube/callback': typeof ApiAccountsYoutubeCallbackRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/team/login': typeof ApiTeamLoginRoute
+  '/api/team/session': typeof ApiTeamSessionRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
   '/api/accounts/youtube/callback': typeof ApiAccountsYoutubeCallbackRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/team/login': typeof ApiTeamLoginRoute
+  '/api/team/session': typeof ApiTeamSessionRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
   '/api/accounts/youtube/callback': typeof ApiAccountsYoutubeCallbackRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/team/login'
+    | '/api/team/session'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
     | '/api/accounts/youtube/callback'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/team/login'
+    | '/api/team/session'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
     | '/api/accounts/youtube/callback'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/team/login'
+    | '/api/team/session'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
     | '/api/accounts/youtube/callback'
@@ -217,6 +229,7 @@ export interface RootRouteChildren {
   ApiAccountsStatusRoute: typeof ApiAccountsStatusRoute
   ApiAiGenerateRoute: typeof ApiAiGenerateRoute
   ApiTeamLoginRoute: typeof ApiTeamLoginRoute
+  ApiTeamSessionRoute: typeof ApiTeamSessionRoute
   ApiYoutubeMetricsRoute: typeof ApiYoutubeMetricsRoute
   ApiYoutubeSyncRoute: typeof ApiYoutubeSyncRoute
   ApiAccountsYoutubeCallbackRoute: typeof ApiAccountsYoutubeCallbackRoute
@@ -295,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiYoutubeMetricsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/team/session': {
+      id: '/api/team/session'
+      path: '/api/team/session'
+      fullPath: '/api/team/session'
+      preLoaderRoute: typeof ApiTeamSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/team/login': {
       id: '/api/team/login'
       path: '/api/team/login'
@@ -356,6 +376,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAccountsStatusRoute: ApiAccountsStatusRoute,
   ApiAiGenerateRoute: ApiAiGenerateRoute,
   ApiTeamLoginRoute: ApiTeamLoginRoute,
+  ApiTeamSessionRoute: ApiTeamSessionRoute,
   ApiYoutubeMetricsRoute: ApiYoutubeMetricsRoute,
   ApiYoutubeSyncRoute: ApiYoutubeSyncRoute,
   ApiAccountsYoutubeCallbackRoute: ApiAccountsYoutubeCallbackRoute,

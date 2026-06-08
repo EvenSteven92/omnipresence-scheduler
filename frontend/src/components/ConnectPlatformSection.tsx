@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { PLATFORMS, PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import { PlatformChip } from "@/components/post/PlatformChip";
 import type { WorkspaceProfile } from "@/lib/workspaces/types";
@@ -13,15 +15,53 @@ export function ConnectPlatformSection({
   id?: string;
   teamAuthed?: boolean;
 }) {
-  const { data: accountStatus, refetch, isFetching } = usePlatformConnections(workspace.id);
+  const queryClient = useQueryClient();
+  const { data: accountStatus, refetch } = usePlatformConnections(workspace.id);
   const youtubeConnected = accountStatus?.youtube.connected ?? false;
   const livePlatforms = new Set(accountStatus?.livePlatforms ?? ["YT"]);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<{ tone: "success" | "error"; text: string } | null>(
+    null,
+  );
 
   const integrationCards = PLATFORMS.filter((p) => workspace.platforms.includes(p.short));
 
   async function syncYouTube() {
-    await fetch(`/api/youtube/sync?workspace=${workspace.id}`, { method: "POST" });
-    await refetch();
+    setSyncing(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch(`/api/youtube/sync?workspace=${workspace.id}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        detail?: string;
+        syncedAt?: string;
+        videoCount?: number;
+      };
+      if (!res.ok) {
+        throw new Error(data.detail ?? `Sync failed (${res.status})`);
+      }
+      await Promise.all([
+        refetch(),
+        queryClient.invalidateQueries({ queryKey: ["youtube-metrics", workspace.id] }),
+        queryClient.invalidateQueries({ queryKey: ["platform-connections", workspace.id] }),
+      ]);
+      const syncedLabel = data.syncedAt
+        ? new Date(data.syncedAt).toLocaleString()
+        : "just now";
+      setSyncMessage({
+        tone: "success",
+        text: `Synced ${data.videoCount ?? 0} videos · ${syncedLabel}`,
+      });
+    } catch (error) {
+      setSyncMessage({
+        tone: "error",
+        text: error instanceof Error ? error.message : "YouTube sync failed",
+      });
+    } finally {
+      setSyncing(false);
+    }
   }
 
   return (
@@ -57,13 +97,23 @@ export function ConnectPlatformSection({
               <button
                 type="button"
                 onClick={() => void syncYouTube()}
-                disabled={!teamAuthed || isFetching}
-                className="btn-action inline-flex items-center gap-2"
+                disabled={!teamAuthed || syncing}
+                className="btn-action inline-flex items-center gap-2 disabled:opacity-50"
+                title={teamAuthed ? "Pull latest YouTube metrics" : "Unlock team access first"}
               >
-                <RefreshCw className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} />
-                Sync now
+                <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Syncing…" : "Sync now"}
               </button>
             </div>
+            {syncMessage ? (
+              <p
+                className={`mt-3 text-sm ${
+                  syncMessage.tone === "success" ? "text-success" : "text-destructive"
+                }`}
+              >
+                {syncMessage.text}
+              </p>
+            ) : null}
           </div>
         ) : null}
 
