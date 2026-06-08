@@ -26,7 +26,6 @@ import {
   getUpcomingDaySlots,
   UPCOMING_WINDOW_DAYS,
 } from "@/lib/scheduled-post-display";
-import type { PlatformConnectionRow } from "@/lib/workspaces/types";
 import {
   Eye,
   Heart,
@@ -38,15 +37,12 @@ import {
   Plus,
   ArrowRight,
   AlertTriangle,
-  CheckCircle2,
-  XCircle,
-
 } from "lucide-react";
 import { TopPerformerCard } from "@/components/post/TopPerformerCard";
-import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
-import { PlatformChip } from "@/components/post/PlatformChip";
 import { useMemo, useState } from "react";
 import { useYouTubeMetrics, youtubeVideosToPublishedPosts } from "@/hooks/useYouTubeMetrics";
+import { usePlatformConnections } from "@/hooks/usePlatformConnections";
+import { LiveConnectionStrip } from "@/components/ConnectPlatformSection";
 import { AddPlatformStencilCard } from "@/components/AddPlatformStencilCard";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { TopEventPerformersSection } from "@/components/events/TopEventPerformersSection";
@@ -76,8 +72,9 @@ export const Route = createFileRoute("/")({
 function DashboardPage() {
   const { workspace } = useWorkspace();
   const [timeframe, setTimeframe] = useState<Timeframe>({ kind: "preset", preset: "1m" });
-  const { scheduledPosts, publishedPosts, platformConnections } = workspace;
+  const { scheduledPosts, publishedPosts } = workspace;
   const { data: youtubeMetrics } = useYouTubeMetrics(workspace.id);
+  const { data: accountStatus } = usePlatformConnections(workspace.id);
   const metrics = useMemo(() => getMetrics(timeframe, workspace), [timeframe, workspace]);
   const growthRows = useMemo(() => {
     const rows = getGrowthMatrixForTimeframe(timeframe, workspace);
@@ -164,7 +161,7 @@ function DashboardPage() {
         <TopEventPerformersSection timeframe={timeframe} />
 
         {/* Connection health */}
-        <HealthStrip platformConnections={platformConnections} />
+        <HealthStrip workspace={workspace} youtubeLive={accountStatus?.youtube.connected ?? false} />
       </div>
     </div>
   );
@@ -477,78 +474,41 @@ function TopPerformersSection({
 // ─── Connection health strip ────────────────────────────────────────────────
 
 function HealthStrip({
-  platformConnections,
+  workspace,
+  youtubeLive,
 }: {
-  platformConnections: PlatformConnectionRow[];
+  workspace: import("@/lib/workspaces/types").WorkspaceProfile;
+  youtubeLive: boolean;
 }) {
   return (
     <section className="section-block">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div className="label-mono">platform_connections</div>
+        <div>
+          <div className="label-mono">platform_connections</div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {youtubeLive
+              ? "YouTube uses live OAuth data. Other platforms still show demo metrics until connected."
+              : "Connect YouTube on Workspaces to replace demo social data one platform at a time."}
+          </p>
+        </div>
         <Link
           to="/workspaces"
+          hash="connect-platform"
           className="label-mono text-muted-foreground/70 transition-colors hover:text-foreground"
         >
-          click to manage →
+          connect accounts →
         </Link>
       </div>
-      <div className="flex flex-wrap gap-4">
-        {platformConnections.map((c) => (
-          <ConnectionCard key={c.platform} connection={c} />
-        ))}
+      <LiveConnectionStrip workspace={workspace} />
+      <div className="mt-4">
         <AddPlatformStencilCard
           testId="connections-add-platform"
           variant="strip"
-          description="Link another account via OAuth."
+          description="Link YouTube first — Meta and X are next."
         />
       </div>
     </section>
   );
 }
 
-function ConnectionCard({ connection: c }: { connection: PlatformConnectionRow }) {
-  const meta = PLATFORMS_BY_SHORT[c.platform];
-  const ok = c.status === "ok";
-  const expiring = c.status === "expiring";
-  const down = c.status === "disconnected";
 
-  const borderClass = ok
-    ? "border-border"
-    : expiring
-      ? "border-warning/60"
-      : "border-danger/60";
-
-  const statusText = ok
-    ? "connected"
-    : expiring
-      ? `expires in ${c.expiresInDays ?? "?"} days`
-      : "reconnect required";
-
-  const statusColor = ok ? "text-success" : expiring ? "text-warning" : "text-danger";
-
-  return (
-    <Link
-      to="/workspaces"
-      data-testid={`connection-${c.platform.replace(/\s+/g, "-")}`}
-      className={`kpi-card flex min-w-[10.5rem] max-w-[13rem] flex-1 basis-[calc(25%-0.75rem)] flex-col gap-3 px-5 py-4 transition-colors hover:bg-secondary/30 sm:basis-[calc(20%-0.8rem)] lg:min-w-[11.5rem] ${borderClass}`}
-    >
-      <div className="flex items-center justify-between gap-3">
-        {meta ? (
-          <PlatformChip platform={c.platform} size="lg" />
-        ) : (
-          <span className="h-8 w-8 shrink-0 rounded-full bg-muted" />
-        )}
-        {ok && <CheckCircle2 className="h-4 w-4 shrink-0 text-success" strokeWidth={1.75} />}
-        {expiring && <AlertTriangle className="h-4 w-4 shrink-0 text-warning" strokeWidth={1.75} />}
-        {down && <XCircle className="h-4 w-4 shrink-0 text-danger" strokeWidth={1.75} />}
-      </div>
-      <div className="space-y-1.5">
-        <div className="text-xs font-semibold leading-snug text-foreground">{c.platform}</div>
-        {meta?.full && meta.full !== c.platform && (
-          <div className="text-[0.6rem] leading-snug text-muted-foreground">{meta.full}</div>
-        )}
-        <div className={`label-mono normal-case tracking-normal ${statusColor}`}>{statusText}</div>
-      </div>
-    </Link>
-  );
-}

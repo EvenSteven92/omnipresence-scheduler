@@ -7,7 +7,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
     slug: "torcc",
     initials: "T",
     tagline: "Church · multi-platform ministry",
-    onboardingStatus: "complete",
+    onboardingStatus: "needs_accounts",
     platforms: ["YT", "RUMBLE", "FB", "IG", "X", "TIKTOK", "IG STORY", "FB STORY", "YT SHORTS"],
     metrics: {
       views: 12_480,
@@ -372,16 +372,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
         description: "Short-form clips and story sequences from game night.",
       },
     ],
-    platformConnections: [
-      { platform: "YT", status: "ok" },
-      { platform: "RUMBLE", status: "ok" },
-      { platform: "FB", status: "ok" },
-      { platform: "IG", status: "expiring", expiresInDays: 4 },
-      { platform: "X", status: "ok" },
-      { platform: "TIKTOK", status: "disconnected" },
-      { platform: "IG STORY", status: "ok" },
-      { platform: "FB STORY", status: "ok" },
-    ],
+    platformConnections: [],
   },
   {
     id: "open-eyes",

@@ -2,16 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
-import { ConnectPlatformSection } from "@/components/ConnectPlatformSection";
+import { ConnectPlatformSection, LiveConnectionStrip } from "@/components/ConnectPlatformSection";
 import { TeamAccessGate } from "@/components/TeamAccessGate";
 import { useWorkspace } from "@/lib/workspace-context";
-import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
-import { PlatformChip } from "@/components/post/PlatformChip";
 import {
   Building2,
-  CheckCircle2,
-  AlertTriangle,
-  Circle,
   ArrowRight,
   Link2,
 } from "lucide-react";
@@ -128,32 +123,13 @@ function WorkspacesPage() {
 
                 <div className="px-6 py-5">
                   <div className="label-mono mb-3">connected_platforms</div>
-                  <div className="flex flex-wrap gap-2">
-                    {ws.platformConnections.map((c) => {
-                      const meta = PLATFORMS_BY_SHORT[c.platform];
-                      return (
-                        <span
-                          key={c.platform}
-                          className="inline-flex items-center gap-2"
-                        >
-                          <PlatformChip
-                            platform={c.platform}
-                            label={c.platform}
-                            size="md"
-                            variant={
-                              c.status === "disconnected"
-                                ? "danger"
-                                : c.status === "expiring"
-                                  ? "warning"
-                                  : "default"
-                            }
-                            title={meta?.full ?? c.platform}
-                          />
-                          <StatusDot status={c.status} />
-                        </span>
-                      );
-                    })}
-                  </div>
+                  {active ? (
+                    <LiveConnectionStrip workspace={ws} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Switch to this workspace to connect accounts.
+                    </p>
+                  )}
                 </div>
               </article>
             );
@@ -217,8 +193,3 @@ function OnboardingBadge({ status }: { status: string }) {
   );
 }
 
-function StatusDot({ status }: { status: string }) {
-  if (status === "ok") return <CheckCircle2 className="h-3 w-3 text-success" />;
-  if (status === "expiring") return <AlertTriangle className="h-3 w-3 text-warning" />;
-  return <Circle className="h-3 w-3 text-danger" />;
-}

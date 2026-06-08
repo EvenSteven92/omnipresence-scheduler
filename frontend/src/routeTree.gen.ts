@@ -21,6 +21,7 @@ import { Route as ApiYoutubeSyncRouteImport } from './routes/api/youtube/sync'
 import { Route as ApiYoutubeMetricsRouteImport } from './routes/api/youtube/metrics'
 import { Route as ApiTeamLoginRouteImport } from './routes/api/team/login'
 import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
+import { Route as ApiAccountsStatusRouteImport } from './routes/api/accounts/status'
 import { Route as ApiAccountsYoutubeConnectRouteImport } from './routes/api/accounts/youtube/connect'
 import { Route as ApiAccountsYoutubeCallbackRouteImport } from './routes/api/accounts/youtube/callback'
 
@@ -84,6 +85,11 @@ const ApiAiGenerateRoute = ApiAiGenerateRouteImport.update({
   path: '/api/ai/generate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAccountsStatusRoute = ApiAccountsStatusRouteImport.update({
+  id: '/api/accounts/status',
+  path: '/api/accounts/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAccountsYoutubeConnectRoute =
   ApiAccountsYoutubeConnectRouteImport.update({
     id: '/api/accounts/youtube/connect',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/workspaces': typeof WorkspacesRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/events/': typeof EventsIndexRoute
+  '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/team/login': typeof ApiTeamLoginRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/workspaces': typeof WorkspacesRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/events': typeof EventsIndexRoute
+  '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/team/login': typeof ApiTeamLoginRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/workspaces': typeof WorkspacesRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/events/': typeof EventsIndexRoute
+  '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/team/login': typeof ApiTeamLoginRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/workspaces'
     | '/events/$eventId'
     | '/events/'
+    | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/team/login'
     | '/api/youtube/metrics'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/workspaces'
     | '/events/$eventId'
     | '/events'
+    | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/team/login'
     | '/api/youtube/metrics'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/workspaces'
     | '/events/$eventId'
     | '/events/'
+    | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/team/login'
     | '/api/youtube/metrics'
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRouteWithChildren
   SchedulerRoute: typeof SchedulerRoute
   WorkspacesRoute: typeof WorkspacesRoute
+  ApiAccountsStatusRoute: typeof ApiAccountsStatusRoute
   ApiAiGenerateRoute: typeof ApiAiGenerateRoute
   ApiTeamLoginRoute: typeof ApiTeamLoginRoute
   ApiYoutubeMetricsRoute: typeof ApiYoutubeMetricsRoute
@@ -296,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAiGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/accounts/status': {
+      id: '/api/accounts/status'
+      path: '/api/accounts/status'
+      fullPath: '/api/accounts/status'
+      preLoaderRoute: typeof ApiAccountsStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/accounts/youtube/connect': {
       id: '/api/accounts/youtube/connect'
       path: '/api/accounts/youtube/connect'
@@ -333,6 +353,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRouteWithChildren,
   SchedulerRoute: SchedulerRoute,
   WorkspacesRoute: WorkspacesRoute,
+  ApiAccountsStatusRoute: ApiAccountsStatusRoute,
   ApiAiGenerateRoute: ApiAiGenerateRoute,
   ApiTeamLoginRoute: ApiTeamLoginRoute,
   ApiYoutubeMetricsRoute: ApiYoutubeMetricsRoute,
