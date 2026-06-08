@@ -1,6 +1,6 @@
 /**
- * Frontend helper for /api/ai/generate.
- * Backend is reachable via the same origin under /api (k8s ingress).
+ * Frontend helper for POST /api/ai/generate.
+ * Served by TanStack server routes (Vercel AI Gateway + Grok on deploy).
  */
 export type AiKind = "caption" | "hashtags" | "yt_desc" | "yt_title" | "internal_notes";
 

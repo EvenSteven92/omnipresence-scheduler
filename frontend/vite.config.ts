@@ -35,7 +35,12 @@ export default defineConfig({
       strictPort: true,
       allowedHosts: true,
       proxy: {
-        "/api": {
+        // Keep news/health on FastAPI; AI copy is handled by TanStack server routes.
+        "/api/news": {
+          target: "http://127.0.0.1:8001",
+          changeOrigin: true,
+        },
+        "/api/health": {
           target: "http://127.0.0.1:8001",
           changeOrigin: true,
         },
