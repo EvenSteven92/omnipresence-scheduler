@@ -1,6 +1,11 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-import { getMetaOAuthConfig, META_GRAPH_VERSION, META_SCOPES } from "./config";
+import {
+  getMetaLoginConfigId,
+  getMetaOAuthConfig,
+  getMetaOAuthScopes,
+  META_GRAPH_VERSION,
+} from "./config";
 
 function stateSecret() {
   return process.env.SESSION_SECRET ?? process.env.TEAM_ACCESS_CODE ?? "dev-meta-oauth";
@@ -30,13 +35,21 @@ export function verifyOAuthState(state: string) {
 export function buildMetaAuthorizeUrl(workspaceId: string) {
   const { appId, redirectUri } = getMetaOAuthConfig();
   const state = createOAuthState(workspaceId);
+  const configId = getMetaLoginConfigId();
   const params = new URLSearchParams({
     client_id: appId,
     redirect_uri: redirectUri,
     response_type: "code",
-    scope: META_SCOPES.join(","),
     state,
   });
+
+  // Prefer Facebook Login for Business configuration (page-picker UX, no personal activity).
+  if (configId) {
+    params.set("config_id", configId);
+  } else {
+    params.set("scope", getMetaOAuthScopes().join(","));
+  }
+
   return {
     url: `https://www.facebook.com/${META_GRAPH_VERSION}/dialog/oauth?${params}`,
     state,
