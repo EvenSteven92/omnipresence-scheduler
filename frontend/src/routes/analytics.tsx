@@ -33,7 +33,10 @@ import {
 } from "@/lib/timeframe";
 import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/lib/workspace-context";
-import { TopPerformerCard } from "@/components/post/TopPerformerCard";
+import {
+  TOP_PERFORMERS_DISPLAY_LIMIT,
+  TopPerformerCard,
+} from "@/components/post/TopPerformerCard";
 import { PostDetailModal } from "@/components/post/PostDetailModal";
 import type { PublishedPost } from "@/lib/mock-data";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
@@ -93,7 +96,8 @@ function AnalyticsPage() {
     () =>
       filterPublishedInTimeframe(publishedPosts, timeframe)
         .slice()
-        .sort((a, b) => b.engagementRate - a.engagementRate),
+        .sort((a, b) => b.engagementRate - a.engagementRate)
+        .slice(0, TOP_PERFORMERS_DISPLAY_LIMIT),
     [publishedPosts, timeframe],
   );
 

@@ -4,6 +4,8 @@ import { fmtCompact } from "@/components/PerformanceMetricCounters";
 import type { PublishedPost } from "@/lib/mock-data";
 import { publishedPostToCardPost } from "@/lib/scheduled-post-display";
 
+export const TOP_PERFORMERS_DISPLAY_LIMIT = 4;
+
 export function TopPerformerCard({
   post,
   isTop = false,

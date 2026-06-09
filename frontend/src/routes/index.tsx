@@ -38,7 +38,10 @@ import {
   ArrowRight,
   AlertTriangle,
 } from "lucide-react";
-import { TopPerformerCard } from "@/components/post/TopPerformerCard";
+import {
+  TOP_PERFORMERS_DISPLAY_LIMIT,
+  TopPerformerCard,
+} from "@/components/post/TopPerformerCard";
 import { useMemo, useState } from "react";
 import { useYouTubeMetrics, youtubeVideosToPublishedPosts } from "@/hooks/useYouTubeMetrics";
 import {
@@ -477,7 +480,9 @@ function TopPerformersSection({
   const [detailPost, setDetailPost] = useState<PublishedPost | null>(null);
   const top = useMemo(() => {
     const recent = filterPublishedInTimeframe(publishedPosts, timeframe);
-    return [...recent].sort((a, b) => b.engagementRate - a.engagementRate);
+    return [...recent]
+      .sort((a, b) => b.engagementRate - a.engagementRate)
+      .slice(0, TOP_PERFORMERS_DISPLAY_LIMIT);
   }, [publishedPosts, timeframe]);
 
   return (

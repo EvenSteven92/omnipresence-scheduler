@@ -12,6 +12,7 @@ import {
   rankEventPerformers,
   type RankedEventPerformer,
 } from "@/lib/events/display";
+import { TOP_PERFORMERS_DISPLAY_LIMIT } from "@/components/post/TopPerformerCard";
 import { timeframeLabel, type Timeframe } from "@/lib/timeframe";
 
 function TopEventPerformerCard({
@@ -85,7 +86,10 @@ export function TopEventPerformersSection({
 
   const topEvents = useMemo(() => {
     const events = mergeWorkspaceEvents(workspace.events, customEvents);
-    return rankEventPerformers(workspace, events, { timeframe, resolveEventId });
+    return rankEventPerformers(workspace, events, { timeframe, resolveEventId }).slice(
+      0,
+      TOP_PERFORMERS_DISPLAY_LIMIT,
+    );
   }, [workspace, customEvents, timeframe, resolveEventId]);
 
   return (
