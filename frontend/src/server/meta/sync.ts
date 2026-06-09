@@ -20,6 +20,7 @@ import {
   getMetaAccount,
   getMetaPageAccessToken,
   getMetaUserAccessToken,
+  refreshMetaPageAccessToken,
   upsertMetaFacebookAccount,
   upsertMetaInstagramAccount,
 } from "./accounts";
@@ -79,6 +80,7 @@ export async function connectMetaWorkspaceFromCode(
 }
 
 export async function syncMetaWorkspace(workspaceId = DEFAULT_WORKSPACE_ID) {
+  await refreshMetaPageAccessToken(workspaceId);
   const pageToken = await getMetaPageAccessToken(workspaceId);
   const fbAccount = await getMetaAccount(workspaceId, "FB");
   if (!pageToken || !fbAccount?.externalAccountId) {

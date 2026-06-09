@@ -4,6 +4,7 @@ import { decryptSecret, encryptSecret } from "@/server/crypto/tokens";
 import { getDb } from "@/server/db/client";
 import { connectedAccounts } from "@/server/db/schema";
 
+import { fetchManagedPages } from "./api";
 import { exchangeForLongLivedUserToken } from "./oauth";
 
 export async function getMetaAccount(workspaceId: string, platform: "FB" | "IG") {
@@ -39,6 +40,42 @@ export async function getMetaUserAccessToken(workspaceId: string) {
   const account = await getMetaAccount(workspaceId, "FB");
   if (!account) return null;
   return decryptSecret(account.refreshTokenEnc);
+}
+
+/** Re-fetch page token from /me/accounts so new permissions apply without reconnecting. */
+export async function refreshMetaPageAccessToken(workspaceId: string) {
+  const account = await getMetaAccount(workspaceId, "FB");
+  if (!account?.externalAccountId) return null;
+
+  const userToken = await getMetaUserAccessToken(workspaceId);
+  if (!userToken) return null;
+
+  const pages = await fetchManagedPages(userToken);
+  const page = pages.find((p) => p.id === account.externalAccountId) ?? pages[0];
+  if (!page?.access_token) return null;
+
+  const db = getDb();
+  await db
+    .update(connectedAccounts)
+    .set({
+      accessTokenEnc: encryptSecret(page.access_token),
+      accountLabel: page.name,
+      updatedAt: new Date(),
+    })
+    .where(eq(connectedAccounts.id, account.id));
+
+  const igAccount = await getMetaAccount(workspaceId, "IG");
+  if (igAccount) {
+    await db
+      .update(connectedAccounts)
+      .set({
+        accessTokenEnc: encryptSecret(page.access_token),
+        updatedAt: new Date(),
+      })
+      .where(eq(connectedAccounts.id, igAccount.id));
+  }
+
+  return page.access_token;
 }
 
 export async function refreshMetaUserAccessToken(workspaceId: string) {

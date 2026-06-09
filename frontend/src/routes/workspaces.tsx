@@ -57,6 +57,11 @@ function WorkspacesPage() {
     } else if (meta === "error") {
       setBanner(params.get("message") ?? "Meta connect failed.");
     }
+
+    if (params.has("youtube") || params.has("meta")) {
+      const cleanUrl = `${window.location.pathname}${window.location.hash}`;
+      window.history.replaceState({}, "", cleanUrl);
+    }
   }, []);
 
   return (
