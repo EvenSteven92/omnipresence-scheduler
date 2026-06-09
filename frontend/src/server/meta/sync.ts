@@ -49,19 +49,30 @@ export async function connectMetaWorkspaceFromCode(
   });
 
   if (page.instagram_business_account?.id) {
-    const igProfile = await fetchInstagramProfile(
-      page.instagram_business_account.id,
-      page.access_token,
-    );
-    await upsertMetaInstagramAccount({
-      workspaceId,
-      igUserId: igProfile.id,
-      username: igProfile.username,
-      pageAccessToken: page.access_token,
-      userAccessToken: longLived.access_token,
-      userTokenExpiresIn: longLived.expires_in,
-      scopes,
-    });
+    try {
+      const igProfile = await fetchInstagramProfile(
+        page.instagram_business_account.id,
+        page.access_token,
+      );
+      await upsertMetaInstagramAccount({
+        workspaceId,
+        igUserId: igProfile.id,
+        username: igProfile.username,
+        pageAccessToken: page.access_token,
+        userAccessToken: longLived.access_token,
+        userTokenExpiresIn: longLived.expires_in,
+        scopes,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Instagram link failed";
+      const result = await syncMetaWorkspace(workspaceId);
+      return {
+        ...result,
+        warnings: [
+          `Instagram not linked yet (${message}). Add instagram_basic to your Login for Business config and reconnect.`,
+        ],
+      };
+    }
   }
 
   return syncMetaWorkspace(workspaceId);
@@ -77,7 +88,20 @@ export async function syncMetaWorkspace(workspaceId = DEFAULT_WORKSPACE_ID) {
   const syncedAt = new Date();
   const pageId = fbAccount.externalAccountId;
   const page = await fetchPageSnapshot(pageId, pageToken);
-  const posts = await fetchRecentPagePosts(pageId, pageToken, 25);
+  const warnings: string[] = [];
+  let posts: Awaited<ReturnType<typeof fetchRecentPagePosts>> = [];
+
+  try {
+    posts = await fetchRecentPagePosts(pageId, pageToken, 25);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Could not load Facebook posts";
+    warnings.push(
+      message.includes("pages_read_engagement")
+        ? "Facebook Page connected, but post metrics need pages_read_engagement. Add it in your Login for Business configuration, then reconnect."
+        : `Facebook posts skipped: ${message}`,
+    );
+  }
+
   const db = getDb();
 
   await db
@@ -131,50 +155,39 @@ export async function syncMetaWorkspace(workspaceId = DEFAULT_WORKSPACE_ID) {
   let igMediaCount = 0;
   const igAccount = await getMetaAccount(workspaceId, "IG");
   if (igAccount?.externalAccountId) {
-    const igProfile = await fetchInstagramProfile(igAccount.externalAccountId, pageToken);
-    const media = await fetchRecentInstagramMedia(igAccount.externalAccountId, pageToken, 25);
-    igMediaCount = media.length;
+    try {
+      const igProfile = await fetchInstagramProfile(igAccount.externalAccountId, pageToken);
+      const media = await fetchRecentInstagramMedia(igAccount.externalAccountId, pageToken, 25);
+      igMediaCount = media.length;
 
-    await db
-      .insert(instagramAccountSnapshots)
-      .values({
-        workspaceId,
-        igUserId: igProfile.id,
-        username: igProfile.username,
-        followerCount: igProfile.followers_count ?? 0,
-        mediaCount: igProfile.media_count ?? media.length,
-        syncedAt,
-      })
-      .onConflictDoUpdate({
-        target: instagramAccountSnapshots.workspaceId,
-        set: {
+      await db
+        .insert(instagramAccountSnapshots)
+        .values({
+          workspaceId,
           igUserId: igProfile.id,
           username: igProfile.username,
           followerCount: igProfile.followers_count ?? 0,
           mediaCount: igProfile.media_count ?? media.length,
           syncedAt,
-        },
-      });
-
-    for (const item of media) {
-      await db
-        .insert(instagramMedia)
-        .values({
-          mediaId: item.id,
-          workspaceId,
-          igUserId: igProfile.id,
-          caption: item.caption ?? "",
-          mediaType: item.media_type ?? "UNKNOWN",
-          permalink: item.permalink,
-          thumbnailUrl: item.thumbnail_url ?? item.media_url,
-          publishedAt: new Date(item.timestamp),
-          likeCount: item.like_count ?? 0,
-          commentCount: item.comments_count ?? 0,
-          syncedAt,
         })
         .onConflictDoUpdate({
-          target: instagramMedia.mediaId,
+          target: instagramAccountSnapshots.workspaceId,
           set: {
+            igUserId: igProfile.id,
+            username: igProfile.username,
+            followerCount: igProfile.followers_count ?? 0,
+            mediaCount: igProfile.media_count ?? media.length,
+            syncedAt,
+          },
+        });
+
+      for (const item of media) {
+        await db
+          .insert(instagramMedia)
+          .values({
+            mediaId: item.id,
+            workspaceId,
+            igUserId: igProfile.id,
             caption: item.caption ?? "",
             mediaType: item.media_type ?? "UNKNOWN",
             permalink: item.permalink,
@@ -183,8 +196,28 @@ export async function syncMetaWorkspace(workspaceId = DEFAULT_WORKSPACE_ID) {
             likeCount: item.like_count ?? 0,
             commentCount: item.comments_count ?? 0,
             syncedAt,
-          },
-        });
+          })
+          .onConflictDoUpdate({
+            target: instagramMedia.mediaId,
+            set: {
+              caption: item.caption ?? "",
+              mediaType: item.media_type ?? "UNKNOWN",
+              permalink: item.permalink,
+              thumbnailUrl: item.thumbnail_url ?? item.media_url,
+              publishedAt: new Date(item.timestamp),
+              likeCount: item.like_count ?? 0,
+              commentCount: item.comments_count ?? 0,
+              syncedAt,
+            },
+          });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not load Instagram media";
+      warnings.push(
+        message.includes("instagram")
+          ? "Instagram metrics need instagram_basic and instagram_manage_insights in your Login for Business configuration."
+          : `Instagram sync skipped: ${message}`,
+      );
     }
   }
 
@@ -203,6 +236,7 @@ export async function syncMetaWorkspace(workspaceId = DEFAULT_WORKSPACE_ID) {
         }
       : null,
     syncedAt: syncedAt.toISOString(),
+    warnings: warnings.length > 0 ? warnings : undefined,
   };
 }
 

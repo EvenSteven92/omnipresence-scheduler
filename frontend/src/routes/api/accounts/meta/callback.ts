@@ -33,15 +33,23 @@ export const Route = createFileRoute("/api/accounts/meta/callback")({
 
         try {
           const tokens = await exchangeMetaCode(code);
-          await connectMetaWorkspaceFromCode(
+          const result = await connectMetaWorkspaceFromCode(
             parsedState.workspaceId,
             tokens.access_token,
             undefined,
           );
 
+          const warning =
+            "warnings" in result && Array.isArray(result.warnings) && result.warnings[0]
+              ? `&message=${encodeURIComponent(result.warnings[0])}`
+              : "";
+          const status = warning ? "partial" : "connected";
+
           return new Response(null, {
             status: 302,
-            headers: { Location: `${redirectBase}?meta=connected#connect-platform` },
+            headers: {
+              Location: `${redirectBase}?meta=${status}${warning}#connect-platform`,
+            },
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : "Meta connect failed";

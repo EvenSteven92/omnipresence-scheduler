@@ -47,6 +47,11 @@ function WorkspacesPage() {
       setBanner(params.get("message") ?? "YouTube connect failed.");
     } else if (meta === "connected") {
       setBanner("Meta connected. Facebook and linked Instagram metrics will sync to the dashboard.");
+    } else if (meta === "partial") {
+      setBanner(
+        params.get("message") ??
+          "Meta connected with limited access. Add pages_read_engagement in Login for Business, then reconnect.",
+      );
     } else if (meta === "denied") {
       setBanner("Meta connect was cancelled.");
     } else if (meta === "error") {
