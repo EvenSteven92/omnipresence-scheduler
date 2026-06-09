@@ -43,12 +43,8 @@ import {
   TopPerformerCard,
 } from "@/components/post/TopPerformerCard";
 import { useMemo, useState } from "react";
-import { useYouTubeMetrics, youtubeVideosToPublishedPosts } from "@/hooks/useYouTubeMetrics";
-import {
-  metaFacebookPostsToPublishedPosts,
-  metaInstagramMediaToPublishedPosts,
-  useMetaMetrics,
-} from "@/hooks/useMetaMetrics";
+import { useYouTubeMetrics } from "@/hooks/useYouTubeMetrics";
+import { useMetaMetrics } from "@/hooks/useMetaMetrics";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import { LiveConnectionStrip } from "@/components/ConnectPlatformSection";
 import { AddPlatformStencilCard } from "@/components/AddPlatformStencilCard";
@@ -57,9 +53,13 @@ import { TopEventPerformersSection } from "@/components/events/TopEventPerformer
 import { GrowthMatrixChart } from "@/components/GrowthMatrixChart";
 import { TimeframeSelector } from "@/components/TimeframeSelector";
 import {
+  buildLivePublishedPosts,
+  hasLiveMetrics,
+  mergeGrowthMatrixRows,
+  mergeMetrics,
+} from "@/lib/live-metrics";
+import {
   filterPublishedInTimeframe,
-  getGrowthMatrixForTimeframe,
-  getMetrics,
   isAllTime,
   timeframeLabel,
   type Timeframe,
@@ -84,69 +84,22 @@ function DashboardPage() {
   const { data: youtubeMetrics } = useYouTubeMetrics(workspace.id);
   const { data: metaMetrics } = useMetaMetrics(workspace.id);
   const { data: accountStatus } = usePlatformConnections(workspace.id);
-  const metrics = useMemo(() => getMetrics(timeframe, workspace), [timeframe, workspace]);
-  const growthRows = useMemo(() => {
-    const rows = getGrowthMatrixForTimeframe(timeframe, workspace);
-    return rows.map((row) => {
-      if (row.platform === "YT" && youtubeMetrics?.connected && youtubeMetrics.videos.length > 0) {
-        const views = youtubeMetrics.videos.reduce((sum, v) => sum + v.views, 0);
-        const likes = youtubeMetrics.videos.reduce((sum, v) => sum + v.likes, 0);
-        const shares = youtubeMetrics.videos.reduce((sum, v) => sum + v.comments, 0);
-        return { ...row, views, likes, shares };
-      }
-      if (
-        row.platform === "FB" &&
-        metaMetrics?.facebook.connected &&
-        metaMetrics.facebook.posts.length > 0
-      ) {
-        const views = metaMetrics.facebook.posts.reduce(
-          (sum, p) => sum + p.likes + p.comments + p.shares,
-          0,
-        );
-        const likes = metaMetrics.facebook.posts.reduce((sum, p) => sum + p.likes, 0);
-        const shares = metaMetrics.facebook.posts.reduce((sum, p) => sum + p.shares, 0);
-        return { ...row, views, likes, shares };
-      }
-      if (
-        row.platform === "IG" &&
-        metaMetrics?.instagram.connected &&
-        metaMetrics.instagram.media.length > 0
-      ) {
-        const views = metaMetrics.instagram.media.reduce(
-          (sum, m) => sum + m.likes + m.comments,
-          0,
-        );
-        const likes = metaMetrics.instagram.media.reduce((sum, m) => sum + m.likes, 0);
-        const shares = metaMetrics.instagram.media.reduce((sum, m) => sum + m.comments, 0);
-        return { ...row, views, likes, shares };
-      }
-      return row;
-    });
-  }, [timeframe, workspace, youtubeMetrics, metaMetrics]);
-  const livePublishedPosts = useMemo(() => {
-    const livePlatforms = new Set<PublishedPost["platforms"][number]>();
-    const livePosts: PublishedPost[] = [];
-
-    if (youtubeMetrics?.connected && youtubeMetrics.videos.length > 0) {
-      livePlatforms.add("YT");
-      livePosts.push(...youtubeVideosToPublishedPosts(youtubeMetrics.videos));
-    }
-    if (metaMetrics?.facebook.connected && metaMetrics.facebook.posts.length > 0) {
-      livePlatforms.add("FB");
-      livePosts.push(...metaFacebookPostsToPublishedPosts(metaMetrics.facebook.posts));
-    }
-    if (metaMetrics?.instagram.connected && metaMetrics.instagram.media.length > 0) {
-      livePlatforms.add("IG");
-      livePosts.push(...metaInstagramMediaToPublishedPosts(metaMetrics.instagram.media));
-    }
-
-    if (livePlatforms.size === 0) return publishedPosts;
-
-    const mockRemainder = publishedPosts.filter(
-      (p) => !p.platforms.some((platform) => livePlatforms.has(platform)),
-    );
-    return [...livePosts, ...mockRemainder];
-  }, [publishedPosts, youtubeMetrics, metaMetrics]);
+  const liveBundle = useMemo(
+    () => ({ youtube: youtubeMetrics, meta: metaMetrics }),
+    [youtubeMetrics, metaMetrics],
+  );
+  const livePublishedPosts = useMemo(
+    () => buildLivePublishedPosts(publishedPosts, liveBundle),
+    [publishedPosts, liveBundle],
+  );
+  const metrics = useMemo(
+    () => mergeMetrics(timeframe, workspace, liveBundle, livePublishedPosts),
+    [timeframe, workspace, liveBundle, livePublishedPosts],
+  );
+  const growthRows = useMemo(
+    () => mergeGrowthMatrixRows(timeframe, workspace, liveBundle, livePublishedPosts),
+    [timeframe, workspace, liveBundle, livePublishedPosts],
+  );
   const allTime = isAllTime(timeframe);
 
   return (
@@ -171,7 +124,9 @@ function DashboardPage() {
           {allTime
             ? "lifetime totals · no period comparison"
             : `vs prior ${timeframeLabel(timeframe)} · % change reflects same-length prior window`}
-          {youtubeMetrics?.connected ? " · YouTube row + top performers use live synced data" : ""}
+          {hasLiveMetrics(liveBundle)
+            ? " · KPIs + growth matrix use live YouTube & Meta sync"
+            : ""}
         </p>
 
         {/* Metric cards */}

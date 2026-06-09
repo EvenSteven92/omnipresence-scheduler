@@ -21,11 +21,17 @@ import {
 } from "recharts";
 import { Eye, Heart, Share2, Activity, Link2, Users, UserCheck, Download, ArrowRight } from "lucide-react";
 import { TimeframeSelector } from "@/components/TimeframeSelector";
+import { useYouTubeMetrics } from "@/hooks/useYouTubeMetrics";
+import { useMetaMetrics } from "@/hooks/useMetaMetrics";
+import {
+  buildLivePublishedPosts,
+  hasLiveMetrics,
+  mergeDailySeries,
+  mergeMetrics,
+  mergePlatformBreakdown,
+} from "@/lib/live-metrics";
 import {
   filterPublishedInTimeframe,
-  getMetrics,
-  getDailySeries,
-  getPlatformBreakdown,
   getEngagementHeatmap,
   isAllTime,
   timeframeLabel,
@@ -85,20 +91,39 @@ function AnalyticsPage() {
   const navigate = useNavigate();
   const { workspace, workspaceId } = useWorkspace();
   const { publishedPosts } = workspace;
+  const { data: youtubeMetrics } = useYouTubeMetrics(workspaceId);
+  const { data: metaMetrics } = useMetaMetrics(workspaceId);
   const [timeframe, setTimeframe] = useState<Timeframe>({ kind: "preset", preset: "1m" });
   const [detailPost, setDetailPost] = useState<PublishedPost | null>(null);
-  const metrics = useMemo(() => getMetrics(timeframe, workspace), [timeframe, workspace]);
-  const series = useMemo(() => getDailySeries(timeframe, workspace), [timeframe, workspace]);
-  const breakdown = useMemo(() => getPlatformBreakdown(timeframe, workspace), [timeframe, workspace]);
+  const liveBundle = useMemo(
+    () => ({ youtube: youtubeMetrics, meta: metaMetrics }),
+    [youtubeMetrics, metaMetrics],
+  );
+  const livePublishedPosts = useMemo(
+    () => buildLivePublishedPosts(publishedPosts, liveBundle),
+    [publishedPosts, liveBundle],
+  );
+  const metrics = useMemo(
+    () => mergeMetrics(timeframe, workspace, liveBundle, livePublishedPosts),
+    [timeframe, workspace, liveBundle, livePublishedPosts],
+  );
+  const series = useMemo(
+    () => mergeDailySeries(timeframe, workspace, liveBundle, livePublishedPosts),
+    [timeframe, workspace, liveBundle, livePublishedPosts],
+  );
+  const breakdown = useMemo(
+    () => mergePlatformBreakdown(timeframe, workspace, liveBundle, livePublishedPosts),
+    [timeframe, workspace, liveBundle, livePublishedPosts],
+  );
   const heatmap = useMemo(() => getEngagementHeatmap(), []);
   const allTime = isAllTime(timeframe);
   const topPublished = useMemo(
     () =>
-      filterPublishedInTimeframe(publishedPosts, timeframe)
+      filterPublishedInTimeframe(livePublishedPosts, timeframe)
         .slice()
         .sort((a, b) => b.engagementRate - a.engagementRate)
         .slice(0, TOP_PERFORMERS_DISPLAY_LIMIT),
-    [publishedPosts, timeframe],
+    [livePublishedPosts, timeframe],
   );
 
   // Aggregate series into ~30 buckets for legibility on longer timeframes
@@ -139,6 +164,9 @@ function AnalyticsPage() {
           {allTime
             ? "lifetime totals · no period comparison"
             : `vs prior ${timeframeLabel(timeframe)} · ${trendData.length}_buckets`}
+          {hasLiveMetrics(liveBundle)
+            ? " · KPIs, charts & platform table use live YouTube & Meta sync"
+            : ""}
         </p>
 
         {/* KPI strip */}
