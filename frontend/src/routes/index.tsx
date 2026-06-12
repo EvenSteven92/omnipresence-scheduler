@@ -51,7 +51,6 @@ import { AddPlatformStencilCard } from "@/components/AddPlatformStencilCard";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { TopEventPerformersSection } from "@/components/events/TopEventPerformersSection";
 import { GrowthMatrixChart } from "@/components/GrowthMatrixChart";
-import { TimeframeSelector } from "@/components/TimeframeSelector";
 import {
   buildLivePublishedPosts,
   hasLiveMetrics,
@@ -65,7 +64,13 @@ import {
   type Timeframe,
 } from "@/lib/timeframe";
 
-const metricIcons = [UserCheck, Eye, Heart, Share2, Activity, Link2, Users];
+const DASHBOARD_METRIC_KEYS = new Set(["views", "engagement", "followers"]);
+const DASHBOARD_METRIC_ICONS: Record<string, typeof Eye> = {
+  followers: UserCheck,
+  views: Eye,
+  engagement: Activity,
+};
+const DASHBOARD_TIMEFRAME: Timeframe = { kind: "preset", preset: "1w" };
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -79,7 +84,7 @@ export const Route = createFileRoute("/")({
 
 function DashboardPage() {
   const { workspace } = useWorkspace();
-  const [timeframe, setTimeframe] = useState<Timeframe>({ kind: "preset", preset: "1m" });
+  const timeframe = DASHBOARD_TIMEFRAME;
   const { scheduledPosts, publishedPosts } = workspace;
   const { data: youtubeMetrics } = useYouTubeMetrics(workspace.id);
   const { data: metaMetrics } = useMetaMetrics(workspace.id);
@@ -106,7 +111,7 @@ function DashboardPage() {
     <div>
       <PageHeader
         eyebrow={<WorkspaceEyebrow />}
-        title="Core Performance"
+        title="Dashboard"
         actions={
           <>
             <Link to="/analytics" className="btn-action">Analytics</Link>
@@ -116,59 +121,78 @@ function DashboardPage() {
       />
 
       <div className="page-content">
-        {/* Range selector — drives KPI row + growth matrix below */}
-        <div id="dashboard-timeframe">
-          <TimeframeSelector value={timeframe} onChange={setTimeframe} />
-        </div>
-        <p className="label-mono mt-4">
-          {allTime
-            ? "lifetime totals · no period comparison"
-            : `vs prior ${timeframeLabel(timeframe)} · % change reflects same-length prior window`}
-          {hasLiveMetrics(liveBundle)
-            ? " · KPIs + growth matrix use live YouTube & Meta sync"
-            : ""}
-        </p>
+        {/* Action-first: schedule + gaps */}
+        <UpcomingSection />
 
-        {/* Metric cards */}
-        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
-          {metrics.map((m, i) => {
-            const Icon = metricIcons[i];
-            return (
-              <div key={m.label} data-testid={`metric-${m.key}`} className="kpi-card metric-cell">
-                <div className="flex items-start justify-between">
-                  <div className="label-mono">{m.label.replace(/ /g, "_")}</div>
-                  <Icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                </div>
-                <div className="mt-5 text-3xl font-semibold tracking-tight text-foreground">{m.value}</div>
-                {m.delta && (
-                  <div
-                    className={`mt-2.5 text-xs ${
-                      m.trend === "up" ? "text-success" : m.trend === "down" ? "text-danger" : "text-muted-foreground"
-                    }`}
-                  >
-                    {m.delta}
+        <div
+          id="dashboard-timeframe"
+          className="mt-2 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4"
+        >
+          <p className="text-sm text-muted-foreground">
+            Quick stats for the{" "}
+            <span className="text-foreground">last 7 days</span>
+            {hasLiveMetrics(liveBundle) ? " · live YouTube & Meta data" : ""}
+          </p>
+          <Link
+            to="/analytics"
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Change range in Analytics →
+          </Link>
+        </div>
+
+        {/* Compact KPI row — full grid lives on Analytics */}
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {metrics
+            .filter((m) => DASHBOARD_METRIC_KEYS.has(m.key))
+            .map((m) => {
+              const Icon = DASHBOARD_METRIC_ICONS[m.key] ?? Eye;
+              return (
+                <div key={m.label} data-testid={`metric-${m.key}`} className="kpi-card metric-cell">
+                  <div className="flex items-start justify-between">
+                    <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                      {m.label}
+                    </div>
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
                   </div>
-                )}
-                {m.note && <p className="label-mono mt-3 leading-relaxed normal-case tracking-normal">{m.note}</p>}
-              </div>
-            );
-          })}
+                  <div className="mt-5 text-3xl font-semibold tracking-tight text-foreground">{m.value}</div>
+                  {m.delta ? (
+                    <div
+                      title={m.key === "engagement" ? "Percentage points vs prior period" : undefined}
+                      className={`mt-2.5 text-xs ${
+                        m.trend === "up"
+                          ? "text-success"
+                          : m.trend === "down"
+                            ? "text-danger"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      {m.delta}
+                    </div>
+                  ) : null}
+                  {m.note && m.key === "followers" ? (
+                    <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{m.note}</p>
+                  ) : null}
+                </div>
+              );
+            })}
         </div>
 
-        {/* Growth matrix */}
+        {!allTime ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Compared to the prior {timeframeLabel(timeframe)}.
+          </p>
+        ) : null}
+
+        {/* Platform health at a glance */}
         <div className="panel section-block p-8">
           <GrowthMatrixChart rows={growthRows} timeframe={timeframe} />
         </div>
 
-        {/* Upcoming this week */}
-        <UpcomingSection />
-
-        {/* Top performers */}
         <TopPerformersSection publishedPosts={livePublishedPosts} timeframe={timeframe} />
 
         <TopEventPerformersSection timeframe={timeframe} />
 
-        {/* Connection health */}
         <HealthStrip workspace={workspace} youtubeLive={accountStatus?.youtube.connected ?? false} />
       </div>
     </div>
@@ -274,7 +298,9 @@ function UpcomingSection() {
     <section className="section-block">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="label-mono">upcoming · next_7d</div>
+          <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Upcoming · next 7 days
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {upcoming.length === 0
               ? "Nothing in the queue — drop assets in New Post to fill the next week."
@@ -288,14 +314,14 @@ function UpcomingSection() {
               className="inline-flex items-center gap-1.5 rounded-sm border border-warning/60 bg-warning/10 px-2 py-1 text-[0.6rem] uppercase tracking-[0.14em] text-warning"
             >
               <AlertTriangle className="h-3 w-3" />
-              {gapWarning.length}_gap{gapWarning.length === 1 ? "" : "s"}_in_queue: {gapWarning.join("·")}
+              {gapWarning.length} gap{gapWarning.length === 1 ? "" : "s"} in queue: {gapWarning.join(" · ")}
             </span>
           ) : null}
           <Link
             to="/calendar"
             className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
           >
-            View_Calendar <ArrowRight className="h-3 w-3" />
+            View calendar <ArrowRight className="h-3 w-3" />
           </Link>
           <NewEventPostActions flow={createEventFlow} />
         </div>
@@ -444,7 +470,9 @@ function TopPerformersSection({
     <section className="section-block">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <div className="label-mono">top_performers · {timeframeLabel(timeframe)}</div>
+          <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Top performers · {timeframeLabel(timeframe)}
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             Ranked by engagement rate — pull insights into your next campaign.
           </p>
@@ -453,13 +481,13 @@ function TopPerformersSection({
           to="/analytics"
           className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
         >
-          Full_Analytics <ArrowRight className="h-3 w-3" />
+          Full analytics <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
 
       {top.length === 0 ? (
-        <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center label-mono">
-          no_published_posts_in_range
+        <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center text-sm text-muted-foreground">
+          No published posts in this range
         </div>
       ) : (
         <div className="flex flex-wrap gap-3">
@@ -494,7 +522,9 @@ function HealthStrip({
     <section className="section-block">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="label-mono">platform_connections</div>
+          <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Platform connections
+          </div>
           <p className="mt-2 text-sm text-muted-foreground">
             {youtubeLive
               ? "YouTube uses live OAuth data. Other platforms still show demo metrics until connected."
@@ -504,9 +534,9 @@ function HealthStrip({
         <Link
           to="/workspaces"
           hash="connect-platform"
-          className="label-mono text-muted-foreground/70 transition-colors hover:text-foreground"
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
-          connect accounts →
+          Connect accounts →
         </Link>
       </div>
       <LiveConnectionStrip workspace={workspace} />

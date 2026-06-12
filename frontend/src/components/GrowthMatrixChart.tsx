@@ -31,7 +31,7 @@ export function GrowthMatrixChart({
   return (
     <div data-testid="growth-matrix-chart" aria-labelledby="dashboard-timeframe">
       <CollapsibleSection
-        title="cross_platform_growth_matrix"
+        title="Cross-platform growth"
         subtitle={
           allTime
             ? "Per-platform lifetime totals for the selected range."
@@ -63,7 +63,11 @@ export function GrowthMatrixChart({
           {sorted.map((row) => {
             const meta = PLATFORMS_BY_SHORT[row.platform];
             return (
-              <div key={row.platform} className="kpi-card flex flex-col px-4 py-4">
+              <div
+                key={row.platform}
+                className="kpi-card flex flex-col border-l-[3px] px-4 py-4"
+                style={{ borderLeftColor: meta?.brandColor ?? "var(--color-border)" }}
+              >
                 <div className="mb-4 flex items-center justify-between gap-2 border-b border-border pb-3">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <PlatformChip platform={row.platform} size="md" title={meta?.full ?? row.platform} />

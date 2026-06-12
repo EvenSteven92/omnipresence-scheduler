@@ -104,7 +104,7 @@ export function ScheduleEventModal({
       >
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <div className="label-mono">new_event</div>
+            <div className="text-sm font-medium text-foreground">New event</div>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
               Create an event album — sermon, worship night, campaign, etc. Associate media now or
               later from New Post.
@@ -135,7 +135,7 @@ export function ScheduleEventModal({
           </label>
 
           <label className="block space-y-1.5">
-            <span className="label-mono text-[0.5rem] text-muted-foreground">short_description</span>
+            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">Short description</span>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -177,7 +177,7 @@ export function ScheduleEventModal({
           ) : null}
 
           <label className="block space-y-1.5">
-            <span className="label-mono text-[0.5rem] text-muted-foreground">event_type</span>
+            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">Event type</span>
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value as ContentEventKind)}

@@ -47,7 +47,7 @@ function EventsIndexPage() {
               <Layers className="h-5 w-5 text-accent" strokeWidth={1.5} />
             </div>
             <div className="max-w-2xl">
-              <div className="label-mono">event_albums</div>
+              <div className="text-sm font-medium text-foreground">Event albums</div>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 Each album is a ministry moment — like a Sunday sermon — with every related file
                 associated to it. Associate reels, quote cards, and long-form uploads from the file
@@ -59,7 +59,7 @@ function EventsIndexPage() {
 
         {events.length === 0 ? (
           <div className="mt-8 rounded-sm border border-dashed border-border bg-surface/40 px-6 py-16 text-center">
-            <p className="label-mono text-muted-foreground">no_events_yet</p>
+            <p className="text-sm text-muted-foreground">No events yet</p>
             <p className="mt-2 text-xs text-muted-foreground">
               Create your first event album to group sermon reels, clips, and quote cards.
             </p>
@@ -69,7 +69,7 @@ function EventsIndexPage() {
               data-testid="events-empty-new-event"
               className="mt-5 inline-flex items-center gap-1.5 rounded-sm border border-accent/60 bg-accent/10 px-4 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-accent transition-colors hover:bg-accent/20"
             >
-              New_Event
+              New Event
             </button>
           </div>
         ) : (

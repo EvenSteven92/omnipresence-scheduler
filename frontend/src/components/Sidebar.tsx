@@ -45,7 +45,6 @@ export function Sidebar() {
 
       {/* Primary action + sign out */}
       <div className="mt-4 space-y-2.5 px-2.5">
-        <NewEventSidebarButton />
         <SidebarItem
           to="/scheduler"
           label="New Post"
@@ -53,6 +52,7 @@ export function Sidebar() {
           variant="primary"
           testid="sidebar-new-post-btn"
         />
+        <NewEventSidebarButton />
         <SidebarButton
           label="Sign out"
           Icon={LogOut}
@@ -119,8 +119,11 @@ function SidebarItem({
       className={`${base} ${styles}`}
       activeProps={
         variant === "ghost"
-          ? { className: "!bg-secondary !text-foreground border-l-2 border-accent" }
-          : undefined
+          ? {
+              className:
+                "!bg-accent/10 !text-foreground ring-1 ring-inset ring-accent/40 border-l-[3px] border-accent",
+            }
+          : { className: "!ring-2 !ring-inset !ring-primary-foreground/30" }
       }
       aria-label={label}
     >

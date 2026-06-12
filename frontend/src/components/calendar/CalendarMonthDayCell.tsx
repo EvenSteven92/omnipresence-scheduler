@@ -45,18 +45,22 @@ export function CalendarMonthDayCell({
       data-testid={
         muted ? undefined : isQuietDay ? `upcoming-quiet-day-${day}` : `cal-day-${day}`
       }
-      className={`group/cell relative flex min-h-[168px] min-w-0 flex-col gap-2 bg-surface p-3 transition-colors ${
+      className={`group/cell relative flex min-h-[168px] min-w-0 flex-col gap-2 p-3 transition-colors ${
         muted
-          ? "text-muted-foreground/40"
-          : emptyMainDay
-            ? "hover:bg-accent"
-            : isToday
-              ? "ring-1 ring-inset ring-accent"
-              : isQuietDay
-                ? "ring-1 ring-inset ring-warning/70 hover:ring-accent"
-                : isSelected
-                  ? "ring-1 ring-inset ring-border hover:ring-accent"
-                  : "hover:ring-1 hover:ring-inset hover:ring-accent"
+          ? "bg-surface/40 text-muted-foreground/40"
+          : hasPosts
+            ? "bg-surface shadow-sm"
+            : emptyMainDay
+              ? "bg-background/40 text-muted-foreground/70 hover:bg-background/60"
+              : "bg-surface"
+      } ${
+        !muted && isToday
+          ? "ring-1 ring-inset ring-accent"
+          : !muted && isQuietDay
+            ? "ring-1 ring-inset ring-warning/70"
+            : !muted && isSelected
+              ? "ring-1 ring-inset ring-border"
+              : ""
       }`}
     >
       <CalendarDayDateBadge
@@ -90,7 +94,7 @@ export function CalendarMonthDayCell({
             className="flex flex-col items-center gap-1.5 text-center"
           >
             <AlertTriangle className="h-3.5 w-3.5 text-warning" strokeWidth={1.75} />
-            <span className="label-mono text-[0.5rem] text-warning">quiet_day</span>
+            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-warning">Quiet day</span>
           </div>
           <div className="w-full min-w-0">
             <SchedulePostStencil dense />

@@ -161,8 +161,8 @@ export function TimeframeSelector({
         </div>
       </div>
 
-      <div className="label-mono ml-2 hidden lg:block" data-testid="timeframe-label">
-        showing · {timeframeLabel(value)}
+      <div className="ml-2 hidden text-xs text-muted-foreground lg:block" data-testid="timeframe-label">
+        Showing {timeframeLabel(value)}
       </div>
     </div>
   );

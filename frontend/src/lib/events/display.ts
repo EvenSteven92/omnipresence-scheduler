@@ -34,12 +34,12 @@ export interface EventPerformance {
 }
 
 const KIND_LABELS: Record<ContentEvent["kind"], string> = {
-  sunday_sermon: "sunday_sermon",
-  worship_night: "worship_night",
-  youth: "youth",
-  campaign: "campaign",
-  conference: "conference",
-  other: "other",
+  sunday_sermon: "Sunday sermon",
+  worship_night: "Worship night",
+  youth: "Youth",
+  campaign: "Campaign",
+  conference: "Conference",
+  other: "Other",
 };
 
 export function eventKindLabel(kind: ContentEvent["kind"]): string {

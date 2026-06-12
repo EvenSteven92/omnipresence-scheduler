@@ -40,12 +40,12 @@ function EventDetailPage() {
     return (
       <div className="page-content">
         <div className="rounded-sm border border-dashed border-border px-6 py-16 text-center">
-          <p className="label-mono text-muted-foreground">event_not_found</p>
+          <p className="text-sm text-muted-foreground">Event not found</p>
           <Link
             to="/events"
             className="mt-4 inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary"
           >
-            <ArrowLeft className="h-3 w-3" /> Back_to_events
+            <ArrowLeft className="h-3 w-3" /> Back to events
           </Link>
         </div>
       </div>
@@ -68,7 +68,7 @@ function EventDetailPage() {
               to="/events"
               className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
             >
-              <ArrowLeft className="h-3 w-3" /> All_Events
+              <ArrowLeft className="h-3 w-3" /> All events
             </Link>
             <NewEventPostActions />
           </>
@@ -105,7 +105,9 @@ function EventDetailPage() {
         </div>
 
         <section>
-          <div className="mb-4 label-mono">album_performance</div>
+          <div className="mb-4 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Album performance
+          </div>
           <EventPerformanceStrip perf={perf} />
         </section>
 

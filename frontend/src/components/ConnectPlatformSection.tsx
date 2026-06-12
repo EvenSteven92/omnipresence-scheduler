@@ -132,7 +132,7 @@ export function ConnectPlatformSection({
       <div className="panel border border-dashed border-border bg-surface/40 p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="label-mono mb-2">platform_integrations</div>
+            <div className="mb-2 text-sm font-medium text-foreground">Platform integrations</div>
             <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
               Connect real accounts one at a time. YouTube and Meta (Facebook + Instagram) are
               live read-only. Other platforms stay in demo mode until we wire OAuth for each.

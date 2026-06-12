@@ -33,6 +33,7 @@ import {
 import {
   filterPublishedInTimeframe,
   getEngagementHeatmap,
+  getPlatformBreakdown,
   isAllTime,
   timeframeLabel,
   type Timeframe,
@@ -142,30 +143,17 @@ function AnalyticsPage() {
       <PageHeader
         eyebrow={<WorkspaceEyebrow />}
         title="Analytics"
-        actions={
-          <>
-            <button
-              type="button"
-              data-testid="export-csv-btn"
-              disabled
-              title="CSV export ships with live analytics — coming soon"
-              className="flex cursor-not-allowed items-center gap-2 rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground opacity-50"
-            >
-              <Download className="h-3 w-3" /> Export_CSV
-            </button>
-            <NewEventPostActions />
-          </>
-        }
+        actions={<NewEventPostActions />}
       />
 
       <div className="page-content">
         <TimeframeSelector value={timeframe} onChange={setTimeframe} />
-        <p className="label-mono mt-4">
+        <p className="mt-4 text-sm text-muted-foreground">
           {allTime
-            ? "lifetime totals · no period comparison"
-            : `vs prior ${timeframeLabel(timeframe)} · ${trendData.length}_buckets`}
+            ? "Lifetime totals — no period comparison."
+            : `Compared to the prior ${timeframeLabel(timeframe)} · ${trendData.length} data points`}
           {hasLiveMetrics(liveBundle)
-            ? " · KPIs, charts & platform table use live YouTube & Meta sync"
+            ? " · live YouTube & Meta sync"
             : ""}
         </p>
 
@@ -176,19 +164,22 @@ function AnalyticsPage() {
             return (
               <div key={m.label} data-testid={`kpi-${m.key}`} className="kpi-card metric-cell">
                 <div className="flex items-start justify-between">
-                  <div className="label-mono">{m.label.replace(/ /g, "_")}</div>
+                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    {m.label}
+                  </div>
                   <Icon className="h-3 w-3 text-muted-foreground" strokeWidth={1.5} />
                 </div>
                 <div className="mt-5 text-2xl font-semibold tracking-tight text-foreground">{m.value}</div>
-                {m.delta && (
+                {m.delta ? (
                   <div
+                    title={m.key === "engagement" ? "Percentage points vs prior period" : undefined}
                     className={`mt-1 text-[0.65rem] ${
                       m.trend === "up" ? "text-success" : m.trend === "down" ? "text-danger" : "text-muted-foreground"
                     }`}
                   >
                     {m.delta}
                   </div>
-                )}
+                ) : null}
               </div>
             );
           })}
@@ -196,7 +187,10 @@ function AnalyticsPage() {
 
         {/* Engagement trend + Audience growth */}
         <div className="section-block grid gap-8 lg:grid-cols-2">
-          <Panel title="engagement_trend" sub="views · likes · shares over time">
+          <Panel
+            title="Engagement trend"
+            sub="Views, likes, and shares plotted daily over the selected period."
+          >
             <div className="h-72">
               <ResponsiveContainer>
                 <AreaChart data={trendData} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
@@ -227,7 +221,10 @@ function AnalyticsPage() {
             ]} />
           </Panel>
 
-          <Panel title="audience_growth" sub="cumulative followers across all connected platforms">
+          <Panel
+            title="Audience growth"
+            sub="Cumulative followers across all connected platforms."
+          >
             <div className="h-72">
               <ResponsiveContainer>
                 <LineChart data={trendData} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
@@ -245,7 +242,11 @@ function AnalyticsPage() {
 
         {/* Platform breakdown + share-of-engagement */}
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <Panel title="per_platform_views" sub="stacked by content type" className="lg:col-span-2">
+          <Panel
+            title="Per-platform views"
+            sub="Stacked views, likes, and shares by platform."
+            className="lg:col-span-2"
+          >
             <div className="h-72">
               <ResponsiveContainer>
                 <BarChart data={breakdown} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
@@ -266,7 +267,7 @@ function AnalyticsPage() {
             ]} />
           </Panel>
 
-          <Panel title="share_of_engagement" sub="where the conversation is happening">
+          <Panel title="Share of engagement" sub="Where the conversation is happening.">
             <div className="h-72">
               <ResponsiveContainer>
                 <PieChart>
@@ -294,7 +295,9 @@ function AnalyticsPage() {
               {breakdown.map((b, i) => (
                 <div key={b.platform} className="flex items-center gap-1.5 text-[0.6rem]">
                   <span className="inline-block h-2 w-2" style={{ background: PALETTE[i % PALETTE.length] }} />
-                  <span className="label-mono">{b.platform}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {PLATFORMS_BY_SHORT[b.platform]?.full ?? b.platform}
+                  </span>
                 </div>
               ))}
             </div>
@@ -303,14 +306,30 @@ function AnalyticsPage() {
 
         {/* Cadence heatmap */}
         <div className="mt-6">
-          <Panel title="posting_cadence_heatmap" sub="when your audience engages most · darker = more engagement">
+          <Panel
+            title="Posting cadence"
+            sub="When your audience engages most — darker cells mean higher engagement."
+          >
             <Heatmap grid={heatmap} />
           </Panel>
         </div>
 
         {/* Per-platform performance table */}
         <div className="mt-6">
-          <Panel title="per_platform_performance">
+          <Panel
+            title="Per-platform performance"
+            action={
+              <button
+                type="button"
+                data-testid="export-csv-btn"
+                disabled
+                title="CSV export ships with live analytics — coming soon"
+                className="flex cursor-not-allowed items-center gap-2 rounded-sm border border-border bg-background/40 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground opacity-50"
+              >
+                <Download className="h-3 w-3" /> Export CSV
+              </button>
+            }
+          >
             <PlatformTable rows={breakdown} />
           </Panel>
         </div>
@@ -319,7 +338,9 @@ function AnalyticsPage() {
         <section className="section-block">
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <div className="label-mono">top_performers · {timeframeLabel(timeframe)}</div>
+              <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                Top performers · {timeframeLabel(timeframe)}
+              </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 Click a post to view its per-platform publish history.
               </p>
@@ -331,12 +352,12 @@ function AnalyticsPage() {
               data-testid="schedule-similar-btn"
               className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Schedule_Similar <ArrowRight className="h-3 w-3" />
+              Schedule similar <ArrowRight className="h-3 w-3" />
             </button>
           </div>
           {topPublished.length === 0 ? (
-            <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center label-mono">
-              no_published_posts_in_range
+            <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center text-sm text-muted-foreground">
+              No published posts in this range
             </div>
           ) : (
           <div className="flex flex-wrap gap-3">
@@ -394,19 +415,24 @@ function shortLabel(iso: string): string {
 function Panel({
   title,
   sub,
+  action,
   children,
   className = "",
 }: {
   title: string;
   sub?: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <section className={`overflow-hidden rounded-sm border border-border bg-surface ${className}`}>
-      <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border px-6 py-4">
-        <div className="label-mono">{title}</div>
-        {sub && <span className="label-mono text-muted-foreground/70 normal-case tracking-normal">{sub}</span>}
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-6 py-4">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-foreground">{title}</div>
+          {sub ? <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{sub}</p> : null}
+        </div>
+        {action}
       </header>
       <div className="p-6">{children}</div>
     </section>
@@ -434,7 +460,7 @@ function FollowerSummary({ points }: { points: { label: string; followers: numbe
   const pct = first === 0 ? 0 : (diff / first) * 100;
   return (
     <div className="mt-2 flex items-baseline justify-between px-1">
-      <div className="label-mono">net_growth</div>
+      <div className="text-xs text-muted-foreground">Net growth</div>
       <div className="flex items-baseline gap-2">
         <span className={`font-mono text-sm ${diff >= 0 ? "text-success" : "text-danger"}`}>
           {diff >= 0 ? "+" : ""}
@@ -520,24 +546,35 @@ function PlatformTable({ rows }: { rows: ReturnType<typeof getPlatformBreakdown>
       <table className="w-full min-w-[640px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-border text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
-            <th className="px-3 py-2 text-left font-normal">platform</th>
-            <th className="px-3 py-2 text-right font-normal">posts</th>
-            <th className="px-3 py-2 text-right font-normal">views</th>
-            <th className="px-3 py-2 text-right font-normal">likes</th>
-            <th className="px-3 py-2 text-right font-normal">shares</th>
-            <th className="px-3 py-2 text-right font-normal">eng_rate</th>
-            <th className="px-3 py-2 text-left font-normal">share</th>
+            <th className="px-3 py-2 text-left font-normal">Platform</th>
+            <th className="px-3 py-2 text-right font-normal">Posts</th>
+            <th className="px-3 py-2 text-right font-normal">Views</th>
+            <th className="px-3 py-2 text-right font-normal">Likes</th>
+            <th className="px-3 py-2 text-right font-normal">Shares</th>
+            <th className="px-3 py-2 text-right font-normal">Eng. rate</th>
+            <th className="px-3 py-2 text-left font-normal" title="Share of total views in range">
+              View share
+            </th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => {
             const meta = PLATFORMS_BY_SHORT[r.platform as keyof typeof PLATFORMS_BY_SHORT];
+            const sharePct = ((r.views / Math.max(max, 1)) * 100).toFixed(0);
             return (
-              <tr key={r.platform} className="border-b border-border/60 last:border-b-0">
+              <tr
+                key={r.platform}
+                className="border-b border-border/60 last:border-b-0"
+                style={{
+                  boxShadow: meta
+                    ? `inset 3px 0 0 0 ${meta.brandColor}`
+                    : undefined,
+                }}
+              >
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
-                    {meta && <PlatformChip platform={r.platform} size="xs" />}
-                    <span className="text-foreground">{r.platform}</span>
+                    {meta ? <PlatformChip platform={r.platform} size="xs" /> : null}
+                    <span className="text-foreground">{meta?.full ?? r.platform}</span>
                   </div>
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-foreground">{r.posts.toLocaleString()}</td>
@@ -546,11 +583,19 @@ function PlatformTable({ rows }: { rows: ReturnType<typeof getPlatformBreakdown>
                 <td className="px-3 py-2 text-right font-mono text-foreground">{r.shares.toLocaleString()}</td>
                 <td className="px-3 py-2 text-right font-mono text-accent">{(r.engagement * 100).toFixed(1)}%</td>
                 <td className="px-3 py-2">
-                  <div className="h-2 w-full overflow-hidden rounded-sm bg-background/60">
-                    <div
-                      className="h-full bg-accent"
-                      style={{ width: `${(r.views / Math.max(max, 1)) * 100}%` }}
-                    />
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 flex-1 overflow-hidden rounded-sm bg-background/60">
+                      <div
+                        className="h-full"
+                        style={{
+                          width: `${sharePct}%`,
+                          background: meta?.brandColor ?? "var(--color-accent)",
+                        }}
+                      />
+                    </div>
+                    <span className="w-8 shrink-0 text-right font-mono text-xs text-muted-foreground">
+                      {sharePct}%
+                    </span>
                   </div>
                 </td>
               </tr>

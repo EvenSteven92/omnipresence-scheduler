@@ -37,7 +37,7 @@ export function EventAssociateModal({
       >
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div className="min-w-0">
-            <div className="label-mono">associate_event</div>
+            <div className="text-sm font-medium text-foreground">Associate with event</div>
             <p className="mt-2 text-sm font-semibold text-foreground">{post.title}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Link this file to a ministry event album — sermon, worship night, etc.

@@ -124,7 +124,7 @@ function AlbumMediaMetricsFooter({
         );
       })}
       <div className="min-w-0 text-center">
-        <div className="label-mono text-[0.45rem] text-muted-foreground">eng_rate</div>
+        <div className="text-[0.45rem] uppercase tracking-[0.12em] text-muted-foreground">Eng. rate</div>
         <div className="mt-1 font-mono text-sm font-semibold tabular-nums text-accent">
           {((item.engagementRate ?? 0) * 100).toFixed(1)}%
         </div>
@@ -204,7 +204,7 @@ export function EventMediaMatrix({
   if (items.length === 0) {
     return (
       <div className="rounded-sm border border-dashed border-border bg-surface/40 px-6 py-12 text-center">
-        <p className="label-mono text-muted-foreground">no_associated_media</p>
+        <p className="text-sm text-muted-foreground">No associated media</p>
         <p className="mt-2 text-xs text-muted-foreground/70">
           Associate files from New Post to add them to this album.
         </p>
@@ -224,7 +224,9 @@ export function EventMediaMatrix({
     <>
       <div data-testid="event-media-matrix">
         <div className="max-w-2xl">
-          <div className="label-mono">associated_media</div>
+          <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Associated media
+          </div>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             One file per card — reels, sermons, quote sets. Live files include per-file totals;
             share % is relative to the top performer in this album.

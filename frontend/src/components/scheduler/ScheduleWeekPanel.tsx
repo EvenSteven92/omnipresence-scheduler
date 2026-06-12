@@ -79,7 +79,9 @@ export function ScheduleWeekPanel({
       className="flex h-full w-[300px] shrink-0 flex-col border-l border-border bg-surface"
     >
       <div className="border-b border-border px-4 py-4">
-        <div className="label-mono text-muted-foreground">week_preview</div>
+        <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          Week preview
+        </div>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
           {pendingSlots.length > 0
             ? `${pendingSlots.length} pending publish${pendingSlots.length === 1 ? "" : "es"}`

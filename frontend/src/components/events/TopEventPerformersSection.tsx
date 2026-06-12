@@ -65,7 +65,7 @@ function TopEventPerformerCard({
             {formatEventMeta(event.date, event.kind)}
           </p>
           <span className="label-mono text-[0.5rem] text-muted-foreground group-hover:text-foreground">
-            {perf.mediaCount} file{perf.mediaCount === 1 ? "" : "s"} · open_album
+            {perf.mediaCount} file{perf.mediaCount === 1 ? "" : "s"} · Open album
           </span>
         </div>
       </article>
@@ -75,7 +75,7 @@ function TopEventPerformerCard({
 
 export function TopEventPerformersSection({
   timeframe,
-  emptyLabel = "no_events_with_live_media_in_range",
+  emptyLabel = "No events with live media in this range",
 }: {
   timeframe: Timeframe;
   emptyLabel?: string;
@@ -96,7 +96,9 @@ export function TopEventPerformersSection({
     <section className="section-block" data-testid="top-event-performers">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <div className="label-mono">top_event_performers · {timeframeLabel(timeframe)}</div>
+          <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Top event performers · {timeframeLabel(timeframe)}
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             Ranked by album engagement — ministry moments with live associated media.
           </p>
@@ -105,12 +107,12 @@ export function TopEventPerformersSection({
           to="/events"
           className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
         >
-          All_Events <ArrowRight className="h-3 w-3" />
+          All events <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
 
       {topEvents.length === 0 ? (
-        <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center label-mono">
+        <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center text-sm text-muted-foreground">
           {emptyLabel}
         </div>
       ) : (

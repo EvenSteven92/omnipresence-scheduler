@@ -10,7 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { Sidebar } from "@/components/Sidebar";
-import { NewsTicker } from "@/components/NewsTicker";
+import { SyncStatusBar } from "@/components/SyncStatusBar";
 import { WorkspaceProvider } from "@/lib/workspace-context";
 
 function NotFoundComponent() {
@@ -90,7 +90,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <WorkspaceProvider>
         <div className="flex h-screen flex-col bg-background text-foreground">
-          <NewsTicker />
+          <SyncStatusBar />
           <div className="flex flex-1 overflow-hidden">
             <Sidebar />
             <main className="min-h-0 flex-1 overflow-y-auto">

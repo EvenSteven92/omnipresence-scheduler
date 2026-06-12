@@ -23,11 +23,11 @@ export type Timeframe =
   | { kind: "all" };
 
 export const PRESETS: { id: "1w" | "1m" | "3m" | "6m" | "1y"; label: string; days: number }[] = [
-  { id: "1w", label: "1 wk",    days: 7 },
-  { id: "1m", label: "1 mnth",  days: 30 },
-  { id: "3m", label: "3 mnths", days: 90 },
-  { id: "6m", label: "6 mnths", days: 180 },
-  { id: "1y", label: "1 yr",    days: 365 },
+  { id: "1w", label: "1 week",   days: 7 },
+  { id: "1m", label: "1 month",  days: 30 },
+  { id: "3m", label: "3 months", days: 90 },
+  { id: "6m", label: "6 months", days: 180 },
+  { id: "1y", label: "1 year",   days: 365 },
 ];
 
 const UNIT_DAYS: Record<TimeframeUnit, number> = {
@@ -82,7 +82,8 @@ function metricHelpers(tf: Timeframe) {
   function delta(pct: number, unit: "%" | "pp"): string {
     if (all) return "";
     const sign = pct > 0 ? "+" : "";
-    return `${sign}${pct.toFixed(unit === "pp" ? 1 : 1)}${unit}`;
+    if (unit === "pp") return `${sign}${pct.toFixed(1)} pp`;
+    return `${sign}${pct.toFixed(1)}%`;
   }
   function trend(pct: number): "up" | "down" | "flat" {
     if (all) return "flat";

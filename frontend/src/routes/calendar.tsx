@@ -106,7 +106,7 @@ function CalendarPage() {
     if (!focusEventId) return;
     const target = events.find((e) => e.id === focusEventId);
     if (!target) {
-      setDeepLinkNotice("event_not_found · link cleared");
+      setDeepLinkNotice("Event not found — link cleared");
       navigate({ to: "/calendar", replace: true });
       return;
     }
@@ -124,7 +124,7 @@ function CalendarPage() {
     if (!focusDateParam) return;
     const dt = parseCalendarDateSearch(focusDateParam);
     if (!dt) {
-      setDeepLinkNotice("invalid_date · link cleared");
+      setDeepLinkNotice("Invalid date — link cleared");
       navigate({ to: "/calendar", replace: true });
       return;
     }
@@ -302,7 +302,7 @@ function CalendarPage() {
                 <ChevronRight className="h-3 w-3" />
               </button>
               {!monthHasPosts && (
-                <span className="ml-2 label-mono text-muted-foreground/60">no_posts_this_month</span>
+                <span className="ml-2 text-xs text-muted-foreground/60">No posts this month</span>
               )}
             </div>
             <CalendarLegendBar
@@ -592,10 +592,10 @@ function AgendaSidebar({
       >
         <div className="flex h-full w-full flex-col lg:w-[360px]">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <div className="label-mono">agenda</div>
+          <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Agenda</div>
           <div className="flex items-center gap-2">
             <span className="rounded-sm border border-dashed border-border px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
-              {RANGE_BACK + RANGE_FWD + 1}_months
+              {RANGE_BACK + RANGE_FWD + 1} months
             </span>
             <button
               type="button"
@@ -705,9 +705,11 @@ function MonthBlock({
     (a, b) => a - b,
   );
 
+  const isEmpty = days.length === 0;
+  const [expanded, setExpanded] = useState(isFocus || !isEmpty);
   const monthSummary = [
-    posts.length > 0 ? `${posts.length}_card${posts.length === 1 ? "" : "s"}` : null,
-    events.length > 0 ? `${events.length}_events` : null,
+    posts.length > 0 ? `${posts.length} card${posts.length === 1 ? "" : "s"}` : null,
+    events.length > 0 ? `${events.length} event${events.length === 1 ? "" : "s"}` : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -717,18 +719,30 @@ function MonthBlock({
       data-focus={isFocus ? "true" : "false"}
       className={muted ? "opacity-40" : "opacity-100"}
     >
-      <div
-        className={`sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-5 py-2 ${
+      <button
+        type="button"
+        onClick={() => isEmpty && setExpanded((v) => !v)}
+        disabled={!isEmpty}
+        className={`sticky top-0 z-10 flex w-full items-center justify-between border-b border-border bg-surface px-5 py-2 text-left ${
           isFocus ? "text-foreground" : "text-muted-foreground"
-        }`}
+        } ${isEmpty ? "cursor-pointer hover:bg-secondary/30" : "cursor-default"}`}
       >
         <span className="display-mono text-xs uppercase tracking-[0.14em]">{monthLabel}</span>
-        {monthSummary ? <span className="label-mono">{monthSummary}</span> : null}
-      </div>
+        <span className="flex items-center gap-2 text-xs">
+          {monthSummary ? <span>{monthSummary}</span> : isEmpty ? (
+            <span className="text-muted-foreground/70">No content</span>
+          ) : null}
+          {isEmpty ? (
+            <span className="text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground">
+              {expanded ? "Hide" : "Show"}
+            </span>
+          ) : null}
+        </span>
+      </button>
 
-      {days.length === 0 ? (
-        <div className="px-5 py-6 text-center label-mono text-muted-foreground/60">
-          no_posts_or_events
+      {!expanded && isEmpty ? null : isEmpty ? (
+        <div className="px-5 py-4 text-center text-xs text-muted-foreground/60">
+          No posts or events this month
         </div>
       ) : (
         <div className="divide-y divide-border">

@@ -12,6 +12,7 @@ import { ComposerCard, type DraftPost } from "@/components/post/ComposerCard";
 import { BulkScheduleModal } from "@/components/scheduler/BulkScheduleModal";
 import { ContentQueueItem } from "@/components/scheduler/ContentQueueItem";
 import { ScheduleWeekPanel } from "@/components/scheduler/ScheduleWeekPanel";
+import { SchedulerWorkflowSteps } from "@/components/scheduler/SchedulerWorkflowSteps";
 import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
 import type { BulkScheduleResult } from "@/lib/schedule-engine";
 import { DraftDropStencil } from "@/components/scheduler/DraftDropStencil";
@@ -438,7 +439,9 @@ function NewPostPage() {
           className="flex h-full w-[300px] shrink-0 flex-col border-r border-border bg-surface"
         >
           <div className="border-b border-border px-4 py-4">
-            <div className="label-mono text-muted-foreground">unique_content</div>
+            <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              Content queue
+            </div>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               {queue.length} potential · {savedDrafts.length} draft{savedDrafts.length === 1 ? "" : "s"}
             </p>
@@ -511,7 +514,9 @@ function NewPostPage() {
               onDrop={handleQueueZoneDrop}
             >
               <div className="border-b border-border/60 px-4 py-2">
-                <div className="label-mono text-[0.55rem] text-muted-foreground">potential_posts</div>
+                <div className="text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground">
+                  Ready to configure
+                </div>
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto p-3">
                 <PotentialPostsDropStencil active={queueZoneActive} />
@@ -551,7 +556,9 @@ function NewPostPage() {
               onDrop={handleDraftZoneDrop}
             >
               <div className="border-b border-border/60 px-4 py-2">
-                <div className="label-mono text-[0.55rem] text-muted-foreground">draft_dropzone</div>
+                <div className="text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground">
+                  Saved drafts
+                </div>
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto p-3">
                 <DraftDropStencil active={draftZoneActive} />
@@ -584,7 +591,7 @@ function NewPostPage() {
                 className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
                 data-testid="status-pill"
               >
-                {empty ? "Empty" : `${queue.length} in_queue`}
+                {empty ? "Empty" : `${queue.length} in queue`}
               </span>
               <NewEventPostActions showPostLink={false} />
             </>
@@ -595,6 +602,7 @@ function NewPostPage() {
           <div className={empty ? "page-content" : "px-8 py-6"}>
             {empty ? (
               <>
+                <SchedulerWorkflowSteps active="upload" />
                 <p className="mb-6 max-w-xl text-sm leading-relaxed text-muted-foreground">
                   Each upload is one content card on your calendar, even when you post the same file to several platforms. Add files, pick networks, write copy, and set publish times per platform.
                 </p>
@@ -627,7 +635,7 @@ function NewPostPage() {
                     data-testid="add-demo-set-btn"
                     className="rounded-sm border border-border bg-background/60 px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary"
                   >
-                    Add_Demo_Set
+                    Add demo set
                   </button>
                   <input
                     ref={fileInput}
@@ -641,9 +649,10 @@ function NewPostPage() {
               </>
             ) : activeDraft ? (
               <div className="mx-auto max-w-3xl">
-                <p className="label-mono mb-4 text-muted-foreground">
-                  card {activeIndex} of {allPosts.length}
-                  {activeInDraftZone ? " · in_draft_zone" : " · potential"}
+                <SchedulerWorkflowSteps active={readyToApply.length > 0 ? "schedule" : "configure"} />
+                <p className="mb-4 text-xs text-muted-foreground">
+                  Card {activeIndex} of {allPosts.length}
+                  {activeInDraftZone ? " · saved draft" : " · ready to configure"}
                 </p>
                 <ComposerCard
                   key={activeDraft.id}

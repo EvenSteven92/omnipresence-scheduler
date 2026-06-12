@@ -7,6 +7,7 @@ import { ConnectPlatformSection, LiveConnectionStrip } from "@/components/Connec
 import { TeamAccessGate } from "@/components/TeamAccessGate";
 import { useTeamSession } from "@/hooks/useTeamSession";
 import { useWorkspace } from "@/lib/workspace-context";
+import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import {
   Building2,
   ArrowRight,
@@ -27,7 +28,13 @@ export const Route = createFileRoute("/workspaces")({
 });
 
 function WorkspacesPage() {
-  const { workspace, workspaces, setWorkspaceId } = useWorkspace();
+  const { workspace, workspaces, setWorkspaceId, workspaceId } = useWorkspace();
+  const { data: connections } = usePlatformConnections(workspaceId);
+  const hasConnectedAccounts =
+    (connections?.youtube.connected ?? false) ||
+    (connections?.meta.facebook.connected ?? false) ||
+    (connections?.meta.instagram.connected ?? false) ||
+    workspaces.some((ws) => ws.onboardingStatus === "complete");
   const queryClient = useQueryClient();
   const { data: teamAuthed = false } = useTeamSession();
   const [banner, setBanner] = useState<string | null>(null);
@@ -67,7 +74,7 @@ function WorkspacesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="multi_tenant"
+        eyebrow="Workspaces"
         title="Workspaces"
         actions={
           <>
@@ -80,14 +87,16 @@ function WorkspacesPage() {
       />
 
       <div className="page-content max-w-4xl">
-        <div className="panel p-8">
-          <div className="label-mono mb-2">how_it_works</div>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            Each workspace is one company or brand. Metrics, scheduled posts, platform
-            connections, and drafts only show that workspace&apos;s accounts. Switch
-            companies from the sidebar picker anytime.
-          </p>
-        </div>
+        {!hasConnectedAccounts ? (
+          <div className="panel p-8">
+            <div className="mb-2 text-sm font-medium text-foreground">How it works</div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Each workspace is one company or brand. Metrics, scheduled posts, platform
+              connections, and drafts only show that workspace&apos;s accounts. Switch
+              companies from the sidebar picker anytime.
+            </p>
+          </div>
+        ) : null}
 
         {banner ? (
           <div className="panel border border-accent/30 bg-accent/5 p-4 text-sm text-foreground">
@@ -107,7 +116,9 @@ function WorkspacesPage() {
         <ConnectPlatformSection workspace={workspace} teamAuthed={teamAuthed} />
 
         <section className="section-block space-y-4">
-          <div className="label-mono">your_workspaces · {workspaces.length}</div>
+          <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Your workspaces · {workspaces.length}
+          </div>
           {workspaces.map((ws) => {
             const active = ws.id === workspace.id;
             return (
@@ -135,12 +146,14 @@ function WorkspacesPage() {
                     onClick={() => setWorkspaceId(ws.id)}
                     className="btn-action disabled:opacity-50"
                   >
-                    {active ? "Active" : "Switch_To"}
+                    {active ? "Active" : "Switch to"}
                   </button>
                 </div>
 
                 <div className="px-6 py-5">
-                  <div className="label-mono mb-3">connected_platforms</div>
+                  <div className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Connected platforms
+                  </div>
                   {active ? (
                     <LiveConnectionStrip workspace={ws} />
                   ) : (
@@ -154,59 +167,64 @@ function WorkspacesPage() {
           })}
         </section>
 
-        <section className="section-block">
-          <div className="panel border-dashed p-8">
-            <div className="flex items-start gap-4">
-              <Building2 className="h-8 w-8 shrink-0 text-accent" strokeWidth={1.25} />
-              <div>
-                <div className="label-mono mb-2">onboarding · coming_next</div>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Future flow: enter company name → connect OAuth for each platform →
-                  metrics sync automatically into this dashboard. For now, workspaces use
-                  demo data per company; add a real workspace via API/DB in Phase 1.
-                </p>
-                <ol className="mt-4 space-y-2 text-sm text-foreground">
-                  <li className="flex gap-2">
-                    <span className="label-mono text-muted-foreground">01</span>
-                    Create workspace (name, slug, timezone)
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="label-mono text-muted-foreground">02</span>
-                    Connect accounts (X, Meta, YouTube, Rumble, TikTok, …)
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="label-mono text-muted-foreground">03</span>
-                    Pull metrics + enable scheduling for that workspace only
-                  </li>
-                </ol>
-                <button
-                  type="button"
-                  disabled
-                  className="btn-action mt-6 gap-2 opacity-60"
-                  title="Available when backend onboarding ships"
-                >
-                  <Link2 className="h-3 w-3" />
-                  Add_Company (soon)
-                </button>
+        {!hasConnectedAccounts ? (
+          <section className="section-block">
+            <div className="panel border-dashed p-8">
+              <div className="flex items-start gap-4">
+                <Building2 className="h-8 w-8 shrink-0 text-accent" strokeWidth={1.25} />
+                <div>
+                  <div className="mb-2 text-sm font-medium text-foreground">Getting started</div>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Connect OAuth for each platform and metrics sync automatically into this
+                    dashboard. Workspaces keep each company&apos;s accounts and content separate.
+                  </p>
+                  <ol className="mt-4 space-y-2 text-sm text-foreground">
+                    <li className="flex gap-2">
+                      <span className="font-mono text-muted-foreground">1</span>
+                      Create workspace (name, slug, timezone)
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-mono text-muted-foreground">2</span>
+                      Connect accounts (X, Meta, YouTube, Rumble, TikTok, …)
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-mono text-muted-foreground">3</span>
+                      Pull metrics + enable scheduling for that workspace only
+                    </li>
+                  </ol>
+                  <button
+                    type="button"
+                    disabled
+                    className="btn-action mt-6 gap-2 opacity-60"
+                    title="Available when backend onboarding ships"
+                  >
+                    <Link2 className="h-3 w-3" />
+                    Add company (soon)
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
       </div>
     </div>
   );
 }
 
 function OnboardingBadge({ status }: { status: string }) {
-  const cls =
+  const config =
     status === "complete"
-      ? "border-success/50 text-success"
+      ? { dot: "bg-success", label: "Connected", cls: "border-success/50 text-success" }
       : status === "needs_accounts"
-        ? "border-warning/50 text-warning"
-        : "border-border text-muted-foreground";
+        ? { dot: "bg-warning", label: "Needs accounts", cls: "border-warning/50 text-warning" }
+        : { dot: "bg-muted-foreground", label: "Draft", cls: "border-border text-muted-foreground" };
+
   return (
-    <span className={`label-mono mt-2 inline-block rounded-sm border px-2 py-1 text-[0.55rem] ${cls}`}>
-      {status.replace(/_/g, " ")}
+    <span
+      className={`mt-2 inline-flex items-center gap-1.5 rounded-sm border px-2 py-1 text-[0.55rem] uppercase tracking-[0.1em] ${config.cls}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} aria-hidden />
+      {config.label}
     </span>
   );
 }

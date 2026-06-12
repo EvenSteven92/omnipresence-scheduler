@@ -99,7 +99,7 @@ export function BulkScheduleModal({
       >
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <div className="label-mono">bulk_schedule</div>
+            <div className="text-sm font-medium text-foreground">Bulk schedule</div>
             <h2 className="mt-2 text-base font-semibold text-foreground">
               Schedule {files.length} file{files.length === 1 ? "" : "s"}
             </h2>
@@ -165,7 +165,7 @@ export function BulkScheduleModal({
 
           {strategy === "smart" ? (
             <div className="space-y-3 rounded-sm border border-border bg-background/40 px-4 py-4">
-              <div className="label-mono text-[0.55rem] text-muted-foreground">date_range</div>
+              <div className="text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground">Date range</div>
               <div className="flex flex-wrap items-center gap-3">
                 <input
                   type="date"
