@@ -13,9 +13,9 @@ function PublishTimesHeader({ platformCount }: { platformCount: number }) {
     <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
       <div className="flex items-center gap-2">
         <CalendarClock className="h-3.5 w-3.5 text-accent" strokeWidth={1.75} />
-        <span className="label-mono">publish_times</span>
+        <span className="text-title text-sm">Publish times</span>
       </div>
-      <span className="label-mono text-muted-foreground/80">
+      <span className="text-body-sm text-muted-foreground">
         1 file · {platformCount} platform{platformCount === 1 ? "" : "s"}
       </span>
     </div>

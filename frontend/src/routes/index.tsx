@@ -47,6 +47,8 @@ import { useYouTubeMetrics } from "@/hooks/useYouTubeMetrics";
 import { useMetaMetrics } from "@/hooks/useMetaMetrics";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import { LiveConnectionStrip } from "@/components/ConnectPlatformSection";
+import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { LiveDataBadge, SampleDataBadge } from "@/components/LiveDataBadge";
 import { AddPlatformStencilCard } from "@/components/AddPlatformStencilCard";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { TopEventPerformersSection } from "@/components/events/TopEventPerformersSection";
@@ -121,6 +123,8 @@ function DashboardPage() {
       />
 
       <div className="page-content">
+        <OnboardingChecklist className="mb-6" />
+
         {/* Action-first: schedule + gaps */}
         <UpcomingSection />
 
@@ -128,11 +132,12 @@ function DashboardPage() {
           id="dashboard-timeframe"
           className="mt-2 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4"
         >
-          <p className="text-sm text-muted-foreground">
-            Quick stats for the{" "}
-            <span className="text-foreground">last 7 days</span>
-            {hasLiveMetrics(liveBundle) ? " · live YouTube & Meta data" : ""}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm text-muted-foreground">
+              Quick stats for the <span className="text-foreground">last 7 days</span>
+            </p>
+            {hasLiveMetrics(liveBundle) ? <LiveDataBadge /> : <SampleDataBadge />}
+          </div>
           <Link
             to="/analytics"
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"

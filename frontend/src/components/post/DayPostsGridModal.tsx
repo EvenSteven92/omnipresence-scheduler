@@ -118,7 +118,7 @@ export function DayPostsGridModal({
       >
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div className="min-w-0">
-            <div className="label-mono">cards_for_day</div>
+            <div className="text-title text-sm">Posts for this day</div>
             <h2 className="mt-1.5 text-base font-semibold text-foreground">{dateLabel}</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               {posts.length} content card{posts.length === 1 ? "" : "s"}

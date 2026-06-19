@@ -24,7 +24,7 @@ export function CollapsibleSection({
         className="mb-3 flex w-full items-center justify-between gap-3 text-left"
       >
         <span className="min-w-0">
-          <span className="label-mono block">{title}</span>
+          <span className="text-title block">{title}</span>
           {subtitle && (
             <span className="mt-1 block text-[0.65rem] normal-case tracking-normal text-muted-foreground">
               {subtitle}

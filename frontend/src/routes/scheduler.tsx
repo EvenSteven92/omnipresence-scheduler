@@ -9,6 +9,7 @@ import {
 } from "@/lib/republish";
 import { CalendarClock, Upload } from "lucide-react";
 import { ComposerCard, type DraftPost } from "@/components/post/ComposerCard";
+import { PlatformPreview } from "@/components/post/PlatformPreview";
 import { BulkScheduleModal } from "@/components/scheduler/BulkScheduleModal";
 import { ContentQueueItem } from "@/components/scheduler/ContentQueueItem";
 import { ScheduleWeekPanel } from "@/components/scheduler/ScheduleWeekPanel";
@@ -21,6 +22,11 @@ import type { Platform } from "@/lib/mock-data";
 import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/lib/workspace-context";
 import type { WorkspaceId } from "@/lib/workspaces/types";
+import {
+  clearPersistedDrafts,
+  readPersistedDrafts,
+  writePersistedDrafts,
+} from "@/lib/draft-storage";
 
 export const Route = createFileRoute("/scheduler")({
   head: () => ({
@@ -140,11 +146,17 @@ function NewPostPage() {
     if (prevWorkspaceIdRef.current === workspaceId) return;
     prevWorkspaceIdRef.current = workspaceId;
     if (peekRepublishDraft(workspaceId)) return;
-    setQueue([]);
-    setSavedDrafts([]);
-    setActiveId(null);
-    setSelectedIds(new Set());
+    const persisted = readPersistedDrafts(workspaceId);
+    setQueue(persisted.queue);
+    setSavedDrafts(persisted.savedDrafts);
+    setActiveId(persisted.activeId);
+    setSelectedIds(new Set(persisted.queue.map((d) => d.id)));
   }, [workspaceId]);
+
+  useEffect(() => {
+    if (peekRepublishDraft(workspaceId)) return;
+    writePersistedDrafts(workspaceId, queue, savedDrafts);
+  }, [workspaceId, queue, savedDrafts]);
 
   useEffect(() => {
     setSelectedIds((cur) => {
@@ -229,6 +241,7 @@ function NewPostPage() {
     setSavedDrafts([]);
     setActiveId(null);
     setSelectedIds(new Set());
+    clearPersistedDrafts(workspaceId);
   }
 
   function reorderQueue(fromId: string, toId: string) {
@@ -621,9 +634,9 @@ function NewPostPage() {
                 >
                   <Upload className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
                   <div className="text-center">
-                    <div className="display-mono text-sm text-foreground">Drop files to start</div>
-                    <p className="mt-2 font-mono text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-                      mp4 · mov · jpg · png
+                    <div className="text-title text-foreground">Drop files to start</div>
+                    <p className="mt-2 text-body-sm text-muted-foreground">
+                      MP4, MOV, JPG, PNG
                     </p>
                   </div>
                   <button
@@ -648,22 +661,38 @@ function NewPostPage() {
                 </div>
               </>
             ) : activeDraft ? (
-              <div className="mx-auto max-w-3xl">
+              <div className="mx-auto max-w-6xl">
                 <SchedulerWorkflowSteps active={readyToApply.length > 0 ? "schedule" : "configure"} />
                 <p className="mb-4 text-xs text-muted-foreground">
                   Card {activeIndex} of {allPosts.length}
                   {activeInDraftZone ? " · saved draft" : " · ready to configure"}
                 </p>
-                <ComposerCard
-                  key={activeDraft.id}
-                  index={activeIndex}
-                  post={activeDraft}
-                  focused
-                  onChange={(next) => updateDraft(activeDraft.id, next)}
-                  onRemove={() => removeDraft(activeDraft.id)}
-                  onSaveDraft={() => saveToDraftZone(activeDraft)}
-                  expanded
-                />
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+                  <ComposerCard
+                    key={activeDraft.id}
+                    index={activeIndex}
+                    post={activeDraft}
+                    focused
+                    hidePreview
+                    onChange={(next) => updateDraft(activeDraft.id, next)}
+                    onRemove={() => removeDraft(activeDraft.id)}
+                    onSaveDraft={() => saveToDraftZone(activeDraft)}
+                    expanded
+                  />
+                  <aside className="hidden lg:block">
+                    <div className="sticky top-6">
+                      <PlatformPreview
+                        variant="panel"
+                        platforms={activeDraft.platforms}
+                        caption={activeDraft.caption}
+                        platformCaptions={activeDraft.platformCaptions}
+                        hashtags={activeDraft.hashtags}
+                        filename={activeDraft.filename}
+                        format={activeDraft.format}
+                      />
+                    </div>
+                  </aside>
+                </div>
               </div>
             ) : null}
           </div>

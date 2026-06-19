@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Link2 } from "lucide-react";
 import { useWorkspace } from "@/lib/workspace-context";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 
@@ -16,23 +16,31 @@ function formatSyncedAt(iso?: string): string | null {
   return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
 }
 
-/**
- * Thin status strip — only surfaces when there is something actionable
- * (connected platforms or a sync warning). Replaces the opaque news ticker.
- */
 export function SyncStatusBar() {
   const { workspaceId } = useWorkspace();
   const { data: status } = usePlatformConnections(workspaceId);
 
-  const message = useMemo(() => {
-    if (!status) return null;
+  const { message, tone, cta } = useMemo(() => {
+    if (!status) {
+      return {
+        message: "Connect a channel to see live metrics",
+        tone: "prompt" as const,
+        cta: "Connect accounts",
+      };
+    }
 
     const yt = status.youtube.connected;
     const fb = status.meta.facebook.connected;
     const ig = status.meta.instagram.connected;
     const anyConnected = yt || fb || ig;
 
-    if (!anyConnected) return null;
+    if (!anyConnected) {
+      return {
+        message: "No channels connected — connect YouTube or Meta to pull live analytics",
+        tone: "prompt" as const,
+        cta: "Connect accounts",
+      };
+    }
 
     const syncedAts = [
       status.youtube.syncedAt,
@@ -48,36 +56,46 @@ export function SyncStatusBar() {
     if (fb) parts.push("Facebook");
     if (ig) parts.push("Instagram");
 
-    const label = parts.join(" · ");
-    return when ? `${label} synced · ${when}` : `${label} connected`;
+    const label = parts.join(", ");
+    const needsSync =
+      (yt && !status.youtube.syncedAt) || (fb && !status.meta.facebook.syncedAt);
+
+    if (needsSync) {
+      return {
+        message: `${label} connected — syncing metrics…`,
+        tone: "warning" as const,
+        cta: "View connections",
+      };
+    }
+
+    return {
+      message: when ? `${label} synced · ${when}` : `${label} connected`,
+      tone: "ok" as const,
+      cta: "Manage connections",
+    };
   }, [status]);
-
-  if (!message) return null;
-
-  const hasWarning =
-    status?.youtube.connected && !status.youtube.syncedAt
-      ? true
-      : status?.meta.facebook.connected && !status.meta.facebook.syncedAt;
 
   return (
     <div
       data-testid="sync-status-bar"
-      className="flex h-8 w-full shrink-0 items-center justify-between gap-3 border-b border-border bg-surface/80 px-4 text-xs"
+      className="flex h-9 w-full shrink-0 items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 text-body-sm"
     >
       <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
-        {hasWarning ? (
-          <AlertCircle className="h-3.5 w-3.5 shrink-0 text-warning" strokeWidth={1.75} />
+        {tone === "ok" ? (
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-success" strokeWidth={1.75} />
+        ) : tone === "warning" ? (
+          <AlertCircle className="h-4 w-4 shrink-0 text-warning" strokeWidth={1.75} />
         ) : (
-          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-success" strokeWidth={1.75} />
+          <Link2 className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.75} />
         )}
         <span className="truncate">{message}</span>
       </div>
       <Link
         to="/workspaces"
         hash="connect-platform"
-        className="shrink-0 text-[0.65rem] text-muted-foreground transition-colors hover:text-foreground"
+        className="shrink-0 text-sm font-medium text-accent transition-opacity hover:opacity-80"
       >
-        Manage connections
+        {cta} →
       </Link>
     </div>
   );

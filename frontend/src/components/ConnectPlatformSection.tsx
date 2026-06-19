@@ -5,9 +5,13 @@ import { PlatformChip } from "@/components/post/PlatformChip";
 import type { WorkspaceProfile } from "@/lib/workspaces/types";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import type { Platform } from "@/lib/mock-data";
-import { Link2, RefreshCw } from "lucide-react";
+import { Link2, RefreshCw, Check } from "lucide-react";
+import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 
 const META_PLATFORMS = new Set<Platform>(["FB", "IG"]);
+const LIVE_NOW = new Set<Platform>(["YT", "FB", "IG"]);
 
 export function ConnectPlatformSection({
   workspace,
@@ -23,15 +27,18 @@ export function ConnectPlatformSection({
   const youtubeConnected = accountStatus?.youtube.connected ?? false;
   const metaFacebookConnected = accountStatus?.meta.facebook.connected ?? false;
   const metaInstagramConnected = accountStatus?.meta.instagram.connected ?? false;
-  const metaConnected = metaFacebookConnected || metaInstagramConnected;
-  const livePlatforms = new Set(accountStatus?.livePlatforms ?? ["YT", "FB", "IG"]);
   const [syncingYouTube, setSyncingYouTube] = useState(false);
   const [syncingMeta, setSyncingMeta] = useState(false);
   const [syncMessage, setSyncMessage] = useState<{ tone: "success" | "error"; text: string } | null>(
     null,
   );
 
-  const integrationCards = PLATFORMS.filter((p) => workspace.platforms.includes(p.short));
+  const availableCards = PLATFORMS.filter(
+    (p) => workspace.platforms.includes(p.short) && LIVE_NOW.has(p.short),
+  );
+  const comingSoonCards = PLATFORMS.filter(
+    (p) => workspace.platforms.includes(p.short) && !LIVE_NOW.has(p.short),
+  );
 
   async function syncYouTube() {
     setSyncingYouTube(true);
@@ -46,20 +53,15 @@ export function ConnectPlatformSection({
         syncedAt?: string;
         videoCount?: number;
       };
-      if (!res.ok) {
-        throw new Error(data.detail ?? `Sync failed (${res.status})`);
-      }
+      if (!res.ok) throw new Error(data.detail ?? `Sync failed (${res.status})`);
       await Promise.all([
         refetch(),
         queryClient.invalidateQueries({ queryKey: ["youtube-metrics", workspace.id] }),
         queryClient.invalidateQueries({ queryKey: ["platform-connections", workspace.id] }),
       ]);
-      const syncedLabel = data.syncedAt
-        ? new Date(data.syncedAt).toLocaleString()
-        : "just now";
       setSyncMessage({
         tone: "success",
-        text: `YouTube synced ${data.videoCount ?? 0} videos · ${syncedLabel}`,
+        text: `YouTube refreshed · ${data.videoCount ?? 0} videos`,
       });
     } catch (error) {
       setSyncMessage({
@@ -79,33 +81,14 @@ export function ConnectPlatformSection({
         method: "POST",
         credentials: "include",
       });
-      const data = (await res.json().catch(() => ({}))) as {
-        detail?: string;
-        syncedAt?: string;
-        facebook?: { postCount?: number; pageName?: string };
-        instagram?: { mediaCount?: number; username?: string } | null;
-      };
-      if (!res.ok) {
-        throw new Error(data.detail ?? `Sync failed (${res.status})`);
-      }
+      const data = (await res.json().catch(() => ({}))) as { detail?: string };
+      if (!res.ok) throw new Error(data.detail ?? `Sync failed (${res.status})`);
       await Promise.all([
         refetch(),
         queryClient.invalidateQueries({ queryKey: ["meta-metrics", workspace.id] }),
         queryClient.invalidateQueries({ queryKey: ["platform-connections", workspace.id] }),
       ]);
-      const syncedLabel = data.syncedAt
-        ? new Date(data.syncedAt).toLocaleString()
-        : "just now";
-      const fbPart = data.facebook
-        ? `FB ${data.facebook.postCount ?? 0} posts`
-        : "FB";
-      const igPart = data.instagram
-        ? `IG ${data.instagram.mediaCount ?? 0} media`
-        : "IG skipped";
-      setSyncMessage({
-        tone: "success",
-        text: `Meta synced · ${fbPart} · ${igPart} · ${syncedLabel}`,
-      });
+      setSyncMessage({ tone: "success", text: "Meta metrics refreshed" });
     } catch (error) {
       setSyncMessage({
         tone: "error",
@@ -127,187 +110,129 @@ export function ConnectPlatformSection({
     }
   }
 
+  function platformConnected(short: Platform) {
+    if (short === "YT") return youtubeConnected;
+    if (short === "FB") return metaFacebookConnected;
+    if (short === "IG") return metaInstagramConnected;
+    return false;
+  }
+
   return (
     <section id={id} data-testid="connect-platform-section" className="scroll-mt-8">
-      <div className="panel border border-dashed border-border bg-surface/40 p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="mb-2 text-sm font-medium text-foreground">Platform integrations</div>
-            <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Connect real accounts one at a time. YouTube and Meta (Facebook + Instagram) are
-              live read-only. Other platforms stay in demo mode until we wire OAuth for each.
+      <Card elevated>
+        <CardHeader
+          title="Connect your channels"
+          description="Link YouTube and Meta to pull live analytics. Other platforms are coming soon."
+          action={<Badge tone="muted">{workspace.name}</Badge>}
+        />
+        <CardBody className="space-y-6 pt-0">
+          {!teamAuthed ? (
+            <p className="rounded-sm border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
+              Unlock team access above before connecting accounts.
             </p>
-          </div>
-          <span className="rounded-sm border border-border bg-background/60 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
-            {workspace.name}
-          </span>
-        </div>
+          ) : null}
 
-        {youtubeConnected && accountStatus?.youtube.channelTitle ? (
-          <div className="mt-6 rounded-sm border border-success/30 bg-success/5 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-foreground">
-                  YouTube connected · {accountStatus.youtube.channelTitle}
-                </div>
-                <div className="label-mono mt-1 text-[0.55rem] text-muted-foreground">
-                  live_oauth ·{" "}
-                  {accountStatus.youtube.syncedAt
-                    ? `synced ${new Date(accountStatus.youtube.syncedAt).toLocaleString()}`
-                    : "awaiting first sync"}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => void syncYouTube()}
-                disabled={!teamAuthed || syncingYouTube}
-                className="btn-action inline-flex items-center gap-2 disabled:opacity-50"
-                title={teamAuthed ? "Pull latest YouTube metrics" : "Unlock team access first"}
-              >
-                <RefreshCw className={`h-3 w-3 ${syncingYouTube ? "animate-spin" : ""}`} />
-                {syncingYouTube ? "Syncing…" : "Sync YouTube"}
-              </button>
+          {syncMessage ? (
+            <p
+              className={`text-sm ${syncMessage.tone === "success" ? "text-success" : "text-destructive"}`}
+            >
+              {syncMessage.text}
+            </p>
+          ) : null}
+
+          <div>
+            <h4 className="mb-3 text-sm font-semibold text-foreground">Available now</h4>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {availableCards.map((meta) => {
+                const connected = platformConnected(meta.short);
+                const isMetaCard = META_PLATFORMS.has(meta.short);
+                const showMetaOnce = meta.short === "FB";
+
+                if (isMetaCard && !showMetaOnce) return null;
+
+                return (
+                  <div
+                    key={meta.short}
+                    className="flex items-center gap-3 rounded-sm border border-border bg-background/40 px-4 py-4"
+                  >
+                    <PlatformChip platform={meta.short} size="xl" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-foreground">
+                        {meta.short === "FB" ? "Facebook & Instagram" : meta.full}
+                      </div>
+                      <p className="mt-0.5 text-body-sm text-muted-foreground">
+                        {connected ? "Connected · read-only metrics" : "One-click OAuth connect"}
+                      </p>
+                    </div>
+                    {connected ? (
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <Badge tone="success">
+                          <Check className="h-3 w-3" /> Connected
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            void (meta.short === "YT" || showMetaOnce ? (meta.short === "YT" ? syncYouTube() : syncMeta()) : null)
+                          }
+                          disabled={!teamAuthed || (meta.short === "YT" ? syncingYouTube : syncingMeta)}
+                        >
+                          <RefreshCw
+                            className={`h-3 w-3 ${(meta.short === "YT" ? syncingYouTube : syncingMeta) ? "animate-spin" : ""}`}
+                          />
+                          Refresh
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        disabled={!teamAuthed}
+                        data-testid={`connect-platform-${meta.short.replace(/\s+/g, "-")}`}
+                        onClick={() => handleConnect(meta.short === "FB" ? "FB" : meta.short)}
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
+                        Connect
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
-        ) : null}
 
-        {metaConnected ? (
-          <div className="mt-6 rounded-sm border border-success/30 bg-success/5 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-foreground">
-                  Meta connected
-                  {metaFacebookConnected && accountStatus?.meta.facebook.pageName
-                    ? ` · ${accountStatus.meta.facebook.pageName}`
-                    : ""}
-                  {metaInstagramConnected && accountStatus?.meta.instagram.username
-                    ? ` · @${accountStatus.meta.instagram.username}`
-                    : ""}
-                </div>
-                <div className="label-mono mt-1 text-[0.55rem] text-muted-foreground">
-                  live_oauth · facebook
-                  {metaInstagramConnected ? " + instagram" : " only"}
-                  {accountStatus?.meta.facebook.syncedAt
-                    ? ` · synced ${new Date(accountStatus.meta.facebook.syncedAt).toLocaleString()}`
-                    : " · awaiting first sync"}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => void syncMeta()}
-                disabled={!teamAuthed || syncingMeta}
-                className="btn-action inline-flex items-center gap-2 disabled:opacity-50"
-                title={teamAuthed ? "Pull latest Meta metrics" : "Unlock team access first"}
-              >
-                <RefreshCw className={`h-3 w-3 ${syncingMeta ? "animate-spin" : ""}`} />
-                {syncingMeta ? "Syncing…" : "Sync Meta"}
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {syncMessage ? (
-          <p
-            className={`mt-4 text-sm ${
-              syncMessage.tone === "success" ? "text-success" : "text-destructive"
-            }`}
-          >
-            {syncMessage.text}
-          </p>
-        ) : null}
-
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {integrationCards.map((meta) => {
-            const isLive = livePlatforms.has(meta.short);
-            const isYouTube = meta.short === "YT";
-            const isMeta = META_PLATFORMS.has(meta.short);
-            const connected = isYouTube
-              ? youtubeConnected
-              : isMeta
-                ? meta.short === "FB"
-                  ? metaFacebookConnected
-                  : metaInstagramConnected
-                : accountStatus?.connections.find((c) => c.platform === meta.short)?.status ===
-                  "ok";
-
-            if (isLive && (isYouTube || isMeta)) {
-              const connectLabel = isYouTube
-                ? "connect_oauth · read_only"
-                : "connect_meta · fb + ig";
-              return (
-                <button
-                  key={meta.short}
-                  type="button"
-                  disabled={!teamAuthed || connected}
-                  data-testid={`connect-platform-${meta.short.replace(/\s+/g, "-")}`}
-                  title={
-                    connected
-                      ? `${meta.full} already connected`
-                      : teamAuthed
-                        ? isYouTube
-                          ? "Connect YouTube (read-only)"
-                          : "Connect Meta Business (Facebook Page + linked Instagram)"
-                        : "Unlock team access first"
-                  }
-                  onClick={() => handleConnect(meta.short)}
-                  className={`kpi-card flex items-center gap-3 px-4 py-4 text-left ${
-                    !teamAuthed || connected
-                      ? "cursor-default opacity-80"
-                      : "hover:border-accent/50"
-                  }`}
-                >
-                  <PlatformChip platform={meta.short} size="xl" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-foreground">{meta.full}</div>
-                    <div className="label-mono mt-0.5 text-[0.55rem] text-muted-foreground">
-                      {connected
-                        ? "live · connected"
-                        : teamAuthed
-                          ? connectLabel
-                          : "unlock_team_access"}
+          {comingSoonCards.length > 0 ? (
+            <div>
+              <h4 className="mb-3 text-sm font-semibold text-muted-foreground">Coming soon</h4>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {comingSoonCards.map((meta) => (
+                  <div
+                    key={meta.short}
+                    data-testid={`connect-platform-${meta.short.replace(/\s+/g, "-")}`}
+                    className="flex items-center gap-3 rounded-sm border border-dashed border-border px-4 py-4 opacity-60"
+                  >
+                    <PlatformChip platform={meta.short} size="xl" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-foreground">{meta.full}</div>
+                      <Badge tone="muted" className="mt-1">
+                        Coming soon
+                      </Badge>
                     </div>
                   </div>
-                  <Link2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
-                </button>
-              );
-            }
-
-            return (
-              <div
-                key={meta.short}
-                data-testid={`connect-platform-${meta.short.replace(/\s+/g, "-")}`}
-                className="kpi-card flex items-center gap-3 px-4 py-4 text-left opacity-55"
-              >
-                <PlatformChip platform={meta.short} size="xl" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-semibold text-foreground">{meta.full}</div>
-                  <div className="label-mono mt-0.5 text-[0.55rem] text-muted-foreground">
-                    demo_data · coming_soon
-                  </div>
-                </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
-
-        <p className="label-mono mt-6 text-muted-foreground/70">
-          live: youtube · meta (fb+ig) · next: x
-        </p>
-      </div>
+            </div>
+          ) : null}
+        </CardBody>
+      </Card>
     </section>
   );
 }
 
-export function LiveConnectionStrip({
-  workspace,
-}: {
-  workspace: WorkspaceProfile;
-}) {
+export function LiveConnectionStrip({ workspace }: { workspace: WorkspaceProfile }) {
   const { data: accountStatus } = usePlatformConnections(workspace.id);
   const live = accountStatus?.connections.filter((c) => c.status === "ok") ?? [];
-  const demoPlatforms = workspace.platforms.filter(
-    (p) => !live.some((c) => c.platform === p),
-  );
+  const demoPlatforms = workspace.platforms.filter((p) => !live.some((c) => c.platform === p));
 
   return (
     <div className="flex flex-wrap gap-3">
@@ -319,24 +244,23 @@ export function LiveConnectionStrip({
             className="inline-flex items-center gap-2 rounded-sm border border-success/40 bg-success/5 px-3 py-2"
           >
             <PlatformChip platform={c.platform} size="md" />
-            <span className="label-mono text-[0.55rem] text-success">
-              {meta?.full ?? c.platform} · live
-            </span>
+            <span className="text-body-sm font-medium text-success">{meta?.full ?? c.platform}</span>
+            <Badge tone="success">Live</Badge>
           </div>
         );
       })}
       {demoPlatforms.slice(0, 4).map((p) => (
         <div
           key={p}
-          className="inline-flex items-center gap-2 rounded-sm border border-border px-3 py-2 opacity-60"
+          className="inline-flex items-center gap-2 rounded-sm border border-border px-3 py-2 opacity-70"
         >
           <PlatformChip platform={p} size="md" />
-          <span className="label-mono text-[0.55rem] text-muted-foreground">demo</span>
+          <Badge tone="muted">Sample</Badge>
         </div>
       ))}
       {demoPlatforms.length > 4 ? (
-        <span className="label-mono self-center text-[0.55rem] text-muted-foreground">
-          +{demoPlatforms.length - 4} demo
+        <span className="self-center text-body-sm text-muted-foreground">
+          +{demoPlatforms.length - 4} sample
         </span>
       ) : null}
     </div>

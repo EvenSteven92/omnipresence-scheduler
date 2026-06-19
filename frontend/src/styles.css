@@ -24,52 +24,58 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-danger: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-success: var(--success);
   --color-warning: var(--warning);
-  --color-danger: var(--danger);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 :root {
-  --radius: 0.1875rem;
-  /* Layout rhythm — keeps pages airy without changing the terminal look */
-  --page-gutter: 3rem;
-  --page-top: 2.5rem;
-  --page-bottom: 5rem;
-  --section-gap: 2.75rem;
+  --radius: 0.375rem;
+  --page-gutter: clamp(1.25rem, 4vw, 3rem);
+  --page-top: 2rem;
+  --page-bottom: 4rem;
+  --section-gap: 2.5rem;
   --stack-gap: 1.25rem;
   --control-gap: 0.75rem;
-  /* Terminal dark — TORCC OmniSocial */
+  /* Type scale */
+  --text-eyebrow-size: 0.6875rem;
+  --text-body-sm-size: 0.8125rem;
+  --text-body-size: 0.875rem;
+  --text-title-size: 1rem;
+  --text-display-size: 1.75rem;
+  /* Terminal dark — OmniSocial */
   --background: oklch(0.14 0.005 270);
   --foreground: oklch(0.97 0.005 270);
   --surface: oklch(0.17 0.006 270);
-  --surface-elevated: oklch(0.20 0.007 270);
-  --card: oklch(0.17 0.006 270);
+  --surface-elevated: oklch(0.21 0.008 270);
+  --card: oklch(0.19 0.007 270);
   --card-foreground: oklch(0.97 0.005 270);
-  --popover: oklch(0.17 0.006 270);
+  --popover: oklch(0.19 0.007 270);
   --popover-foreground: oklch(0.97 0.005 270);
-  --primary: oklch(0.98 0 0);
+  --primary: oklch(0.74 0.18 55);
   --primary-foreground: oklch(0.14 0.005 270);
   --secondary: oklch(0.22 0.007 270);
   --secondary-foreground: oklch(0.97 0.005 270);
   --muted: oklch(0.22 0.007 270);
   --muted-foreground: oklch(0.62 0.012 270);
-  --accent: oklch(0.74 0.18 55); /* signal orange */
+  --accent: oklch(0.74 0.18 55);
   --accent-foreground: oklch(0.14 0.005 270);
   --destructive: oklch(0.65 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
   --success: oklch(0.78 0.18 150);
   --warning: oklch(0.82 0.16 85);
-  --danger: oklch(0.68 0.22 25);
   --border: oklch(0.27 0.008 270);
   --input: oklch(0.22 0.007 270);
   --ring: oklch(0.74 0.18 55);
+  --sidebar-width: 15rem;
+  --sidebar-width-collapsed: 4rem;
 }
 
 .dark {
@@ -81,11 +87,14 @@
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-mono);
-    font-feature-settings: "ss01", "cv11";
+    font-family: var(--font-sans);
+    font-size: var(--text-body-size);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
   ::selection {
     background-color: var(--color-accent);
@@ -94,20 +103,62 @@
 }
 
 @layer utilities {
+  /* Typography */
+  .text-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-eyebrow-size);
+    line-height: 1.45;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+  .text-body-sm {
+    font-size: var(--text-body-sm-size);
+    line-height: 1.5;
+  }
+  .text-body {
+    font-size: var(--text-body-size);
+    line-height: 1.5;
+  }
+  .text-title {
+    font-size: var(--text-title-size);
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+  }
+  .text-display {
+    font-size: var(--text-display-size);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .font-data {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Legacy utilities — gradually migrate callers to ui/* */
   .label-mono {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--text-eyebrow-size);
     line-height: 1.45;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-muted-foreground);
   }
   .display-mono {
     font-family: var(--font-mono);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
     font-weight: 700;
   }
+  .page-title {
+    font-size: var(--text-display-size);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--color-foreground);
+  }
+
   .page-content {
     padding-inline: var(--page-gutter);
     padding-top: var(--page-top);
@@ -115,12 +166,13 @@
   }
   .page-header {
     padding-inline: var(--page-gutter);
-    padding-top: 2.75rem;
-    padding-bottom: 2rem;
+    padding-top: 2rem;
+    padding-bottom: 1.5rem;
   }
   .section-block {
     margin-top: var(--section-gap);
   }
+
   .btn-action {
     display: inline-flex;
     align-items: center;
@@ -128,16 +180,19 @@
     border-radius: var(--radius);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
-    padding: 0.625rem 1rem;
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    padding: 0.5rem 0.875rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm-size);
+    font-weight: 500;
     color: var(--color-foreground);
     transition: background-color 150ms ease;
   }
   .btn-action:hover {
     background: var(--color-secondary);
+  }
+  .btn-action:focus-visible {
+    outline: none;
+    ring: 2px solid var(--color-ring);
   }
   .btn-action-primary {
     border-color: transparent;
@@ -147,14 +202,15 @@
   .btn-action-primary:hover {
     opacity: 0.92;
   }
+
   .metric-cell {
-    padding: 1.5rem 1.375rem;
+    padding: 1.25rem 1.25rem;
   }
   .kpi-card {
     overflow: hidden;
     border-radius: var(--radius);
     border: 1px solid var(--color-border);
-    background: var(--color-surface);
+    background: var(--color-surface-elevated);
   }
   .composer-section {
     padding-inline: 1.25rem;
@@ -167,16 +223,15 @@
     padding: 0.25rem 0.625rem;
     border: 1px solid var(--color-border);
     border-radius: 999px;
-    font-family: var(--font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm-size);
+    font-weight: 500;
     color: var(--color-foreground);
     background: var(--color-surface);
   }
   .panel {
     border: 1px solid var(--color-border);
-    background: var(--color-surface);
+    background: var(--color-surface-elevated);
     border-radius: var(--radius);
   }
   .grid-bg {
@@ -188,16 +243,16 @@
 }
 
 @keyframes fadeSwap {
-  0% { opacity: 0; transform: translateY(4px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes newsTickerScroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .pause-on-hover:hover {
   animation-play-state: paused !important;
 }
-

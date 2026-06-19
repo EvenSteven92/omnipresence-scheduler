@@ -103,8 +103,8 @@ export function PostDetailModal({
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-sm border border-foreground/40 px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-foreground">
-                content_card
+              <span className="rounded-sm border border-foreground/40 px-2 py-0.5 text-body-sm font-medium text-foreground">
+                Content card
               </span>
               <span
                 className={`rounded-sm border px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] ${
@@ -143,7 +143,7 @@ export function PostDetailModal({
         <div className="flex aspect-video items-center justify-center border-b border-border bg-background/60">
           <div className="flex flex-col items-center gap-1 text-muted-foreground">
             <ImageIcon className="h-6 w-6" strokeWidth={1.25} />
-            <span className="label-mono text-[0.55rem]">one_file · many_networks</span>
+            <span className="text-body-sm text-muted-foreground">One file · many networks</span>
           </div>
         </div>
 
@@ -157,7 +157,7 @@ export function PostDetailModal({
               <div className="flex min-w-0 items-center gap-2">
                 <Layers className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={1.75} />
                 <div className="min-w-0">
-                  <div className="label-mono text-[0.5rem] text-muted-foreground">event_album</div>
+                  <div className="text-eyebrow">Event album</div>
                   <div className="truncate text-xs font-semibold text-foreground">
                     {linkedEvent.title}
                   </div>

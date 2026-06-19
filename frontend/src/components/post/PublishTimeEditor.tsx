@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, CalendarClock, Loader2, Sparkles } from "lucide-react";
 import type { Platform, ScheduledPost } from "@/lib/mock-data";
 import { today } from "@/lib/demo-clock";
 import { buildPlatformSlots } from "@/lib/schedule-display";
+import { detectConflicts } from "@/lib/conflicts";
 import {
   calendarDayKey,
   combineDateAndTime,
@@ -72,10 +73,26 @@ export function PublishTimeEditor({
     [proposedTimes],
   );
 
-  // Re-sync when platforms change or times are committed — not on every day pick (handleSelectDay owns that).
+  const draftConflicts = useMemo(() => {
+    const seen = new Set<string>();
+    const out: ReturnType<typeof detectConflicts> = [];
+    platforms.forEach((platform) => {
+      const draft = drafts[platform];
+      if (!draft?.date || !draft?.time) return;
+      const iso = combineDateAndTime(draft.date, draft.time);
+      const found = detectConflicts(scheduledPosts, new Date(iso), [platform], fileId);
+      found.forEach((c) => {
+        const key = `${c.withId}-${platform}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push(c);
+      });
+    });
+    return out;
+  }, [drafts, platforms, scheduledPosts, fileId]);
+
   useEffect(() => {
     setDrafts(buildDrafts(platforms, selectedDay, proposedTimes));
-    // selectedDay read for initial build only; day changes go through handleSelectDay
     // eslint-disable-next-line react-hooks/exhaustive-deps -- proposedKey tracks proposedTimes
   }, [platforms, proposedKey]);
 
@@ -134,7 +151,7 @@ export function PublishTimeEditor({
   return (
     <div data-testid="publish-time-editor" className="overflow-hidden rounded-sm border border-border bg-background/40">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <span className="label-mono text-muted-foreground">pick_a_day</span>
+        <span className="text-body-sm text-muted-foreground">Pick a day</span>
         <div className="flex items-center gap-2">
           {onSuggestTimes ? (
             <button
@@ -142,17 +159,17 @@ export function PublishTimeEditor({
               onClick={runSuggest}
               disabled={busy || platforms.length === 0}
               data-testid="suggest-times-btn"
-              className="flex items-center gap-1.5 rounded-sm border border-accent/50 bg-accent/10 px-2.5 py-1.5 text-[0.55rem] uppercase tracking-[0.14em] text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-sm border border-accent/50 bg-accent/10 px-2.5 py-1.5 text-body-sm font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
             >
               {busy ? (
                 <Loader2 className="h-2.5 w-2.5 animate-spin" />
               ) : (
                 <Sparkles className="h-2.5 w-2.5" />
               )}
-              Suggest_times
+              Suggest times
             </button>
           ) : null}
-          <span className="label-mono text-[0.55rem] text-muted-foreground/80">
+          <span className="text-body-sm text-muted-foreground">
             {slots.length}/{platforms.length} set
             {unsetCount > 0 ? ` · ${unsetCount} need time` : ""}
           </span>
@@ -176,19 +193,36 @@ export function PublishTimeEditor({
         }}
       />
 
+      {draftConflicts.length > 0 ? (
+        <div
+          data-testid="inline-schedule-conflicts"
+          className="border-t border-warning/40 bg-warning/10 px-4 py-3 text-body-sm text-warning"
+        >
+          <div className="mb-1 flex items-center gap-1.5 font-medium">
+            <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2} />
+            {draftConflicts.length} scheduling conflict{draftConflicts.length === 1 ? "" : "s"}
+          </div>
+          {draftConflicts.map((c) => (
+            <div key={`${c.withId}-${c.sharedPlatforms.join("-")}`} className="leading-snug">
+              · {c.sharedPlatforms.join(", ")} overlaps with “{c.withTitle}” (±{c.deltaMinutes} min)
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       <div className="border-t border-border px-4 py-3">
         <button
           type="button"
           onClick={applySetTimes}
           disabled={platforms.length === 0}
           data-testid="set-times-btn"
-          className="flex w-full items-center justify-center gap-2 rounded-sm border border-accent bg-accent px-4 py-2.5 text-[0.6rem] uppercase tracking-[0.14em] text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-sm border border-accent bg-accent px-4 py-2.5 text-body-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           <CalendarClock className="h-3 w-3" strokeWidth={1.75} />
-          Set_times
+          Set times
         </button>
-        <p className="mt-2 text-center text-[0.6rem] leading-relaxed text-muted-foreground">
-          Adjust times above, then press Set_times to save all platforms at once.
+        <p className="mt-2 text-center text-body-sm text-muted-foreground">
+          Adjust times above, then press Set times to save all platforms at once.
         </p>
       </div>
     </div>

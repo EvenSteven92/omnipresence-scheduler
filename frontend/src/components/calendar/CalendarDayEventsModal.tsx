@@ -44,7 +44,7 @@ export function CalendarDayEventsModal({
       >
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <div className="label-mono">events_this_day</div>
+            <div className="text-title text-sm">Events this day</div>
             <p className="mt-2 text-sm font-semibold text-foreground">{dateLabel}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {events.length} event album{events.length === 1 ? "" : "s"} — pick one to see queued

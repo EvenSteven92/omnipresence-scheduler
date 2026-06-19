@@ -65,7 +65,7 @@ export function PublishTimesAgenda({
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <Icon className={`h-3.5 w-3.5 ${meta.iconClass}`} strokeWidth={1.75} />
-          <span className="label-mono">{meta.label}</span>
+          <span className="text-body-sm font-medium text-foreground">{meta.label}</span>
         </div>
         <span className="label-mono text-muted-foreground/80">
           {slots.length} publish{slots.length === 1 ? "" : "es"}

@@ -6,18 +6,31 @@ export function EventAssociationPicker({
   events,
   value,
   onChange,
+  onCreateEvent,
 }: {
   events: ContentEvent[];
   value?: string;
   onChange: (eventId: string | undefined) => void;
+  onCreateEvent?: () => void;
 }) {
   const selected = events.find((e) => e.id === value);
 
   if (events.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground">
-        No event albums yet — create one from the calendar (click a day) or Events page.
-      </p>
+      <div className="space-y-3">
+        <p className="text-body-sm text-muted-foreground">
+          No event albums yet. Create one to group this file with related media.
+        </p>
+        {onCreateEvent ? (
+          <button
+            type="button"
+            onClick={onCreateEvent}
+            className="text-sm font-medium text-accent hover:underline"
+          >
+            Create event album →
+          </button>
+        ) : null}
+      </div>
     );
   }
 
@@ -74,6 +87,15 @@ export function EventAssociationPicker({
           );
         })}
       </div>
+      {onCreateEvent ? (
+        <button
+          type="button"
+          onClick={onCreateEvent}
+          className="text-sm font-medium text-muted-foreground transition-colors hover:text-accent"
+        >
+          + New event album
+        </button>
+      ) : null}
     </div>
   );
 }

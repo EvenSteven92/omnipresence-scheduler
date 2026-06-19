@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Lock } from "lucide-react";
+import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 export function TeamAccessGate({ onAuthed }: { onAuthed: () => void }) {
   const [code, setCode] = useState("");
@@ -30,27 +32,33 @@ export function TeamAccessGate({ onAuthed }: { onAuthed: () => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="panel border border-border bg-surface/60 p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Lock className="h-3.5 w-3.5 text-accent" />
-        <div className="label-mono">team_access</div>
-      </div>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Enter your team access code to connect YouTube or run a manual sync.
-      </p>
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="password"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="Access code"
-          className="min-w-[220px] rounded-sm border border-border bg-background px-3 py-2 text-sm"
-        />
-        <button type="submit" disabled={busy || !code.trim()} className="btn-action">
-          {busy ? "Checking…" : "Unlock"}
-        </button>
-      </div>
-      {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
-    </form>
+    <Card elevated>
+      <CardHeader
+        title="Team access"
+        description="Your workspace admin shares a one-time access code so you can connect social accounts and sync metrics. Ask your TORCC admin if you don't have one."
+      />
+      <CardBody className="pt-0">
+        <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[220px] flex-1">
+            <label htmlFor="team-code" className="mb-1.5 block text-body-sm font-medium text-foreground">
+              Access code
+            </label>
+            <input
+              id="team-code"
+              type="password"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="Enter code"
+              className="w-full rounded-sm border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+          <Button type="submit" variant="primary" disabled={busy || !code.trim()}>
+            <Lock className="h-3.5 w-3.5" />
+            {busy ? "Checking…" : "Unlock"}
+          </Button>
+        </form>
+        {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
+      </CardBody>
+    </Card>
   );
 }

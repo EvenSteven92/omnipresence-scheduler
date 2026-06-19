@@ -53,7 +53,7 @@ export function RepublishModal({
       >
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div className="min-w-0">
-            <div className="label-mono">republish_flow</div>
+            <div className="text-title">Republish</div>
             <h2 className="mt-2 text-base font-semibold text-foreground">
               {published ? "Schedule this content again" : "Queue a new publish wave"}
             </h2>

@@ -8,6 +8,8 @@ import { TeamAccessGate } from "@/components/TeamAccessGate";
 import { useTeamSession } from "@/hooks/useTeamSession";
 import { useWorkspace } from "@/lib/workspace-context";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
+import { useOAuthAutoSync } from "@/hooks/useOAuthAutoSync";
+import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import {
   Building2,
   ArrowRight,
@@ -38,6 +40,9 @@ function WorkspacesPage() {
   const queryClient = useQueryClient();
   const { data: teamAuthed = false } = useTeamSession();
   const [banner, setBanner] = useState<string | null>(null);
+  const [oauthParams, setOauthParams] = useState<{ youtube?: string | null; meta?: string | null }>({});
+
+  useOAuthAutoSync(workspaceId, oauthParams, teamAuthed);
 
   useEffect(() => {
     if (window.location.hash === "#connect-platform") {
@@ -46,14 +51,15 @@ function WorkspacesPage() {
     const params = new URLSearchParams(window.location.search);
     const youtube = params.get("youtube");
     const meta = params.get("meta");
+    setOauthParams({ youtube, meta });
     if (youtube === "connected") {
-      setBanner("YouTube connected. Live metrics will appear on the dashboard after sync.");
+      setBanner("YouTube connected — syncing metrics now.");
     } else if (youtube === "denied") {
       setBanner("YouTube connect was cancelled.");
     } else if (youtube === "error") {
       setBanner(params.get("message") ?? "YouTube connect failed.");
     } else if (meta === "connected") {
-      setBanner("Meta connected. Facebook and linked Instagram metrics will sync to the dashboard.");
+      setBanner("Meta connected — syncing Facebook and Instagram metrics now.");
     } else if (meta === "partial") {
       setBanner(
         params.get("message") ??
@@ -86,7 +92,9 @@ function WorkspacesPage() {
         }
       />
 
-      <div className="page-content max-w-4xl">
+      <div className="page-content max-w-4xl space-y-6">
+        <OnboardingChecklist />
+
         {!hasConnectedAccounts ? (
           <div className="panel p-8">
             <div className="mb-2 text-sm font-medium text-foreground">How it works</div>

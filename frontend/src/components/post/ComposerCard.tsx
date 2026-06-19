@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Save,
   Sparkles,
@@ -21,6 +21,7 @@ import { CollapsibleSection } from "./CollapsibleSection";
 import { detectConflicts } from "@/lib/conflicts";
 import { useWorkspace } from "@/lib/workspace-context";
 import { EventAssociationPicker } from "@/components/events/EventAssociationPicker";
+import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
 import { mergeWorkspaceEvents, useCustomEvents } from "@/hooks/useCustomEvents";
 import { formatEventTime, getEventById } from "@/lib/events/display";
 
@@ -34,6 +35,8 @@ export interface DraftPost {
   autoFormat: PostFormat;
   platforms: Platform[];
   caption: string;
+  /** Per-platform caption overrides — falls back to `caption` when unset. */
+  platformCaptions?: Partial<Record<Platform, string>>;
   hashtags: string;
   transcript: string;
   /** Per-platform proposed times (ISO). Populated by Suggest_times. */
@@ -52,6 +55,7 @@ export function ComposerCard({
   onSaveDraft,
   expanded,
   focused = false,
+  hidePreview = false,
   dragHandlers,
   isDragging,
 }: {
@@ -64,6 +68,8 @@ export function ComposerCard({
   expanded: boolean;
   /** Master–detail editor: slimmer chrome, sections tuned for one card at a time. */
   focused?: boolean;
+  /** When true, preview is rendered by the parent (e.g. scheduler side pane). */
+  hidePreview?: boolean;
   /** Native HTML5 drag handlers passed from the parent grid. */
   dragHandlers?: {
     draggable: boolean;
@@ -79,7 +85,15 @@ export function ComposerCard({
 
   const { workspace, workspaceId } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
+  const createEventFlow = useCreateEventFlow();
   const workspaceEvents = mergeWorkspaceEvents(workspace.events, customEvents);
+  const [captionPlatform, setCaptionPlatform] = useState<Platform | "all">("all");
+
+  useEffect(() => {
+    if (captionPlatform !== "all" && !post.platforms.includes(captionPlatform)) {
+      setCaptionPlatform("all");
+    }
+  }, [captionPlatform, post.platforms]);
 
   const availablePlatforms = useMemo(
     () => PLATFORMS.filter((p) => workspace.platforms.includes(p.short)),
@@ -180,9 +194,9 @@ export function ComposerCard({
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   data-testid={`card-index-${post.id}`}
-                  className="label-mono text-muted-foreground"
+                  className="text-eyebrow"
                 >
-                  {focused ? "editing" : `content #${index}`}
+                  {focused ? "Editing" : `Content ${index}`}
                 </span>
                 {linkedEvent ? (
                   <span className="rounded-sm border border-accent/50 bg-accent/10 px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-accent">
@@ -219,7 +233,7 @@ export function ComposerCard({
       </div>
 
       <CollapsibleSection
-        title="media_&_format"
+        title="Media & format"
         subtitle="Local upload or Dropbox link (coming soon)"
         defaultOpen
       >
@@ -246,9 +260,9 @@ export function ComposerCard({
               className="flex items-center gap-2 rounded-sm border border-border bg-surface px-4 py-2.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-70"
             >
               <Cloud className="h-3.5 w-3.5" strokeWidth={1.75} />
-              Add_From_Dropbox
+              Add from Dropbox
             </button>
-            <span className="label-mono text-[0.5rem] text-muted-foreground/60">placeholder · not wired</span>
+            <span className="text-body-sm text-muted-foreground/60">Coming soon</span>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-0 overflow-hidden rounded-sm border border-border">
@@ -271,7 +285,7 @@ export function ComposerCard({
       </CollapsibleSection>
 
       <CollapsibleSection
-        title="platforms"
+        title="Platforms"
         subtitle="Where this file will publish"
         defaultOpen
         badge={
@@ -300,7 +314,7 @@ export function ComposerCard({
       </CollapsibleSection>
 
       <CollapsibleSection
-        title="event_album"
+        title="Event album"
         subtitle="Associate this file with a ministry event"
         defaultOpen={!!post.eventId}
         badge={
@@ -315,12 +329,14 @@ export function ComposerCard({
           events={workspaceEvents}
           value={post.eventId}
           onChange={(eventId) => onChange({ ...post, eventId })}
+          onCreateEvent={() => createEventFlow.openCreateEvent()}
         />
+        {createEventFlow.modal}
       </CollapsibleSection>
 
       <CollapsibleSection
-        title="publish_times"
-        subtitle="One date & time per selected platform"
+        title="Publish times"
+        subtitle="One date and time per selected platform"
         defaultOpen={!focused}
         badge={
           post.platforms.length > 0 ? (
@@ -351,36 +367,84 @@ export function ComposerCard({
         />
       </CollapsibleSection>
 
-      <CollapsibleSection title="caption_&_copy" defaultOpen>
+      <CollapsibleSection title="Caption & copy" defaultOpen>
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <AiButton
-            label="caption"
+            label="Caption"
             busy={busy === "caption"}
             onClick={() => runAi("caption")}
             testid={`ai-caption-${post.id}`}
           />
           <AiButton
-            label="hashtags"
+            label="Hashtags"
             busy={busy === "hashtags"}
             onClick={() => runAi("hashtags")}
             testid={`ai-hashtags-${post.id}`}
           />
           <AiButton
-            label="yt_desc"
+            label="YouTube desc"
             busy={busy === "yt_desc"}
             onClick={() => runAi("yt_desc")}
             testid={`ai-yt-desc-${post.id}`}
           />
         </div>
+        {post.platforms.length > 1 ? (
+          <div className="mb-3 flex flex-wrap gap-1">
+            <button
+              type="button"
+              onClick={() => setCaptionPlatform("all")}
+              className={`rounded-sm px-2.5 py-1 text-body-sm ${
+                captionPlatform === "all" ? "bg-secondary text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              All platforms
+            </button>
+            {post.platforms.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setCaptionPlatform(p)}
+                className={`rounded-sm px-2.5 py-1 text-body-sm ${
+                  captionPlatform === p ? "bg-secondary text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <textarea
-          value={post.caption}
-          onChange={(e) => onChange({ ...post, caption: e.target.value })}
-          placeholder="Caption shared across platforms (tweak per network later if needed)…"
+          value={
+            captionPlatform === "all"
+              ? post.caption
+              : (post.platformCaptions?.[captionPlatform] ?? post.caption)
+          }
+          onChange={(e) => {
+            if (captionPlatform === "all") {
+              onChange({ ...post, caption: e.target.value });
+            } else {
+              onChange({
+                ...post,
+                platformCaptions: {
+                  ...(post.platformCaptions ?? {}),
+                  [captionPlatform]: e.target.value,
+                },
+              });
+            }
+          }}
+          placeholder="Write your caption — customize per platform with the tabs above."
           data-testid={`caption-input-${post.id}`}
           rows={4}
-          className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+          className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
         />
-        <CharCounters text={post.caption} platforms={post.platforms} />
+        <CharCounters
+          text={
+            captionPlatform === "all"
+              ? post.caption
+              : (post.platformCaptions?.[captionPlatform] ?? post.caption)
+          }
+          platforms={captionPlatform === "all" ? post.platforms : [captionPlatform]}
+        />
         <textarea
           value={post.hashtags}
           onChange={(e) => onChange({ ...post, hashtags: e.target.value })}
@@ -392,8 +456,8 @@ export function ComposerCard({
       </CollapsibleSection>
 
       <CollapsibleSection
-        title="transcript_&_ai_context"
-        subtitle="Optional — powers AI buttons"
+        title="Transcript & AI context"
+        subtitle="Optional — powers AI caption buttons"
         defaultOpen={false}
       >
         <textarea
@@ -418,26 +482,28 @@ export function ComposerCard({
           data-testid={`conflict-banner-${post.id}`}
           className="composer-section rounded-sm border border-warning/60 bg-warning/10 px-4 py-3 text-[0.65rem] leading-relaxed text-warning"
         >
-          <div className="mb-1 flex items-center gap-1.5 font-mono uppercase tracking-[0.14em]">
+          <div className="mb-1 flex items-center gap-1.5 text-sm font-medium">
             <AlertTriangle className="h-3 w-3" strokeWidth={2} />
-            schedule_conflict · {conflicts.length}
+            Schedule conflict{conflicts.length === 1 ? "" : "s"} ({conflicts.length})
           </div>
           {conflicts.map((c) => (
             <div key={c.withId} className="leading-snug">
-              · {c.sharedPlatforms.join("/")} overlap with “{c.withTitle}” (±{c.deltaMinutes}min)
+              · {c.sharedPlatforms.join(", ")} overlaps with “{c.withTitle}” (±{c.deltaMinutes} min)
             </div>
           ))}
         </div>
       )}
 
-      {!focused ? (
+      {!hidePreview ? (
         <div className="pb-2">
           <PlatformPreview
             platforms={post.platforms}
             caption={post.caption}
+            platformCaptions={post.platformCaptions}
             hashtags={post.hashtags}
             filename={post.filename}
             format={post.format}
+            defaultOpen={focused}
           />
         </div>
       ) : null}
@@ -447,10 +513,10 @@ export function ComposerCard({
           type="button"
           onClick={onSaveDraft}
           data-testid={`save-draft-${post.id}`}
-          className="flex w-full items-center justify-center gap-2 bg-surface px-5 py-4 text-[0.65rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
+          className="flex w-full items-center justify-center gap-2 bg-surface px-5 py-4 text-body-sm font-medium text-foreground transition-colors hover:bg-secondary"
         >
           <Save className="h-3 w-3" strokeWidth={2} />
-          Save_Draft
+          Save draft
         </button>
       </div>
     </article>

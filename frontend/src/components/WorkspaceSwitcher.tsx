@@ -3,11 +3,10 @@ import { Link } from "@tanstack/react-router";
 import { Building2, Check, ChevronDown, Plus } from "lucide-react";
 import { useWorkspace } from "@/lib/workspace-context";
 import type { WorkspaceId } from "@/lib/workspaces";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/Badge";
 
-/**
- * Sidebar workspace picker — switches company context for metrics, posts, and connections.
- */
-export function WorkspaceSwitcher() {
+export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }) {
   const { workspace, workspaces, setWorkspaceId } = useWorkspace();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -21,35 +20,49 @@ export function WorkspaceSwitcher() {
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative border-b border-border/60 px-2.5 py-3">
+    <div ref={rootRef} className="relative border-b border-border/60 px-2 py-2">
       <button
         type="button"
         data-testid="workspace-switcher"
         onClick={() => setOpen((o) => !o)}
-        className="group flex w-full flex-col items-center gap-1 rounded-sm border border-border bg-background/50 px-1 py-2 transition-colors hover:bg-secondary"
+        className={cn(
+          "flex w-full items-center gap-2 rounded-sm border border-border bg-background/50 transition-colors hover:bg-secondary",
+          collapsed ? "justify-center px-2 py-2" : "px-2.5 py-2",
+        )}
         aria-expanded={open}
         aria-haspopup="listbox"
         title={workspace.name}
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-sm bg-foreground font-mono text-[0.65rem] font-bold text-background">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-foreground font-data text-[0.65rem] font-bold text-background">
           {workspace.initials}
         </span>
-        <ChevronDown
-          className={`h-3 w-3 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
-          strokeWidth={2}
-        />
+        {!collapsed ? (
+          <>
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate text-sm font-medium text-foreground">{workspace.name}</span>
+              <span className="block truncate text-body-sm text-muted-foreground">{workspace.tagline}</span>
+            </span>
+            <ChevronDown
+              className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+              strokeWidth={2}
+            />
+          </>
+        ) : null}
       </button>
 
       {open && (
         <div
           role="listbox"
           aria-label="Select workspace"
-          className="absolute left-full top-0 z-50 ml-2 w-64 overflow-hidden rounded-sm border border-border bg-surface shadow-xl"
+          className={cn(
+            "absolute z-50 overflow-hidden rounded-sm border border-border bg-popover shadow-xl",
+            collapsed ? "left-full top-0 ml-2 w-64" : "left-2 right-2 top-full mt-1",
+          )}
         >
           <div className="border-b border-border px-3 py-2.5">
-            <div className="label-mono">workspace</div>
-            <p className="mt-1 text-[0.65rem] leading-relaxed text-muted-foreground">
-              Each company has its own platforms, posts, and metrics.
+            <p className="text-sm font-medium text-foreground">Workspaces</p>
+            <p className="mt-0.5 text-body-sm text-muted-foreground">
+              Each company has its own platforms and content.
             </p>
           </div>
           <ul className="max-h-72 overflow-y-auto py-1">
@@ -66,31 +79,35 @@ export function WorkspaceSwitcher() {
                       setWorkspaceId(ws.id as WorkspaceId);
                       setOpen(false);
                     }}
-                    className={`flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors ${
-                      active ? "bg-secondary" : "hover:bg-secondary/60"
-                    }`}
+                    className={cn(
+                      "flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors",
+                      active ? "bg-secondary" : "hover:bg-secondary/60",
+                    )}
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-border bg-background font-mono text-[0.6rem] font-semibold text-foreground">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-border bg-background font-data text-[0.6rem] font-semibold">
                       {ws.initials}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-xs font-semibold text-foreground">{ws.name}</span>
-                      <span className="label-mono mt-0.5 block normal-case tracking-normal text-muted-foreground/80">
-                        {ws.tagline}
-                      </span>
-                      <span
-                        className={`label-mono mt-1 inline-block rounded-sm border px-1.5 py-0.5 text-[0.5rem] ${
+                      <span className="block text-sm font-medium text-foreground">{ws.name}</span>
+                      <span className="mt-0.5 block text-body-sm text-muted-foreground">{ws.tagline}</span>
+                      <Badge
+                        tone={
                           ws.onboardingStatus === "complete"
-                            ? "border-success/50 text-success"
+                            ? "success"
                             : ws.onboardingStatus === "needs_accounts"
-                              ? "border-warning/50 text-warning"
-                              : "border-border text-muted-foreground"
-                        }`}
+                              ? "warning"
+                              : "muted"
+                        }
+                        className="mt-1.5"
                       >
-                        {ws.onboardingStatus.replace(/_/g, " ")}
-                      </span>
+                        {ws.onboardingStatus === "complete"
+                          ? "Connected"
+                          : ws.onboardingStatus === "needs_accounts"
+                            ? "Needs accounts"
+                            : "Draft"}
+                      </Badge>
                     </span>
-                    {active && <Check className="mt-1 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />}
+                    {active ? <Check className="mt-1 h-4 w-4 shrink-0 text-accent" /> : null}
                   </button>
                 </li>
               );
@@ -100,10 +117,10 @@ export function WorkspaceSwitcher() {
             <Link
               to="/workspaces"
               onClick={() => setOpen(false)}
-              className="flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-border bg-background/40 px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
+              className="flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
             >
-              <Plus className="h-3 w-3" />
-              Manage / Onboard
+              <Plus className="h-3.5 w-3.5" />
+              Manage workspaces
             </Link>
           </div>
         </div>
@@ -112,13 +129,12 @@ export function WorkspaceSwitcher() {
   );
 }
 
-/** Compact label for page headers */
 export function WorkspaceEyebrow() {
   const { workspace } = useWorkspace();
   return (
-    <span className="inline-flex items-center gap-2">
-      <Building2 className="h-3 w-3 text-accent" strokeWidth={1.75} />
-      {workspace.slug}
+    <span className="inline-flex items-center gap-2 text-body-sm text-muted-foreground">
+      <Building2 className="h-3.5 w-3.5 text-accent" strokeWidth={1.75} />
+      {workspace.name}
     </span>
   );
 }

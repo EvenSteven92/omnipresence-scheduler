@@ -49,6 +49,8 @@ import type { PublishedPost } from "@/lib/mock-data";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import { PlatformChip } from "@/components/post/PlatformChip";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
+import { LiveDataBadge, SampleDataBadge } from "@/components/LiveDataBadge";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { TopEventPerformersSection } from "@/components/events/TopEventPerformersSection";
 
 export const Route = createFileRoute("/analytics")({
@@ -147,15 +149,29 @@ function AnalyticsPage() {
       />
 
       <div className="page-content">
+        {publishedPosts.length === 0 && !hasLiveMetrics(liveBundle) ? (
+          <EmptyState
+            icon={Activity}
+            title="No analytics yet"
+            description="Connect YouTube or Meta to pull live metrics, or publish posts to see performance here."
+            action={
+              <Link to="/workspaces" className="btn-action-primary btn-action">
+                Connect a channel
+              </Link>
+            }
+            className="mt-4"
+          />
+        ) : (
+        <>
         <TimeframeSelector value={timeframe} onChange={setTimeframe} />
-        <p className="mt-4 text-sm text-muted-foreground">
-          {allTime
-            ? "Lifetime totals — no period comparison."
-            : `Compared to the prior ${timeframeLabel(timeframe)} · ${trendData.length} data points`}
-          {hasLiveMetrics(liveBundle)
-            ? " · live YouTube & Meta sync"
-            : ""}
-        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            {allTime
+              ? "Lifetime totals — no period comparison."
+              : `Compared to the prior ${timeframeLabel(timeframe)} · ${trendData.length} data points`}
+          </p>
+          {hasLiveMetrics(liveBundle) ? <LiveDataBadge /> : <SampleDataBadge />}
+        </div>
 
         {/* KPI strip */}
         <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
@@ -374,6 +390,8 @@ function AnalyticsPage() {
         </section>
 
         <TopEventPerformersSection timeframe={timeframe} />
+        </>
+        )}
       </div>
 
       {detailPost ? (
@@ -489,13 +507,13 @@ function TerminalTooltip({ active, payload, label }: { active?: boolean; payload
 }
 
 function Heatmap({ grid }: { grid: number[][] }) {
-  const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   return (
     <div data-testid="cadence-heatmap" className="overflow-x-auto">
       <div className="min-w-[760px]">
         <div className="ml-12 grid" style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}>
           {Array.from({ length: 24 }, (_, h) => (
-            <div key={h} className="label-mono text-center text-[0.5rem]">
+            <div key={h} className="text-center text-[0.625rem] text-muted-foreground">
               {h % 3 === 0 ? `${h.toString().padStart(2, "0")}` : ""}
             </div>
           ))}
@@ -503,7 +521,7 @@ function Heatmap({ grid }: { grid: number[][] }) {
         <div className="mt-1 space-y-0.5">
           {grid.map((row, d) => (
             <div key={d} className="flex items-center gap-2">
-              <span className="label-mono w-10 shrink-0 text-[0.55rem]">{days[d]}</span>
+              <span className="w-10 shrink-0 text-[0.6875rem] text-muted-foreground">{days[d]}</span>
               <div className="grid flex-1" style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}>
                 {row.map((v, h) => (
                   <div

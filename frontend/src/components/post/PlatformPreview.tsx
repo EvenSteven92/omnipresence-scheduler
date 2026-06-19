@@ -5,29 +5,92 @@ import { PlatformSelectChip } from "./PlatformChip";
 import type { Platform } from "@/lib/mock-data";
 
 /**
- * Inline platform previews for the composer card.
- * Renders a tab-switcher (one per selected platform) and a mock card body
- * showing how the post will look — terminal aesthetic, not pixel-perfect mocks.
+ * Live per-network preview for the composer — shows how the post will look on each platform.
  */
 export function PlatformPreview({
   platforms,
   caption,
+  platformCaptions,
   hashtags,
   filename,
   format,
+  defaultOpen = false,
+  variant = "collapsible",
 }: {
   platforms: Platform[];
   caption: string;
+  platformCaptions?: Partial<Record<Platform, string>>;
   hashtags: string;
   filename: string;
   format: "landscape" | "portrait" | "story";
+  /** When true, section starts expanded. */
+  defaultOpen?: boolean;
+  /** `panel` renders always-open for the composer side pane. */
+  variant?: "collapsible" | "panel";
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen || variant === "panel");
   const [active, setActive] = useState<Platform | null>(platforms[0] ?? null);
 
-  // Default to first selected platform if active not in list
   const effective: Platform | null =
     active && platforms.includes(active) ? active : platforms[0] ?? null;
+
+  function captionFor(platform: Platform): string {
+    return platformCaptions?.[platform]?.trim() || caption;
+  }
+
+  const body = (
+    <div className={variant === "panel" ? "" : "px-4 pb-4"}>
+      {platforms.length === 0 ? (
+        <div className="rounded-sm border border-dashed border-border bg-background/30 px-3 py-6 text-center text-body-sm text-muted-foreground">
+          Select platforms above to see how your post will look on each network.
+        </div>
+      ) : (
+        <>
+          <div className="mb-3 flex flex-wrap gap-1">
+            {platforms.map((p) => (
+              <PlatformSelectChip
+                key={p}
+                platform={p}
+                size="sm"
+                active={effective === p}
+                onClick={() => setActive(p)}
+                data-testid={`preview-tab-${p.replace(/\s+/g, "-")}`}
+              />
+            ))}
+          </div>
+
+          {effective && (
+            <PlatformMock
+              platform={effective}
+              caption={captionFor(effective)}
+              hashtags={hashtags}
+              filename={filename}
+              format={format}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  if (variant === "panel") {
+    return (
+      <section
+        data-testid="platform-preview-panel"
+        className="overflow-hidden rounded-sm border border-border bg-surface-elevated"
+      >
+        <div className="border-b border-border px-4 py-3">
+          <h3 className="text-title">Preview</h3>
+          <p className="mt-0.5 text-body-sm text-muted-foreground">
+            {platforms.length === 0
+              ? "No platforms selected"
+              : `${platforms.length} network${platforms.length === 1 ? "" : "s"}`}
+          </p>
+        </div>
+        <div className="p-4">{body}</div>
+      </section>
+    );
+  }
 
   return (
     <section className="border-t border-border">
@@ -37,12 +100,12 @@ export function PlatformPreview({
         data-testid="preview-toggle"
         className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-secondary/40"
       >
-        <span className="label-mono">platform_previews</span>
+        <span className="text-title text-sm">Preview</span>
         <div className="flex items-center gap-2">
-          <span className="label-mono text-muted-foreground/70">
+          <span className="text-body-sm text-muted-foreground">
             {platforms.length === 0
-              ? "no_platform_selected"
-              : `${platforms.length}_${platforms.length === 1 ? "preview" : "previews"}`}
+              ? "No platforms"
+              : `${platforms.length} network${platforms.length === 1 ? "" : "s"}`}
           </span>
           {open ? (
             <ChevronDown className="h-3 w-3 text-muted-foreground" />
@@ -52,40 +115,7 @@ export function PlatformPreview({
         </div>
       </button>
 
-      {open && (
-        <div className="px-4 pb-4">
-          {platforms.length === 0 ? (
-            <div className="rounded-sm border border-dashed border-border bg-background/30 px-3 py-6 text-center label-mono">
-              select_target_platforms_above
-            </div>
-          ) : (
-            <>
-              <div className="mb-3 flex flex-wrap gap-1">
-                {platforms.map((p) => (
-                  <PlatformSelectChip
-                    key={p}
-                    platform={p}
-                    size="sm"
-                    active={effective === p}
-                    onClick={() => setActive(p)}
-                    data-testid={`preview-tab-${p.replace(/\s+/g, "-")}`}
-                  />
-                ))}
-              </div>
-
-              {effective && (
-                <PlatformMock
-                  platform={effective}
-                  caption={caption}
-                  hashtags={hashtags}
-                  filename={filename}
-                  format={format}
-                />
-              )}
-            </>
-          )}
-        </div>
-      )}
+      {open && body}
     </section>
   );
 }
@@ -131,8 +161,9 @@ function PlatformMock({
   filename: string;
   format: "landscape" | "portrait" | "story";
 }) {
-  const display = caption.trim() || "Your caption preview will appear here once you start typing…";
+  const display = caption.trim() || "Your caption will appear here as you type…";
   const tags = hashtags.trim();
+  const network = PLATFORMS_BY_SHORT[platform]?.full ?? platform;
 
   if (platform === "X") return <XMock caption={display} tags={tags} />;
   if (platform === "FB" || platform === "FB STORY") return <FBMock caption={display} tags={tags} filename={filename} format={format} story={platform === "FB STORY"} />;
@@ -141,7 +172,11 @@ function PlatformMock({
   if (platform === "YT" || platform === "YT SHORTS")
     return <YTMock caption={display} tags={tags} filename={filename} shorts={platform === "YT SHORTS"} />;
   if (platform === "RUMBLE") return <RumbleMock caption={display} tags={tags} filename={filename} />;
-  return null;
+  return (
+    <div className="rounded-sm border border-dashed border-border px-3 py-4 text-center text-body-sm text-muted-foreground">
+      Preview for {network}
+    </div>
+  );
 }
 
 function XMock({ caption, tags }: { caption: string; tags: string }) {
@@ -182,7 +217,7 @@ function FBMock({ caption, tags, story }: { caption: string; tags: string; filen
           <Avatar />
           <div className="text-xs">
             <div className="font-semibold text-foreground">TORCC OmniSocial</div>
-            <div className="label-mono text-muted-foreground">just now · 🌍</div>
+            <div className="text-body-sm text-muted-foreground">Just now · Public</div>
           </div>
         </div>
         <MoreHorizontal className="h-3 w-3 text-muted-foreground" />
@@ -239,7 +274,7 @@ function StoryMock({ platform, caption }: { platform: "IG" | "FB"; caption: stri
       <div className="absolute inset-x-2 top-2 h-0.5 rounded-full bg-foreground/80" />
       <div className="absolute inset-x-2 top-4 flex items-center gap-1.5">
         <Avatar />
-        <span className="text-[0.6rem] font-semibold text-foreground">torcc · {platform.toLowerCase()}</span>
+        <span className="text-[0.6rem] font-semibold text-foreground">torcc · {platform === "IG" ? "Instagram" : "Facebook"}</span>
       </div>
       <div className="absolute inset-x-3 bottom-3 text-[0.6rem] leading-tight text-foreground line-clamp-4">
         {caption}
@@ -280,7 +315,7 @@ function RumbleMock({ caption, tags, filename }: { caption: string; tags: string
         <Avatar />
         <div className="min-w-0 flex-1">
           <div className="line-clamp-2 text-sm font-semibold text-foreground">{title}</div>
-          <div className="label-mono mt-1">torcc · 18k views · 1 day ago</div>
+          <div className="mt-1 text-body-sm text-muted-foreground">torcc · 18k views · 1 day ago</div>
           <p className="mt-2 whitespace-pre-wrap break-words text-[0.65rem] text-muted-foreground line-clamp-3">
             {caption}
             {tags && <span className="block text-success">{tags}</span>}
@@ -315,7 +350,7 @@ function YTMock({
         <Avatar />
         <div className="min-w-0 flex-1">
           <div className="line-clamp-2 text-sm font-semibold text-foreground">{title}</div>
-          <div className="label-mono mt-1">torcc · 248k views · 2 hr ago</div>
+          <div className="mt-1 text-body-sm text-muted-foreground">torcc · 248k views · 2 hr ago</div>
           <p className="mt-2 whitespace-pre-wrap break-words text-[0.65rem] text-muted-foreground line-clamp-3">
             {caption}
             {tags && <span className="block text-accent">{tags}</span>}

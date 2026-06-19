@@ -1,4 +1,4 @@
-export const CALENDAR_DOW = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+export const CALENDAR_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 export type CalendarCell = {
   d: number;

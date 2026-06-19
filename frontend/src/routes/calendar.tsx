@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, List } from "lucide-react";
+import { CalendarQueueView } from "@/components/calendar/CalendarQueueView";
+import { cn } from "@/lib/utils";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useEventAssociations } from "@/hooks/useEventAssociations";
 import { AgendaEventRow } from "@/components/calendar/AgendaEventRow";
@@ -70,6 +72,7 @@ function CalendarPage() {
   );
   const { isAssociated, resolveEventId, associate } = useEventAssociations(workspaceId);
   const [showAgenda, setShowAgenda] = useState(true);
+  const [viewMode, setViewMode] = useState<"calendar" | "queue">("calendar");
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
   const [highlightUnassociated, setHighlightUnassociated] = useState(false);
   const [associateTarget, setAssociateTarget] = useState<ScheduledPost | null>(null);
@@ -253,7 +256,7 @@ function CalendarPage() {
                   key={showAgenda ? "hide" : "show"}
                   className="inline-block animate-[fadeSwap_180ms_ease-out]"
                 >
-                  {showAgenda ? "Hide_Agenda" : "Show_Agenda"}
+                  {showAgenda ? "Hide agenda" : "Show agenda"}
                 </span>
               </button>
               <NewEventPostActions
@@ -269,6 +272,44 @@ function CalendarPage() {
         />
 
         <div className="page-content">
+          <div className="mb-6 flex gap-1 rounded-sm border border-border bg-surface p-1">
+            <button
+              type="button"
+              data-testid="calendar-view-month"
+              onClick={() => setViewMode("calendar")}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
+                viewMode === "calendar"
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <CalendarDays className="h-4 w-4" />
+              Month
+            </button>
+            <button
+              type="button"
+              data-testid="calendar-view-queue"
+              onClick={() => setViewMode("queue")}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
+                viewMode === "queue"
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <List className="h-4 w-4" />
+              Queue
+            </button>
+          </div>
+
+          {viewMode === "queue" ? (
+            <CalendarQueueView
+              posts={scheduledPosts}
+              onSelectPost={(post) => openPosts([post], contentCardAnchorDate(post))}
+            />
+          ) : null}
+
           {deepLinkNotice ? (
             <p
               data-testid="calendar-deep-link-notice"
@@ -277,6 +318,8 @@ function CalendarPage() {
               {deepLinkNotice}
             </p>
           ) : null}
+          {viewMode === "calendar" ? (
+          <>
           {/* Month nav row */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -289,7 +332,7 @@ function CalendarPage() {
               >
                 <ChevronLeft className="h-3 w-3" />
               </button>
-              <span className="display-mono px-1 text-sm uppercase tracking-[0.06em]">
+              <span className="px-1 text-title">
                 {viewMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
               </span>
               <button
@@ -316,11 +359,11 @@ function CalendarPage() {
           <div className="mt-4 overflow-x-auto">
             <div className="min-w-[48rem] overflow-hidden rounded-sm border border-border bg-border">
               <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] gap-px">
-              <div className="bg-surface py-2 text-center label-mono text-[0.5rem] text-muted-foreground">
-                wk
+              <div className="bg-surface py-2 text-center text-[0.6875rem] text-muted-foreground">
+                Wk
               </div>
               {CALENDAR_DOW.map((d) => (
-                <div key={d} className="bg-surface py-2 text-center label-mono">
+                <div key={d} className="bg-surface py-2 text-center text-[0.6875rem] font-medium text-muted-foreground">
                   {d}
                 </div>
               ))}
@@ -362,6 +405,8 @@ function CalendarPage() {
               </div>
             </div>
           </div>
+          </>
+          ) : null}
         </div>
       </div>
 

@@ -43,7 +43,7 @@ export function UnassignedMediaPicker({
         data-testid="unassigned-media-empty"
         className="rounded-sm border border-dashed border-border bg-background/30 px-4 py-6 text-center"
       >
-        <p className="label-mono text-[0.5rem] text-muted-foreground">all_media_associated</p>
+        <p className="text-body-sm text-muted-foreground">All media is associated with events</p>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
           Every file is already linked to an event album. You can associate more later from New
           Post or the calendar stencil.
@@ -55,7 +55,7 @@ export function UnassignedMediaPicker({
   return (
     <div data-testid="unassigned-media-picker" className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="label-mono text-[0.5rem] text-muted-foreground">unassigned_media</div>
+        <div className="text-eyebrow">Unassigned media</div>
         <span className="label-mono text-[0.5rem] text-muted-foreground">
           {selectedIds.size > 0 ? `${selectedIds.size}_selected` : `${unassigned.length}_files`}
         </span>

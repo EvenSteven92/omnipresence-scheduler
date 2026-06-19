@@ -51,7 +51,7 @@ export function CardMediaBanner({
           ) : (
             <ImageIcon className="h-4 w-4" strokeWidth={1.5} />
           )}
-          <span className="label-mono text-[0.45rem]">no_media</span>
+          <span className="text-body-sm text-muted-foreground">No media</span>
         </div>
       </div>
     );
@@ -109,7 +109,7 @@ export function CardMediaThumb({
           ) : (
             <ImageIcon className="h-4 w-4" strokeWidth={1.5} />
           )}
-          <span className="label-mono text-[0.45rem]">no_media</span>
+          <span className="text-body-sm text-muted-foreground">No media</span>
         </div>
       </div>
     );
@@ -156,7 +156,7 @@ export function MediaPreview({
           ) : (
             <ImageIcon className="h-5 w-5" strokeWidth={1.5} />
           )}
-          <span className="label-mono text-[0.55rem]">no_media_asset</span>
+          <span className="text-body-sm text-muted-foreground">No media asset</span>
         </div>
       </div>
     );

@@ -47,17 +47,17 @@ function TopEventPerformerCard({
         <div className="grid grid-cols-3 gap-2 border-t border-border bg-background/40 px-3 py-2.5 text-center">
           <div>
             <div className="font-mono text-sm text-foreground">{fmtCompact(perf.totalViews)}</div>
-            <div className="label-mono text-[0.55rem]">views</div>
+            <div className="text-body-sm text-muted-foreground">Views</div>
           </div>
           <div>
             <div className="font-mono text-sm text-foreground">{fmtCompact(perf.totalLikes)}</div>
-            <div className="label-mono text-[0.55rem]">likes</div>
+            <div className="text-body-sm text-muted-foreground">Likes</div>
           </div>
           <div>
             <div className="font-mono text-sm text-accent">
               {(perf.avgEngagement * 100).toFixed(1)}%
             </div>
-            <div className="label-mono text-[0.55rem]">eng</div>
+            <div className="text-body-sm text-muted-foreground">Engagement</div>
           </div>
         </div>
         <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
