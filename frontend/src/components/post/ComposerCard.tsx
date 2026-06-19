@@ -56,6 +56,7 @@ export function ComposerCard({
   expanded,
   focused = false,
   hidePreview = false,
+  hideFooterActions = false,
   dragHandlers,
   isDragging,
 }: {
@@ -70,6 +71,8 @@ export function ComposerCard({
   focused?: boolean;
   /** When true, preview is rendered by the parent (e.g. scheduler side pane). */
   hidePreview?: boolean;
+  /** When true, save-draft footer is omitted (parent provides footer actions). */
+  hideFooterActions?: boolean;
   /** Native HTML5 drag handlers passed from the parent grid. */
   dragHandlers?: {
     draggable: boolean;
@@ -506,17 +509,19 @@ export function ComposerCard({
         </div>
       ) : null}
 
-      <div className="border-t border-border">
-        <button
-          type="button"
-          onClick={onSaveDraft}
-          data-testid={`save-draft-${post.id}`}
-          className="flex w-full items-center justify-center gap-2 bg-surface px-5 py-4 text-body-sm font-medium text-foreground transition-colors hover:bg-secondary"
-        >
-          <Save className="h-3 w-3" strokeWidth={2} />
-          Save draft
-        </button>
-      </div>
+      {!hideFooterActions ? (
+        <div className="border-t border-border">
+          <button
+            type="button"
+            onClick={onSaveDraft}
+            data-testid={`save-draft-${post.id}`}
+            className="flex w-full items-center justify-center gap-2 bg-surface px-5 py-4 text-body-sm font-medium text-foreground transition-colors hover:bg-secondary"
+          >
+            <Save className="h-3 w-3" strokeWidth={2} />
+            Save draft
+          </button>
+        </div>
+      ) : null}
     </article>
   );
 }

@@ -12,7 +12,7 @@ import { ComposerCard, type DraftPost } from "@/components/post/ComposerCard";
 import { PlatformPreview } from "@/components/post/PlatformPreview";
 import { BulkScheduleModal } from "@/components/scheduler/BulkScheduleModal";
 import { ContentQueueItem } from "@/components/scheduler/ContentQueueItem";
-import { ScheduleWeekPanel } from "@/components/scheduler/ScheduleWeekPanel";
+import { ComposerFooter } from "@/components/scheduler/ComposerFooter";
 import { SchedulerWorkflowSteps } from "@/components/scheduler/SchedulerWorkflowSteps";
 import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
 import type { BulkScheduleResult } from "@/lib/schedule-engine";
@@ -448,16 +448,14 @@ function NewPostPage() {
   });
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="composer-shell">
       {hasSidebar && (
         <aside
           data-testid="content-queue"
-          className="flex h-full w-[300px] shrink-0 flex-col border-r border-border bg-surface"
+          className="composer-queue-pane flex h-full flex-col border-r border-border bg-surface"
         >
           <div className="border-b border-border px-4 py-4">
-            <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              Content queue
-            </div>
+            <div className="text-body-sm font-medium text-muted-foreground">Queue</div>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               {queue.length} potential · {savedDrafts.length} draft
               {savedDrafts.length === 1 ? "" : "s"}
@@ -469,10 +467,10 @@ function NewPostPage() {
                 type="button"
                 onClick={() => queueFileInput.current?.click()}
                 data-testid="queue-add-files-btn"
-                className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-dashed border-border bg-background/40 px-3 py-2.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-accent/60 hover:bg-secondary/30 hover:text-foreground"
+                className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-dashed border-border bg-background/40 px-3 py-2.5 text-body-sm text-muted-foreground transition-colors hover:border-accent/60 hover:bg-secondary/30 hover:text-foreground"
               >
                 <Upload className="h-3 w-3" strokeWidth={1.5} />
-                Add
+                Upload
               </button>
               <button
                 type="button"
@@ -490,10 +488,10 @@ function NewPostPage() {
                   onClick={() => setBulkScheduleOpen(true)}
                   disabled={bulkScheduleFiles.length === 0}
                   data-testid="bulk-schedule-btn"
-                  className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-accent/60 bg-accent/10 px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-accent/60 bg-accent/10 px-3 py-2 text-body-sm font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
                 >
                   <CalendarClock className="h-3 w-3" strokeWidth={1.75} />
-                  Schedule ({bulkScheduleFiles.length})
+                  Bulk schedule ({bulkScheduleFiles.length})
                 </button>
                 <button
                   type="button"
@@ -531,9 +529,7 @@ function NewPostPage() {
               onDrop={handleQueueZoneDrop}
             >
               <div className="border-b border-border/60 px-4 py-2">
-                <div className="text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground">
-                  Ready to configure
-                </div>
+                <div className="text-body-sm text-muted-foreground">Ready to configure</div>
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto p-3">
                 <PotentialPostsDropStencil active={queueZoneActive} />
@@ -573,9 +569,7 @@ function NewPostPage() {
               onDrop={handleDraftZoneDrop}
             >
               <div className="border-b border-border/60 px-4 py-2">
-                <div className="text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground">
-                  Saved drafts
-                </div>
+                <div className="text-body-sm text-muted-foreground">Saved drafts</div>
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto p-3">
                 <DraftDropStencil active={draftZoneActive} />
@@ -598,14 +592,14 @@ function NewPostPage() {
         </aside>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="composer-editor-pane">
         <PageHeader
           eyebrow={<WorkspaceEyebrow />}
           title="New Post"
           actions={
             <>
               <span
-                className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground"
+                className="rounded-sm border border-border bg-surface px-3 py-2 text-body-sm text-muted-foreground"
                 data-testid="status-pill"
               >
                 {empty ? "Empty" : `${queue.length} in queue`}
@@ -615,8 +609,9 @@ function NewPostPage() {
           }
         />
 
-        <div className="flex-1 overflow-y-auto">
-          <div className={empty ? "page-content" : "px-8 py-6"}>
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className={empty ? "page-content" : "px-6 py-5"}>
             {empty ? (
               <>
                 <SchedulerWorkflowSteps active="upload" />
@@ -665,54 +660,55 @@ function NewPostPage() {
                 </div>
               </>
             ) : activeDraft ? (
-              <div className="mx-auto max-w-6xl">
+              <div className="mx-auto max-w-3xl">
                 <SchedulerWorkflowSteps
                   active={readyToApply.length > 0 ? "schedule" : "configure"}
                 />
-                <p className="mb-4 text-xs text-muted-foreground">
+                <p className="mb-4 text-body-sm text-muted-foreground">
                   Card {activeIndex} of {allPosts.length}
                   {activeInDraftZone ? " · saved draft" : " · ready to configure"}
                 </p>
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                  <ComposerCard
-                    key={activeDraft.id}
-                    index={activeIndex}
-                    post={activeDraft}
-                    focused
-                    hidePreview
-                    onChange={(next) => updateDraft(activeDraft.id, next)}
-                    onRemove={() => removeDraft(activeDraft.id)}
-                    onSaveDraft={() => saveToDraftZone(activeDraft)}
-                    expanded
-                  />
-                  <aside className="hidden lg:block">
-                    <div className="sticky top-6">
-                      <PlatformPreview
-                        variant="panel"
-                        platforms={activeDraft.platforms}
-                        caption={activeDraft.caption}
-                        platformCaptions={activeDraft.platformCaptions}
-                        hashtags={activeDraft.hashtags}
-                        filename={activeDraft.filename}
-                        format={activeDraft.format}
-                      />
-                    </div>
-                  </aside>
-                </div>
+                <ComposerCard
+                  key={activeDraft.id}
+                  index={activeIndex}
+                  post={activeDraft}
+                  focused
+                  hidePreview
+                  hideFooterActions
+                  onChange={(next) => updateDraft(activeDraft.id, next)}
+                  onRemove={() => removeDraft(activeDraft.id)}
+                  onSaveDraft={() => saveToDraftZone(activeDraft)}
+                  expanded
+                />
               </div>
             ) : null}
+            </div>
           </div>
-        </div>
-      </div>
 
-      <ScheduleWeekPanel
-        queue={queue}
-        scheduledPosts={workspace.scheduledPosts}
-        activeFileId={activeDraft?.id}
-        readyCount={readyToApply.length}
-        onSelectFile={setActiveId}
-        onApply={applyPendingSchedule}
-      />
+          {activeDraft ? (
+            <aside className="composer-preview-pane p-4">
+              <PlatformPreview
+                variant="panel"
+                platforms={activeDraft.platforms}
+                caption={activeDraft.caption}
+                platformCaptions={activeDraft.platformCaptions}
+                hashtags={activeDraft.hashtags}
+                filename={activeDraft.filename}
+                format={activeDraft.format}
+              />
+            </aside>
+          ) : null}
+        </div>
+
+        {activeDraft ? (
+          <ComposerFooter
+            readyCount={readyToApply.length}
+            canSave
+            onSaveDraft={() => saveToDraftZone(activeDraft)}
+            onSchedule={applyPendingSchedule}
+          />
+        ) : null}
+      </div>
 
       {bulkScheduleOpen ? (
         <BulkScheduleModal

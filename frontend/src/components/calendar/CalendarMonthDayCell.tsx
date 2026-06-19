@@ -20,6 +20,8 @@ export function CalendarMonthDayCell({
   resolveEventId,
   onDateClick,
   onOpenPosts,
+  onDropPost,
+  dropActive = false,
 }: {
   day: number;
   date: Date;
@@ -35,6 +37,8 @@ export function CalendarMonthDayCell({
   resolveEventId?: (post: Pick<ScheduledPost, "id" | "eventId">) => string | undefined;
   onDateClick: () => void;
   onOpenPosts: (posts: ScheduledPost[], date: Date) => void;
+  onDropPost?: (e: React.DragEvent, date: Date) => void;
+  dropActive?: boolean;
 }) {
   const hasEvent = (events?.length ?? 0) > 0;
   const hasPosts = (posts?.length ?? 0) > 0;
@@ -43,6 +47,22 @@ export function CalendarMonthDayCell({
   return (
     <div
       data-testid={muted ? undefined : isQuietDay ? `upcoming-quiet-day-${day}` : `cal-day-${day}`}
+      onDragOver={
+        !muted && onDropPost
+          ? (e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+            }
+          : undefined
+      }
+      onDrop={
+        !muted && onDropPost
+          ? (e) => {
+              e.preventDefault();
+              onDropPost(e, date);
+            }
+          : undefined
+      }
       className={`group/cell relative flex min-h-[168px] min-w-0 flex-col gap-2 p-3 transition-colors ${
         muted
           ? "bg-surface/40 text-muted-foreground/40"
@@ -59,7 +79,7 @@ export function CalendarMonthDayCell({
             : !muted && isSelected
               ? "ring-1 ring-inset ring-border"
               : ""
-      }`}
+      } ${dropActive && !muted ? "ring-2 ring-inset ring-accent bg-accent/5" : ""}`}
     >
       <CalendarDayDateBadge
         day={day}

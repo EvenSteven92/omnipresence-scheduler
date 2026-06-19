@@ -147,6 +147,12 @@ function AnalyticsPage() {
     navigate({ to: "/scheduler" });
   }
 
+  const dataHonestyBadge = hasLiveMetrics(liveBundle) ? (
+    <LiveDataBadge />
+  ) : (
+    <SampleDataBadge />
+  );
+
   return (
     <div>
       <PageHeader
@@ -221,6 +227,7 @@ function AnalyticsPage() {
               <Panel
                 title="Engagement trend"
                 sub="Views, likes, and shares plotted daily over the selected period."
+                dataBadge={dataHonestyBadge}
               >
                 <div className="h-72">
                   <ResponsiveContainer>
@@ -291,6 +298,7 @@ function AnalyticsPage() {
               <Panel
                 title="Audience growth"
                 sub="Cumulative followers across all connected platforms."
+                dataBadge={dataHonestyBadge}
               >
                 <div className="h-72">
                   <ResponsiveContainer>
@@ -332,6 +340,7 @@ function AnalyticsPage() {
                 title="Per-platform views"
                 sub="Stacked views, likes, and shares by platform."
                 className="lg:col-span-2"
+                dataBadge={dataHonestyBadge}
               >
                 <div className="h-72">
                   <ResponsiveContainer>
@@ -367,7 +376,11 @@ function AnalyticsPage() {
                 />
               </Panel>
 
-              <Panel title="Share of engagement" sub="Where the conversation is happening.">
+              <Panel
+                title="Share of engagement"
+                sub="Where the conversation is happening."
+                dataBadge={dataHonestyBadge}
+              >
                 <div className="h-72">
                   <ResponsiveContainer>
                     <PieChart>
@@ -412,6 +425,7 @@ function AnalyticsPage() {
               <Panel
                 title="Posting cadence"
                 sub="When your audience engages most — darker cells mean higher engagement."
+                dataBadge={dataHonestyBadge}
               >
                 <Heatmap grid={heatmap} />
               </Panel>
@@ -421,6 +435,7 @@ function AnalyticsPage() {
             <div className="mt-6">
               <Panel
                 title="Per-platform performance"
+                dataBadge={dataHonestyBadge}
                 action={
                   <button
                     type="button"
@@ -529,19 +544,24 @@ function Panel({
   action,
   children,
   className = "",
+  dataBadge,
 }: {
   title: string;
   sub?: string;
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  dataBadge?: React.ReactNode;
 }) {
   return (
-    <section className={`overflow-hidden rounded-sm border border-border bg-surface ${className}`}>
+    <section className={`overflow-hidden rounded-sm border border-border bg-surface-elevated ${className}`}>
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-6 py-4">
         <div className="min-w-0">
-          <div className="text-sm font-medium text-foreground">{title}</div>
-          {sub ? <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{sub}</p> : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-title text-sm">{title}</div>
+            {dataBadge}
+          </div>
+          {sub ? <p className="mt-1 text-body-sm leading-relaxed text-muted-foreground">{sub}</p> : null}
         </div>
         {action}
       </header>

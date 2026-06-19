@@ -84,13 +84,13 @@ function EventDetailPage() {
               className="h-full w-full object-cover"
               loading="lazy"
             />
-            <span className="absolute right-3 top-3 rounded-sm border border-border/80 bg-background/80 px-2 py-0.5 label-mono text-[0.5rem] text-muted-foreground backdrop-blur-sm">
+            <span className="absolute right-3 top-3 rounded-sm border border-border/80 bg-background/80 px-2 py-0.5 text-eyebrow backdrop-blur-sm">
               {eventKindLabel(event.kind)}
             </span>
           </div>
 
           <div className="p-8">
-            <p className="label-mono text-muted-foreground">{dateLabel}</p>
+            <p className="text-body-sm text-muted-foreground">{dateLabel}</p>
             {event.description ? (
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 {event.description}

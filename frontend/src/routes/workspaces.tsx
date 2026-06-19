@@ -9,7 +9,7 @@ import { useTeamSession } from "@/hooks/useTeamSession";
 import { useWorkspace } from "@/lib/workspace-context";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import { useOAuthAutoSync } from "@/hooks/useOAuthAutoSync";
-import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { OnboardingStepper } from "@/components/workspaces/OnboardingStepper";
 import { Building2, ArrowRight, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/workspaces")({
@@ -93,22 +93,11 @@ function WorkspacesPage() {
         }
       />
 
-      <div className="page-content max-w-4xl space-y-6">
-        <OnboardingChecklist />
-
-        {!hasConnectedAccounts ? (
-          <div className="panel p-8">
-            <div className="mb-2 text-sm font-medium text-foreground">How it works</div>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Each workspace is one company or brand. Metrics, scheduled posts, platform
-              connections, and drafts only show that workspace&apos;s accounts. Switch companies
-              from the sidebar picker anytime.
-            </p>
-          </div>
-        ) : null}
+      <div className="page-content max-w-3xl mx-auto space-y-6">
+        <OnboardingStepper />
 
         {banner ? (
-          <div className="panel border border-accent/30 bg-accent/5 p-4 text-sm text-foreground">
+          <div className="panel border border-accent/30 bg-accent/5 p-4 text-body-sm text-foreground">
             {banner}
           </div>
         ) : null}
@@ -123,6 +112,15 @@ function WorkspacesPage() {
         ) : null}
 
         <ConnectPlatformSection workspace={workspace} teamAuthed={teamAuthed} />
+
+        <div className="panel p-6">
+          <h2 className="text-title text-sm">How it works</h2>
+          <p className="mt-2 text-body-sm leading-relaxed text-muted-foreground">
+            Each workspace is one company or brand. Metrics, scheduled posts, platform connections,
+            and drafts only show that workspace&apos;s accounts. Switch companies from the sidebar
+            anytime.
+          </p>
+        </div>
 
         <section className="section-block space-y-4">
           <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
