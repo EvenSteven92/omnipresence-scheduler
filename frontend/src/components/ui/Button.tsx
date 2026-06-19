@@ -4,14 +4,11 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 const variants: Record<Variant, string> = {
-  primary:
-    "bg-primary text-primary-foreground hover:opacity-90 border-transparent",
-  secondary:
-    "border-border bg-surface text-foreground hover:bg-secondary",
+  primary: "bg-primary text-primary-foreground hover:opacity-90 border-transparent",
+  secondary: "border-border bg-surface text-foreground hover:bg-secondary",
   ghost:
     "border-transparent bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground",
-  danger:
-    "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20",
+  danger: "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20",
 };
 
 export function Button({

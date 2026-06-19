@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { Image as ImageIcon, X as XIcon, ExternalLink, Pencil, BarChart3, Repeat2 } from "lucide-react";
+import {
+  Image as ImageIcon,
+  X as XIcon,
+  ExternalLink,
+  Pencil,
+  BarChart3,
+  Repeat2,
+} from "lucide-react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import { ContentPublishSchedule } from "@/components/post/ContentPublishSchedule";
 import { PublishTimesAgenda } from "@/components/post/PublishTimesAgenda";
 import { useWorkspace } from "@/lib/workspace-context";
 import { mergeWorkspaceEvents, useCustomEvents } from "@/hooks/useCustomEvents";
 import { useEventAssociations } from "@/hooks/useEventAssociations";
-import {
-  contentCardAnchorDate,
-  contentCardPublishSpread,
-} from "@/lib/scheduled-post-display";
+import { contentCardAnchorDate, contentCardPublishSpread } from "@/lib/scheduled-post-display";
 import {
   isPublishedPost,
   postDetailFallbackIso,
@@ -55,10 +59,7 @@ export function PostDetailModal({
   const scheduled = published ? null : (post as ScheduledPost);
   const anchor = published ? new Date(fallbackIso) : contentCardAnchorDate(scheduled!);
   const spread = published ? null : contentCardPublishSpread(scheduled!);
-  const linkedEventId = useMemo(
-    () => resolveEventId(post) ?? post.eventId,
-    [post, resolveEventId],
-  );
+  const linkedEventId = useMemo(() => resolveEventId(post) ?? post.eventId, [post, resolveEventId]);
 
   const linkedEvent = useMemo(
     () => (linkedEventId ? getEventById(workspaceEvents, linkedEventId) : undefined),
@@ -108,9 +109,7 @@ export function PostDetailModal({
               </span>
               <span
                 className={`rounded-sm border px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] ${
-                  published
-                    ? "border-success/60 text-success"
-                    : "border-accent text-accent"
+                  published ? "border-success/60 text-success" : "border-accent text-accent"
                 }`}
               >
                 {published ? "published" : scheduled!.status}

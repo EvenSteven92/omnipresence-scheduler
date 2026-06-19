@@ -1,10 +1,4 @@
-import {
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const connectedAccounts = pgTable(
   "connected_accounts",
@@ -22,10 +16,7 @@ export const connectedAccounts = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex("connected_accounts_workspace_platform_uidx").on(
-      table.workspaceId,
-      table.platform,
-    ),
+    uniqueIndex("connected_accounts_workspace_platform_uidx").on(table.workspaceId, table.platform),
   ],
 );
 

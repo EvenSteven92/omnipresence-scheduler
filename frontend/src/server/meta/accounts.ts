@@ -13,10 +13,7 @@ export async function getMetaAccount(workspaceId: string, platform: "FB" | "IG")
     .select()
     .from(connectedAccounts)
     .where(
-      and(
-        eq(connectedAccounts.workspaceId, workspaceId),
-        eq(connectedAccounts.platform, platform),
-      ),
+      and(eq(connectedAccounts.workspaceId, workspaceId), eq(connectedAccounts.platform, platform)),
     )
     .limit(1);
   return row ?? null;

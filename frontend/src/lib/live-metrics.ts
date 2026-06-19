@@ -32,8 +32,8 @@ const LIVE_PLATFORMS = new Set<Platform>(["YT", "FB", "IG"]);
 export function hasLiveMetrics(bundle: LiveMetricsBundle) {
   return Boolean(
     bundle.youtube?.connected ||
-      bundle.meta?.facebook.connected ||
-      bundle.meta?.instagram.connected,
+    bundle.meta?.facebook.connected ||
+    bundle.meta?.instagram.connected,
   );
 }
 

@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import {
   DEFAULT_WORKSPACE_ID,
   getWorkspace,
@@ -16,10 +9,7 @@ import {
   type WorkspaceProfile,
 } from "@/lib/workspaces";
 import type { ScheduledPost } from "@/lib/mock-data";
-import {
-  mergeScheduledPosts,
-  useComposerScheduledPosts,
-} from "@/hooks/useComposerScheduledPosts";
+import { mergeScheduledPosts, useComposerScheduledPosts } from "@/hooks/useComposerScheduledPosts";
 
 interface WorkspaceContextValue {
   workspaceId: WorkspaceId;
@@ -59,9 +49,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     };
   }, [workspaceId, setWorkspaceId, composerScheduled, addScheduledPosts]);
 
-  return (
-    <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>
-  );
+  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }
 
 export function useWorkspace(): WorkspaceContextValue {

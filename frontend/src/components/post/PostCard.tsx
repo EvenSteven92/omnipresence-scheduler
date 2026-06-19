@@ -27,9 +27,9 @@ export interface DisplayPost {
 
 const STATUS_STYLE: Record<PostStatus, string> = {
   scheduled: "border-accent text-accent",
-  draft:     "border-border text-muted-foreground",
+  draft: "border-border text-muted-foreground",
   published: "border-success text-success",
-  failed:    "border-danger text-danger",
+  failed: "border-danger text-danger",
 };
 
 /**

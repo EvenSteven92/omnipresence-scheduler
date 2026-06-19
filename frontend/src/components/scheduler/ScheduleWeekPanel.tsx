@@ -56,9 +56,7 @@ export function ScheduleWeekPanel({
         return days.some((d) => calendarDayKey(d) === key);
       });
     }
-    return pendingSlots.filter((slot) =>
-      isSameCalendarDay(new Date(slot.iso), focusDay),
-    );
+    return pendingSlots.filter((slot) => isSameCalendarDay(new Date(slot.iso), focusDay));
   }, [pendingSlots, focusDay, days]);
 
   const slotsByDay = useMemo(() => {
@@ -106,7 +104,9 @@ export function ScheduleWeekPanel({
           >
             <ChevronLeft className="h-3 w-3" />
           </button>
-          <span className="display-mono text-[0.6rem] uppercase tracking-[0.06em]">{weekLabel}</span>
+          <span className="display-mono text-[0.6rem] uppercase tracking-[0.06em]">
+            {weekLabel}
+          </span>
           <button
             type="button"
             onClick={() => {
@@ -144,7 +144,9 @@ export function ScheduleWeekPanel({
             <button
               key={key}
               type="button"
-              onClick={() => setFocusDay((cur) => (cur && isSameCalendarDay(cur, day) ? null : day))}
+              onClick={() =>
+                setFocusDay((cur) => (cur && isSameCalendarDay(cur, day) ? null : day))
+              }
               data-testid={`pending-week-day-${day.getDate()}`}
               className={`flex flex-col items-center gap-1 bg-surface py-2 transition-colors ${
                 isFocus ? "ring-1 ring-inset ring-accent" : "hover:bg-secondary/40"
@@ -159,9 +161,13 @@ export function ScheduleWeekPanel({
                 {day.getDate()}
               </span>
               {pending > 0 ? (
-                <span className="font-mono text-[0.45rem] font-semibold text-accent">{pending}</span>
+                <span className="font-mono text-[0.45rem] font-semibold text-accent">
+                  {pending}
+                </span>
               ) : scheduled > 0 ? (
-                <span className="font-mono text-[0.45rem] text-muted-foreground/60">{scheduled}</span>
+                <span className="font-mono text-[0.45rem] text-muted-foreground/60">
+                  {scheduled}
+                </span>
               ) : (
                 <span className="h-2.5" />
               )}

@@ -37,8 +37,8 @@ export function EventAssociationPicker({
   return (
     <div data-testid="event-association-picker" className="space-y-3">
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Associate this file with a ministry event — like linking a reel to its sermon album.
-        Not a tag; files stay grouped under the event.
+        Associate this file with a ministry event — like linking a reel to its sermon album. Not a
+        tag; files stay grouped under the event.
       </p>
 
       {selected ? (
@@ -79,7 +79,9 @@ export function EventAssociationPicker({
                   : "border-border bg-background/60 hover:border-accent/40 hover:bg-secondary/40"
               }`}
             >
-              <div className="text-xs font-semibold leading-snug text-foreground">{event.title}</div>
+              <div className="text-xs font-semibold leading-snug text-foreground">
+                {event.title}
+              </div>
               <div className="mt-1 label-mono text-[0.5rem] text-muted-foreground">
                 {formatEventMeta(event.date, event.kind)}
               </div>

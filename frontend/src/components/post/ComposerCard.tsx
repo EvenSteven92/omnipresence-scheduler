@@ -103,9 +103,7 @@ export function ComposerCard({
   const incompatiblePlatforms = useMemo(
     () =>
       new Set(
-        availablePlatforms
-          .filter((p) => !p.formats.includes(post.format))
-          .map((p) => p.short),
+        availablePlatforms.filter((p) => !p.formats.includes(post.format)).map((p) => p.short),
       ),
     [post.format, availablePlatforms],
   );
@@ -143,7 +141,10 @@ export function ComposerCard({
 
   function togglePlatform(p: Platform) {
     const has = post.platforms.includes(p);
-    onChange({ ...post, platforms: has ? post.platforms.filter((x) => x !== p) : [...post.platforms, p] });
+    onChange({
+      ...post,
+      platforms: has ? post.platforms.filter((x) => x !== p) : [...post.platforms, p],
+    });
   }
 
   async function runAi(kind: AiKind) {
@@ -192,10 +193,7 @@ export function ComposerCard({
             )}
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span
-                  data-testid={`card-index-${post.id}`}
-                  className="text-eyebrow"
-                >
+                <span data-testid={`card-index-${post.id}`} className="text-eyebrow">
                   {focused ? "Editing" : `Content ${index}`}
                 </span>
                 {linkedEvent ? (

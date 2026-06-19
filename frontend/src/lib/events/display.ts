@@ -304,9 +304,7 @@ export function eventToDisplayPost(item: EventMediaItem) {
       ? new Date(item.date).toLocaleString("en-US", {
           month: "short",
           day: "numeric",
-          ...(item.status === "published"
-            ? {}
-            : { hour: "numeric", minute: "2-digit" }),
+          ...(item.status === "published" ? {} : { hour: "numeric", minute: "2-digit" }),
         })
       : undefined,
     mediaKind,
@@ -360,7 +358,8 @@ export function eventMediaToCardPost(item: EventMediaItem): ScheduledPost {
     title: item.title,
     platforms: item.platforms,
     date: item.date ?? new Date(0).toISOString(),
-    status: item.status === "published" ? "published" : item.status === "draft" ? "draft" : "scheduled",
+    status:
+      item.status === "published" ? "published" : item.status === "draft" ? "draft" : "scheduled",
   };
 }
 

@@ -87,7 +87,9 @@ export async function exchangeYouTubeCode(code: string): Promise<GoogleTokenResp
   return res.json() as Promise<GoogleTokenResponse>;
 }
 
-export async function refreshYouTubeAccessToken(refreshToken: string): Promise<GoogleTokenResponse> {
+export async function refreshYouTubeAccessToken(
+  refreshToken: string,
+): Promise<GoogleTokenResponse> {
   const { clientId, clientSecret } = getYouTubeOAuthConfig();
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",

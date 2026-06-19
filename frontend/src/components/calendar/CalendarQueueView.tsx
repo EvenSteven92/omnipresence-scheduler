@@ -13,9 +13,7 @@ export function CalendarQueueView({
   posts: ScheduledPost[];
   onSelectPost: (post: ScheduledPost) => void;
 }) {
-  const sorted = [...posts].sort(
-    (a, b) => +contentCardAnchorDate(a) - +contentCardAnchorDate(b),
-  );
+  const sorted = [...posts].sort((a, b) => +contentCardAnchorDate(a) - +contentCardAnchorDate(b));
 
   if (sorted.length === 0) {
     return (
@@ -56,8 +54,7 @@ export function CalendarQueueView({
                   month: "short",
                   day: "numeric",
                 })}{" "}
-                ·{" "}
-                {when.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                · {when.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
               </p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {post.platforms.map((p) => (

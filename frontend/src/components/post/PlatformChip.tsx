@@ -10,10 +10,7 @@ export type PlatformChipVariant =
   | "scheduled"
   | "active";
 
-const SIZES: Record<
-  PlatformChipSize,
-  { icon: string; text: string; pad: string; gap: string }
-> = {
+const SIZES: Record<PlatformChipSize, { icon: string; text: string; pad: string; gap: string }> = {
   xs: { icon: "h-2 w-2", text: "text-[0.45rem]", pad: "px-1 py-0.5", gap: "gap-1" },
   sm: { icon: "h-2.5 w-2.5", text: "text-[0.5rem]", pad: "px-1.5 py-0.5", gap: "gap-1" },
   md: { icon: "h-3 w-3", text: "text-[0.55rem]", pad: "px-2 py-1", gap: "gap-1.5" },
@@ -52,8 +49,7 @@ export function PlatformChip({
   const meta = PLATFORMS_BY_SHORT[platform];
   const s = SIZES[size];
   const borderClass = chipBorderClass(variant);
-  const labelClass =
-    variant === "active" ? "text-background" : "text-foreground/90";
+  const labelClass = variant === "active" ? "text-background" : "text-foreground/90";
 
   return (
     <span
@@ -66,9 +62,7 @@ export function PlatformChip({
         muted={variant === "muted" || variant === "active"}
       />
       {label ? (
-        <span
-          className={`truncate font-mono uppercase tracking-wide ${labelClass} ${s.text}`}
-        >
+        <span className={`truncate font-mono uppercase tracking-wide ${labelClass} ${s.text}`}>
           {label}
         </span>
       ) : null}
@@ -117,7 +111,11 @@ export function PlatformSelectChip({
             : "border-border bg-background/60 text-foreground hover:bg-secondary"
       } ${className}`}
     >
-      <PlatformIcon platform={platform} className={`${s.icon} shrink-0`} muted={disabled || active} />
+      <PlatformIcon
+        platform={platform}
+        className={`${s.icon} shrink-0`}
+        muted={disabled || active}
+      />
       {displayLabel}
     </button>
   );

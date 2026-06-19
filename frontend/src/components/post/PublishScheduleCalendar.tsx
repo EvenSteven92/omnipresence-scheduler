@@ -8,10 +8,7 @@ import {
   formatScheduleTimeShort,
   type PlatformSlot,
 } from "@/lib/schedule-display";
-import {
-  contentCardAnchorDate,
-  groupContentCardsByDay,
-} from "@/lib/scheduled-post-display";
+import { contentCardAnchorDate, groupContentCardsByDay } from "@/lib/scheduled-post-display";
 import { PlatformChip } from "@/components/post/PlatformChip";
 import { CalendarDayPostContent } from "@/components/post/CalendarDayPostContent";
 import { mergeWorkspaceEvents, useCustomEvents } from "@/hooks/useCustomEvents";
@@ -20,7 +17,11 @@ import { CalendarPostModals } from "@/components/post/CalendarPostModals";
 import { useCalendarPostSelection } from "@/hooks/useCalendarPostSelection";
 import { useWorkspace } from "@/lib/workspace-context";
 
-function groupSlotsByDay(slots: PlatformSlot[], year: number, month: number): Map<number, PlatformSlot[]> {
+function groupSlotsByDay(
+  slots: PlatformSlot[],
+  year: number,
+  month: number,
+): Map<number, PlatformSlot[]> {
   const map = new Map<number, PlatformSlot[]>();
   slots.forEach((slot) => {
     const dt = new Date(slot.iso);
@@ -49,7 +50,15 @@ function initialViewMonth(slots: PlatformSlot[], scheduled: ScheduledPost[]): Da
   return monthStartFromDate(candidates[0]!);
 }
 
-function Legend({ swatch, label, dashed = false }: { swatch: string; label: string; dashed?: boolean }) {
+function Legend({
+  swatch,
+  label,
+  dashed = false,
+}: {
+  swatch: string;
+  label: string;
+  dashed?: boolean;
+}) {
   return (
     <span className="flex items-center gap-1.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
       <span
@@ -87,14 +96,8 @@ export function PublishScheduleCalendar({
 
   const [viewMonth, setViewMonth] = useState(() => initialViewMonth(slots, scheduled));
   const [selectedDay, setSelectedDay] = useState<number | null>(() => today().getDate());
-  const {
-    dayGrid,
-    detailPost,
-    openPosts,
-    selectFromGrid,
-    closeDayGrid,
-    closeDetail,
-  } = useCalendarPostSelection();
+  const { dayGrid, detailPost, openPosts, selectFromGrid, closeDayGrid, closeDetail } =
+    useCalendarPostSelection();
 
   const focusYear = viewMonth.getFullYear();
   const focusMonth = viewMonth.getMonth();

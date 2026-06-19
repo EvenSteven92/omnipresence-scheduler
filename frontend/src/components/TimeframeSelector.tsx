@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { PRESETS, type Timeframe, type TimeframeUnit, isAllTime, timeframeLabel } from "@/lib/timeframe";
+import {
+  PRESETS,
+  type Timeframe,
+  type TimeframeUnit,
+  isAllTime,
+  timeframeLabel,
+} from "@/lib/timeframe";
 
 const UNITS: { id: TimeframeUnit; label: string }[] = [
   { id: "day", label: "day(s)" },
@@ -59,7 +65,10 @@ export function TimeframeSelector({
   const isAll = isAllTime(value);
 
   return (
-    <div className={`flex flex-wrap items-center gap-3 ${className}`} data-testid="timeframe-selector">
+    <div
+      className={`flex flex-wrap items-center gap-3 ${className}`}
+      data-testid="timeframe-selector"
+    >
       {PRESETS.map((p) => {
         const active = value.kind === "preset" && value.preset === p.id;
         return (
@@ -161,7 +170,10 @@ export function TimeframeSelector({
         </div>
       </div>
 
-      <div className="ml-2 hidden text-xs text-muted-foreground lg:block" data-testid="timeframe-label">
+      <div
+        className="ml-2 hidden text-xs text-muted-foreground lg:block"
+        data-testid="timeframe-label"
+      >
         Showing {timeframeLabel(value)}
       </div>
     </div>

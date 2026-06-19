@@ -4,12 +4,7 @@ import {
   PERFORMANCE_METRICS,
   PerformanceMetricCounters,
 } from "@/components/PerformanceMetricCounters";
-import {
-  isAllTime,
-  timeframeLabel,
-  type GrowthMatrixRow,
-  type Timeframe,
-} from "@/lib/timeframe";
+import { isAllTime, timeframeLabel, type GrowthMatrixRow, type Timeframe } from "@/lib/timeframe";
 import { PlatformChip } from "@/components/post/PlatformChip";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 
@@ -70,7 +65,11 @@ export function GrowthMatrixChart({
               >
                 <div className="mb-4 flex items-center justify-between gap-2 border-b border-border pb-3">
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <PlatformChip platform={row.platform} size="md" title={meta?.full ?? row.platform} />
+                    <PlatformChip
+                      platform={row.platform}
+                      size="md"
+                      title={meta?.full ?? row.platform}
+                    />
                     <span className="truncate text-xs font-semibold leading-snug text-foreground">
                       {meta?.full ?? row.platform}
                     </span>

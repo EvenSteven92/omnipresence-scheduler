@@ -27,10 +27,7 @@ function writeCustomEvents(workspaceId: WorkspaceId, events: ContentEvent[]) {
   }
 }
 
-export function mergeWorkspaceEvents(
-  base: ContentEvent[],
-  custom: ContentEvent[],
-): ContentEvent[] {
+export function mergeWorkspaceEvents(base: ContentEvent[], custom: ContentEvent[]): ContentEvent[] {
   return [...base, ...custom].sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
 

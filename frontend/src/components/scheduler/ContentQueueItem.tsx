@@ -85,7 +85,11 @@ export function ContentQueueItem({
         ) : null}
         {dragHandlers ? (
           <span
-            title={variant === "draft" ? "Drag to reorder or move to potential posts" : "Drag to reorder or move to drafts"}
+            title={
+              variant === "draft"
+                ? "Drag to reorder or move to potential posts"
+                : "Drag to reorder or move to drafts"
+            }
             onClick={(e) => e.stopPropagation()}
             className="mt-0.5 cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
           >
@@ -118,13 +122,7 @@ export function ContentQueueItem({
               {post.platforms.map((p) => {
                 const meta = PLATFORMS_BY_SHORT[p];
                 return (
-                  <PlatformChip
-                    key={p}
-                    platform={p}
-                    label={p}
-                    size="xs"
-                    title={meta?.full ?? p}
-                  />
+                  <PlatformChip key={p} platform={p} label={p} size="xs" title={meta?.full ?? p} />
                 );
               })}
             </div>

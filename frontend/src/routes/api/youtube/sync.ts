@@ -23,7 +23,7 @@ async function handleSync(request: Request) {
   const workspaceId = new URL(request.url).searchParams.get("workspace");
   const cronAuth = Boolean(
     process.env.CRON_SECRET &&
-      request.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`,
+    request.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`,
   );
 
   try {

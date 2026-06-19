@@ -124,7 +124,9 @@ function AlbumMediaMetricsFooter({
         );
       })}
       <div className="min-w-0 text-center">
-        <div className="text-[0.45rem] uppercase tracking-[0.12em] text-muted-foreground">Eng. rate</div>
+        <div className="text-[0.45rem] uppercase tracking-[0.12em] text-muted-foreground">
+          Eng. rate
+        </div>
         <div className="mt-1 font-mono text-sm font-semibold tabular-nums text-accent">
           {((item.engagementRate ?? 0) * 100).toFixed(1)}%
         </div>
@@ -235,7 +237,11 @@ export function EventMediaMatrix({
 
         <div className="mt-5 flex flex-col gap-5">
           {groups.map((group) => (
-            <section key={group.key} data-testid={`album-media-group-${group.key}`} className="space-y-2.5">
+            <section
+              key={group.key}
+              data-testid={`album-media-group-${group.key}`}
+              className="space-y-2.5"
+            >
               <AlbumMediaGroupHeader group={group} />
               <div className="flex flex-wrap gap-3">
                 {group.items.map((item) => (

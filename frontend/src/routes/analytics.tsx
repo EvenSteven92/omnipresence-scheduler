@@ -19,7 +19,17 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Eye, Heart, Share2, Activity, Link2, Users, UserCheck, Download, ArrowRight } from "lucide-react";
+import {
+  Eye,
+  Heart,
+  Share2,
+  Activity,
+  Link2,
+  Users,
+  UserCheck,
+  Download,
+  ArrowRight,
+} from "lucide-react";
 import { TimeframeSelector } from "@/components/TimeframeSelector";
 import { useYouTubeMetrics } from "@/hooks/useYouTubeMetrics";
 import { useMetaMetrics } from "@/hooks/useMetaMetrics";
@@ -40,10 +50,7 @@ import {
 } from "@/lib/timeframe";
 import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/lib/workspace-context";
-import {
-  TOP_PERFORMERS_DISPLAY_LIMIT,
-  TopPerformerCard,
-} from "@/components/post/TopPerformerCard";
+import { TOP_PERFORMERS_DISPLAY_LIMIT, TopPerformerCard } from "@/components/post/TopPerformerCard";
 import { PostDetailModal } from "@/components/post/PostDetailModal";
 import type { PublishedPost } from "@/lib/mock-data";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
@@ -162,235 +169,315 @@ function AnalyticsPage() {
             className="mt-4"
           />
         ) : (
-        <>
-        <TimeframeSelector value={timeframe} onChange={setTimeframe} />
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <p className="text-sm text-muted-foreground">
-            {allTime
-              ? "Lifetime totals — no period comparison."
-              : `Compared to the prior ${timeframeLabel(timeframe)} · ${trendData.length} data points`}
-          </p>
-          {hasLiveMetrics(liveBundle) ? <LiveDataBadge /> : <SampleDataBadge />}
-        </div>
-
-        {/* KPI strip */}
-        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
-          {metrics.map((m, i) => {
-            const Icon = metricIcons[i];
-            return (
-              <div key={m.label} data-testid={`kpi-${m.key}`} className="kpi-card metric-cell">
-                <div className="flex items-start justify-between">
-                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    {m.label}
-                  </div>
-                  <Icon className="h-3 w-3 text-muted-foreground" strokeWidth={1.5} />
-                </div>
-                <div className="mt-5 text-2xl font-semibold tracking-tight text-foreground">{m.value}</div>
-                {m.delta ? (
-                  <div
-                    title={m.key === "engagement" ? "Percentage points vs prior period" : undefined}
-                    className={`mt-1 text-[0.65rem] ${
-                      m.trend === "up" ? "text-success" : m.trend === "down" ? "text-danger" : "text-muted-foreground"
-                    }`}
-                  >
-                    {m.delta}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Engagement trend + Audience growth */}
-        <div className="section-block grid gap-8 lg:grid-cols-2">
-          <Panel
-            title="Engagement trend"
-            sub="Views, likes, and shares plotted daily over the selected period."
-          >
-            <div className="h-72">
-              <ResponsiveContainer>
-                <AreaChart data={trendData} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="grad-views" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.5} />
-                      <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="grad-likes" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-foreground)" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="var(--color-foreground)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
-                  <XAxis dataKey="label" stroke={C.muted} tick={{ fontSize: 10, fontFamily: "monospace" }} tickLine={false} axisLine={false} />
-                  <YAxis stroke={C.muted} tick={{ fontSize: 10, fontFamily: "monospace" }} tickLine={false} axisLine={false} width={42} />
-                  <Tooltip content={<TerminalTooltip />} />
-                  <Area type="monotone" dataKey="views" stroke="var(--color-accent)" fill="url(#grad-views)" strokeWidth={1.5} />
-                  <Area type="monotone" dataKey="likes" stroke="var(--color-foreground)" fill="url(#grad-likes)" strokeWidth={1.5} />
-                  <Area type="monotone" dataKey="shares" stroke="var(--color-success)" fill="none" strokeWidth={1.5} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <Legend3 items={[
-              { label: "views", color: "var(--color-accent)" },
-              { label: "likes", color: "var(--color-foreground)" },
-              { label: "shares", color: "var(--color-success)" },
-            ]} />
-          </Panel>
-
-          <Panel
-            title="Audience growth"
-            sub="Cumulative followers across all connected platforms."
-          >
-            <div className="h-72">
-              <ResponsiveContainer>
-                <LineChart data={trendData} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
-                  <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
-                  <XAxis dataKey="label" stroke={C.muted} tick={{ fontSize: 10, fontFamily: "monospace" }} tickLine={false} axisLine={false} />
-                  <YAxis stroke={C.muted} tick={{ fontSize: 10, fontFamily: "monospace" }} tickLine={false} axisLine={false} width={50} domain={["dataMin", "dataMax"]} />
-                  <Tooltip content={<TerminalTooltip />} />
-                  <Line type="monotone" dataKey="followers" stroke="var(--color-accent)" strokeWidth={1.75} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <FollowerSummary points={trendData} />
-          </Panel>
-        </div>
-
-        {/* Platform breakdown + share-of-engagement */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <Panel
-            title="Per-platform views"
-            sub="Stacked views, likes, and shares by platform."
-            className="lg:col-span-2"
-          >
-            <div className="h-72">
-              <ResponsiveContainer>
-                <BarChart data={breakdown} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
-                  <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
-                  <XAxis dataKey="platform" stroke={C.muted} tick={{ fontSize: 10, fontFamily: "monospace" }} tickLine={false} axisLine={false} />
-                  <YAxis stroke={C.muted} tick={{ fontSize: 10, fontFamily: "monospace" }} tickLine={false} axisLine={false} width={42} />
-                  <Tooltip content={<TerminalTooltip />} />
-                  <Bar dataKey="views" stackId="a" fill="var(--color-accent)" />
-                  <Bar dataKey="likes" stackId="a" fill="var(--color-foreground)" />
-                  <Bar dataKey="shares" stackId="a" fill="var(--color-success)" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <Legend3 items={[
-              { label: "views", color: "var(--color-accent)" },
-              { label: "likes", color: "var(--color-foreground)" },
-              { label: "shares", color: "var(--color-success)" },
-            ]} />
-          </Panel>
-
-          <Panel title="Share of engagement" sub="Where the conversation is happening.">
-            <div className="h-72">
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={breakdown}
-                    dataKey="views"
-                    nameKey="platform"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={48}
-                    outerRadius={88}
-                    paddingAngle={2}
-                    stroke="var(--color-background)"
-                    strokeWidth={2}
-                  >
-                    {breakdown.map((_, i) => (
-                      <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<TerminalTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="grid grid-cols-2 gap-1 px-1 pb-1">
-              {breakdown.map((b, i) => (
-                <div key={b.platform} className="flex items-center gap-1.5 text-[0.6rem]">
-                  <span className="inline-block h-2 w-2" style={{ background: PALETTE[i % PALETTE.length] }} />
-                  <span className="text-xs text-muted-foreground">
-                    {PLATFORMS_BY_SHORT[b.platform]?.full ?? b.platform}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Panel>
-        </div>
-
-        {/* Cadence heatmap */}
-        <div className="mt-6">
-          <Panel
-            title="Posting cadence"
-            sub="When your audience engages most — darker cells mean higher engagement."
-          >
-            <Heatmap grid={heatmap} />
-          </Panel>
-        </div>
-
-        {/* Per-platform performance table */}
-        <div className="mt-6">
-          <Panel
-            title="Per-platform performance"
-            action={
-              <button
-                type="button"
-                data-testid="export-csv-btn"
-                disabled
-                title="CSV export ships with live analytics — coming soon"
-                className="flex cursor-not-allowed items-center gap-2 rounded-sm border border-border bg-background/40 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground opacity-50"
-              >
-                <Download className="h-3 w-3" /> Export CSV
-              </button>
-            }
-          >
-            <PlatformTable rows={breakdown} />
-          </Panel>
-        </div>
-
-        {/* Top performers */}
-        <section className="section-block">
-          <div className="mb-4 flex items-end justify-between">
-            <div>
-              <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                Top performers · {timeframeLabel(timeframe)}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Click a post to view its per-platform publish history.
+          <>
+            <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">
+                {allTime
+                  ? "Lifetime totals — no period comparison."
+                  : `Compared to the prior ${timeframeLabel(timeframe)} · ${trendData.length} data points`}
               </p>
+              {hasLiveMetrics(liveBundle) ? <LiveDataBadge /> : <SampleDataBadge />}
             </div>
-            <button
-              type="button"
-              onClick={handleScheduleSimilar}
-              disabled={topPublished.length === 0}
-              data-testid="schedule-similar-btn"
-              className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Schedule similar <ArrowRight className="h-3 w-3" />
-            </button>
-          </div>
-          {topPublished.length === 0 ? (
-            <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center text-sm text-muted-foreground">
-              No published posts in this range
-            </div>
-          ) : (
-          <div className="flex flex-wrap gap-3">
-            {topPublished.map((p, i) => (
-              <TopPerformerCard
-                key={p.id}
-                post={p}
-                isTop={i === 0}
-                onOpen={() => setDetailPost(p)}
-              />
-            ))}
-          </div>
-          )}
-        </section>
 
-        <TopEventPerformersSection timeframe={timeframe} />
-        </>
+            {/* KPI strip */}
+            <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
+              {metrics.map((m, i) => {
+                const Icon = metricIcons[i];
+                return (
+                  <div key={m.label} data-testid={`kpi-${m.key}`} className="kpi-card metric-cell">
+                    <div className="flex items-start justify-between">
+                      <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                        {m.label}
+                      </div>
+                      <Icon className="h-3 w-3 text-muted-foreground" strokeWidth={1.5} />
+                    </div>
+                    <div className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
+                      {m.value}
+                    </div>
+                    {m.delta ? (
+                      <div
+                        title={
+                          m.key === "engagement" ? "Percentage points vs prior period" : undefined
+                        }
+                        className={`mt-1 text-[0.65rem] ${
+                          m.trend === "up"
+                            ? "text-success"
+                            : m.trend === "down"
+                              ? "text-danger"
+                              : "text-muted-foreground"
+                        }`}
+                      >
+                        {m.delta}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Engagement trend + Audience growth */}
+            <div className="section-block grid gap-8 lg:grid-cols-2">
+              <Panel
+                title="Engagement trend"
+                sub="Views, likes, and shares plotted daily over the selected period."
+              >
+                <div className="h-72">
+                  <ResponsiveContainer>
+                    <AreaChart data={trendData} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="grad-views" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.5} />
+                          <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="grad-likes" x1="0" y1="0" x2="0" y2="1">
+                          <stop
+                            offset="5%"
+                            stopColor="var(--color-foreground)"
+                            stopOpacity={0.35}
+                          />
+                          <stop offset="95%" stopColor="var(--color-foreground)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        stroke={C.muted}
+                        tick={{ fontSize: 10, fontFamily: "monospace" }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke={C.muted}
+                        tick={{ fontSize: 10, fontFamily: "monospace" }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={42}
+                      />
+                      <Tooltip content={<TerminalTooltip />} />
+                      <Area
+                        type="monotone"
+                        dataKey="views"
+                        stroke="var(--color-accent)"
+                        fill="url(#grad-views)"
+                        strokeWidth={1.5}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="likes"
+                        stroke="var(--color-foreground)"
+                        fill="url(#grad-likes)"
+                        strokeWidth={1.5}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="shares"
+                        stroke="var(--color-success)"
+                        fill="none"
+                        strokeWidth={1.5}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <Legend3
+                  items={[
+                    { label: "views", color: "var(--color-accent)" },
+                    { label: "likes", color: "var(--color-foreground)" },
+                    { label: "shares", color: "var(--color-success)" },
+                  ]}
+                />
+              </Panel>
+
+              <Panel
+                title="Audience growth"
+                sub="Cumulative followers across all connected platforms."
+              >
+                <div className="h-72">
+                  <ResponsiveContainer>
+                    <LineChart data={trendData} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
+                      <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        stroke={C.muted}
+                        tick={{ fontSize: 10, fontFamily: "monospace" }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke={C.muted}
+                        tick={{ fontSize: 10, fontFamily: "monospace" }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={50}
+                        domain={["dataMin", "dataMax"]}
+                      />
+                      <Tooltip content={<TerminalTooltip />} />
+                      <Line
+                        type="monotone"
+                        dataKey="followers"
+                        stroke="var(--color-accent)"
+                        strokeWidth={1.75}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <FollowerSummary points={trendData} />
+              </Panel>
+            </div>
+
+            {/* Platform breakdown + share-of-engagement */}
+            <div className="mt-6 grid gap-6 lg:grid-cols-3">
+              <Panel
+                title="Per-platform views"
+                sub="Stacked views, likes, and shares by platform."
+                className="lg:col-span-2"
+              >
+                <div className="h-72">
+                  <ResponsiveContainer>
+                    <BarChart data={breakdown} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
+                      <CartesianGrid stroke={C.border} strokeDasharray="2 4" vertical={false} />
+                      <XAxis
+                        dataKey="platform"
+                        stroke={C.muted}
+                        tick={{ fontSize: 10, fontFamily: "monospace" }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke={C.muted}
+                        tick={{ fontSize: 10, fontFamily: "monospace" }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={42}
+                      />
+                      <Tooltip content={<TerminalTooltip />} />
+                      <Bar dataKey="views" stackId="a" fill="var(--color-accent)" />
+                      <Bar dataKey="likes" stackId="a" fill="var(--color-foreground)" />
+                      <Bar dataKey="shares" stackId="a" fill="var(--color-success)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <Legend3
+                  items={[
+                    { label: "views", color: "var(--color-accent)" },
+                    { label: "likes", color: "var(--color-foreground)" },
+                    { label: "shares", color: "var(--color-success)" },
+                  ]}
+                />
+              </Panel>
+
+              <Panel title="Share of engagement" sub="Where the conversation is happening.">
+                <div className="h-72">
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie
+                        data={breakdown}
+                        dataKey="views"
+                        nameKey="platform"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={48}
+                        outerRadius={88}
+                        paddingAngle={2}
+                        stroke="var(--color-background)"
+                        strokeWidth={2}
+                      >
+                        {breakdown.map((_, i) => (
+                          <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<TerminalTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-2 gap-1 px-1 pb-1">
+                  {breakdown.map((b, i) => (
+                    <div key={b.platform} className="flex items-center gap-1.5 text-[0.6rem]">
+                      <span
+                        className="inline-block h-2 w-2"
+                        style={{ background: PALETTE[i % PALETTE.length] }}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {PLATFORMS_BY_SHORT[b.platform]?.full ?? b.platform}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            </div>
+
+            {/* Cadence heatmap */}
+            <div className="mt-6">
+              <Panel
+                title="Posting cadence"
+                sub="When your audience engages most — darker cells mean higher engagement."
+              >
+                <Heatmap grid={heatmap} />
+              </Panel>
+            </div>
+
+            {/* Per-platform performance table */}
+            <div className="mt-6">
+              <Panel
+                title="Per-platform performance"
+                action={
+                  <button
+                    type="button"
+                    data-testid="export-csv-btn"
+                    disabled
+                    title="CSV export ships with live analytics — coming soon"
+                    className="flex cursor-not-allowed items-center gap-2 rounded-sm border border-border bg-background/40 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground opacity-50"
+                  >
+                    <Download className="h-3 w-3" /> Export CSV
+                  </button>
+                }
+              >
+                <PlatformTable rows={breakdown} />
+              </Panel>
+            </div>
+
+            {/* Top performers */}
+            <section className="section-block">
+              <div className="mb-4 flex items-end justify-between">
+                <div>
+                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Top performers · {timeframeLabel(timeframe)}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Click a post to view its per-platform publish history.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleScheduleSimilar}
+                  disabled={topPublished.length === 0}
+                  data-testid="schedule-similar-btn"
+                  className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Schedule similar <ArrowRight className="h-3 w-3" />
+                </button>
+              </div>
+              {topPublished.length === 0 ? (
+                <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center text-sm text-muted-foreground">
+                  No published posts in this range
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-3">
+                  {topPublished.map((p, i) => (
+                    <TopPerformerCard
+                      key={p.id}
+                      post={p}
+                      isTop={i === 0}
+                      onOpen={() => setDetailPost(p)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <TopEventPerformersSection timeframe={timeframe} />
+          </>
         )}
       </div>
 
@@ -411,7 +498,13 @@ function bucketSeries(
     return series.map((p) => ({ ...p, label: shortLabel(p.date) }));
   }
   const size = Math.ceil(series.length / buckets);
-  const out: Array<{ label: string; views: number; likes: number; shares: number; followers: number }> = [];
+  const out: Array<{
+    label: string;
+    views: number;
+    likes: number;
+    shares: number;
+    followers: number;
+  }> = [];
   for (let i = 0; i < series.length; i += size) {
     const slice = series.slice(i, i + size);
     out.push({
@@ -461,7 +554,10 @@ function Legend3({ items }: { items: { label: string; color: string }[] }) {
   return (
     <div className="mt-2 flex items-center gap-3 px-1">
       {items.map((i) => (
-        <span key={i.label} className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
+        <span
+          key={i.label}
+          className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground"
+        >
           <span className="inline-block h-2 w-2" style={{ background: i.color }} />
           {i.label}
         </span>
@@ -484,13 +580,24 @@ function FollowerSummary({ points }: { points: { label: string; followers: numbe
           {diff >= 0 ? "+" : ""}
           {diff.toLocaleString()}
         </span>
-        <span className="label-mono">{pct >= 0 ? "+" : ""}{pct.toFixed(2)}%</span>
+        <span className="label-mono">
+          {pct >= 0 ? "+" : ""}
+          {pct.toFixed(2)}%
+        </span>
       </div>
     </div>
   );
 }
 
-function TerminalTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
+function TerminalTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { name: string; value: number; color: string }[];
+  label?: string;
+}) {
   if (!active || !payload || !payload.length) return null;
   return (
     <div className="rounded-sm border border-border bg-background/95 px-3 py-2 font-mono text-[0.65rem] text-foreground shadow-lg backdrop-blur">
@@ -521,8 +628,13 @@ function Heatmap({ grid }: { grid: number[][] }) {
         <div className="mt-1 space-y-0.5">
           {grid.map((row, d) => (
             <div key={d} className="flex items-center gap-2">
-              <span className="w-10 shrink-0 text-[0.6875rem] text-muted-foreground">{days[d]}</span>
-              <div className="grid flex-1" style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}>
+              <span className="w-10 shrink-0 text-[0.6875rem] text-muted-foreground">
+                {days[d]}
+              </span>
+              <div
+                className="grid flex-1"
+                style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}
+              >
                 {row.map((v, h) => (
                   <div
                     key={h}
@@ -584,9 +696,7 @@ function PlatformTable({ rows }: { rows: ReturnType<typeof getPlatformBreakdown>
                 key={r.platform}
                 className="border-b border-border/60 last:border-b-0"
                 style={{
-                  boxShadow: meta
-                    ? `inset 3px 0 0 0 ${meta.brandColor}`
-                    : undefined,
+                  boxShadow: meta ? `inset 3px 0 0 0 ${meta.brandColor}` : undefined,
                 }}
               >
                 <td className="px-3 py-2">
@@ -595,11 +705,21 @@ function PlatformTable({ rows }: { rows: ReturnType<typeof getPlatformBreakdown>
                     <span className="text-foreground">{meta?.full ?? r.platform}</span>
                   </div>
                 </td>
-                <td className="px-3 py-2 text-right font-mono text-foreground">{r.posts.toLocaleString()}</td>
-                <td className="px-3 py-2 text-right font-mono text-foreground">{r.views.toLocaleString()}</td>
-                <td className="px-3 py-2 text-right font-mono text-foreground">{r.likes.toLocaleString()}</td>
-                <td className="px-3 py-2 text-right font-mono text-foreground">{r.shares.toLocaleString()}</td>
-                <td className="px-3 py-2 text-right font-mono text-accent">{(r.engagement * 100).toFixed(1)}%</td>
+                <td className="px-3 py-2 text-right font-mono text-foreground">
+                  {r.posts.toLocaleString()}
+                </td>
+                <td className="px-3 py-2 text-right font-mono text-foreground">
+                  {r.views.toLocaleString()}
+                </td>
+                <td className="px-3 py-2 text-right font-mono text-foreground">
+                  {r.likes.toLocaleString()}
+                </td>
+                <td className="px-3 py-2 text-right font-mono text-foreground">
+                  {r.shares.toLocaleString()}
+                </td>
+                <td className="px-3 py-2 text-right font-mono text-accent">
+                  {(r.engagement * 100).toFixed(1)}%
+                </td>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
                     <div className="h-2 flex-1 overflow-hidden rounded-sm bg-background/60">

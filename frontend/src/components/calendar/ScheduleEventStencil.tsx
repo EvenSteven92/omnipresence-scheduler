@@ -1,11 +1,7 @@
 import { Plus } from "lucide-react";
 
 /** Dashed stencil affordance — schedule a new event album on this day. */
-export function ScheduleEventStencil({
-  onClick,
-}: {
-  onClick: (e: React.MouseEvent) => void;
-}) {
+export function ScheduleEventStencil({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
       type="button"

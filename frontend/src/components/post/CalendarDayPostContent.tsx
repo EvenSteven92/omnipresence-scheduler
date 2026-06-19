@@ -33,9 +33,7 @@ export function CalendarDayPostContent({
 }) {
   if (posts.length === 0) return null;
 
-  const unassociatedCount = isAssociated
-    ? posts.filter((post) => !isAssociated(post)).length
-    : 0;
+  const unassociatedCount = isAssociated ? posts.filter((post) => !isAssociated(post)).length : 0;
   const eventHighlightCount = countPostsForEvent(posts, hoveredEventId, resolveEventId);
 
   return (

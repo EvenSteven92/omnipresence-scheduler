@@ -64,8 +64,7 @@ export function draftFromPostDetail(
   const mediaKind = inferMediaKind(post.title);
   const format = inferFormat(post.title, mediaKind);
   const platforms = post.platforms.filter((p) => options.allowedPlatforms.includes(p));
-  const resolvedPlatforms =
-    platforms.length > 0 ? platforms : options.allowedPlatforms.slice(0, 1);
+  const resolvedPlatforms = platforms.length > 0 ? platforms : options.allowedPlatforms.slice(0, 1);
 
   const draft: DraftPost = {
     id: uid(),

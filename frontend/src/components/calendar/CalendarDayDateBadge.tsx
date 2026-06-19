@@ -52,9 +52,7 @@ export function CalendarDayDateBadge({
         {interactive && eventCount === 0 ? (
           <span
             className={`pointer-events-none absolute left-0 top-full z-10 mt-1 hidden whitespace-nowrap font-mono text-[0.6875rem] uppercase tracking-[0.12em] group-hover/date:block ${
-              emptyDayCellHover
-                ? "text-accent-foreground"
-                : "text-accent"
+              emptyDayCellHover ? "text-accent-foreground" : "text-accent"
             }`}
           >
             new_event

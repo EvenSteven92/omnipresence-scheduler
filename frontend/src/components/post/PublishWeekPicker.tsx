@@ -83,9 +83,7 @@ export function PublishWeekPicker({
               <span className="label-mono text-[0.45rem] text-muted-foreground">{DOW[idx]}</span>
               <span
                 className={`inline-flex h-7 w-7 items-center justify-center rounded-sm font-mono text-xs ${
-                  isToday
-                    ? "bg-accent font-semibold text-accent-foreground"
-                    : "text-foreground"
+                  isToday ? "bg-accent font-semibold text-accent-foreground" : "text-foreground"
                 }`}
               >
                 {day.getDate()}

@@ -14,10 +14,7 @@ import {
   toTimeInputValue,
 } from "@/lib/schedule-engine";
 import { PublishWeekPicker } from "@/components/post/PublishWeekPicker";
-import {
-  PlatformTimeEditor,
-  type PlatformTimeDraft,
-} from "@/components/post/PlatformTimeEditor";
+import { PlatformTimeEditor, type PlatformTimeDraft } from "@/components/post/PlatformTimeEditor";
 
 function buildDrafts(
   platforms: Platform[],
@@ -68,10 +65,7 @@ export function PublishTimeEditor({
   const slots = buildPlatformSlots(platforms, proposedTimes);
   const unsetCount = platforms.length - slots.length;
 
-  const proposedKey = useMemo(
-    () => JSON.stringify(proposedTimes ?? {}),
-    [proposedTimes],
-  );
+  const proposedKey = useMemo(() => JSON.stringify(proposedTimes ?? {}), [proposedTimes]);
 
   const draftConflicts = useMemo(() => {
     const seen = new Set<string>();
@@ -128,11 +122,7 @@ export function PublishTimeEditor({
   async function runSuggest() {
     setBusy(true);
     try {
-      const times = suggestTimesForDay(
-        { id: fileId, platforms },
-        selectedDay,
-        scheduledPosts,
-      );
+      const times = suggestTimesForDay({ id: fileId, platforms }, selectedDay, scheduledPosts);
       onSuggestTimes?.(times);
     } finally {
       setBusy(false);
@@ -149,7 +139,10 @@ export function PublishTimeEditor({
   }, [slots]);
 
   return (
-    <div data-testid="publish-time-editor" className="overflow-hidden rounded-sm border border-border bg-background/40">
+    <div
+      data-testid="publish-time-editor"
+      className="overflow-hidden rounded-sm border border-border bg-background/40"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
         <span className="text-body-sm text-muted-foreground">Pick a day</span>
         <div className="flex items-center gap-2">

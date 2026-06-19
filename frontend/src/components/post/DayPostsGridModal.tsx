@@ -21,7 +21,9 @@ function DayPostsEventGroupHeader({
         <Layers className="h-3 w-3 text-accent" strokeWidth={1.5} />
       </span>
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-semibold leading-tight text-foreground">{event.title}</h3>
+        <h3 className="truncate text-sm font-semibold leading-tight text-foreground">
+          {event.title}
+        </h3>
         <p className="mt-0.5 font-mono text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">
           {formatEventMeta(event.date, event.kind)}
         </p>
@@ -147,9 +149,15 @@ export function DayPostsGridModal({
                 <section
                   key={group.event?.id ?? "unassigned"}
                   data-testid={
-                    group.event ? `day-posts-event-group-${group.event.id}` : "day-posts-unassigned-group"
+                    group.event
+                      ? `day-posts-event-group-${group.event.id}`
+                      : "day-posts-unassigned-group"
                   }
-                  className={isUnassigned ? `space-y-2.5 rounded-sm p-3 ${needsEventSectionClass}` : "space-y-2.5"}
+                  className={
+                    isUnassigned
+                      ? `space-y-2.5 rounded-sm p-3 ${needsEventSectionClass}`
+                      : "space-y-2.5"
+                  }
                 >
                   {group.event ? (
                     <DayPostsEventGroupHeader event={group.event} postCount={group.posts.length} />
@@ -166,9 +174,7 @@ export function DayPostsGridModal({
                         associated={isAssociated ? isAssociated(post) : true}
                         highlightUnassociated={isUnassigned || highlightUnassociated}
                         onOpen={() => onSelect(post)}
-                        onAssociate={
-                          onAssociatePost ? (e) => onAssociatePost(post, e) : undefined
-                        }
+                        onAssociate={onAssociatePost ? (e) => onAssociatePost(post, e) : undefined}
                       />
                     ))}
                   </div>

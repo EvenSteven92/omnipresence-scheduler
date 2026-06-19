@@ -1,9 +1,4 @@
-import type {
-  ConnectionStatus,
-  Platform,
-  PublishedPost,
-  ScheduledPost,
-} from "@/lib/mock-data";
+import type { ConnectionStatus, Platform, PublishedPost, ScheduledPost } from "@/lib/mock-data";
 
 export type WorkspaceId = "torcc" | "open-eyes" | "kidztown" | "catch-the-vision";
 

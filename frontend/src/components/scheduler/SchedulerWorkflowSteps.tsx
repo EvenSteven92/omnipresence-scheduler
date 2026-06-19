@@ -10,11 +10,7 @@ export function SchedulerWorkflowSteps({ active }: { active: Step }) {
   const activeIndex = STEPS.findIndex((s) => s.id === active);
 
   return (
-    <nav
-      aria-label="New post workflow"
-      data-testid="scheduler-workflow-steps"
-      className="mb-8"
-    >
+    <nav aria-label="New post workflow" data-testid="scheduler-workflow-steps" className="mb-8">
       <ol className="flex flex-wrap items-start gap-2 sm:gap-0">
         {STEPS.map((step, i) => {
           const done = i < activeIndex;
@@ -42,7 +38,9 @@ export function SchedulerWorkflowSteps({ active }: { active: Step }) {
                     >
                       {step.label}
                     </div>
-                    <p className="hidden text-xs text-muted-foreground sm:block">{step.description}</p>
+                    <p className="hidden text-xs text-muted-foreground sm:block">
+                      {step.description}
+                    </p>
                   </div>
                 </div>
               </div>

@@ -39,10 +39,7 @@ export function BulkScheduleModal({
   const [preview, setPreview] = useState<BulkScheduleResult | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const totalPublishes = useMemo(
-    () => files.reduce((n, f) => n + f.platforms.length, 0),
-    [files],
-  );
+  const totalPublishes = useMemo(() => files.reduce((n, f) => n + f.platforms.length, 0), [files]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -165,7 +162,9 @@ export function BulkScheduleModal({
 
           {strategy === "smart" ? (
             <div className="space-y-3 rounded-sm border border-border bg-background/40 px-4 py-4">
-              <div className="text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground">Date range</div>
+              <div className="text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground">
+                Date range
+              </div>
               <div className="flex flex-wrap items-center gap-3">
                 <input
                   type="date"

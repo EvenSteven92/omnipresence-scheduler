@@ -49,7 +49,9 @@ export function EventAlbumCard({
           <p className="text-lg font-semibold leading-none text-foreground">
             {formatEventTime(event.date)}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">{formatEventDate(event.date, "medium")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {formatEventDate(event.date, "medium")}
+          </p>
           <Link
             to="/events/$eventId"
             params={{ eventId: event.id }}
@@ -67,17 +69,23 @@ export function EventAlbumCard({
         <div className="grid grid-cols-3 gap-2 border-t border-border pt-3 text-center">
           <div>
             <div className="font-mono text-sm text-foreground">{media.length}</div>
-            <div className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">Files</div>
+            <div className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">
+              Files
+            </div>
           </div>
           <div>
             <div className="font-mono text-sm text-foreground">{perf.publishedCount}</div>
-            <div className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">Live</div>
+            <div className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">
+              Live
+            </div>
           </div>
           <div>
             <div className="font-mono text-sm text-accent">
               {perf.totalViews > 0 ? fmtCompact(perf.totalViews) : "—"}
             </div>
-            <div className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">Views</div>
+            <div className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">
+              Views
+            </div>
           </div>
         </div>
 

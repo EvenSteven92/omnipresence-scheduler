@@ -38,10 +38,7 @@ import {
   ArrowRight,
   AlertTriangle,
 } from "lucide-react";
-import {
-  TOP_PERFORMERS_DISPLAY_LIMIT,
-  TopPerformerCard,
-} from "@/components/post/TopPerformerCard";
+import { TOP_PERFORMERS_DISPLAY_LIMIT, TopPerformerCard } from "@/components/post/TopPerformerCard";
 import { useMemo, useState } from "react";
 import { useYouTubeMetrics } from "@/hooks/useYouTubeMetrics";
 import { useMetaMetrics } from "@/hooks/useMetaMetrics";
@@ -78,7 +75,10 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Dashboard — TORCC OmniSocial" },
-      { name: "description", content: "Cross-platform performance, scheduled queue, and draft pipeline at a glance." },
+      {
+        name: "description",
+        content: "Cross-platform performance, scheduled queue, and draft pipeline at a glance.",
+      },
     ],
   }),
   component: DashboardPage,
@@ -116,7 +116,9 @@ function DashboardPage() {
         title="Dashboard"
         actions={
           <>
-            <Link to="/analytics" className="btn-action">Analytics</Link>
+            <Link to="/analytics" className="btn-action">
+              Analytics
+            </Link>
             <NewEventPostActions />
           </>
         }
@@ -160,10 +162,14 @@ function DashboardPage() {
                     </div>
                     <Icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
                   </div>
-                  <div className="mt-5 text-3xl font-semibold tracking-tight text-foreground">{m.value}</div>
+                  <div className="mt-5 text-3xl font-semibold tracking-tight text-foreground">
+                    {m.value}
+                  </div>
                   {m.delta ? (
                     <div
-                      title={m.key === "engagement" ? "Percentage points vs prior period" : undefined}
+                      title={
+                        m.key === "engagement" ? "Percentage points vs prior period" : undefined
+                      }
                       className={`mt-2.5 text-xs ${
                         m.trend === "up"
                           ? "text-success"
@@ -198,7 +204,10 @@ function DashboardPage() {
 
         <TopEventPerformersSection timeframe={timeframe} />
 
-        <HealthStrip workspace={workspace} youtubeLive={accountStatus?.youtube.connected ?? false} />
+        <HealthStrip
+          workspace={workspace}
+          youtubeLive={accountStatus?.youtube.connected ?? false}
+        />
       </div>
     </div>
   );
@@ -319,7 +328,8 @@ function UpcomingSection() {
               className="inline-flex items-center gap-1.5 rounded-sm border border-warning/60 bg-warning/10 px-2 py-1 text-[0.6rem] uppercase tracking-[0.14em] text-warning"
             >
               <AlertTriangle className="h-3 w-3" />
-              {gapWarning.length} gap{gapWarning.length === 1 ? "" : "s"} in queue: {gapWarning.join(" · ")}
+              {gapWarning.length} gap{gapWarning.length === 1 ? "" : "s"} in queue:{" "}
+              {gapWarning.join(" · ")}
             </span>
           ) : null}
           <Link
@@ -497,12 +507,7 @@ function TopPerformersSection({
       ) : (
         <div className="flex flex-wrap gap-3">
           {top.map((p, i) => (
-            <TopPerformerCard
-              key={p.id}
-              post={p}
-              isTop={i === 0}
-              onOpen={() => setDetailPost(p)}
-            />
+            <TopPerformerCard key={p.id} post={p} isTop={i === 0} onOpen={() => setDetailPost(p)} />
           ))}
         </div>
       )}
@@ -555,5 +560,3 @@ function HealthStrip({
     </section>
   );
 }
-
-

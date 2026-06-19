@@ -33,7 +33,8 @@ export const Route = createFileRoute("/api/ai/generate")({
           return Response.json({ kind: parsed.data.kind, text });
         } catch (error) {
           const message = error instanceof Error ? error.message : "LLM call failed";
-          const status = message.includes("API key") || message.includes("authentication") ? 503 : 502;
+          const status =
+            message.includes("API key") || message.includes("authentication") ? 503 : 502;
           return Response.json({ detail: `LLM call failed: ${message}` }, { status });
         }
       },

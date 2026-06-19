@@ -42,9 +42,7 @@ export function CalendarMonthDayCell({
 
   return (
     <div
-      data-testid={
-        muted ? undefined : isQuietDay ? `upcoming-quiet-day-${day}` : `cal-day-${day}`
-      }
+      data-testid={muted ? undefined : isQuietDay ? `upcoming-quiet-day-${day}` : `cal-day-${day}`}
       className={`group/cell relative flex min-h-[168px] min-w-0 flex-col gap-2 p-3 transition-colors ${
         muted
           ? "bg-surface/40 text-muted-foreground/40"
@@ -94,7 +92,9 @@ export function CalendarMonthDayCell({
             className="flex flex-col items-center gap-1.5 text-center"
           >
             <AlertTriangle className="h-3.5 w-3.5 text-warning" strokeWidth={1.75} />
-            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-warning">Quiet day</span>
+            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-warning">
+              Quiet day
+            </span>
           </div>
           <div className="w-full min-w-0">
             <SchedulePostStencil dense />

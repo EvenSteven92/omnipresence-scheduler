@@ -135,7 +135,9 @@ export function ScheduleEventModal({
           </label>
 
           <label className="block space-y-1.5">
-            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">Short description</span>
+            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">
+              Short description
+            </span>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -171,13 +173,17 @@ export function ScheduleEventModal({
 
           {previewLabel ? (
             <p className="rounded-sm border border-border bg-background/40 px-3 py-2 text-xs text-muted-foreground">
-              <span className="label-mono text-[0.45rem] text-muted-foreground">scheduled_for </span>
+              <span className="label-mono text-[0.45rem] text-muted-foreground">
+                scheduled_for{" "}
+              </span>
               <span className="font-medium text-foreground">{previewLabel}</span>
             </p>
           ) : null}
 
           <label className="block space-y-1.5">
-            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">Event type</span>
+            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">
+              Event type
+            </span>
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value as ContentEventKind)}

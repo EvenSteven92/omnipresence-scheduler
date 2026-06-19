@@ -77,11 +77,7 @@ export interface InstagramMediaItem {
   comments_count?: number;
 }
 
-export async function fetchRecentInstagramMedia(
-  igUserId: string,
-  accessToken: string,
-  limit = 25,
-) {
+export async function fetchRecentInstagramMedia(igUserId: string, accessToken: string, limit = 25) {
   const data = await graphGet<{ data: InstagramMediaItem[] }>(
     `/${igUserId}/media?fields=id,caption,timestamp,media_type,permalink,thumbnail_url,media_url,like_count,comments_count&limit=${limit}`,
     accessToken,

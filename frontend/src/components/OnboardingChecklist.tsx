@@ -69,7 +69,9 @@ export function OnboardingChecklist({ className }: { className?: string }) {
             >
               <span
                 className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-                  step.done ? "bg-success/15 text-success" : "border border-border text-muted-foreground"
+                  step.done
+                    ? "bg-success/15 text-success"
+                    : "border border-border text-muted-foreground"
                 }`}
               >
                 {step.done ? <Check className="h-3.5 w-3.5" /> : <Circle className="h-3 w-3" />}

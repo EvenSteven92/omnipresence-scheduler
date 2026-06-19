@@ -40,7 +40,10 @@ export function TeamAccessGate({ onAuthed }: { onAuthed: () => void }) {
       <CardBody className="pt-0">
         <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
           <div className="min-w-[220px] flex-1">
-            <label htmlFor="team-code" className="mb-1.5 block text-body-sm font-medium text-foreground">
+            <label
+              htmlFor="team-code"
+              className="mb-1.5 block text-body-sm font-medium text-foreground"
+            >
               Access code
             </label>
             <input

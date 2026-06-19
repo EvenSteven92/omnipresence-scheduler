@@ -24,13 +24,7 @@ function tone(used: number, max: number): { label: string; color: string } {
 }
 
 /** Inline strip of per-platform character counters under the caption. */
-export function CharCounters({
-  text,
-  platforms,
-}: {
-  text: string;
-  platforms: Platform[];
-}) {
+export function CharCounters({ text, platforms }: { text: string; platforms: Platform[] }) {
   const used = text.length;
   if (platforms.length === 0) {
     return (
@@ -45,7 +39,10 @@ export function CharCounters({
         const meta = PLATFORMS_BY_SHORT[p];
         const max = CHAR_LIMITS[p];
         const t = tone(used, max);
-        const display = max >= 1000 ? `${used}/${(max / 1000).toFixed(max % 1000 === 0 ? 0 : 1)}k` : `${used}/${max}`;
+        const display =
+          max >= 1000
+            ? `${used}/${(max / 1000).toFixed(max % 1000 === 0 ? 0 : 1)}k`
+            : `${used}/${max}`;
         const pct = max > 0 ? used / max : 0;
         return (
           <PlatformChip

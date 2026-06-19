@@ -15,13 +15,7 @@ import {
 import { TOP_PERFORMERS_DISPLAY_LIMIT } from "@/components/post/TopPerformerCard";
 import { timeframeLabel, type Timeframe } from "@/lib/timeframe";
 
-function TopEventPerformerCard({
-  row,
-  isTop,
-}: {
-  row: RankedEventPerformer;
-  isTop: boolean;
-}) {
+function TopEventPerformerCard({ row, isTop }: { row: RankedEventPerformer; isTop: boolean }) {
   const { event, perf } = row;
 
   return (

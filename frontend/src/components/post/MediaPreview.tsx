@@ -20,10 +20,7 @@ export function isLandscapeCardAspect(aspectRatio?: string): boolean {
 }
 
 /** Left-rail layout for day picker — 16:9 and square keep metadata beside the thumb. */
-export function usesRailCardLayout(
-  aspectRatio: string,
-  layout: "auto" | "rail",
-): boolean {
+export function usesRailCardLayout(aspectRatio: string, layout: "auto" | "rail"): boolean {
   if (layout === "rail") return true;
   return !isLandscapeCardAspect(aspectRatio);
 }

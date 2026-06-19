@@ -49,10 +49,7 @@ export function inferMediaKind(title: string): "image" | "video" {
 }
 
 /** CSS aspect-ratio value — width scales from a fixed card height (9:16 reels stay narrow). */
-export function inferMediaAspect(
-  title: string,
-  mediaKind?: "image" | "video",
-): string {
+export function inferMediaAspect(title: string, mediaKind?: "image" | "video"): string {
   const kind = mediaKind ?? inferMediaKind(title);
   const t = title.toLowerCase();
   if (t.includes("story")) return "9/16";
@@ -131,7 +128,11 @@ export function isContentCardInUpcomingWindow(
 ): boolean {
   if (post.status === "published") return false;
   const anchor = contentCardAnchorDate(post);
-  const start = new Date(fromDayStart.getFullYear(), fromDayStart.getMonth(), fromDayStart.getDate());
+  const start = new Date(
+    fromDayStart.getFullYear(),
+    fromDayStart.getMonth(),
+    fromDayStart.getDate(),
+  );
   const end = dayEndExclusive(start, days);
   return anchor.getTime() >= start.getTime() && anchor.getTime() < end.getTime();
 }

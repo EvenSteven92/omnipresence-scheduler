@@ -39,11 +39,18 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
         {!collapsed ? (
           <>
             <span className="min-w-0 flex-1 text-left">
-              <span className="block truncate text-sm font-medium text-foreground">{workspace.name}</span>
-              <span className="block truncate text-body-sm text-muted-foreground">{workspace.tagline}</span>
+              <span className="block truncate text-sm font-medium text-foreground">
+                {workspace.name}
+              </span>
+              <span className="block truncate text-body-sm text-muted-foreground">
+                {workspace.tagline}
+              </span>
             </span>
             <ChevronDown
-              className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+              className={cn(
+                "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                open && "rotate-180",
+              )}
               strokeWidth={2}
             />
           </>
@@ -89,7 +96,9 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium text-foreground">{ws.name}</span>
-                      <span className="mt-0.5 block text-body-sm text-muted-foreground">{ws.tagline}</span>
+                      <span className="mt-0.5 block text-body-sm text-muted-foreground">
+                        {ws.tagline}
+                      </span>
                       <Badge
                         tone={
                           ws.onboardingStatus === "complete"

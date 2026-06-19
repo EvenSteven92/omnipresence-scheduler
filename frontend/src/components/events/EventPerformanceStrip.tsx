@@ -16,10 +16,7 @@ export function EventPerformanceStrip({ perf }: { perf: EventPerformance }) {
   ];
 
   return (
-    <div
-      data-testid="event-performance-strip"
-      className="grid grid-cols-2 gap-3 md:grid-cols-4"
-    >
+    <div data-testid="event-performance-strip" className="grid grid-cols-2 gap-3 md:grid-cols-4">
       {cells.map(({ label, value, icon: Icon, highlight }) => (
         <div key={label} className="kpi-card px-4 py-4">
           <div className="flex items-start justify-between">
@@ -35,7 +32,6 @@ export function EventPerformanceStrip({ perf }: { perf: EventPerformance }) {
           >
             {value}
           </div>
-
         </div>
       ))}
     </div>

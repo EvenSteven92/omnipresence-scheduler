@@ -91,7 +91,14 @@ export function Sidebar() {
 
         <nav className="flex flex-1 flex-col gap-1 px-2 py-3" aria-label="Main">
           {nav.map(({ to, label, icon: Icon }) => (
-            <SidebarItem key={to} to={to} label={label} Icon={Icon} collapsed={collapsed} exact={to === "/"} />
+            <SidebarItem
+              key={to}
+              to={to}
+              label={label}
+              Icon={Icon}
+              collapsed={collapsed}
+              exact={to === "/"}
+            />
           ))}
         </nav>
 

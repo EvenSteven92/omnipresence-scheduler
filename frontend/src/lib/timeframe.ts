@@ -23,11 +23,11 @@ export type Timeframe =
   | { kind: "all" };
 
 export const PRESETS: { id: "1w" | "1m" | "3m" | "6m" | "1y"; label: string; days: number }[] = [
-  { id: "1w", label: "1 week",   days: 7 },
-  { id: "1m", label: "1 month",  days: 30 },
+  { id: "1w", label: "1 week", days: 7 },
+  { id: "1m", label: "1 month", days: 30 },
   { id: "3m", label: "3 months", days: 90 },
   { id: "6m", label: "6 months", days: 180 },
-  { id: "1y", label: "1 year",   days: 365 },
+  { id: "1y", label: "1 year", days: 365 },
 ];
 
 const UNIT_DAYS: Record<TimeframeUnit, number> = {
@@ -260,12 +260,10 @@ function platformMetricDelta(
   all: boolean,
 ): GrowthMatrixMetricDelta {
   if (all) return { pct: 0, trend: "flat", label: "" };
-  const seed =
-    platform.split("").reduce((a, c) => a + c.charCodeAt(0), 0) + metric.charCodeAt(0);
+  const seed = platform.split("").reduce((a, c) => a + c.charCodeAt(0), 0) + metric.charCodeAt(0);
   const variance = ((seed % 21) - 10) * 1.2;
   const pct = Math.round((basePct + variance) * 10) / 10;
-  const trend: MetricTrend =
-    Math.abs(pct) < 0.05 ? "flat" : pct > 0 ? "up" : "down";
+  const trend: MetricTrend = Math.abs(pct) < 0.05 ? "flat" : pct > 0 ? "up" : "down";
   const sign = pct > 0 ? "+" : "";
   return { pct, trend, label: `${sign}${pct.toFixed(1)}%` };
 }
@@ -298,14 +296,11 @@ export function getPlatformBreakdown(
 ): PlatformBreakdown[] {
   const factor = timeframeDays(tf) / 30;
   return workspace.growthMatrix.map((row) => {
-    const engagement =
-      row.views > 0 ? (row.likes + row.shares) / row.views : 0;
+    const engagement = row.views > 0 ? (row.likes + row.shares) / row.views : 0;
     const posts = Math.max(
       1,
-      workspace.scheduledPosts.filter((p) => p.platforms.includes(row.platform))
-        .length +
-        workspace.publishedPosts.filter((p) => p.platforms.includes(row.platform))
-          .length,
+      workspace.scheduledPosts.filter((p) => p.platforms.includes(row.platform)).length +
+        workspace.publishedPosts.filter((p) => p.platforms.includes(row.platform)).length,
     );
     return {
       platform: row.platform,

@@ -17,7 +17,8 @@ export const Route = createFileRoute("/api/accounts/youtube/connect")({
         }
 
         try {
-          const workspaceId = new URL(request.url).searchParams.get("workspace") ?? DEFAULT_WORKSPACE_ID;
+          const workspaceId =
+            new URL(request.url).searchParams.get("workspace") ?? DEFAULT_WORKSPACE_ID;
           const { url, state } = buildYouTubeAuthorizeUrl(workspaceId);
           return new Response(null, {
             status: 302,
@@ -27,7 +28,8 @@ export const Route = createFileRoute("/api/accounts/youtube/connect")({
             },
           });
         } catch (error) {
-          const message = error instanceof Error ? error.message : "YouTube OAuth is not configured";
+          const message =
+            error instanceof Error ? error.message : "YouTube OAuth is not configured";
           return Response.json({ detail: message }, { status: 503 });
         }
       },

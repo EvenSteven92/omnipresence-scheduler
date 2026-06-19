@@ -15,7 +15,8 @@ export const Route = createFileRoute("/events/")({
       { title: "Events — TORCC OmniSocial" },
       {
         name: "description",
-        content: "Event albums group related media — sermons, reels, clips — with combined performance.",
+        content:
+          "Event albums group related media — sermons, reels, clips — with combined performance.",
       },
     ],
   }),

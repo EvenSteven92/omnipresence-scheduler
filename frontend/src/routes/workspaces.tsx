@@ -10,11 +10,7 @@ import { useWorkspace } from "@/lib/workspace-context";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import { useOAuthAutoSync } from "@/hooks/useOAuthAutoSync";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
-import {
-  Building2,
-  ArrowRight,
-  Link2,
-} from "lucide-react";
+import { Building2, ArrowRight, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/workspaces")({
   head: () => ({
@@ -22,7 +18,8 @@ export const Route = createFileRoute("/workspaces")({
       { title: "Workspaces — TORCC OmniSocial" },
       {
         name: "description",
-        content: "Manage company workspaces and connect social accounts for metrics and publishing.",
+        content:
+          "Manage company workspaces and connect social accounts for metrics and publishing.",
       },
     ],
   }),
@@ -40,13 +37,17 @@ function WorkspacesPage() {
   const queryClient = useQueryClient();
   const { data: teamAuthed = false } = useTeamSession();
   const [banner, setBanner] = useState<string | null>(null);
-  const [oauthParams, setOauthParams] = useState<{ youtube?: string | null; meta?: string | null }>({});
+  const [oauthParams, setOauthParams] = useState<{ youtube?: string | null; meta?: string | null }>(
+    {},
+  );
 
   useOAuthAutoSync(workspaceId, oauthParams, teamAuthed);
 
   useEffect(() => {
     if (window.location.hash === "#connect-platform") {
-      document.getElementById("connect-platform")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document
+        .getElementById("connect-platform")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     const params = new URLSearchParams(window.location.search);
     const youtube = params.get("youtube");
@@ -100,8 +101,8 @@ function WorkspacesPage() {
             <div className="mb-2 text-sm font-medium text-foreground">How it works</div>
             <p className="text-sm leading-relaxed text-muted-foreground">
               Each workspace is one company or brand. Metrics, scheduled posts, platform
-              connections, and drafts only show that workspace&apos;s accounts. Switch
-              companies from the sidebar picker anytime.
+              connections, and drafts only show that workspace&apos;s accounts. Switch companies
+              from the sidebar picker anytime.
             </p>
           </div>
         ) : null}
@@ -225,7 +226,11 @@ function OnboardingBadge({ status }: { status: string }) {
       ? { dot: "bg-success", label: "Connected", cls: "border-success/50 text-success" }
       : status === "needs_accounts"
         ? { dot: "bg-warning", label: "Needs accounts", cls: "border-warning/50 text-warning" }
-        : { dot: "bg-muted-foreground", label: "Draft", cls: "border-border text-muted-foreground" };
+        : {
+            dot: "bg-muted-foreground",
+            label: "Draft",
+            cls: "border-border text-muted-foreground",
+          };
 
   return (
     <span
@@ -236,4 +241,3 @@ function OnboardingBadge({ status }: { status: string }) {
     </span>
   );
 }
-

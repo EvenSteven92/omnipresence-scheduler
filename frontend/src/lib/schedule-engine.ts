@@ -129,9 +129,7 @@ function hasConflict(
   fileId?: string,
 ): boolean {
   const dt = new Date(iso);
-  if (
-    detectConflicts(scheduledPosts, dt, [platform], fileId).length > 0
-  ) {
+  if (detectConflicts(scheduledPosts, dt, [platform], fileId).length > 0) {
     return true;
   }
   const minGap = DEFAULT_CONSTRAINTS.minGapMinutes * 60_000;
@@ -142,15 +140,10 @@ function hasConflict(
   return false;
 }
 
-function countOnDayPlatform(
-  assigned: BulkScheduleSlot[],
-  day: Date,
-  platform: Platform,
-): number {
+function countOnDayPlatform(assigned: BulkScheduleSlot[], day: Date, platform: Platform): number {
   const key = calendarDayKey(day);
-  return assigned.filter(
-    (s) => s.platform === platform && calendarDayKey(new Date(s.iso)) === key,
-  ).length;
+  return assigned.filter((s) => s.platform === platform && calendarDayKey(new Date(s.iso)) === key)
+    .length;
 }
 
 function pickBestTime(
@@ -193,15 +186,7 @@ export function suggestTimesForDay(
   const out: Partial<Record<Platform, string>> = {};
 
   post.platforms.forEach((platform, idx) => {
-    const pick = pickBestTime(
-      platform,
-      day,
-      scheduledPosts,
-      assigned,
-      post.id,
-      idx,
-      constraints,
-    );
+    const pick = pickBestTime(platform, day, scheduledPosts, assigned, post.id, idx, constraints);
     if (pick) {
       out[platform] = pick.iso;
       assigned.push({

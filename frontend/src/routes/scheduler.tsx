@@ -50,8 +50,14 @@ function uid() {
 
 function detectFormat(filename: string): "landscape" | "portrait" | "story" {
   const lower = filename.toLowerCase();
-  if (lower.includes("story") || lower.includes("ig_story") || lower.includes("fb_story")) return "story";
-  if (lower.includes("reel") || lower.includes("short") || lower.includes("tiktok") || lower.includes("portrait"))
+  if (lower.includes("story") || lower.includes("ig_story") || lower.includes("fb_story"))
+    return "story";
+  if (
+    lower.includes("reel") ||
+    lower.includes("short") ||
+    lower.includes("tiktok") ||
+    lower.includes("portrait")
+  )
     return "portrait";
   if (lower.includes("rumble")) return "landscape";
   return "landscape";
@@ -102,7 +108,7 @@ function NewPostPage() {
   const republishFromNavigation = useRouterState({
     select: (state) =>
       state.location.pathname === "/scheduler"
-        ? (state.location.state as RepublishLocationState | undefined)?.republishDraft ?? null
+        ? ((state.location.state as RepublishLocationState | undefined)?.republishDraft ?? null)
         : null,
   });
   const [queue, setQueue] = useState<DraftPost[]>([]);
@@ -123,10 +129,7 @@ function NewPostPage() {
     [queue, selectedIds],
   );
   const hasSidebar = queue.length > 0 || savedDrafts.length > 0;
-  const readyToApply = useMemo(
-    () => queue.filter((d) => draftToScheduledPost(d) != null),
-    [queue],
-  );
+  const readyToApply = useMemo(() => queue.filter((d) => draftToScheduledPost(d) != null), [queue]);
 
   const prevWorkspaceIdRef = useRef<WorkspaceId | null>(null);
 
@@ -456,7 +459,8 @@ function NewPostPage() {
               Content queue
             </div>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              {queue.length} potential · {savedDrafts.length} draft{savedDrafts.length === 1 ? "" : "s"}
+              {queue.length} potential · {savedDrafts.length} draft
+              {savedDrafts.length === 1 ? "" : "s"}
             </p>
           </div>
           <div className="border-b border-border px-4 py-3">
@@ -617,7 +621,9 @@ function NewPostPage() {
               <>
                 <SchedulerWorkflowSteps active="upload" />
                 <p className="mb-6 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                  Each upload is one content card on your calendar, even when you post the same file to several platforms. Add files, pick networks, write copy, and set publish times per platform.
+                  Each upload is one content card on your calendar, even when you post the same file
+                  to several platforms. Add files, pick networks, write copy, and set publish times
+                  per platform.
                 </p>
                 <div
                   onDragOver={(e) => {
@@ -635,9 +641,7 @@ function NewPostPage() {
                   <Upload className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
                   <div className="text-center">
                     <div className="text-title text-foreground">Drop files to start</div>
-                    <p className="mt-2 text-body-sm text-muted-foreground">
-                      MP4, MOV, JPG, PNG
-                    </p>
+                    <p className="mt-2 text-body-sm text-muted-foreground">MP4, MOV, JPG, PNG</p>
                   </div>
                   <button
                     type="button"
@@ -662,7 +666,9 @@ function NewPostPage() {
               </>
             ) : activeDraft ? (
               <div className="mx-auto max-w-6xl">
-                <SchedulerWorkflowSteps active={readyToApply.length > 0 ? "schedule" : "configure"} />
+                <SchedulerWorkflowSteps
+                  active={readyToApply.length > 0 ? "schedule" : "configure"}
+                />
                 <p className="mb-4 text-xs text-muted-foreground">
                   Card {activeIndex} of {allPosts.length}
                   {activeInDraftZone ? " · saved draft" : " · ready to configure"}

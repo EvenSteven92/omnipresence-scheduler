@@ -45,8 +45,8 @@ export function UnassignedMediaPicker({
       >
         <p className="text-body-sm text-muted-foreground">All media is associated with events</p>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          Every file is already linked to an event album. You can associate more later from New
-          Post or the calendar stencil.
+          Every file is already linked to an event album. You can associate more later from New Post
+          or the calendar stencil.
         </p>
       </div>
     );

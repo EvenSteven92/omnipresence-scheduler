@@ -58,7 +58,9 @@ export function SchedulePreviewTimeline({ slots }: { slots: BulkScheduleSlot[] }
                   label={formatScheduleTimeShort(slot.iso)}
                   size="xs"
                 />
-                <span className="font-mono text-[0.5rem] text-muted-foreground/80">{slot.reason}</span>
+                <span className="font-mono text-[0.5rem] text-muted-foreground/80">
+                  {slot.reason}
+                </span>
               </li>
             ))}
           </ul>

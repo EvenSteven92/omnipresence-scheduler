@@ -1,9 +1,6 @@
 import { CalendarClock } from "lucide-react";
 import type { Platform, ScheduledPost } from "@/lib/mock-data";
-import {
-  buildPlatformSlots,
-  formatScheduleTimeShort,
-} from "@/lib/schedule-display";
+import { buildPlatformSlots, formatScheduleTimeShort } from "@/lib/schedule-display";
 import { PublishScheduleCalendar } from "@/components/post/PublishScheduleCalendar";
 import { PublishTimeEditor } from "@/components/post/PublishTimeEditor";
 import { PublishTimesAgenda } from "@/components/post/PublishTimesAgenda";

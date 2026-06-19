@@ -57,8 +57,7 @@ export function SyncStatusBar() {
     if (ig) parts.push("Instagram");
 
     const label = parts.join(", ");
-    const needsSync =
-      (yt && !status.youtube.syncedAt) || (fb && !status.meta.facebook.syncedAt);
+    const needsSync = (yt && !status.youtube.syncedAt) || (fb && !status.meta.facebook.syncedAt);
 
     if (needsSync) {
       return {

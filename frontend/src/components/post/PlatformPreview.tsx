@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { Heart, MessageCircle, Repeat2, Send, Bookmark, MoreHorizontal, Play, ChevronDown, ChevronRight, Image as ImageIcon } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Repeat2,
+  Send,
+  Bookmark,
+  MoreHorizontal,
+  Play,
+  ChevronDown,
+  ChevronRight,
+  Image as ImageIcon,
+} from "lucide-react";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import { PlatformSelectChip } from "./PlatformChip";
 import type { Platform } from "@/lib/mock-data";
@@ -32,7 +43,7 @@ export function PlatformPreview({
   const [active, setActive] = useState<Platform | null>(platforms[0] ?? null);
 
   const effective: Platform | null =
-    active && platforms.includes(active) ? active : platforms[0] ?? null;
+    active && platforms.includes(active) ? active : (platforms[0] ?? null);
 
   function captionFor(platform: Platform): string {
     return platformCaptions?.[platform]?.trim() || caption;
@@ -138,7 +149,13 @@ function MediaPlaceholder({
   rounded?: boolean;
 }) {
   const aspect =
-    ratio === "16/9" ? "aspect-video" : ratio === "1/1" ? "aspect-square" : ratio === "4/5" ? "aspect-[4/5]" : "aspect-[9/16]";
+    ratio === "16/9"
+      ? "aspect-video"
+      : ratio === "1/1"
+        ? "aspect-square"
+        : ratio === "4/5"
+          ? "aspect-[4/5]"
+          : "aspect-[9/16]";
   return (
     <div
       className={`relative flex w-full items-center justify-center bg-background/80 ${aspect} ${rounded ? "rounded-sm" : ""}`}
@@ -166,12 +183,33 @@ function PlatformMock({
   const network = PLATFORMS_BY_SHORT[platform]?.full ?? platform;
 
   if (platform === "X") return <XMock caption={display} tags={tags} />;
-  if (platform === "FB" || platform === "FB STORY") return <FBMock caption={display} tags={tags} filename={filename} format={format} story={platform === "FB STORY"} />;
-  if (platform === "IG" || platform === "IG STORY") return <IGMock caption={display} tags={tags} filename={filename} format={format} story={platform === "IG STORY"} />;
+  if (platform === "FB" || platform === "FB STORY")
+    return (
+      <FBMock
+        caption={display}
+        tags={tags}
+        filename={filename}
+        format={format}
+        story={platform === "FB STORY"}
+      />
+    );
+  if (platform === "IG" || platform === "IG STORY")
+    return (
+      <IGMock
+        caption={display}
+        tags={tags}
+        filename={filename}
+        format={format}
+        story={platform === "IG STORY"}
+      />
+    );
   if (platform === "TIKTOK") return <TikTokMock caption={display} tags={tags} />;
   if (platform === "YT" || platform === "YT SHORTS")
-    return <YTMock caption={display} tags={tags} filename={filename} shorts={platform === "YT SHORTS"} />;
-  if (platform === "RUMBLE") return <RumbleMock caption={display} tags={tags} filename={filename} />;
+    return (
+      <YTMock caption={display} tags={tags} filename={filename} shorts={platform === "YT SHORTS"} />
+    );
+  if (platform === "RUMBLE")
+    return <RumbleMock caption={display} tags={tags} filename={filename} />;
   return (
     <div className="rounded-sm border border-dashed border-border px-3 py-4 text-center text-body-sm text-muted-foreground">
       Preview for {network}
@@ -195,10 +233,18 @@ function XMock({ caption, tags }: { caption: string; tags: string }) {
           </p>
           <MediaPlaceholder ratio="16/9" rounded />
           <div className="mt-2 flex items-center justify-between text-muted-foreground">
-            <span className="flex items-center gap-1 text-[0.65rem]"><MessageCircle className="h-3 w-3" /> 24</span>
-            <span className="flex items-center gap-1 text-[0.65rem]"><Repeat2 className="h-3 w-3" /> 11</span>
-            <span className="flex items-center gap-1 text-[0.65rem]"><Heart className="h-3 w-3" /> 142</span>
-            <span className="flex items-center gap-1 text-[0.65rem]"><Send className="h-3 w-3" /> 8</span>
+            <span className="flex items-center gap-1 text-[0.65rem]">
+              <MessageCircle className="h-3 w-3" /> 24
+            </span>
+            <span className="flex items-center gap-1 text-[0.65rem]">
+              <Repeat2 className="h-3 w-3" /> 11
+            </span>
+            <span className="flex items-center gap-1 text-[0.65rem]">
+              <Heart className="h-3 w-3" /> 142
+            </span>
+            <span className="flex items-center gap-1 text-[0.65rem]">
+              <Send className="h-3 w-3" /> 8
+            </span>
           </div>
         </div>
       </div>
@@ -206,12 +252,25 @@ function XMock({ caption, tags }: { caption: string; tags: string }) {
   );
 }
 
-function FBMock({ caption, tags, story }: { caption: string; tags: string; filename: string; format: string; story: boolean }) {
+function FBMock({
+  caption,
+  tags,
+  story,
+}: {
+  caption: string;
+  tags: string;
+  filename: string;
+  format: string;
+  story: boolean;
+}) {
   if (story) {
     return <StoryMock platform="FB" caption={caption} />;
   }
   return (
-    <div data-testid="mock-FB" className="overflow-hidden rounded-sm border border-border bg-background/60">
+    <div
+      data-testid="mock-FB"
+      className="overflow-hidden rounded-sm border border-border bg-background/60"
+    >
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
           <Avatar />
@@ -228,19 +287,39 @@ function FBMock({ caption, tags, story }: { caption: string; tags: string; filen
       </p>
       <MediaPlaceholder ratio="16/9" />
       <div className="flex items-center justify-between border-t border-border px-3 py-2 text-muted-foreground">
-        <span className="flex items-center gap-1 text-[0.65rem]"><Heart className="h-3 w-3" /> Like</span>
-        <span className="flex items-center gap-1 text-[0.65rem]"><MessageCircle className="h-3 w-3" /> Comment</span>
-        <span className="flex items-center gap-1 text-[0.65rem]"><Send className="h-3 w-3" /> Share</span>
+        <span className="flex items-center gap-1 text-[0.65rem]">
+          <Heart className="h-3 w-3" /> Like
+        </span>
+        <span className="flex items-center gap-1 text-[0.65rem]">
+          <MessageCircle className="h-3 w-3" /> Comment
+        </span>
+        <span className="flex items-center gap-1 text-[0.65rem]">
+          <Send className="h-3 w-3" /> Share
+        </span>
       </div>
     </div>
   );
 }
 
-function IGMock({ caption, tags, story, format }: { caption: string; tags: string; filename: string; format: string; story: boolean }) {
+function IGMock({
+  caption,
+  tags,
+  story,
+  format,
+}: {
+  caption: string;
+  tags: string;
+  filename: string;
+  format: string;
+  story: boolean;
+}) {
   if (story) return <StoryMock platform="IG" caption={caption} />;
   const ratio = format === "landscape" ? "16/9" : "4/5";
   return (
-    <div data-testid="mock-IG" className="overflow-hidden rounded-sm border border-border bg-background/60">
+    <div
+      data-testid="mock-IG"
+      className="overflow-hidden rounded-sm border border-border bg-background/60"
+    >
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
           <Avatar />
@@ -270,11 +349,16 @@ function IGMock({ caption, tags, story, format }: { caption: string; tags: strin
 
 function StoryMock({ platform, caption }: { platform: "IG" | "FB"; caption: string }) {
   return (
-    <div data-testid={`mock-${platform}-STORY`} className="relative mx-auto aspect-[9/16] w-40 overflow-hidden rounded-sm border border-border bg-gradient-to-br from-accent/30 via-background to-background">
+    <div
+      data-testid={`mock-${platform}-STORY`}
+      className="relative mx-auto aspect-[9/16] w-40 overflow-hidden rounded-sm border border-border bg-gradient-to-br from-accent/30 via-background to-background"
+    >
       <div className="absolute inset-x-2 top-2 h-0.5 rounded-full bg-foreground/80" />
       <div className="absolute inset-x-2 top-4 flex items-center gap-1.5">
         <Avatar />
-        <span className="text-[0.6rem] font-semibold text-foreground">torcc · {platform === "IG" ? "Instagram" : "Facebook"}</span>
+        <span className="text-[0.6rem] font-semibold text-foreground">
+          torcc · {platform === "IG" ? "Instagram" : "Facebook"}
+        </span>
       </div>
       <div className="absolute inset-x-3 bottom-3 text-[0.6rem] leading-tight text-foreground line-clamp-4">
         {caption}
@@ -285,12 +369,21 @@ function StoryMock({ platform, caption }: { platform: "IG" | "FB"; caption: stri
 
 function TikTokMock({ caption, tags }: { caption: string; tags: string }) {
   return (
-    <div data-testid="mock-TIKTOK" className="relative mx-auto aspect-[9/16] w-44 overflow-hidden rounded-sm border border-border bg-background">
+    <div
+      data-testid="mock-TIKTOK"
+      className="relative mx-auto aspect-[9/16] w-44 overflow-hidden rounded-sm border border-border bg-background"
+    >
       <MediaPlaceholder ratio="9/16" />
       <div className="absolute right-2 top-1/3 flex flex-col items-center gap-3 text-foreground">
-        <div className="flex flex-col items-center text-[0.55rem]"><Heart className="h-4 w-4" /> 24.1k</div>
-        <div className="flex flex-col items-center text-[0.55rem]"><MessageCircle className="h-4 w-4" /> 612</div>
-        <div className="flex flex-col items-center text-[0.55rem]"><Send className="h-4 w-4" /> 411</div>
+        <div className="flex flex-col items-center text-[0.55rem]">
+          <Heart className="h-4 w-4" /> 24.1k
+        </div>
+        <div className="flex flex-col items-center text-[0.55rem]">
+          <MessageCircle className="h-4 w-4" /> 612
+        </div>
+        <div className="flex flex-col items-center text-[0.55rem]">
+          <Send className="h-4 w-4" /> 411
+        </div>
       </div>
       <div className="absolute inset-x-2 bottom-2 text-foreground">
         <div className="text-[0.65rem] font-semibold">@torcc_omni</div>
@@ -301,10 +394,21 @@ function TikTokMock({ caption, tags }: { caption: string; tags: string }) {
   );
 }
 
-function RumbleMock({ caption, tags, filename }: { caption: string; tags: string; filename: string }) {
+function RumbleMock({
+  caption,
+  tags,
+  filename,
+}: {
+  caption: string;
+  tags: string;
+  filename: string;
+}) {
   const title = filename.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ");
   return (
-    <div data-testid="mock-RUMBLE" className="overflow-hidden rounded-sm border border-border bg-background/60">
+    <div
+      data-testid="mock-RUMBLE"
+      className="overflow-hidden rounded-sm border border-border bg-background/60"
+    >
       <div className="relative">
         <MediaPlaceholder ratio="16/9" />
         <span className="absolute bottom-1.5 right-1.5 rounded-sm bg-success/90 px-1.5 py-0.5 font-mono text-[0.55rem] text-background">
@@ -315,7 +419,9 @@ function RumbleMock({ caption, tags, filename }: { caption: string; tags: string
         <Avatar />
         <div className="min-w-0 flex-1">
           <div className="line-clamp-2 text-sm font-semibold text-foreground">{title}</div>
-          <div className="mt-1 text-body-sm text-muted-foreground">torcc · 18k views · 1 day ago</div>
+          <div className="mt-1 text-body-sm text-muted-foreground">
+            torcc · 18k views · 1 day ago
+          </div>
           <p className="mt-2 whitespace-pre-wrap break-words text-[0.65rem] text-muted-foreground line-clamp-3">
             {caption}
             {tags && <span className="block text-success">{tags}</span>}
@@ -339,7 +445,10 @@ function YTMock({
 }) {
   const title = filename.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ");
   return (
-    <div data-testid={shorts ? "mock-YT-SHORTS" : "mock-YT"} className="overflow-hidden rounded-sm border border-border bg-background/60">
+    <div
+      data-testid={shorts ? "mock-YT-SHORTS" : "mock-YT"}
+      className="overflow-hidden rounded-sm border border-border bg-background/60"
+    >
       <div className="relative">
         <MediaPlaceholder ratio="16/9" />
         <span className="absolute bottom-1.5 right-1.5 rounded-sm bg-background/80 px-1.5 py-0.5 font-mono text-[0.55rem] text-foreground">
@@ -350,7 +459,9 @@ function YTMock({
         <Avatar />
         <div className="min-w-0 flex-1">
           <div className="line-clamp-2 text-sm font-semibold text-foreground">{title}</div>
-          <div className="mt-1 text-body-sm text-muted-foreground">torcc · 248k views · 2 hr ago</div>
+          <div className="mt-1 text-body-sm text-muted-foreground">
+            torcc · 248k views · 2 hr ago
+          </div>
           <p className="mt-2 whitespace-pre-wrap break-words text-[0.65rem] text-muted-foreground line-clamp-3">
             {caption}
             {tags && <span className="block text-accent">{tags}</span>}

@@ -39,7 +39,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="label-mono">Runtime error</p>
         <h1 className="mt-2 text-lg text-foreground">{error.message}</h1>
         <button
-          onClick={() => { router.invalidate(); reset(); }}
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
           className="mt-6 rounded-sm bg-primary px-4 py-2 text-[0.7rem] uppercase tracking-[0.14em] text-primary-foreground"
         >
           Retry
@@ -55,7 +58,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "OmniSocial — TORCC" },
-      { name: "description", content: "Schedule, publish, and analyze social content across every platform." },
+      {
+        name: "description",
+        content: "Schedule, publish, and analyze social content across every platform.",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

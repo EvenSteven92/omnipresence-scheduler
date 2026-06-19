@@ -68,10 +68,7 @@ const EVENT_KIND_COVERS: Record<ContentEventKind, string> = {
 };
 
 /** Title-based TORCC art when no per-id thumbnail exists. */
-export function demoStockForContent(
-  title: string,
-  mediaKind?: "image" | "video",
-): string {
+export function demoStockForContent(title: string, mediaKind?: "image" | "video"): string {
   const t = title.toLowerCase();
 
   if (t.includes("quote") || t.includes("carousel") || t.includes("photo")) {

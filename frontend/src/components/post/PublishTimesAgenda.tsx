@@ -75,12 +75,8 @@ export function PublishTimesAgenda({
       <div className="max-h-64 divide-y divide-border overflow-y-auto">
         {slots.map((slot) => {
           const dt = new Date(slot.iso);
-          const month = dt
-            .toLocaleDateString(undefined, { month: "short" })
-            .toLowerCase();
-          const weekday = dt
-            .toLocaleDateString(undefined, { weekday: "short" })
-            .toLowerCase();
+          const month = dt.toLocaleDateString(undefined, { month: "short" }).toLowerCase();
+          const weekday = dt.toLocaleDateString(undefined, { weekday: "short" }).toLowerCase();
 
           return (
             <div

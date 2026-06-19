@@ -85,7 +85,9 @@ export function CalendarDayIntentModal({
               <CalendarPlus className="h-4 w-4 text-foreground" strokeWidth={1.75} />
             </span>
             <span className="min-w-0">
-              <span className="block text-sm font-semibold text-foreground">Create event album</span>
+              <span className="block text-sm font-semibold text-foreground">
+                Create event album
+              </span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
                 Group sermon reels, clips, and cards under one ministry moment.
               </span>

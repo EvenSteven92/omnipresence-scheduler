@@ -12,10 +12,7 @@ export async function getYouTubeAccount(workspaceId: string) {
     .select()
     .from(connectedAccounts)
     .where(
-      and(
-        eq(connectedAccounts.workspaceId, workspaceId),
-        eq(connectedAccounts.platform, "YT"),
-      ),
+      and(eq(connectedAccounts.workspaceId, workspaceId), eq(connectedAccounts.platform, "YT")),
     )
     .limit(1);
   if (!row) return null;

@@ -110,8 +110,12 @@ export function ContentCardChip({
           {post.title}
         </span>
         {showSchedule ? (
-          <span className={`block font-mono text-accent ${dense ? "text-[0.5rem]" : "text-[0.55rem]"}`}>
-            {dense ? `${publishCount} · ${contentCardPublishSpread(post)}` : contentCardPublishSpread(post)}
+          <span
+            className={`block font-mono text-accent ${dense ? "text-[0.5rem]" : "text-[0.55rem]"}`}
+          >
+            {dense
+              ? `${publishCount} · ${contentCardPublishSpread(post)}`
+              : contentCardPublishSpread(post)}
           </span>
         ) : null}
       </div>

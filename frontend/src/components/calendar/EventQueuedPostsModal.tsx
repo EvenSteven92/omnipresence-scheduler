@@ -111,7 +111,10 @@ export function EventQueuedPostsModal({
                 });
 
                 return (
-                  <section key={date.toDateString()} data-testid={`event-queued-day-${date.toDateString()}`}>
+                  <section
+                    key={date.toDateString()}
+                    data-testid={`event-queued-day-${date.toDateString()}`}
+                  >
                     <div className="mb-3 flex items-center justify-between gap-3 border-b border-border pb-2">
                       <span className="text-sm font-semibold text-foreground">{dayLabel}</span>
                       <span className="label-mono text-muted-foreground">

@@ -29,9 +29,10 @@ export function ConnectPlatformSection({
   const metaInstagramConnected = accountStatus?.meta.instagram.connected ?? false;
   const [syncingYouTube, setSyncingYouTube] = useState(false);
   const [syncingMeta, setSyncingMeta] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<{ tone: "success" | "error"; text: string } | null>(
-    null,
-  );
+  const [syncMessage, setSyncMessage] = useState<{
+    tone: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const availableCards = PLATFORMS.filter(
     (p) => workspace.platforms.includes(p.short) && LIVE_NOW.has(p.short),
@@ -173,9 +174,15 @@ export function ConnectPlatformSection({
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            void (meta.short === "YT" || showMetaOnce ? (meta.short === "YT" ? syncYouTube() : syncMeta()) : null)
+                            void (meta.short === "YT" || showMetaOnce
+                              ? meta.short === "YT"
+                                ? syncYouTube()
+                                : syncMeta()
+                              : null)
                           }
-                          disabled={!teamAuthed || (meta.short === "YT" ? syncingYouTube : syncingMeta)}
+                          disabled={
+                            !teamAuthed || (meta.short === "YT" ? syncingYouTube : syncingMeta)
+                          }
                         >
                           <RefreshCw
                             className={`h-3 w-3 ${(meta.short === "YT" ? syncingYouTube : syncingMeta) ? "animate-spin" : ""}`}
@@ -244,7 +251,9 @@ export function LiveConnectionStrip({ workspace }: { workspace: WorkspaceProfile
             className="inline-flex items-center gap-2 rounded-sm border border-success/40 bg-success/5 px-3 py-2"
           >
             <PlatformChip platform={c.platform} size="md" />
-            <span className="text-body-sm font-medium text-success">{meta?.full ?? c.platform}</span>
+            <span className="text-body-sm font-medium text-success">
+              {meta?.full ?? c.platform}
+            </span>
             <Badge tone="success">Live</Badge>
           </div>
         );
