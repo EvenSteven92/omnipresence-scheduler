@@ -143,7 +143,7 @@ export function ConnectPlatformSection({
 
           <div>
             <h4 className="mb-3 text-sm font-semibold text-foreground">Available now</h4>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {availableCards.map((meta) => {
                 const connected = platformConnected(meta.short);
                 const isMetaCard = META_PLATFORMS.has(meta.short);
@@ -151,49 +151,45 @@ export function ConnectPlatformSection({
 
                 if (isMetaCard && !showMetaOnce) return null;
 
+                const syncing = meta.short === "YT" ? syncingYouTube : syncingMeta;
+
                 return (
                   <div
                     key={meta.short}
-                    className="flex items-center gap-3 rounded-sm border border-border bg-background/40 px-4 py-4"
+                    className="flex flex-col gap-3 rounded-md border border-border bg-background/40 p-4"
                   >
-                    <PlatformChip platform={meta.short} size="xl" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-foreground">
-                        {meta.short === "FB" ? "Facebook & Instagram" : meta.full}
+                    <div className="flex items-center gap-3">
+                      <PlatformChip platform={meta.short} size="lg" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium text-foreground">
+                          {meta.short === "FB" ? "Facebook & Instagram" : meta.full}
+                        </div>
+                        <p className="mt-0.5 text-body-sm text-muted-foreground">
+                          {connected ? "Connected · read-only metrics" : "One-click OAuth connect"}
+                        </p>
                       </div>
-                      <p className="mt-0.5 text-body-sm text-muted-foreground">
-                        {connected ? "Connected · read-only metrics" : "One-click OAuth connect"}
-                      </p>
-                    </div>
-                    {connected ? (
-                      <div className="flex shrink-0 flex-col items-end gap-2">
+                      {connected ? (
                         <Badge tone="success">
                           <Check className="h-3 w-3" /> Connected
                         </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            void (meta.short === "YT" || showMetaOnce
-                              ? meta.short === "YT"
-                                ? syncYouTube()
-                                : syncMeta()
-                              : null)
-                          }
-                          disabled={
-                            !teamAuthed || (meta.short === "YT" ? syncingYouTube : syncingMeta)
-                          }
-                        >
-                          <RefreshCw
-                            className={`h-3 w-3 ${(meta.short === "YT" ? syncingYouTube : syncingMeta) ? "animate-spin" : ""}`}
-                          />
-                          Refresh
-                        </Button>
-                      </div>
+                      ) : null}
+                    </div>
+                    {connected ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => void (meta.short === "YT" ? syncYouTube() : syncMeta())}
+                        disabled={!teamAuthed || syncing}
+                      >
+                        <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
+                        Refresh
+                      </Button>
                     ) : (
                       <Button
                         variant="primary"
                         size="sm"
+                        className="w-full"
                         disabled={!teamAuthed}
                         data-testid={`connect-platform-${meta.short.replace(/\s+/g, "-")}`}
                         onClick={() => handleConnect(meta.short === "FB" ? "FB" : meta.short)}

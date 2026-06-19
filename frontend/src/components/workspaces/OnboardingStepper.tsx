@@ -53,14 +53,14 @@ export function OnboardingStepper() {
   return (
     <section
       data-testid="onboarding-stepper"
-      className="mx-auto mb-8 max-w-2xl rounded-sm border border-border bg-surface-elevated p-8 text-center"
+      className="rounded-md border border-border bg-surface-elevated p-6"
     >
       <h2 className="text-title">Getting started</h2>
-      <p className="mt-2 text-body-sm text-muted-foreground">
+      <p className="mt-1 text-body-sm text-muted-foreground">
         {doneCount} of {steps.length} complete for {workspace.name}
       </p>
 
-      <ol className="mt-8 space-y-4 text-left">
+      <ol className="mt-6 space-y-3 text-left">
         {steps.map((step, index) => {
           const Icon = step.icon;
           return (

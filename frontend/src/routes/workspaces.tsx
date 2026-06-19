@@ -7,10 +7,9 @@ import { ConnectPlatformSection, LiveConnectionStrip } from "@/components/Connec
 import { TeamAccessGate } from "@/components/TeamAccessGate";
 import { useTeamSession } from "@/hooks/useTeamSession";
 import { useWorkspace } from "@/lib/workspace-context";
-import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import { useOAuthAutoSync } from "@/hooks/useOAuthAutoSync";
 import { OnboardingStepper } from "@/components/workspaces/OnboardingStepper";
-import { Building2, ArrowRight, Link2 } from "lucide-react";
+import { ArrowRight, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/workspaces")({
   head: () => ({
@@ -28,12 +27,6 @@ export const Route = createFileRoute("/workspaces")({
 
 function WorkspacesPage() {
   const { workspace, workspaces, setWorkspaceId, workspaceId } = useWorkspace();
-  const { data: connections } = usePlatformConnections(workspaceId);
-  const hasConnectedAccounts =
-    (connections?.youtube.connected ?? false) ||
-    (connections?.meta.facebook.connected ?? false) ||
-    (connections?.meta.instagram.connected ?? false) ||
-    workspaces.some((ws) => ws.onboardingStatus === "complete");
   const queryClient = useQueryClient();
   const { data: teamAuthed = false } = useTeamSession();
   const [banner, setBanner] = useState<string | null>(null);
@@ -93,126 +86,99 @@ function WorkspacesPage() {
         }
       />
 
-      <div className="page-content max-w-3xl mx-auto space-y-6">
-        <OnboardingStepper />
-
+      <div className="page-content space-y-6">
         {banner ? (
           <div className="panel border border-accent/30 bg-accent/5 p-4 text-body-sm text-foreground">
             {banner}
           </div>
         ) : null}
 
-        {!teamAuthed ? (
-          <TeamAccessGate
-            onAuthed={() => {
-              sessionStorage.setItem("team_authed", "1");
-              queryClient.setQueryData(["team-session"], true);
-            }}
-          />
-        ) : null}
+        <div className="page-grid">
+          <div className="page-grid-main space-y-6">
+            <OnboardingStepper />
 
-        <ConnectPlatformSection workspace={workspace} teamAuthed={teamAuthed} />
+            {!teamAuthed ? (
+              <TeamAccessGate
+                onAuthed={() => {
+                  sessionStorage.setItem("team_authed", "1");
+                  queryClient.setQueryData(["team-session"], true);
+                }}
+              />
+            ) : null}
 
-        <div className="panel p-6">
-          <h2 className="text-title text-sm">How it works</h2>
-          <p className="mt-2 text-body-sm leading-relaxed text-muted-foreground">
-            Each workspace is one company or brand. Metrics, scheduled posts, platform connections,
-            and drafts only show that workspace&apos;s accounts. Switch companies from the sidebar
-            anytime.
-          </p>
-        </div>
+            <ConnectPlatformSection workspace={workspace} teamAuthed={teamAuthed} />
 
-        <section className="section-block space-y-4">
-          <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            Your workspaces · {workspaces.length}
-          </div>
-          {workspaces.map((ws) => {
-            const active = ws.id === workspace.id;
-            return (
-              <article
-                key={ws.id}
-                data-testid={`workspace-card-${ws.slug}`}
-                className={`overflow-hidden rounded-sm border bg-surface ${
-                  active ? "border-accent" : "border-border"
-                }`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-6 py-5">
-                  <div className="flex items-start gap-4">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-sm bg-foreground font-mono text-sm font-bold text-background">
-                      {ws.initials}
-                    </span>
-                    <div>
-                      <h2 className="text-lg font-semibold text-foreground">{ws.name}</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">{ws.tagline}</p>
-                      <OnboardingBadge status={ws.onboardingStatus} />
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={active}
-                    onClick={() => setWorkspaceId(ws.id)}
-                    className="btn-action disabled:opacity-50"
-                  >
-                    {active ? "Active" : "Switch to"}
-                  </button>
-                </div>
-
-                <div className="px-6 py-5">
-                  <div className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    Connected platforms
-                  </div>
-                  {active ? (
-                    <LiveConnectionStrip workspace={ws} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Switch to this workspace to connect accounts.
-                    </p>
-                  )}
-                </div>
-              </article>
-            );
-          })}
-        </section>
-
-        {!hasConnectedAccounts ? (
-          <section className="section-block">
-            <div className="panel border-dashed p-8">
-              <div className="flex items-start gap-4">
-                <Building2 className="h-8 w-8 shrink-0 text-accent" strokeWidth={1.25} />
-                <div>
-                  <div className="mb-2 text-sm font-medium text-foreground">Getting started</div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Connect OAuth for each platform and metrics sync automatically into this
-                    dashboard. Workspaces keep each company&apos;s accounts and content separate.
-                  </p>
-                  <ol className="mt-4 space-y-2 text-sm text-foreground">
-                    <li className="flex gap-2">
-                      <span className="font-mono text-muted-foreground">1</span>
-                      Create workspace (name, slug, timezone)
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="font-mono text-muted-foreground">2</span>
-                      Connect accounts (X, Meta, YouTube, Rumble, TikTok, …)
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="font-mono text-muted-foreground">3</span>
-                      Pull metrics + enable scheduling for that workspace only
-                    </li>
-                  </ol>
-                  <button
-                    type="button"
-                    disabled
-                    className="btn-action mt-6 gap-2 opacity-60"
-                    title="Available when backend onboarding ships"
-                  >
-                    <Link2 className="h-3 w-3" />
-                    Add company (soon)
-                  </button>
-                </div>
+            <section className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-eyebrow">Your workspaces · {workspaces.length}</h2>
+                <button
+                  type="button"
+                  disabled
+                  className="btn-action gap-2 opacity-60"
+                  title="Available when backend onboarding ships"
+                >
+                  <Link2 className="h-3 w-3" />
+                  Add company (soon)
+                </button>
               </div>
+              {workspaces.map((ws) => {
+                const active = ws.id === workspace.id;
+                return (
+                  <article
+                    key={ws.id}
+                    data-testid={`workspace-card-${ws.slug}`}
+                    className={`overflow-hidden rounded-md border bg-surface-elevated ${
+                      active ? "border-accent" : "border-border"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4">
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-foreground font-data text-sm font-bold text-background">
+                          {ws.initials}
+                        </span>
+                        <div className="min-w-0">
+                          <h3 className="text-title">{ws.name}</h3>
+                          <p className="mt-0.5 text-body-sm text-muted-foreground">{ws.tagline}</p>
+                          <OnboardingBadge status={ws.onboardingStatus} />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={active}
+                        onClick={() => setWorkspaceId(ws.id)}
+                        className="btn-action shrink-0 disabled:opacity-50"
+                      >
+                        {active ? "Active" : "Switch to"}
+                      </button>
+                    </div>
+
+                    <div className="px-5 py-4">
+                      <div className="text-eyebrow mb-3">Connected platforms</div>
+                      {active ? (
+                        <LiveConnectionStrip workspace={ws} />
+                      ) : (
+                        <p className="text-body-sm text-muted-foreground">
+                          Switch to this workspace to connect accounts.
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </section>
+          </div>
+
+          <aside className="page-grid-rail space-y-4">
+            <div className="panel p-5">
+              <h2 className="text-title">How it works</h2>
+              <p className="mt-2 text-body-sm leading-relaxed text-muted-foreground">
+                Each workspace is one company or brand. Metrics, scheduled posts, platform
+                connections, and drafts only show that workspace&apos;s accounts. Switch companies
+                from the sidebar anytime.
+              </p>
             </div>
-          </section>
-        ) : null}
+          </aside>
+        </div>
       </div>
     </div>
   );
