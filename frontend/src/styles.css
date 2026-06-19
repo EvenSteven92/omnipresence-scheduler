@@ -191,8 +191,8 @@
     background: var(--color-secondary);
   }
   .btn-action:focus-visible {
-    outline: none;
-    ring: 2px solid var(--color-ring);
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
   }
   .btn-action-primary {
     border-color: transparent;
