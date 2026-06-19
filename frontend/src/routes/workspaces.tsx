@@ -93,91 +93,87 @@ function WorkspacesPage() {
           </div>
         ) : null}
 
-        <div className="page-grid">
-          <div className="page-grid-main space-y-6">
-            <OnboardingStepper />
+        <div className="max-w-4xl space-y-6">
+          <OnboardingStepper />
 
-            {!teamAuthed ? (
-              <TeamAccessGate
-                onAuthed={() => {
-                  sessionStorage.setItem("team_authed", "1");
-                  queryClient.setQueryData(["team-session"], true);
-                }}
-              />
-            ) : null}
+          {!teamAuthed ? (
+            <TeamAccessGate
+              onAuthed={() => {
+                sessionStorage.setItem("team_authed", "1");
+                queryClient.setQueryData(["team-session"], true);
+              }}
+            />
+          ) : null}
 
-            <ConnectPlatformSection workspace={workspace} teamAuthed={teamAuthed} />
+          <ConnectPlatformSection workspace={workspace} teamAuthed={teamAuthed} />
 
-            <section className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-eyebrow">Your workspaces · {workspaces.length}</h2>
-                <button
-                  type="button"
-                  disabled
-                  className="btn-action gap-2 opacity-60"
-                  title="Available when backend onboarding ships"
-                >
-                  <Link2 className="h-3 w-3" />
-                  Add company (soon)
-                </button>
-              </div>
-              {workspaces.map((ws) => {
-                const active = ws.id === workspace.id;
-                return (
-                  <article
-                    key={ws.id}
-                    data-testid={`workspace-card-${ws.slug}`}
-                    className={`overflow-hidden rounded-md border bg-surface-elevated ${
-                      active ? "border-accent" : "border-border"
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4">
-                      <div className="flex items-start gap-3">
-                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-foreground font-data text-sm font-bold text-background">
-                          {ws.initials}
-                        </span>
-                        <div className="min-w-0">
-                          <h3 className="text-title">{ws.name}</h3>
-                          <p className="mt-0.5 text-body-sm text-muted-foreground">{ws.tagline}</p>
-                          <OnboardingBadge status={ws.onboardingStatus} />
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={active}
-                        onClick={() => setWorkspaceId(ws.id)}
-                        className="btn-action shrink-0 disabled:opacity-50"
-                      >
-                        {active ? "Active" : "Switch to"}
-                      </button>
-                    </div>
-
-                    <div className="px-5 py-4">
-                      <div className="text-eyebrow mb-3">Connected platforms</div>
-                      {active ? (
-                        <LiveConnectionStrip workspace={ws} />
-                      ) : (
-                        <p className="text-body-sm text-muted-foreground">
-                          Switch to this workspace to connect accounts.
-                        </p>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </section>
+          <div className="panel p-5">
+            <h2 className="text-title">How it works</h2>
+            <p className="mt-2 text-body-sm leading-relaxed text-muted-foreground">
+              Each workspace is one company or brand. Metrics, scheduled posts, platform
+              connections, and drafts only show that workspace&apos;s accounts. Switch companies from
+              the sidebar anytime.
+            </p>
           </div>
 
-          <aside className="page-grid-rail space-y-4">
-            <div className="panel p-5">
-              <h2 className="text-title">How it works</h2>
-              <p className="mt-2 text-body-sm leading-relaxed text-muted-foreground">
-                Each workspace is one company or brand. Metrics, scheduled posts, platform
-                connections, and drafts only show that workspace&apos;s accounts. Switch companies
-                from the sidebar anytime.
-              </p>
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-eyebrow">Your workspaces · {workspaces.length}</h2>
+              <button
+                type="button"
+                disabled
+                className="btn-action gap-2 opacity-60"
+                title="Available when backend onboarding ships"
+              >
+                <Link2 className="h-3 w-3" />
+                Add company (soon)
+              </button>
             </div>
-          </aside>
+            {workspaces.map((ws) => {
+              const active = ws.id === workspace.id;
+              return (
+                <article
+                  key={ws.id}
+                  data-testid={`workspace-card-${ws.slug}`}
+                  className={`overflow-hidden rounded-md border bg-surface-elevated ${
+                    active ? "border-accent" : "border-border"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-foreground font-data text-sm font-bold text-background">
+                        {ws.initials}
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="text-title">{ws.name}</h3>
+                        <p className="mt-0.5 text-body-sm text-muted-foreground">{ws.tagline}</p>
+                        <OnboardingBadge status={ws.onboardingStatus} />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={active}
+                      onClick={() => setWorkspaceId(ws.id)}
+                      className="btn-action shrink-0 disabled:opacity-50"
+                    >
+                      {active ? "Active" : "Switch to"}
+                    </button>
+                  </div>
+
+                  <div className="px-5 py-4">
+                    <div className="text-eyebrow mb-3">Connected platforms</div>
+                    {active ? (
+                      <LiveConnectionStrip workspace={ws} />
+                    ) : (
+                      <p className="text-body-sm text-muted-foreground">
+                        Switch to this workspace to connect accounts.
+                      </p>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </section>
         </div>
       </div>
     </div>
