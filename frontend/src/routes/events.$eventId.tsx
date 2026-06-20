@@ -17,6 +17,7 @@ import {
   getEventById,
 } from "@/lib/events/display";
 import { ArrowLeft } from "lucide-react";
+import { CardThumbnail } from "@/components/ui/CardThumbnail";
 
 export const Route = createFileRoute("/events/$eventId")({
   head: () => ({
@@ -77,17 +78,17 @@ function EventDetailPage() {
 
       <div className="page-content space-y-8">
         <div className="panel section-block overflow-hidden p-0">
-          <div className="relative aspect-video overflow-hidden border-b border-border bg-background">
-            <img
-              src={cover.src}
-              alt={cover.alt}
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-            <span className="absolute right-3 top-3 rounded-sm border border-border/80 bg-background/80 px-2 py-0.5 text-eyebrow backdrop-blur-sm">
-              {eventKindLabel(event.kind)}
-            </span>
-          </div>
+          <CardThumbnail
+            src={cover.src}
+            alt={cover.alt}
+            layout="block"
+            aspect="video"
+            badge={
+              <span className="rounded-sm border border-border/80 bg-background/80 px-2 py-0.5 text-eyebrow backdrop-blur-sm">
+                {eventKindLabel(event.kind)}
+              </span>
+            }
+          />
 
           <div className="p-8">
             <p className="text-body-sm text-muted-foreground">{dateLabel}</p>

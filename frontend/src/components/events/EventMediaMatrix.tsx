@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { CircleCheck, Clock, FilePen, Plus } from "lucide-react";
-import { ContentCardChip } from "@/components/post/ContentCardChip";
+import { ContentCard } from "@/components/ui/ContentCard";
+import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import { PostDetailModal } from "@/components/post/PostDetailModal";
+import { PlatformRow } from "@/components/post/PlatformRow";
 import { fmtCompact } from "@/components/PerformanceMetricCounters";
 import { eventMediaToCardPost, type EventMediaItem } from "@/lib/events/display";
+import { inferMediaKind } from "@/lib/scheduled-post-display";
 import type { PostDetailSource } from "@/lib/post-detail";
 import type { WorkspaceProfile } from "@/lib/workspaces/types";
 
@@ -49,9 +52,9 @@ function groupAlbumMedia(items: EventMediaItem[]): AlbumMediaGroup[] {
 
   return (
     [
-      { key: "scheduled" as const, label: "queued", countLabel: "card" },
-      { key: "published" as const, label: "live", countLabel: "card" },
-      { key: "draft" as const, label: "drafts", countLabel: "file" },
+      { key: "scheduled" as const, label: "Queued", countLabel: "card" },
+      { key: "published" as const, label: "Live", countLabel: "card" },
+      { key: "draft" as const, label: "Drafts", countLabel: "file" },
     ] as const
   )
     .filter(({ key }) => buckets[key].length > 0)
@@ -60,7 +63,7 @@ function groupAlbumMedia(items: EventMediaItem[]): AlbumMediaGroup[] {
       return {
         key,
         label,
-        countLabel: `${count}_${countLabel}${count === 1 ? "" : "s"}`,
+        countLabel: `${count} ${countLabel}${count === 1 ? "" : "s"}`,
         items: buckets[key],
       };
     });
@@ -97,9 +100,9 @@ function AlbumMediaMetricsFooter({
   max: { views: number; likes: number; shares: number };
 }) {
   const metrics = [
-    { key: "views", label: "views", value: item.views ?? 0 },
-    { key: "likes", label: "likes", value: item.likes ?? 0 },
-    { key: "shares", label: "shares", value: item.shares ?? 0 },
+    { key: "views", label: "Views", value: item.views ?? 0 },
+    { key: "likes", label: "Likes", value: item.likes ?? 0 },
+    { key: "shares", label: "Shares", value: item.shares ?? 0 },
   ] as const;
 
   return (
@@ -144,32 +147,48 @@ function AlbumMediaCard({
   maxMetrics?: { views: number; likes: number; shares: number };
   onOpen: () => void;
 }) {
+  const cardPost = eventMediaToCardPost(item);
+  const mediaKind = inferMediaKind(item.title);
+  const publishCount = item.platforms.length;
   const isPublished = item.status === "published";
+  const entries = cardPost.platforms.map((platform) => ({
+    platform,
+    state:
+      item.status === "published"
+        ? ("published" as const)
+        : item.status === "scheduled"
+          ? ("scheduled" as const)
+          : ("pending" as const),
+  }));
 
   return (
-    <article
-      data-testid={`album-media-${item.id}`}
-      className="inline-flex w-fit max-w-full flex-col overflow-hidden rounded-sm border border-border bg-surface transition-colors hover:border-accent/50"
-    >
-      <ContentCardChip
-        post={eventMediaToCardPost(item)}
-        layout="rail"
-        showSchedule={false}
-        associated
-        onOpen={onOpen}
-        className="rounded-none border-0 bg-transparent"
-      />
-
-      {isPublished && maxMetrics ? (
-        <AlbumMediaMetricsFooter item={item} max={maxMetrics} />
-      ) : (
-        <div className="border-t border-border bg-background/30 px-4 py-2">
-          <p className="label-mono text-[0.5rem] text-muted-foreground">
-            {item.status === "scheduled" ? "queued · not live yet" : "draft · not published"}
-          </p>
-        </div>
-      )}
-    </article>
+    <ContentCard
+      size="sm"
+      orientation="rail"
+      testId={`album-media-${item.id}`}
+      title={item.title}
+      eyebrow={
+        <span className="label-mono text-[0.5rem] text-muted-foreground/80">
+          1 card · {publishCount} publish{publishCount === 1 ? "" : "es"}
+        </span>
+      }
+      platforms={<PlatformRow entries={entries} size="sm" compact />}
+      onOpen={onOpen}
+      thumbnail={
+        <CardThumbnail post={cardPost} alt={item.title} kind={mediaKind} layout="rail" height="md" />
+      }
+      trailing={
+        isPublished && maxMetrics ? (
+          <AlbumMediaMetricsFooter item={item} max={maxMetrics} />
+        ) : (
+          <div className="border-t border-border bg-background/30 px-4 py-2">
+            <p className="label-mono text-[0.5rem] text-muted-foreground">
+              {item.status === "scheduled" ? "Queued · not live yet" : "Draft · not published"}
+            </p>
+          </div>
+        )
+      }
+    />
   );
 }
 
@@ -216,7 +235,7 @@ export function EventMediaMatrix({
           className="mt-5 inline-flex items-center gap-1.5 rounded-sm border border-accent/60 bg-accent/10 px-4 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-accent transition-colors hover:bg-accent/20"
         >
           <Plus className="h-3 w-3" />
-          New_Post
+          New post
         </Link>
       </div>
     );

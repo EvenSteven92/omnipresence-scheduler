@@ -27,6 +27,9 @@ export function ContentCard({
   className,
   testId,
   children,
+  draggable,
+  onDragStart,
+  onDragEnd,
 }: {
   size?: ContentCardSize;
   /** `rail` = thumb left; `stacked` = thumb on top (16:9 landscape). */
@@ -34,7 +37,7 @@ export function ContentCard({
   variant?: ContentCardVariant;
   thumbnail?: ReactNode;
   eyebrow?: ReactNode;
-  title: string;
+  title: ReactNode;
   meta?: ReactNode;
   platforms?: ReactNode;
   trailing?: ReactNode;
@@ -43,6 +46,9 @@ export function ContentCard({
   className?: string;
   testId?: string;
   children?: ReactNode;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
 }) {
   const interactive = Boolean(onOpen);
   const isRow = size === "row";
@@ -112,6 +118,9 @@ export function ContentCard({
     <div
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onClick={
         interactive
           ? (e) => {
