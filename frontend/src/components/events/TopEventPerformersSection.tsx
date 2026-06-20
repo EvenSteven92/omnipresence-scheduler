@@ -1,22 +1,37 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, TrendingUp } from "lucide-react";
-import { ContentCardChip } from "@/components/post/ContentCardChip";
+import { CardStats } from "@/components/ui/CardStats";
+import { CardThumbnail } from "@/components/ui/CardThumbnail";
+import { ContentCard } from "@/components/ui/ContentCard";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useEventAssociations } from "@/hooks/useEventAssociations";
 import { useWorkspace } from "@/lib/workspace-context";
 import {
   eventPerformerToCardPost,
-  fmtCompact,
   formatEventMeta,
   rankEventPerformers,
   type RankedEventPerformer,
 } from "@/lib/events/display";
 import { TOP_PERFORMERS_DISPLAY_LIMIT } from "@/components/post/TopPerformerCard";
 import { timeframeLabel, type Timeframe } from "@/lib/timeframe";
+import { PlatformRow } from "@/components/post/PlatformRow";
+
+function TopBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-sm border border-success/60 bg-success/10 px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-success">
+      <TrendingUp className="h-2.5 w-2.5" /> Top
+    </span>
+  );
+}
 
 function TopEventPerformerCard({ row, isTop }: { row: RankedEventPerformer; isTop: boolean }) {
   const { event, perf } = row;
+  const cardPost = eventPerformerToCardPost(row);
+  const entries = cardPost.platforms.map((platform) => ({
+    platform,
+    state: "published" as const,
+  }));
 
   return (
     <Link
@@ -25,44 +40,38 @@ function TopEventPerformerCard({ row, isTop }: { row: RankedEventPerformer; isTo
       data-testid={`top-event-${event.id}`}
       className="group inline-flex w-fit max-w-full"
     >
-      <article className="relative inline-flex w-fit max-w-full flex-col overflow-hidden rounded-sm border border-border bg-surface transition-colors group-hover:border-accent/50">
-        {isTop ? (
-          <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-sm border border-success/60 bg-success/10 px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-success">
-            <TrendingUp className="h-2.5 w-2.5" /> top
-          </span>
-        ) : null}
-        <ContentCardChip
-          post={eventPerformerToCardPost(row)}
-          layout="rail"
-          showSchedule={false}
-          associated
-          className="rounded-none border-0 bg-transparent"
-        />
-        <div className="grid grid-cols-3 gap-2 border-t border-border bg-background/40 px-3 py-2.5 text-center">
-          <div>
-            <div className="font-mono text-sm text-foreground">{fmtCompact(perf.totalViews)}</div>
-            <div className="text-body-sm text-muted-foreground">Views</div>
-          </div>
-          <div>
-            <div className="font-mono text-sm text-foreground">{fmtCompact(perf.totalLikes)}</div>
-            <div className="text-body-sm text-muted-foreground">Likes</div>
-          </div>
-          <div>
-            <div className="font-mono text-sm text-accent">
-              {(perf.avgEngagement * 100).toFixed(1)}%
+      <ContentCard
+        size="sm"
+        orientation="rail"
+        title={cardPost.title}
+        platforms={<PlatformRow entries={entries} size="sm" compact />}
+        thumbnail={
+          <CardThumbnail
+            post={cardPost}
+            alt={cardPost.title}
+            layout="rail"
+            height="md"
+            badge={isTop ? <TopBadge /> : undefined}
+          />
+        }
+        trailing={
+          <>
+            <CardStats
+              views={perf.totalViews}
+              likes={perf.totalLikes}
+              engagementRate={perf.avgEngagement}
+            />
+            <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
+              <p className="label-mono text-[0.45rem] text-muted-foreground">
+                {formatEventMeta(event.date, event.kind)}
+              </p>
+              <span className="label-mono text-[0.5rem] text-muted-foreground group-hover:text-foreground">
+                {perf.mediaCount} file{perf.mediaCount === 1 ? "" : "s"} · Open album
+              </span>
             </div>
-            <div className="text-body-sm text-muted-foreground">Engagement</div>
-          </div>
-        </div>
-        <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
-          <p className="label-mono text-[0.45rem] text-muted-foreground">
-            {formatEventMeta(event.date, event.kind)}
-          </p>
-          <span className="label-mono text-[0.5rem] text-muted-foreground group-hover:text-foreground">
-            {perf.mediaCount} file{perf.mediaCount === 1 ? "" : "s"} · Open album
-          </span>
-        </div>
-      </article>
+          </>
+        }
+      />
     </Link>
   );
 }

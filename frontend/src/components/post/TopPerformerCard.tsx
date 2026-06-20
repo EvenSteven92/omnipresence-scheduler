@@ -1,10 +1,25 @@
 import { TrendingUp } from "lucide-react";
-import { ContentCardChip } from "@/components/post/ContentCardChip";
-import { fmtCompact } from "@/components/PerformanceMetricCounters";
+import { CardStats } from "@/components/ui/CardStats";
+import { CardThumbnail } from "@/components/ui/CardThumbnail";
+import { ContentCard } from "@/components/ui/ContentCard";
 import type { PublishedPost } from "@/lib/mock-data";
-import { publishedPostToCardPost } from "@/lib/scheduled-post-display";
+import {
+  contentCardPublishSpread,
+  inferMediaKind,
+  publishedPostToCardPost,
+  scheduledPostPlatformEntries,
+} from "@/lib/scheduled-post-display";
+import { PlatformRow } from "./PlatformRow";
 
 export const TOP_PERFORMERS_DISPLAY_LIMIT = 4;
+
+function TopBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-sm border border-success/60 bg-success/10 px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-success">
+      <TrendingUp className="h-2.5 w-2.5" /> Top
+    </span>
+  );
+}
 
 export function TopPerformerCard({
   post,
@@ -15,39 +30,38 @@ export function TopPerformerCard({
   isTop?: boolean;
   onOpen: () => void;
 }) {
+  const cardPost = publishedPostToCardPost(post);
+  const mediaKind = inferMediaKind(post.title);
+  const publishCount = post.platforms.length;
+
   return (
-    <article
-      data-testid={`top-performer-${post.id}`}
-      className="relative inline-flex w-fit max-w-full flex-col overflow-hidden rounded-sm border border-border bg-surface transition-colors hover:border-accent/50"
-    >
-      {isTop ? (
-        <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-sm border border-success/60 bg-success/10 px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-success">
-          <TrendingUp className="h-2.5 w-2.5" /> top
-        </span>
-      ) : null}
-      <ContentCardChip
-        post={publishedPostToCardPost(post)}
-        layout="rail"
-        associated
+    <article data-testid={`top-performer-${post.id}`} className="inline-flex w-fit max-w-full flex-col">
+      <ContentCard
+        size="sm"
+        orientation="rail"
+        title={post.title}
+        eyebrow={
+          <span className="label-mono text-[0.5rem] text-muted-foreground/80">
+            1 card · {publishCount} publish{publishCount === 1 ? "" : "es"}
+          </span>
+        }
+        meta={contentCardPublishSpread(cardPost)}
+        platforms={<PlatformRow entries={scheduledPostPlatformEntries(cardPost)} size="sm" compact />}
         onOpen={onOpen}
-        className="rounded-none border-0 bg-transparent"
+        thumbnail={
+          <CardThumbnail
+            post={cardPost}
+            alt={post.title}
+            kind={mediaKind}
+            layout="rail"
+            height="md"
+            badge={isTop ? <TopBadge /> : undefined}
+          />
+        }
+        trailing={
+          <CardStats views={post.views} likes={post.likes} engagementRate={post.engagementRate} />
+        }
       />
-      <div className="grid grid-cols-3 gap-2 border-t border-border bg-background/40 px-3 py-2.5 text-center">
-        <div>
-          <div className="font-mono text-sm text-foreground">{fmtCompact(post.views)}</div>
-          <div className="text-body-sm text-muted-foreground">Views</div>
-        </div>
-        <div>
-          <div className="font-mono text-sm text-foreground">{fmtCompact(post.likes)}</div>
-          <div className="text-body-sm text-muted-foreground">Likes</div>
-        </div>
-        <div>
-          <div className="font-mono text-sm text-accent">
-            {(post.engagementRate * 100).toFixed(1)}%
-          </div>
-          <div className="text-body-sm text-muted-foreground">Engagement</div>
-        </div>
-      </div>
     </article>
   );
 }
