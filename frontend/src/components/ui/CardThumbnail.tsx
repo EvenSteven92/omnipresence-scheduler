@@ -76,6 +76,13 @@ export function CardThumbnail({
   const title = post?.title ?? alt;
   const mediaKind = kind ?? post?.mediaKind ?? (post ? inferMediaKind(post.title) : "video");
   const imageSrc = src ?? (post ? demoPreviewForPost({ ...post, mediaKind }) : undefined);
+  // Use a <video> element only for an actual video source (real upload: blob/object URL, or a
+  // video file extension). Demo previews/covers are always poster images and must render as <img>.
+  const isVideoSrc =
+    !!imageSrc &&
+    (imageSrc.startsWith("blob:") ||
+      imageSrc.startsWith("data:video") ||
+      /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(imageSrc));
   const aspectRatio = layout === "fixed" ? undefined : resolveAspectRatio(aspect, post?.title, mediaKind);
 
   return (
@@ -89,7 +96,7 @@ export function CardThumbnail({
       )}
       style={aspectRatio ? { aspectRatio } : undefined}
     >
-      {imageSrc && mediaKind === "video" ? (
+      {isVideoSrc ? (
         <video
           src={imageSrc}
           muted

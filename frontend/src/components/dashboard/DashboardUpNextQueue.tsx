@@ -89,7 +89,7 @@ export function DashboardUpNextQueue() {
                   >
                     <div className="h-12 w-12 shrink-0 overflow-hidden rounded-sm border border-border bg-background">
                       <img
-                        src={preview.src}
+                        src={preview}
                         alt=""
                         className="h-full w-full object-cover"
                         loading="lazy"

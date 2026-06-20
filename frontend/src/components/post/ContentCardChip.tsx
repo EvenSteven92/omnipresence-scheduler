@@ -80,7 +80,12 @@ export function ContentCardChip({
       {dense ? (
         <span className="flex flex-wrap gap-0.5">
           {entries.map((e) => (
-            <PlatformChip key={e.platform} platform={e.platform} size="xs" title={e.at} />
+            <PlatformChip
+              key={e.platform}
+              platform={e.platform}
+              size="xs"
+              title={"at" in e ? e.at : undefined}
+            />
           ))}
         </span>
       ) : (
