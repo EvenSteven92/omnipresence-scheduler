@@ -70,9 +70,11 @@ function TopEventPerformerCard({ row, isTop }: { row: RankedEventPerformer; isTo
 export function TopEventPerformersSection({
   timeframe,
   emptyLabel = "No events with live media in this range",
+  className = "section-block",
 }: {
   timeframe: Timeframe;
   emptyLabel?: string;
+  className?: string;
 }) {
   const { workspace, workspaceId } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
@@ -87,7 +89,7 @@ export function TopEventPerformersSection({
   }, [workspace, customEvents, timeframe, resolveEventId]);
 
   return (
-    <section className="section-block" data-testid="top-event-performers">
+    <section className={className} data-testid="top-event-performers">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">

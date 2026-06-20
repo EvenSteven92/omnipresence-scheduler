@@ -90,7 +90,6 @@ function DashboardPage() {
         <div className="page-grid">
           <div className="page-grid-main space-y-6">
             <DashboardUpNextQueue />
-            <TopPerformersStrip publishedPosts={livePublishedPosts} timeframe={timeframe} />
           </div>
 
           <aside className="page-grid-rail space-y-4">
@@ -99,6 +98,8 @@ function DashboardPage() {
               workspace={workspace}
               youtubeLive={accountStatus?.youtube.connected ?? false}
             />
+            <TopPerformersStrip publishedPosts={livePublishedPosts} timeframe={timeframe} />
+            <TopEventPerformersSection timeframe={timeframe} className="" />
           </aside>
         </div>
 
@@ -121,8 +122,6 @@ function DashboardPage() {
           </div>
           <GrowthMatrixChart rows={growthRows} timeframe={timeframe} />
         </div>
-
-        <TopEventPerformersSection timeframe={timeframe} />
       </div>
     </div>
   );
