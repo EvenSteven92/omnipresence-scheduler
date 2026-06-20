@@ -1,6 +1,19 @@
 import type { PublishedPost, ScheduledPost } from "@/lib/mock-data";
 import type { PlatformEntry } from "@/components/post/PlatformRow";
-import type { DisplayPost } from "@/components/post/PostCard";
+import type { PlatformEntry } from "@/components/post/PlatformRow";
+
+export type PostStatus = "scheduled" | "draft" | "published" | "failed";
+
+export interface DisplayPost {
+  id: string;
+  title: string;
+  status: PostStatus;
+  when?: string;
+  mediaKind?: "image" | "video" | "none";
+  aspectRatio?: string;
+  previewUrl?: string;
+  platforms: PlatformEntry[];
+}
 import { demoPreviewForPost } from "@/lib/demo-media";
 import { dayEndExclusive } from "@/lib/demo-clock";
 import {

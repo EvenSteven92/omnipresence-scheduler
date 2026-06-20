@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarClock, Pencil } from "lucide-react";
 import type { ScheduledPost } from "@/lib/mock-data";
-import { PlatformChip } from "@/components/post/PlatformChip";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ContentCard } from "@/components/ui/ContentCard";
+import { CardThumbnail } from "@/components/ui/CardThumbnail";
+import { PlatformChip } from "@/components/post/PlatformChip";
 import { contentCardAnchorDate } from "@/lib/scheduled-post-display";
-import { demoPreviewForPost } from "@/lib/demo-media";
+import { inferMediaKind } from "@/lib/scheduled-post-display";
 
 const DRAG_POST_TYPE = "application/x-scheduled-post";
 
@@ -51,11 +53,43 @@ export function CalendarQueueView({
     <div data-testid="calendar-queue-view" className="space-y-2">
       {sorted.map((post) => {
         const when = contentCardAnchorDate(post);
-        const preview = demoPreviewForPost(post);
+        const mediaKind = inferMediaKind(post.title);
+
         return (
-          <button
+          <ContentCard
             key={post.id}
-            type="button"
+            size="row"
+            fullWidth={compact}
+            testId={`queue-item-${post.id}`}
+            title={post.title}
+            meta={
+              <>
+                {when.toLocaleDateString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}{" "}
+                · {when.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+              </>
+            }
+            platforms={
+              !compact ? (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {post.platforms.map((p) => (
+                    <PlatformChip key={p} platform={p} size="xs" />
+                  ))}
+                </div>
+              ) : null
+            }
+            trailing={
+              !compact ? (
+                <span className="flex shrink-0 items-center gap-1 text-body-sm text-muted-foreground">
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </span>
+              ) : null
+            }
+            onOpen={() => onSelectPost(post)}
             draggable={draggable}
             onDragStart={
               draggable
@@ -68,44 +102,16 @@ export function CalendarQueueView({
                 : undefined
             }
             onDragEnd={draggable ? onDragEnd : undefined}
-            onClick={() => onSelectPost(post)}
-            data-testid={`queue-item-${post.id}`}
-            className={`flex w-full items-center rounded-sm border border-border bg-surface-elevated text-left transition-colors hover:border-accent/40 hover:bg-secondary/30 ${
-              compact ? "gap-3 px-3 py-2" : "gap-4 px-4 py-3"
-            }`}
-          >
-            <div
-              className={`shrink-0 overflow-hidden rounded-sm border border-border bg-background ${
-                compact ? "h-10 w-10" : "h-14 w-14"
-              }`}
-            >
-              <img src={preview.src} alt="" className="h-full w-full object-cover" loading="lazy" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">{post.title}</p>
-              <p className="mt-0.5 text-body-sm text-muted-foreground">
-                {when.toLocaleDateString(undefined, {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                })}{" "}
-                · {when.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-              </p>
-              {!compact ? (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {post.platforms.map((p) => (
-                    <PlatformChip key={p} platform={p} size="xs" />
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            {!compact ? (
-              <span className="flex shrink-0 items-center gap-1 text-body-sm text-muted-foreground">
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </span>
-            ) : null}
-          </button>
+            thumbnail={
+              <div
+                className={`shrink-0 overflow-hidden rounded-md border border-border bg-background ${
+                  compact ? "h-10 w-10" : "h-14 w-14"
+                }`}
+              >
+                <CardThumbnail post={post} alt={post.title} kind={mediaKind} layout="fixed" />
+              </div>
+            }
+          />
         );
       })}
     </div>
