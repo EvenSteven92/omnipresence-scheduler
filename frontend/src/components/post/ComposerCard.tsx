@@ -1,15 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Save,
-  Sparkles,
-  X,
-  FileVideo,
-  Image as ImageIcon,
-  Cloud,
-  Loader2,
-  GripVertical,
-  AlertTriangle,
-} from "lucide-react";
+import { Save, Sparkles, X, Loader2, GripVertical, AlertTriangle } from "lucide-react";
+import { CardThumbnail, type CardThumbnailAspect } from "@/components/ui/CardThumbnail";
 import { PLATFORMS, PLATFORMS_BY_SHORT, FORMAT_META, type PostFormat } from "@/lib/platforms";
 import { aiGenerate, type AiKind } from "@/lib/ai-client";
 import type { Platform } from "@/lib/mock-data";
@@ -45,6 +36,8 @@ export interface DraftPost {
   savedAt?: number;
   /** Associated event album — groups this file with related ministry media. */
   eventId?: string;
+  /** Object URL for the uploaded file — set in scheduler addFiles. */
+  previewUrl?: string;
 }
 
 export function ComposerCard({
@@ -55,7 +48,6 @@ export function ComposerCard({
   onSaveDraft,
   expanded,
   focused = false,
-  hidePreview = false,
   hideFooterActions = false,
   dragHandlers,
   isDragging,
@@ -69,8 +61,6 @@ export function ComposerCard({
   expanded: boolean;
   /** Master–detail editor: slimmer chrome, sections tuned for one card at a time. */
   focused?: boolean;
-  /** When true, preview is rendered by the parent (e.g. scheduler side pane). */
-  hidePreview?: boolean;
   /** When true, save-draft footer is omitted (parent provides footer actions). */
   hideFooterActions?: boolean;
   /** Native HTML5 drag handlers passed from the parent grid. */
@@ -172,20 +162,21 @@ export function ComposerCard({
   }
 
   const linkedEvent = post.eventId ? getEventById(workspaceEvents, post.eventId) : undefined;
+  const thumbAspect: CardThumbnailAspect =
+    post.format === "portrait" || post.format === "story" ? "portrait" : "video";
 
   return (
     <article
       data-testid={`composer-card-${post.id}`}
       {...(dragHandlers ?? {})}
-      className={`flex flex-col overflow-hidden rounded-sm border border-border bg-surface transition-opacity ${
+      className={`flex flex-col overflow-hidden rounded-md border border-border bg-surface-elevated transition-opacity ${
         isDragging ? "opacity-40" : "opacity-100"
       }`}
     >
-      {/* Header — one file = one content piece */}
       <div className={`border-b border-border ${focused ? "px-5 py-3" : "px-5 py-4"}`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-3">
-            {!focused && dragHandlers && (
+            {!focused && dragHandlers ? (
               <span
                 title="Drag to reorder"
                 data-testid="drag-handle"
@@ -193,11 +184,11 @@ export function ComposerCard({
               >
                 <GripVertical className="h-4 w-4" strokeWidth={1.5} />
               </span>
-            )}
+            ) : null}
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span data-testid={`card-index-${post.id}`} className="text-eyebrow">
-                  {focused ? "Editing" : `Content ${index}`}
+                  Content {index} · {post.filename}
                 </span>
                 {linkedEvent ? (
                   <span className="rounded-sm border border-accent/50 bg-accent/10 px-2 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-accent">
@@ -205,14 +196,7 @@ export function ComposerCard({
                   </span>
                 ) : null}
               </div>
-              <h2
-                className={`break-words font-semibold leading-snug text-foreground ${
-                  focused ? "mt-1 text-base" : "mt-2 text-sm"
-                }`}
-              >
-                {post.filename}
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1.5 text-xs text-muted-foreground">
                 {post.mediaKind === "video" ? "Video" : "Image"} · {FORMAT_META[post.format].label}
                 {post.sizeMB != null ? ` · ${post.sizeMB.toFixed(1)} MB` : ""}
                 {post.platforms.length > 0
@@ -224,7 +208,7 @@ export function ComposerCard({
           <button
             type="button"
             onClick={onRemove}
-            aria-label="remove card"
+            aria-label="Remove card"
             className="shrink-0 rounded-sm border border-border bg-background/60 p-1.5 text-muted-foreground transition-colors hover:text-foreground"
             data-testid="composer-remove-btn"
           >
@@ -233,255 +217,218 @@ export function ComposerCard({
         </div>
       </div>
 
-      <CollapsibleSection
-        title="Media & format"
-        subtitle="Local upload or Dropbox link (coming soon)"
-        defaultOpen
-      >
-        <div
-          className={`mb-4 flex items-center justify-center rounded-sm border border-dashed border-border bg-background/40 ${
-            post.format === "landscape" ? "aspect-video max-h-44" : "aspect-[4/5] max-h-52"
-          }`}
-        >
-          <div className="flex flex-col items-center gap-3 px-4 text-center text-muted-foreground">
-            {post.mediaKind === "video" ? (
-              <FileVideo className="h-6 w-6" strokeWidth={1.4} />
-            ) : (
-              <ImageIcon className="h-6 w-6" strokeWidth={1.4} />
-            )}
-            <span className="max-w-full truncate font-mono text-[0.65rem] text-foreground/80">
-              {post.filename}
-            </span>
-            <button
-              type="button"
-              disabled
-              data-testid="add-from-dropbox-btn"
-              title="Dropbox picker — coming soon"
-              aria-label="Add from Dropbox (coming soon)"
-              className="flex items-center gap-2 rounded-sm border border-border bg-surface px-4 py-2.5 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              <Cloud className="h-3.5 w-3.5" strokeWidth={1.75} />
-              Add from Dropbox
-            </button>
-            <span className="text-body-sm text-muted-foreground/60">Coming soon</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-0 overflow-hidden rounded-sm border border-border">
-          {(Object.keys(FORMAT_META) as PostFormat[]).map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => toggleFormat(f)}
-              data-testid={`format-${f}`}
-              className={`px-4 py-3 text-center text-[0.6rem] uppercase tracking-[0.14em] transition-colors ${
-                post.format === f
-                  ? "bg-foreground text-background"
-                  : "bg-background/60 text-muted-foreground hover:bg-secondary"
-              }`}
-            >
-              {FORMAT_META[f].label}
-            </button>
-          ))}
-        </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        title="Platforms"
-        subtitle="Where this file will publish"
-        defaultOpen
-        badge={
-          <span className="rounded-sm border border-border px-2 py-0.5 text-[0.55rem] text-foreground">
-            {post.platforms.length}
-          </span>
-        }
-      >
-        <div className="flex flex-wrap gap-2">
-          {availablePlatforms.map((meta) => {
-            const active = post.platforms.includes(meta.short);
-            const disabled = incompatiblePlatforms.has(meta.short);
-            return (
-              <PlatformSelectChip
-                key={meta.short}
-                platform={meta.short}
-                active={active}
-                disabled={disabled}
-                onClick={() => !disabled && togglePlatform(meta.short)}
-                title={disabled ? `${meta.full} doesn't support ${post.format}` : meta.full}
-                data-testid={`platform-${meta.short.replace(/\s+/g, "-")}`}
-              />
-            );
-          })}
-        </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        title="Event album"
-        subtitle="Associate this file with a ministry event"
-        defaultOpen={!!post.eventId}
-        badge={
-          post.eventId ? (
-            <span className="rounded-sm border border-accent/50 bg-accent/10 px-2 py-0.5 text-[0.55rem] text-accent">
-              linked
-            </span>
-          ) : undefined
-        }
-      >
-        <EventAssociationPicker
-          events={workspaceEvents}
-          value={post.eventId}
-          onChange={(eventId) => onChange({ ...post, eventId })}
-          onCreateEvent={() => createEventFlow.openCreateEvent()}
-        />
-        {createEventFlow.modal}
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        title="Publish times"
-        subtitle="One date and time per selected platform"
-        defaultOpen={!focused}
-        badge={
-          post.platforms.length > 0 ? (
-            <span className="rounded-sm border border-border px-2 py-0.5 text-[0.55rem] text-foreground">
-              {post.platforms.length}
-            </span>
-          ) : undefined
-        }
-      >
-        <ContentPublishSchedule
-          fileId={post.id}
-          platforms={post.platforms}
-          proposedTimes={post.proposedTimes}
-          scheduledPosts={workspace.scheduledPosts}
-          editable
-          onSuggestTimes={(times) => {
-            onChange({
-              ...post,
-              proposedTimes: { ...(post.proposedTimes ?? {}), ...times },
-            });
-          }}
-          onApplyTimes={(times) => {
-            onChange({
-              ...post,
-              proposedTimes: { ...(post.proposedTimes ?? {}), ...times },
-            });
-          }}
-        />
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Caption & copy" defaultOpen>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <AiButton
-            label="Caption"
-            busy={busy === "caption"}
-            onClick={() => runAi("caption")}
-            testid={`ai-caption-${post.id}`}
+      <div className="composer-section grid gap-6 p-5 lg:grid-cols-[200px_1fr]">
+        <div className="space-y-3">
+          <CardThumbnail
+            src={post.previewUrl}
+            alt={post.filename}
+            kind={post.mediaKind}
+            aspect={thumbAspect}
+            layout="block"
           />
-          <AiButton
-            label="Hashtags"
-            busy={busy === "hashtags"}
-            onClick={() => runAi("hashtags")}
-            testid={`ai-hashtags-${post.id}`}
-          />
-          <AiButton
-            label="YouTube desc"
-            busy={busy === "yt_desc"}
-            onClick={() => runAi("yt_desc")}
-            testid={`ai-yt-desc-${post.id}`}
-          />
-        </div>
-        {post.platforms.length > 1 ? (
-          <div className="mb-3 flex flex-wrap gap-1">
-            <button
-              type="button"
-              onClick={() => setCaptionPlatform("all")}
-              className={`rounded-sm px-2.5 py-1 text-body-sm ${
-                captionPlatform === "all" ? "bg-secondary text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              All platforms
-            </button>
-            {post.platforms.map((p) => (
+          <div className="grid grid-cols-3 gap-0 overflow-hidden rounded-md border border-border">
+            {(Object.keys(FORMAT_META) as PostFormat[]).map((f) => (
               <button
-                key={p}
+                key={f}
                 type="button"
-                onClick={() => setCaptionPlatform(p)}
-                className={`rounded-sm px-2.5 py-1 text-body-sm ${
-                  captionPlatform === p ? "bg-secondary text-foreground" : "text-muted-foreground"
+                onClick={() => toggleFormat(f)}
+                data-testid={`format-${f}`}
+                className={`px-2 py-2.5 text-center text-[0.55rem] uppercase tracking-[0.14em] transition-colors ${
+                  post.format === f
+                    ? "bg-foreground text-background"
+                    : "bg-background/60 text-muted-foreground hover:bg-secondary"
                 }`}
               >
-                {p}
+                {FORMAT_META[f].label}
               </button>
             ))}
           </div>
-        ) : null}
-        <textarea
-          value={
-            captionPlatform === "all"
-              ? post.caption
-              : (post.platformCaptions?.[captionPlatform] ?? post.caption)
-          }
-          onChange={(e) => {
-            if (captionPlatform === "all") {
-              onChange({ ...post, caption: e.target.value });
-            } else {
-              onChange({
-                ...post,
-                platformCaptions: {
-                  ...(post.platformCaptions ?? {}),
-                  [captionPlatform]: e.target.value,
-                },
-              });
-            }
-          }}
-          placeholder="Write your caption — customize per platform with the tabs above."
-          data-testid={`caption-input-${post.id}`}
-          rows={4}
-          className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
-        />
-        <CharCounters
-          text={
-            captionPlatform === "all"
-              ? post.caption
-              : (post.platformCaptions?.[captionPlatform] ?? post.caption)
-          }
-          platforms={captionPlatform === "all" ? post.platforms : [captionPlatform]}
-        />
-        <textarea
-          value={post.hashtags}
-          onChange={(e) => onChange({ ...post, hashtags: e.target.value })}
-          placeholder="Hashtags (optional)"
-          data-testid={`hashtags-input-${post.id}`}
-          rows={2}
-          className="mt-3 w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
-        />
-      </CollapsibleSection>
+          <PlatformPreview
+            variant="inline"
+            platforms={post.platforms}
+            caption={post.caption}
+            platformCaptions={post.platformCaptions}
+            hashtags={post.hashtags}
+            filename={post.filename}
+            format={post.format}
+            defaultOpen={focused}
+          />
+        </div>
 
-      <CollapsibleSection
-        title="Transcript & AI context"
-        subtitle="Optional — powers AI caption buttons"
-        defaultOpen={false}
-      >
-        <textarea
-          value={post.transcript}
-          onChange={(e) => onChange({ ...post, transcript: e.target.value })}
-          placeholder="Paste transcript or talking points…"
-          data-testid={`transcript-input-${post.id}`}
-          rows={3}
-          className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
-        />
-      </CollapsibleSection>
+        <div className="space-y-6">
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-foreground">Where it goes</h3>
+              <p className="mt-0.5 text-body-sm text-muted-foreground">
+                Platforms and per-network publish times
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {availablePlatforms.map((meta) => {
+                const active = post.platforms.includes(meta.short);
+                const disabled = incompatiblePlatforms.has(meta.short);
+                return (
+                  <PlatformSelectChip
+                    key={meta.short}
+                    platform={meta.short}
+                    active={active}
+                    disabled={disabled}
+                    onClick={() => !disabled && togglePlatform(meta.short)}
+                    title={disabled ? `${meta.full} doesn't support ${post.format}` : meta.full}
+                    data-testid={`platform-${meta.short.replace(/\s+/g, "-")}`}
+                  />
+                );
+              })}
+            </div>
+            <ContentPublishSchedule
+              fileId={post.id}
+              platforms={post.platforms}
+              proposedTimes={post.proposedTimes}
+              scheduledPosts={workspace.scheduledPosts}
+              editable
+              onSuggestTimes={(times) => {
+                onChange({
+                  ...post,
+                  proposedTimes: { ...(post.proposedTimes ?? {}), ...times },
+                });
+              }}
+              onApplyTimes={(times) => {
+                onChange({
+                  ...post,
+                  proposedTimes: { ...(post.proposedTimes ?? {}), ...times },
+                });
+              }}
+            />
+            <EventAssociationPicker
+              events={workspaceEvents}
+              value={post.eventId}
+              onChange={(eventId) => onChange({ ...post, eventId })}
+              onCreateEvent={() => createEventFlow.openCreateEvent()}
+            />
+            {createEventFlow.modal}
+          </section>
 
-      {error && (
-        <div className="composer-section rounded-sm border border-danger/60 bg-danger/10 px-4 py-3 text-[0.65rem] leading-relaxed text-danger">
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-foreground">What it says</h3>
+              <p className="mt-0.5 text-body-sm text-muted-foreground">Caption, hashtags, and AI copy</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <AiButton
+                label="Caption"
+                busy={busy === "caption"}
+                onClick={() => runAi("caption")}
+                testid={`ai-caption-${post.id}`}
+              />
+              <AiButton
+                label="Hashtags"
+                busy={busy === "hashtags"}
+                onClick={() => runAi("hashtags")}
+                testid={`ai-hashtags-${post.id}`}
+              />
+              <AiButton
+                label="YouTube desc"
+                busy={busy === "yt_desc"}
+                onClick={() => runAi("yt_desc")}
+                testid={`ai-yt-desc-${post.id}`}
+              />
+            </div>
+            {post.platforms.length > 1 ? (
+              <div className="flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => setCaptionPlatform("all")}
+                  className={`rounded-sm px-2.5 py-1 text-body-sm ${
+                    captionPlatform === "all"
+                      ? "bg-secondary text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  All platforms
+                </button>
+                {post.platforms.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setCaptionPlatform(p)}
+                    className={`rounded-sm px-2.5 py-1 text-body-sm ${
+                      captionPlatform === p ? "bg-secondary text-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <textarea
+              value={
+                captionPlatform === "all"
+                  ? post.caption
+                  : (post.platformCaptions?.[captionPlatform] ?? post.caption)
+              }
+              onChange={(e) => {
+                if (captionPlatform === "all") {
+                  onChange({ ...post, caption: e.target.value });
+                } else {
+                  onChange({
+                    ...post,
+                    platformCaptions: {
+                      ...(post.platformCaptions ?? {}),
+                      [captionPlatform]: e.target.value,
+                    },
+                  });
+                }
+              }}
+              placeholder="Write your caption — customize per platform with the tabs above."
+              data-testid={`caption-input-${post.id}`}
+              rows={4}
+              className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+            />
+            <CharCounters
+              text={
+                captionPlatform === "all"
+                  ? post.caption
+                  : (post.platformCaptions?.[captionPlatform] ?? post.caption)
+              }
+              platforms={captionPlatform === "all" ? post.platforms : [captionPlatform]}
+            />
+            <textarea
+              value={post.hashtags}
+              onChange={(e) => onChange({ ...post, hashtags: e.target.value })}
+              placeholder="Hashtags (optional)"
+              data-testid={`hashtags-input-${post.id}`}
+              rows={2}
+              className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+            />
+          </section>
+
+          <CollapsibleSection
+            title="Advanced"
+            subtitle="Transcript and AI context"
+            defaultOpen={false}
+          >
+            <textarea
+              value={post.transcript}
+              onChange={(e) => onChange({ ...post, transcript: e.target.value })}
+              placeholder="Paste transcript or talking points…"
+              data-testid={`transcript-input-${post.id}`}
+              rows={3}
+              className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+            />
+          </CollapsibleSection>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="composer-section mx-5 mb-5 rounded-sm border border-danger/60 bg-danger/10 px-4 py-3 text-[0.65rem] leading-relaxed text-danger">
           {error}
         </div>
-      )}
+      ) : null}
 
-      {/* Conflict warnings (post auto-schedule) */}
-      {conflicts.length > 0 && (
+      {conflicts.length > 0 ? (
         <div
           data-testid={`conflict-banner-${post.id}`}
-          className="composer-section rounded-sm border border-warning/60 bg-warning/10 px-4 py-3 text-[0.65rem] leading-relaxed text-warning"
+          className="composer-section mx-5 mb-5 rounded-sm border border-warning/60 bg-warning/10 px-4 py-3 text-[0.65rem] leading-relaxed text-warning"
         >
           <div className="mb-1 flex items-center gap-1.5 text-sm font-medium">
             <AlertTriangle className="h-3 w-3" strokeWidth={2} />
@@ -492,20 +439,6 @@ export function ComposerCard({
               · {c.sharedPlatforms.join(", ")} overlaps with “{c.withTitle}” (±{c.deltaMinutes} min)
             </div>
           ))}
-        </div>
-      )}
-
-      {!hidePreview ? (
-        <div className="pb-2">
-          <PlatformPreview
-            platforms={post.platforms}
-            caption={post.caption}
-            platformCaptions={post.platformCaptions}
-            hashtags={post.hashtags}
-            filename={post.filename}
-            format={post.format}
-            defaultOpen={focused}
-          />
         </div>
       ) : null}
 

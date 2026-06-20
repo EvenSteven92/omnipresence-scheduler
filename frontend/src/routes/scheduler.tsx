@@ -9,7 +9,7 @@ import {
 } from "@/lib/republish";
 import { CalendarClock, Upload } from "lucide-react";
 import { ComposerCard, type DraftPost } from "@/components/post/ComposerCard";
-import { PlatformPreview } from "@/components/post/PlatformPreview";
+
 import { BulkScheduleModal } from "@/components/scheduler/BulkScheduleModal";
 import { ContentQueueItem } from "@/components/scheduler/ContentQueueItem";
 import { ComposerFooter } from "@/components/scheduler/ComposerFooter";
@@ -68,12 +68,17 @@ function detectMediaKind(filename: string): "image" | "video" {
   return /\.(mp4|mov|webm|m4v|avi|mkv)$/.test(lower) ? "video" : "image";
 }
 
-function defaultDraftFromFile(
-  file: { name: string; sizeBytes: number },
-  allowed: Platform[],
-): DraftPost {
-  const fmt = detectFormat(file.name);
-  const mediaKind = detectMediaKind(file.name);
+type DraftFileInput = File | { name: string; sizeBytes: number };
+
+function revokePreviewUrl(draft: DraftPost) {
+  if (draft.previewUrl) URL.revokeObjectURL(draft.previewUrl);
+}
+
+function defaultDraftFromFile(file: DraftFileInput, allowed: Platform[]): DraftPost {
+  const name = file.name;
+  const sizeBytes = "size" in file ? file.size : file.sizeBytes;
+  const fmt = detectFormat(name);
+  const mediaKind = detectMediaKind(name);
   const platforms: Platform[] =
     fmt === "story"
       ? (["IG STORY", "FB STORY"] as Platform[]).filter((p) => allowed.includes(p))
@@ -83,8 +88,8 @@ function defaultDraftFromFile(
   if (platforms.length === 0 && allowed.length > 0) platforms.push(allowed[0]!);
   return {
     id: uid(),
-    filename: file.name,
-    sizeMB: file.sizeBytes / (1024 * 1024),
+    filename: name,
+    sizeMB: sizeBytes / (1024 * 1024),
     mediaKind,
     format: fmt,
     autoFormat: fmt,
@@ -92,6 +97,7 @@ function defaultDraftFromFile(
     caption: "",
     hashtags: "",
     transcript: "",
+    previewUrl: file instanceof File ? URL.createObjectURL(file) : undefined,
   };
 }
 
@@ -170,7 +176,7 @@ function NewPostPage() {
 
   const addFiles = useCallback(
     (files: FileList | File[]) => {
-      const arr = Array.from(files).map((f) => ({ name: f.name, sizeBytes: f.size }));
+      const arr = Array.from(files);
       const created = arr.map((f) => defaultDraftFromFile(f, workspace.platforms));
       setQueue((cur) => [...cur, ...created]);
       setSelectedIds((cur) => {
@@ -227,8 +233,16 @@ function NewPostPage() {
   }
 
   function removeDraft(id: string) {
-    setQueue((cur) => cur.filter((d) => d.id !== id));
-    setSavedDrafts((cur) => cur.filter((d) => d.id !== id));
+    setQueue((cur) => {
+      const draft = cur.find((d) => d.id === id);
+      if (draft) revokePreviewUrl(draft);
+      return cur.filter((d) => d.id !== id);
+    });
+    setSavedDrafts((cur) => {
+      const draft = cur.find((d) => d.id === id);
+      if (draft) revokePreviewUrl(draft);
+      return cur.filter((d) => d.id !== id);
+    });
     setActiveId((current) => (current === id ? null : current));
   }
 
@@ -240,6 +254,8 @@ function NewPostPage() {
       );
       if (!ok) return;
     }
+    queue.forEach(revokePreviewUrl);
+    savedDrafts.forEach(revokePreviewUrl);
     setQueue([]);
     setSavedDrafts([]);
     setActiveId(null);
@@ -673,7 +689,6 @@ function NewPostPage() {
                   index={activeIndex}
                   post={activeDraft}
                   focused
-                  hidePreview
                   hideFooterActions
                   onChange={(next) => updateDraft(activeDraft.id, next)}
                   onRemove={() => removeDraft(activeDraft.id)}
@@ -685,19 +700,6 @@ function NewPostPage() {
             </div>
           </div>
 
-          {activeDraft ? (
-            <aside className="composer-preview-pane p-4">
-              <PlatformPreview
-                variant="panel"
-                platforms={activeDraft.platforms}
-                caption={activeDraft.caption}
-                platformCaptions={activeDraft.platformCaptions}
-                hashtags={activeDraft.hashtags}
-                filename={activeDraft.filename}
-                format={activeDraft.format}
-              />
-            </aside>
-          ) : null}
         </div>
 
         {activeDraft ? (

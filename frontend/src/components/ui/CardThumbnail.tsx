@@ -89,7 +89,15 @@ export function CardThumbnail({
       )}
       style={aspectRatio ? { aspectRatio } : undefined}
     >
-      {imageSrc ? (
+      {imageSrc && mediaKind === "video" ? (
+        <video
+          src={imageSrc}
+          muted
+          playsInline
+          preload="metadata"
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+        />
+      ) : imageSrc ? (
         <img
           src={imageSrc}
           alt={title}

@@ -37,7 +37,7 @@ export function PlatformPreview({
   /** When true, section starts expanded. */
   defaultOpen?: boolean;
   /** `panel` renders always-open for the composer side pane. */
-  variant?: "collapsible" | "panel";
+  variant?: "collapsible" | "panel" | "inline";
 }) {
   const [open, setOpen] = useState(defaultOpen || variant === "panel");
   const [active, setActive] = useState<Platform | null>(platforms[0] ?? null);
@@ -83,6 +83,30 @@ export function PlatformPreview({
       )}
     </div>
   );
+
+  if (variant === "inline") {
+    return (
+      <section data-testid="platform-preview-inline" className="overflow-hidden rounded-md border border-border">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          data-testid="preview-toggle"
+          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:bg-secondary/40"
+        >
+          <span>
+            Live preview
+            {effective ? ` · ${effective}` : ""}
+          </span>
+          {open ? (
+            <ChevronDown className="h-3 w-3 shrink-0" />
+          ) : (
+            <ChevronRight className="h-3 w-3 shrink-0" />
+          )}
+        </button>
+        {open ? <div className="border-t border-border px-3 pb-3 pt-2">{body}</div> : null}
+      </section>
+    );
+  }
 
   if (variant === "panel") {
     return (

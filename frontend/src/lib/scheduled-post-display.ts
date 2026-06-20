@@ -1,6 +1,6 @@
 import type { PublishedPost, ScheduledPost } from "@/lib/mock-data";
 import type { PlatformEntry } from "@/components/post/PlatformRow";
-import type { PlatformEntry } from "@/components/post/PlatformRow";
+import { demoPreviewForPost } from "@/lib/demo-media";
 
 export type PostStatus = "scheduled" | "draft" | "published" | "failed";
 
@@ -14,7 +14,6 @@ export interface DisplayPost {
   previewUrl?: string;
   platforms: PlatformEntry[];
 }
-import { demoPreviewForPost } from "@/lib/demo-media";
 import { dayEndExclusive } from "@/lib/demo-clock";
 import {
   buildPlatformSlots,
