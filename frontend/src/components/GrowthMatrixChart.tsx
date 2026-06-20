@@ -15,24 +15,26 @@ import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 export function GrowthMatrixChart({
   rows,
   timeframe,
+  defaultOpen = true,
 }: {
   rows: GrowthMatrixRow[];
   timeframe: Timeframe;
+  defaultOpen?: boolean;
 }) {
   const sorted = [...rows].sort((a, b) => b.views - a.views);
   const periodLabel = timeframeLabel(timeframe);
   const allTime = isAllTime(timeframe);
 
   return (
-    <div data-testid="growth-matrix-chart" aria-labelledby="dashboard-timeframe">
+    <div data-testid="growth-matrix-chart">
       <CollapsibleSection
         title="Cross-platform growth"
         subtitle={
           allTime
             ? "Per-platform lifetime totals for the selected range."
-            : "Per-platform totals and change vs the prior window."
+            : `Per-platform totals · ${periodLabel} vs the prior window.`
         }
-        defaultOpen
+        defaultOpen={defaultOpen}
       >
         <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
           Each card is one platform. Totals reflect the{" "}

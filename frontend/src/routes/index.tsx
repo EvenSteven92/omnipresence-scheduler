@@ -22,12 +22,7 @@ import {
   mergeGrowthMatrixRows,
   mergeMetrics,
 } from "@/lib/live-metrics";
-import {
-  filterPublishedInTimeframe,
-  isAllTime,
-  timeframeLabel,
-  type Timeframe,
-} from "@/lib/timeframe";
+import { filterPublishedInTimeframe, timeframeLabel, type Timeframe } from "@/lib/timeframe";
 
 const DASHBOARD_TIMEFRAME: Timeframe = { kind: "preset", preset: "1w" };
 
@@ -67,7 +62,6 @@ function DashboardPage() {
     () => mergeGrowthMatrixRows(timeframe, workspace, liveBundle, livePublishedPosts),
     [timeframe, workspace, liveBundle, livePublishedPosts],
   );
-  const allTime = isAllTime(timeframe);
 
   return (
     <div>
@@ -88,23 +82,7 @@ function DashboardPage() {
         <OnboardingChecklist className="mb-6" />
 
         <div className="panel mb-6 p-6">
-          <div
-            id="dashboard-timeframe"
-            className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4"
-          >
-            <p className="text-body-sm text-muted-foreground">
-              Cross-platform growth ·{" "}
-              <span className="text-foreground">last 7 days</span>
-              {!allTime ? ` · compared to prior ${timeframeLabel(timeframe)}` : null}
-            </p>
-            <Link
-              to="/analytics"
-              className="text-body-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Full analytics →
-            </Link>
-          </div>
-          <GrowthMatrixChart rows={growthRows} timeframe={timeframe} />
+          <GrowthMatrixChart rows={growthRows} timeframe={timeframe} defaultOpen={false} />
         </div>
 
         <div className="page-grid">
