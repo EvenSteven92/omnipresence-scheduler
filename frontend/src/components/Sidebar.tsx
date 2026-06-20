@@ -110,7 +110,7 @@ export function Sidebar() {
       {/* Mobile bottom nav */}
       <nav
         data-testid="mobile-nav"
-        className="flex shrink-0 items-center justify-around border-t border-border bg-surface px-2 py-2 md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-border bg-surface px-2 py-2 md:hidden"
         aria-label="Mobile"
       >
         {nav.slice(0, 4).map(({ to, label, icon: Icon }) => (

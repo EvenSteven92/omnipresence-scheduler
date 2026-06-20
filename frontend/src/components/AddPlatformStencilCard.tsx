@@ -36,7 +36,7 @@ export function AddPlatformStencilCard({
       </span>
       <div className={variant === "strip" ? "space-y-1" : undefined}>
         <div className="text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
-          Add_Platform
+          Add platform
         </div>
         <p
           className={`leading-relaxed text-muted-foreground ${
