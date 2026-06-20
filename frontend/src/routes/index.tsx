@@ -87,23 +87,7 @@ function DashboardPage() {
       <div className="page-content">
         <OnboardingChecklist className="mb-6" />
 
-        <div className="page-grid">
-          <div className="page-grid-main space-y-6">
-            <DashboardUpNextQueue />
-          </div>
-
-          <aside className="page-grid-rail space-y-4">
-            <DashboardKpiRail metrics={metrics} liveBundle={liveBundle} />
-            <DashboardChannelHealth
-              workspace={workspace}
-              youtubeLive={accountStatus?.youtube.connected ?? false}
-            />
-            <TopPerformersStrip publishedPosts={livePublishedPosts} timeframe={timeframe} />
-            <TopEventPerformersSection timeframe={timeframe} className="" />
-          </aside>
-        </div>
-
-        <div className="panel section-block p-6">
+        <div className="panel mb-6 p-6">
           <div
             id="dashboard-timeframe"
             className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4"
@@ -121,6 +105,22 @@ function DashboardPage() {
             </Link>
           </div>
           <GrowthMatrixChart rows={growthRows} timeframe={timeframe} />
+        </div>
+
+        <div className="page-grid">
+          <div className="page-grid-main space-y-6">
+            <DashboardUpNextQueue />
+          </div>
+
+          <aside className="page-grid-rail space-y-4">
+            <DashboardKpiRail metrics={metrics} liveBundle={liveBundle} />
+            <DashboardChannelHealth
+              workspace={workspace}
+              youtubeLive={accountStatus?.youtube.connected ?? false}
+            />
+            <TopPerformersStrip publishedPosts={livePublishedPosts} timeframe={timeframe} />
+            <TopEventPerformersSection timeframe={timeframe} className="" />
+          </aside>
         </div>
       </div>
     </div>
