@@ -168,7 +168,7 @@ export function PublishScheduleCalendar({
         <div className="flex flex-wrap items-center gap-3">
           <Legend swatch="bg-accent" label="today" />
           <Legend swatch="" label="scheduled" dashed />
-          <Legend swatch="bg-foreground" label="this_post" />
+          <Legend swatch="bg-foreground" label="this post" />
         </div>
       </div>
 

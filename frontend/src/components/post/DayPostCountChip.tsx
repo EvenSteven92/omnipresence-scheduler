@@ -48,7 +48,7 @@ export function DayPostCountChip({
       }`}
     >
       <span>
-        {count}_card{count === 1 ? "" : "s"}
+        {count} card{count === 1 ? "" : "s"}
       </span>
       {eventLinked ? (
         <span

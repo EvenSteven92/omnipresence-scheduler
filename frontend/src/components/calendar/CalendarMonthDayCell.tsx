@@ -1,9 +1,8 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { CalendarDayPostContent } from "@/components/post/CalendarDayPostContent";
 import { CalendarDayDateBadge } from "@/components/calendar/CalendarDayDateBadge";
-import { EmptyDayNewPostAffordance } from "@/components/calendar/EmptyDayNewPostAffordance";
 import { SchedulePostStencil } from "@/components/calendar/SchedulePostStencil";
 
 export function CalendarMonthDayCell({
@@ -88,7 +87,7 @@ export function CalendarMonthDayCell({
         hasEvent={hasEvent}
         eventCount={events?.length ?? 0}
         emptyDayCellHover={emptyMainDay}
-        onClick={muted ? undefined : onDateClick}
+        onClick={muted || emptyMainDay ? undefined : onDateClick}
       />
 
       {hasPosts ? (
@@ -121,7 +120,18 @@ export function CalendarMonthDayCell({
           </div>
         </div>
       ) : emptyMainDay ? (
-        <EmptyDayNewPostAffordance />
+        <button
+          type="button"
+          onClick={onDateClick}
+          data-testid={`empty-day-create-${day}`}
+          aria-label="Add a post or event to this day"
+          className="absolute inset-0 z-10 flex items-center justify-center"
+        >
+          <span className="flex items-center gap-1.5 rounded-sm border border-border bg-background/90 px-2.5 py-1.5 text-xs text-foreground opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover/cell:opacity-100">
+            <Plus className="h-3.5 w-3.5 text-accent" strokeWidth={2} />
+            New
+          </span>
+        </button>
       ) : null}
     </div>
   );

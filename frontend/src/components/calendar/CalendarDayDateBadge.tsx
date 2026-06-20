@@ -23,7 +23,11 @@ export function CalendarDayDateBadge({
   const interactive = !muted && !!onClick;
 
   return (
-    <div className="group/date relative z-20 flex min-w-0 items-center gap-2">
+    <div
+      className={`group/date relative z-20 flex min-w-0 items-center gap-2 ${
+        interactive ? "" : "pointer-events-none"
+      }`}
+    >
       <button
         type="button"
         onClick={onClick}
@@ -44,7 +48,9 @@ export function CalendarDayDateBadge({
               : ""
           }`}
         >
-          <span className="tabular-nums group-hover/date:hidden">{day}</span>
+          <span className={`tabular-nums ${interactive ? "group-hover/date:hidden" : ""}`}>
+            {day}
+          </span>
           {interactive ? (
             <Plus className="hidden h-3 w-3 group-hover/date:block" strokeWidth={2} />
           ) : null}
@@ -55,7 +61,7 @@ export function CalendarDayDateBadge({
               emptyDayCellHover ? "text-accent-foreground" : "text-accent"
             }`}
           >
-            new_event
+            New event
           </span>
         ) : null}
       </button>
@@ -66,7 +72,7 @@ export function CalendarDayDateBadge({
             emptyDayCellHover ? "text-accent-foreground" : "text-accent"
           }`}
         >
-          {eventCount}_event{eventCount === 1 ? "" : "s"}
+          {eventCount} event{eventCount === 1 ? "" : "s"}
         </span>
       ) : null}
     </div>

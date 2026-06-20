@@ -118,7 +118,7 @@ export function EventQueuedPostsModal({
                     <div className="mb-3 flex items-center justify-between gap-3 border-b border-border pb-2">
                       <span className="text-sm font-semibold text-foreground">{dayLabel}</span>
                       <span className="label-mono text-muted-foreground">
-                        {dayPosts.length}_card{dayPosts.length === 1 ? "" : "s"}
+                        {dayPosts.length} card{dayPosts.length === 1 ? "" : "s"}
                       </span>
                     </div>
                     <div className="flex flex-col gap-3">

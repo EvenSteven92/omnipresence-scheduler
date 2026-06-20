@@ -29,7 +29,7 @@ function DayPostsEventGroupHeader({
         </p>
       </div>
       <span className="shrink-0 font-mono text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">
-        {postCount}_card{postCount === 1 ? "" : "s"}
+        {postCount} card{postCount === 1 ? "" : "s"}
       </span>
     </div>
   );
