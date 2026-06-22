@@ -7,7 +7,9 @@ import {
   normalizeRepublishDraft,
   peekRepublishDraft,
 } from "@/lib/republish";
-import { CalendarClock, Upload } from "lucide-react";
+import { CalendarClock, Upload, Sparkles, Loader2 } from "lucide-react";
+import { aiGenerate } from "@/lib/ai-client";
+import { getEventById } from "@/lib/events/display";
 import { ComposerCard, type DraftPost } from "@/components/post/ComposerCard";
 
 import { BulkScheduleModal } from "@/components/scheduler/BulkScheduleModal";
@@ -128,6 +130,8 @@ function NewPostPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkScheduleOpen, setBulkScheduleOpen] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiProgress, setAiProgress] = useState<{ done: number; total: number } | null>(null);
 
   const allPosts = useMemo(() => [...queue, ...savedDrafts], [queue, savedDrafts]);
   const bulkScheduleFiles = useMemo(
@@ -226,6 +230,47 @@ function NewPostPage() {
     },
     [workspace.platforms, addFiles],
   );
+
+  async function generateAllQueued() {
+    if (aiBusy || queue.length === 0) return;
+    setAiBusy(true);
+    const targets = [...queue];
+    setAiProgress({ done: 0, total: targets.length });
+    try {
+      for (let i = 0; i < targets.length; i++) {
+        const d = targets[i]!;
+        const event = d.eventId ? getEventById(workspace.events, d.eventId) : undefined;
+        const eventContext = event ? `This post is part of the event "${event.title}". ` : "";
+        const brief = `${eventContext}${d.transcript?.trim() || d.caption?.trim() || d.filename}`;
+        try {
+          const [caption, hashtags] = await Promise.all([
+            aiGenerate({
+              kind: "caption",
+              brief,
+              title: d.filename,
+              platforms: d.platforms,
+              tone: workspace.voice,
+            }),
+            aiGenerate({
+              kind: "hashtags",
+              brief,
+              title: d.filename,
+              platforms: d.platforms,
+              tone: workspace.voice,
+            }),
+          ]);
+          // Functional update so concurrent edits to other fields are preserved.
+          setQueue((cur) => cur.map((x) => (x.id === d.id ? { ...x, caption, hashtags } : x)));
+        } catch {
+          /* skip a failed item; keep going */
+        }
+        setAiProgress({ done: i + 1, total: targets.length });
+      }
+    } finally {
+      setAiBusy(false);
+      setAiProgress(null);
+    }
+  }
 
   function updateDraft(id: string, next: DraftPost) {
     setQueue((cur) => cur.map((d) => (d.id === id ? next : d)));
@@ -498,26 +543,44 @@ function NewPostPage() {
               </button>
             </div>
             {queue.length > 0 ? (
-              <div className="mt-2 flex gap-2">
+              <>
                 <button
                   type="button"
-                  onClick={() => setBulkScheduleOpen(true)}
-                  disabled={bulkScheduleFiles.length === 0}
-                  data-testid="bulk-schedule-btn"
-                  className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-accent/60 bg-accent/10 px-3 py-2 text-body-sm font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+                  onClick={generateAllQueued}
+                  disabled={aiBusy}
+                  data-testid="generate-all-btn"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-sm border border-accent/60 bg-accent/10 px-3 py-2 text-body-sm font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
                 >
-                  <CalendarClock className="h-3 w-3" strokeWidth={1.75} />
-                  Bulk schedule ({bulkScheduleFiles.length})
+                  {aiBusy ? (
+                    <Loader2 className="h-3 w-3 animate-spin" strokeWidth={1.75} />
+                  ) : (
+                    <Sparkles className="h-3 w-3" strokeWidth={1.75} />
+                  )}
+                  {aiBusy && aiProgress
+                    ? `Generating ${aiProgress.done}/${aiProgress.total}…`
+                    : "Generate captions for all"}
                 </button>
-                <button
-                  type="button"
-                  onClick={selectAllQueue}
-                  data-testid="select-all-queue-btn"
-                  className="rounded-sm border border-border bg-background/40 px-2 py-2 text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground hover:bg-secondary hover:text-foreground"
-                >
-                  All
-                </button>
-              </div>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBulkScheduleOpen(true)}
+                    disabled={bulkScheduleFiles.length === 0}
+                    data-testid="bulk-schedule-btn"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-accent/60 bg-accent/10 px-3 py-2 text-body-sm font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+                  >
+                    <CalendarClock className="h-3 w-3" strokeWidth={1.75} />
+                    Bulk schedule ({bulkScheduleFiles.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={selectAllQueue}
+                    data-testid="select-all-queue-btn"
+                    className="rounded-sm border border-border bg-background/40 px-2 py-2 text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    All
+                  </button>
+                </div>
+              </>
             ) : null}
             <input
               ref={queueFileInput}

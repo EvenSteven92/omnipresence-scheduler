@@ -144,12 +144,16 @@ export function ComposerCard({
     setBusy(kind);
     setError(null);
     try {
-      const brief = post.transcript?.trim() || post.caption?.trim() || post.filename;
+      const eventContext = linkedEvent
+        ? `This post is part of the event "${linkedEvent.title}". `
+        : "";
+      const brief = `${eventContext}${post.transcript?.trim() || post.caption?.trim() || post.filename}`;
       const text = await aiGenerate({
         kind,
         brief,
         title: post.filename,
         platforms: post.platforms,
+        tone: workspace.voice,
       });
       if (kind === "caption") onChange({ ...post, caption: text });
       else if (kind === "hashtags") onChange({ ...post, hashtags: text });
