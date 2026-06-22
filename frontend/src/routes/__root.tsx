@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { Sidebar } from "@/components/Sidebar";
 import { SyncStatusBar } from "@/components/SyncStatusBar";
+import { BrandTheme } from "@/components/BrandTheme";
 import { WorkspaceProvider } from "@/lib/workspace-context";
 
 function NotFoundComponent() {
@@ -99,6 +100,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <WorkspaceProvider>
+        <BrandTheme />
         <div className="flex h-screen flex-col bg-background text-foreground">
           <SyncStatusBar />
           <div className="flex min-h-0 flex-1 overflow-hidden">

@@ -1,6 +1,6 @@
 import type { ConnectionStatus, Platform, PublishedPost, ScheduledPost } from "@/lib/mock-data";
 
-export type WorkspaceId = "torcc" | "open-eyes" | "kidztown" | "catch-the-vision";
+export type WorkspaceId = "torcc" | "open-eyes" | "keka" | "first-love";
 
 export type WorkspaceOnboardingStatus = "complete" | "needs_accounts" | "draft";
 
@@ -62,6 +62,14 @@ export interface WorkspaceProfile {
   initials: string;
   tagline: string;
   onboardingStatus: WorkspaceOnboardingStatus;
+  /** Brand accent color (oklch/hex) — tints the UI when this workspace is active. */
+  accent: string;
+  /** Text color to sit on the accent (defaults handled by consumers). */
+  accentForeground?: string;
+  /** Brand voice / tone guidelines fed into AI caption + hashtag generation. */
+  voice: string;
+  /** Per-brand optimal posting times; falls back to global platform peakTimes when unset. */
+  postingTimes?: Partial<Record<Platform, string[]>>;
   /** Platforms this company actively uses (metrics + scheduling scope). */
   platforms: Platform[];
   metrics: WorkspaceMetricsBase;

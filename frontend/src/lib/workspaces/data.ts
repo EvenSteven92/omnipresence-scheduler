@@ -8,6 +8,14 @@ export const WORKSPACES: WorkspaceProfile[] = [
     initials: "T",
     tagline: "Church · multi-platform ministry",
     onboardingStatus: "needs_accounts",
+    accent: "oklch(0.64 0.2 47)",
+    voice:
+      "Warm, pastoral, and encouraging. Christ-centered and Scripture-aware. Invite reflection and hope; avoid hype, clickbait, and salesy language. Speak to the heart.",
+    postingTimes: {
+      IG: ["11:00", "17:30", "21:00"],
+      "YT SHORTS": ["12:00", "17:00", "20:30"],
+      TIKTOK: ["07:45", "19:00", "22:00"],
+    },
     platforms: ["YT", "RUMBLE", "FB", "IG", "X", "TIKTOK", "IG STORY", "FB STORY", "YT SHORTS"],
     metrics: {
       views: 12_480,
@@ -381,6 +389,13 @@ export const WORKSPACES: WorkspaceProfile[] = [
     initials: "OE",
     tagline: "Long-form · news & commentary",
     onboardingStatus: "complete",
+    accent: "oklch(0.55 0.16 250)",
+    voice:
+      "Sharp, clear, and discerning. Journalistic commentary that seeks truth and context. Confident and direct without being sensational or partisan. Lead with the insight.",
+    postingTimes: {
+      YT: ["15:00", "20:30"],
+      X: ["08:15", "12:40", "18:05"],
+    },
     platforms: ["YT", "RUMBLE", "X", "FB"],
     metrics: {
       views: 284_200,
@@ -464,12 +479,20 @@ export const WORKSPACES: WorkspaceProfile[] = [
     ],
   },
   {
-    id: "kidztown",
-    name: "Kidztown",
-    slug: "kidztown",
-    initials: "KZ",
-    tagline: "Kids ministry · short-form first",
+    id: "keka",
+    name: "KEKA",
+    slug: "keka",
+    initials: "KK",
+    tagline: "Short-form · building presence",
     onboardingStatus: "needs_accounts",
+    accent: "oklch(0.55 0.2 300)",
+    voice:
+      "Bold, energetic, and culture-forward. Punchy and modern with a confident hook in the first line. Keep it fresh and scroll-stopping.",
+    postingTimes: {
+      IG: ["11:00", "17:30", "21:15"],
+      TIKTOK: ["07:45", "19:00", "22:30"],
+      "YT SHORTS": ["12:00", "17:00", "21:00"],
+    },
     platforms: ["IG", "TIKTOK", "FB", "YT SHORTS", "IG STORY"],
     metrics: {
       views: 48_900,
@@ -538,13 +561,21 @@ export const WORKSPACES: WorkspaceProfile[] = [
     ],
   },
   {
-    id: "catch-the-vision",
-    name: "Catch The Vision",
-    slug: "catch-the-vision",
-    initials: "CTV",
-    tagline: "Events · conferences · annual campaigns",
+    id: "first-love",
+    name: "First Love",
+    slug: "first-love",
+    initials: "FL",
+    tagline: "Radio · podcast · weekly episodes",
     onboardingStatus: "complete",
-    platforms: ["FB", "IG", "YT", "X", "FB STORY", "IG STORY"],
+    accent: "oklch(0.6 0.2 12)",
+    voice:
+      "Conversational and intimate, with radio-host warmth. Hook the listener, tease the episode's best moment, and invite them to tune in. Friendly and inviting.",
+    postingTimes: {
+      YT: ["15:00", "20:30"],
+      "YT SHORTS": ["12:00", "17:00", "21:00"],
+      IG: ["11:00", "17:30", "21:15"],
+    },
+    platforms: ["YT", "YT SHORTS", "IG", "TIKTOK", "X", "IG STORY"],
     metrics: {
       views: 22_400,
       likes: 1_480,
