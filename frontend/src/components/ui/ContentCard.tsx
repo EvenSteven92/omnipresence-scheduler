@@ -108,7 +108,8 @@ export function ContentCard({
             "flex",
             isStacked ? "flex-col" : "",
             fullWidth ? "w-full" : "inline-flex w-fit max-w-full",
-            !isMd && CARD_PREVIEW_HEIGHT,
+            // Fixed rail height applies only to side-thumbnail (rail) cards, never stacked.
+            !isMd && !isStacked && CARD_PREVIEW_HEIGHT,
           ),
     interactive && "cursor-pointer hover:border-accent/40",
     className,

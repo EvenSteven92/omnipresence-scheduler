@@ -3,13 +3,7 @@ import { CardStats } from "@/components/ui/CardStats";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import { ContentCard } from "@/components/ui/ContentCard";
 import type { PublishedPost } from "@/lib/mock-data";
-import {
-  contentCardPublishSpread,
-  inferMediaKind,
-  publishedPostToCardPost,
-  scheduledPostPlatformEntries,
-} from "@/lib/scheduled-post-display";
-import { PlatformRow } from "./PlatformRow";
+import { inferMediaKind, publishedPostToCardPost } from "@/lib/scheduled-post-display";
 
 export const TOP_PERFORMERS_DISPLAY_LIMIT = 4;
 
@@ -32,36 +26,28 @@ export function TopPerformerCard({
 }) {
   const cardPost = publishedPostToCardPost(post);
   const mediaKind = inferMediaKind(post.title);
-  const publishCount = post.platforms.length;
 
   return (
-    <article data-testid={`top-performer-${post.id}`} className="inline-flex w-fit max-w-full flex-col">
-      <ContentCard
-        size="sm"
-        orientation="rail"
-        title={post.title}
-        eyebrow={
-          <span className="label-mono text-[0.5rem] text-muted-foreground/80">
-            1 card · {publishCount} publish{publishCount === 1 ? "" : "es"}
-          </span>
-        }
-        meta={contentCardPublishSpread(cardPost)}
-        platforms={<PlatformRow entries={scheduledPostPlatformEntries(cardPost)} size="sm" compact />}
-        onOpen={onOpen}
-        thumbnail={
-          <CardThumbnail
-            post={cardPost}
-            alt={post.title}
-            kind={mediaKind}
-            layout="rail"
-            height="md"
-            badge={isTop ? <TopBadge /> : undefined}
-          />
-        }
-        trailing={
-          <CardStats views={post.views} likes={post.likes} engagementRate={post.engagementRate} />
-        }
-      />
-    </article>
+    <ContentCard
+      size="sm"
+      orientation="stacked"
+      fullWidth
+      testId={`top-performer-${post.id}`}
+      title={post.title}
+      onOpen={onOpen}
+      thumbnail={
+        <CardThumbnail
+          post={cardPost}
+          alt={post.title}
+          kind={mediaKind}
+          layout="block"
+          aspect="video"
+          badge={isTop ? <TopBadge /> : undefined}
+        />
+      }
+      trailing={
+        <CardStats views={post.views} likes={post.likes} engagementRate={post.engagementRate} />
+      }
+    />
   );
 }

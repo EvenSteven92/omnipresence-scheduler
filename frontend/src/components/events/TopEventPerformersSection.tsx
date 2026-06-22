@@ -15,7 +15,6 @@ import {
 } from "@/lib/events/display";
 import { TOP_PERFORMERS_DISPLAY_LIMIT } from "@/components/post/TopPerformerCard";
 import { timeframeLabel, type Timeframe } from "@/lib/timeframe";
-import { PlatformRow } from "@/components/post/PlatformRow";
 
 function TopBadge() {
   return (
@@ -28,48 +27,38 @@ function TopBadge() {
 function TopEventPerformerCard({ row, isTop }: { row: RankedEventPerformer; isTop: boolean }) {
   const { event, perf } = row;
   const cardPost = eventPerformerToCardPost(row);
-  const entries = cardPost.platforms.map((platform) => ({
-    platform,
-    state: "published" as const,
-  }));
 
   return (
     <Link
       to="/events/$eventId"
       params={{ eventId: event.id }}
       data-testid={`top-event-${event.id}`}
-      className="group inline-flex w-fit max-w-full"
+      className="group block"
     >
       <ContentCard
         size="sm"
-        orientation="rail"
+        orientation="stacked"
+        fullWidth
+        className="transition-colors group-hover:border-accent/40"
         title={cardPost.title}
-        platforms={<PlatformRow entries={entries} size="sm" compact />}
+        meta={`${formatEventMeta(event.date, event.kind)} · ${perf.mediaCount} file${
+          perf.mediaCount === 1 ? "" : "s"
+        }`}
         thumbnail={
           <CardThumbnail
             post={cardPost}
             alt={cardPost.title}
-            layout="rail"
-            height="md"
+            layout="block"
+            aspect="video"
             badge={isTop ? <TopBadge /> : undefined}
           />
         }
         trailing={
-          <>
-            <CardStats
-              views={perf.totalViews}
-              likes={perf.totalLikes}
-              engagementRate={perf.avgEngagement}
-            />
-            <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
-              <p className="label-mono text-[0.45rem] text-muted-foreground">
-                {formatEventMeta(event.date, event.kind)}
-              </p>
-              <span className="label-mono text-[0.5rem] text-muted-foreground group-hover:text-foreground">
-                {perf.mediaCount} file{perf.mediaCount === 1 ? "" : "s"} · Open album
-              </span>
-            </div>
-          </>
+          <CardStats
+            views={perf.totalViews}
+            likes={perf.totalLikes}
+            engagementRate={perf.avgEngagement}
+          />
         }
       />
     </Link>
@@ -121,7 +110,7 @@ export function TopEventPerformersSection({
           {emptyLabel}
         </div>
       ) : (
-        <div className="flex flex-wrap gap-3">
+        <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
           {topEvents.map((row, i) => (
             <TopEventPerformerCard key={row.event.id} row={row} isTop={i === 0} />
           ))}

@@ -140,7 +140,7 @@ function TopPerformersStrip({
             No published posts in this range
           </p>
         ) : (
-          <div className="flex flex-wrap gap-3">
+          <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
             {top.map((p, i) => (
               <TopPerformerCard
                 key={p.id}
