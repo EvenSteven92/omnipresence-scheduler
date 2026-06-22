@@ -15,6 +15,7 @@ import {
 } from "@/lib/schedule-engine";
 import { PublishWeekPicker } from "@/components/post/PublishWeekPicker";
 import { PlatformTimeEditor, type PlatformTimeDraft } from "@/components/post/PlatformTimeEditor";
+import { useWorkspace } from "@/lib/workspace-context";
 
 function buildDrafts(
   platforms: Platform[],
@@ -55,6 +56,7 @@ export function PublishTimeEditor({
   onApplyTimes?: (times: Partial<Record<Platform, string>>) => void;
   scheduledPosts?: ScheduledPost[];
 }) {
+  const { workspace } = useWorkspace();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today()));
   const [selectedDay, setSelectedDay] = useState(() => today());
   const [busy, setBusy] = useState(false);
@@ -122,7 +124,13 @@ export function PublishTimeEditor({
   async function runSuggest() {
     setBusy(true);
     try {
-      const times = suggestTimesForDay({ id: fileId, platforms }, selectedDay, scheduledPosts);
+      const times = suggestTimesForDay(
+        { id: fileId, platforms },
+        selectedDay,
+        scheduledPosts,
+        [],
+        workspace.postingTimes,
+      );
       onSuggestTimes?.(times);
     } finally {
       setBusy(false);

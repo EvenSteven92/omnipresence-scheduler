@@ -13,6 +13,7 @@ import {
   type ScheduleConstraints,
 } from "@/lib/schedule-engine";
 import { SchedulePreviewTimeline } from "@/components/scheduler/SchedulePreviewTimeline";
+import { useWorkspace } from "@/lib/workspace-context";
 
 type Strategy = "smart" | "cadence";
 
@@ -27,6 +28,7 @@ export function BulkScheduleModal({
   onClose: () => void;
   onApprove: (result: BulkScheduleResult) => void;
 }) {
+  const { workspace } = useWorkspace();
   const defaultRange = defaultBulkRange();
   const [strategy, setStrategy] = useState<Strategy>("smart");
   const [rangeStart, setRangeStart] = useState(toDateInputValue(defaultRange.start));
@@ -66,7 +68,16 @@ export function BulkScheduleModal({
       if (strategy === "smart") {
         const range = parseRange();
         if (!range) return;
-        setPreview(smartDistributeBulk(files, range.start, range.end, scheduledPosts, constraints));
+        setPreview(
+          smartDistributeBulk(
+            files,
+            range.start,
+            range.end,
+            scheduledPosts,
+            constraints,
+            workspace.postingTimes,
+          ),
+        );
         return;
       }
       const [y, mo, d] = cadenceStart.split("-").map(Number);
@@ -77,6 +88,7 @@ export function BulkScheduleModal({
           files,
           { startIso, interval: cadenceInterval, unit: cadenceUnit },
           scheduledPosts,
+          workspace.postingTimes,
         ),
       );
     } finally {

@@ -117,7 +117,12 @@ function cadenceToMs(interval: number, unit: CadenceUnit): number {
   return interval * 86_400_000;
 }
 
-function platformPeaks(platform: Platform): string[] {
+/** Per-brand posting times override the global platform peakTimes when present. */
+export type PostingTimes = Partial<Record<Platform, string[]>>;
+
+function platformPeaks(platform: Platform, overrides?: PostingTimes): string[] {
+  const override = overrides?.[platform];
+  if (override && override.length > 0) return override;
   return PLATFORMS_BY_SHORT[platform]?.peakTimes ?? ["12:00"];
 }
 
@@ -154,8 +159,9 @@ function pickBestTime(
   fileId: string,
   peakIndex: number,
   constraints: Required<ScheduleConstraints>,
+  overrides?: PostingTimes,
 ): { iso: string; reason: string } | null {
-  const peaks = platformPeaks(platform);
+  const peaks = platformPeaks(platform, overrides);
   for (let i = 0; i < peaks.length; i++) {
     const peak = peaks[(peakIndex + i) % peaks.length]!;
     const candidate = atLocalTime(day, peak);
@@ -180,13 +186,23 @@ export function suggestTimesForDay(
   day: Date,
   scheduledPosts: ScheduledPost[],
   existingAssigned: BulkScheduleSlot[] = [],
+  postingTimes?: PostingTimes,
 ): Partial<Record<Platform, string>> {
   const constraints = DEFAULT_CONSTRAINTS;
   const assigned = [...existingAssigned];
   const out: Partial<Record<Platform, string>> = {};
 
   post.platforms.forEach((platform, idx) => {
-    const pick = pickBestTime(platform, day, scheduledPosts, assigned, post.id, idx, constraints);
+    const pick = pickBestTime(
+      platform,
+      day,
+      scheduledPosts,
+      assigned,
+      post.id,
+      idx,
+      constraints,
+      postingTimes,
+    );
     if (pick) {
       out[platform] = pick.iso;
       assigned.push({
@@ -209,6 +225,7 @@ export function smartDistributeBulk(
   rangeEnd: Date,
   scheduledPosts: ScheduledPost[],
   constraints?: ScheduleConstraints,
+  postingTimes?: PostingTimes,
 ): BulkScheduleResult {
   const c = { ...DEFAULT_CONSTRAINTS, ...constraints };
   const days = eachDayInRange(rangeStart, rangeEnd, c);
@@ -233,6 +250,7 @@ export function smartDistributeBulk(
         file.id,
         platformIdx + fileIdx,
         c,
+        postingTimes,
       );
 
       if (!pick) {
@@ -245,6 +263,7 @@ export function smartDistributeBulk(
             file.id,
             platformIdx + fileIdx,
             c,
+            postingTimes,
           );
           if (pick) break;
         }
@@ -276,6 +295,7 @@ export function fixedCadenceBulk(
   files: DraftPost[],
   input: FixedCadenceInput,
   scheduledPosts: ScheduledPost[],
+  postingTimes?: PostingTimes,
 ): BulkScheduleResult {
   const stepMs = cadenceToMs(input.interval, input.unit);
   const startMs = new Date(input.startIso).getTime();
@@ -288,7 +308,7 @@ export function fixedCadenceBulk(
     const times: Partial<Record<Platform, string>> = {};
 
     file.platforms.forEach((platform, platformIdx) => {
-      const peaks = platformPeaks(platform);
+      const peaks = platformPeaks(platform, postingTimes);
       const peak = peaks[platformIdx % peaks.length]!;
       let candidate = atLocalTime(day, peak);
       if (fileIdx === 0 && platformIdx === 0) {
