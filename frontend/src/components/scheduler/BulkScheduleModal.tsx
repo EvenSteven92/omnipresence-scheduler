@@ -143,7 +143,7 @@ export function BulkScheduleModal({
             >
               <div className="flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground">
                 <Sparkles className="h-3 w-3 text-accent" />
-                Smart_distribute
+                Smart distribute
               </div>
               <p className="mt-1 text-[0.65rem] leading-relaxed text-muted-foreground">
                 AI spreads files across your date range using per-platform peak times.
@@ -164,7 +164,7 @@ export function BulkScheduleModal({
             >
               <div className="flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground">
                 <CalendarClock className="h-3 w-3 text-accent" />
-                Fixed_cadence
+                Fixed cadence
               </div>
               <p className="mt-1 text-[0.65rem] leading-relaxed text-muted-foreground">
                 Post files one after another on a fixed interval (Opus-style drip).

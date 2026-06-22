@@ -2,7 +2,13 @@
  * Frontend helper for POST /api/ai/generate.
  * Served by TanStack server routes (Vercel AI Gateway + Grok on deploy).
  */
-export type AiKind = "caption" | "hashtags" | "yt_desc" | "yt_title" | "internal_notes";
+export type AiKind =
+  | "caption"
+  | "hashtags"
+  | "yt_desc"
+  | "yt_title"
+  | "internal_notes"
+  | "weekly_summary";
 
 export interface AiGenerateInput {
   kind: AiKind;

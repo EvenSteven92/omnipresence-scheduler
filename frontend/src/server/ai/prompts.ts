@@ -1,4 +1,10 @@
-export type AiKind = "caption" | "hashtags" | "yt_desc" | "yt_title" | "internal_notes";
+export type AiKind =
+  | "caption"
+  | "hashtags"
+  | "yt_desc"
+  | "yt_title"
+  | "internal_notes"
+  | "weekly_summary";
 
 export interface AiGenerateInput {
   kind: AiKind;
@@ -14,6 +20,7 @@ export const AI_KINDS = [
   "yt_desc",
   "yt_title",
   "internal_notes",
+  "weekly_summary",
 ] as const satisfies readonly AiKind[];
 
 export const PROMPTS: Record<AiKind, string> = {
@@ -37,6 +44,10 @@ export const PROMPTS: Record<AiKind, string> = {
     "You summarise post intent for an internal social team. " +
     "Output 3-5 short bullet points (use '- '): goal, primary platform, success metric, any caveats. " +
     "Plain text only.",
+  weekly_summary:
+    "You are a friendly, sharp social-media analyst. Given a brand's recent performance numbers, " +
+    "write a short report: what's working, what to watch, and 2-3 specific, concrete recommendations " +
+    "for the coming week. 4-6 sentences of warm, direct plain text — no markdown headers, no hype.",
 };
 
 export function buildUserPrompt(input: AiGenerateInput): string {

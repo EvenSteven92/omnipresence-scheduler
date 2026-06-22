@@ -66,7 +66,7 @@ export function DayPostCountChip({
             dense ? "text-[0.45rem] tracking-[0.1em]" : "text-[0.5rem] tracking-[0.12em]"
           }`}
         >
-          {unassociatedCount}_needs_event
+          {unassociatedCount} needs event
         </span>
       ) : null}
     </button>

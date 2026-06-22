@@ -223,7 +223,7 @@ export function PostDetailModal({
                   className="flex items-center gap-1.5 rounded-sm bg-primary px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90"
                 >
                   <Pencil className="h-3 w-3" />
-                  Edit_Post
+                  Edit post
                 </button>
               </>
             )}

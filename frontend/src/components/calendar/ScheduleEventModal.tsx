@@ -222,7 +222,7 @@ export function ScheduleEventModal({
             data-testid="create-event-btn"
             className="rounded-sm border border-accent bg-accent px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:border-dashed disabled:border-border disabled:bg-surface disabled:text-muted-foreground"
           >
-            Create_Event
+            Create event
           </button>
         </div>
       </div>

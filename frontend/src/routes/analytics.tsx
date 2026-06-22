@@ -29,7 +29,10 @@ import {
   UserCheck,
   Download,
   ArrowRight,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
+import { aiGenerate } from "@/lib/ai-client";
 import { TimeframeSelector } from "@/components/TimeframeSelector";
 import { useYouTubeMetrics } from "@/hooks/useYouTubeMetrics";
 import { useMetaMetrics } from "@/hooks/useMetaMetrics";
@@ -104,6 +107,9 @@ function AnalyticsPage() {
   const { data: youtubeMetrics } = useYouTubeMetrics(workspaceId);
   const { data: metaMetrics } = useMetaMetrics(workspaceId);
   const [timeframe, setTimeframe] = useState<Timeframe>({ kind: "preset", preset: "1m" });
+  const [summary, setSummary] = useState<string | null>(null);
+  const [summaryBusy, setSummaryBusy] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
   const [detailPost, setDetailPost] = useState<PublishedPost | null>(null);
   const liveBundle = useMemo(
     () => ({ youtube: youtubeMetrics, meta: metaMetrics }),
@@ -152,6 +158,26 @@ function AnalyticsPage() {
   ) : (
     <SampleDataBadge />
   );
+
+  async function generateSummary() {
+    if (summaryBusy) return;
+    setSummaryBusy(true);
+    setSummaryError(null);
+    try {
+      const lines = metrics
+        .map((m) => `${m.label}: ${m.value}${m.delta ? ` (${m.delta})` : ""}`)
+        .join("; ");
+      const brief =
+        `Performance for ${workspace.name} — ${workspace.tagline}, over the ${timeframeLabel(timeframe)}. ` +
+        `Active platforms: ${workspace.platforms.join(", ")}. Metrics — ${lines}.`;
+      const text = await aiGenerate({ kind: "weekly_summary", brief, tone: workspace.voice });
+      setSummary(text);
+    } catch (e) {
+      setSummaryError((e as Error).message || "Could not generate summary");
+    } finally {
+      setSummaryBusy(false);
+    }
+  }
 
   return (
     <div>
@@ -220,6 +246,40 @@ function AnalyticsPage() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* AI weekly summary */}
+            <div className="section-block panel p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-title text-sm">What&apos;s working</h2>
+                  <p className="mt-0.5 text-body-sm text-muted-foreground">
+                    AI reads your numbers and suggests next moves for {workspace.name}.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={generateSummary}
+                  disabled={summaryBusy}
+                  data-testid="ai-summary-btn"
+                  className="btn-action-primary btn-action disabled:opacity-50"
+                >
+                  {summaryBusy ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.75} />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  )}
+                  {summary ? "Regenerate" : "Summarize performance"}
+                </button>
+              </div>
+              {summaryError ? (
+                <p className="mt-3 text-body-sm text-destructive">{summaryError}</p>
+              ) : null}
+              {summary ? (
+                <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-foreground">
+                  {summary}
+                </p>
+              ) : null}
             </div>
 
             {/* Engagement trend + Audience growth */}

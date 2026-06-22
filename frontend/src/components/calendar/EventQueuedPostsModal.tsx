@@ -98,7 +98,7 @@ export function EventQueuedPostsModal({
                 className="inline-flex items-center gap-1.5 rounded-sm border border-accent/60 bg-accent/10 px-4 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-accent transition-colors hover:bg-accent/20"
               >
                 <Plus className="h-3 w-3" />
-                New_Post
+                New post
               </Link>
             </div>
           ) : (

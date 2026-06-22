@@ -27,7 +27,7 @@ export function EventAssociateStencil({
       >
         <Layers className={dense ? "h-2 w-2" : "h-2.5 w-2.5"} strokeWidth={1.75} />
       </span>
-      Associate_Event
+      Associate event
     </button>
   );
 }
