@@ -15,6 +15,8 @@ export function CalendarRail({
   focusMonth,
   onSelectPost,
   onSelectEvent,
+  hoveredEventId,
+  onHoverEvent,
 }: {
   scheduledPosts: ScheduledPost[];
   events: ContentEvent[];
@@ -22,6 +24,8 @@ export function CalendarRail({
   focusMonth: number;
   onSelectPost: (post: ScheduledPost) => void;
   onSelectEvent: (event: ContentEvent) => void;
+  hoveredEventId?: string | null;
+  onHoverEvent?: (eventId: string | null) => void;
 }) {
   const [agendaOpen, setAgendaOpen] = useState(true);
 
@@ -93,6 +97,9 @@ export function CalendarRail({
                     key={event.id}
                     event={event}
                     onSelect={() => onSelectEvent(event)}
+                    highlighted={hoveredEventId === event.id}
+                    onHoverStart={() => onHoverEvent?.(event.id)}
+                    onHoverEnd={() => onHoverEvent?.(null)}
                   />
                 ))}
                 {monthPosts.slice(0, 8).map((post) => (

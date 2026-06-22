@@ -392,6 +392,8 @@ function CalendarPage() {
               focusMonth={focusMonth}
               onSelectPost={(post) => selectFromGrid(post)}
               onSelectEvent={openEventPosts}
+              hoveredEventId={hoveredEventId}
+              onHoverEvent={setHoveredEventId}
             />
           </div>
         )}
