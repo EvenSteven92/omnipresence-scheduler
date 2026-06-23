@@ -265,7 +265,7 @@ export function ComposerCard({
             <div>
               <h3 className="text-sm font-medium text-foreground">Where it goes</h3>
               <p className="mt-0.5 text-body-sm text-muted-foreground">
-                Platforms and per-network publish times
+                Platforms &amp; event album
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -284,6 +284,22 @@ export function ComposerCard({
                   />
                 );
               })}
+            </div>
+            <EventAssociationPicker
+              events={workspaceEvents}
+              value={post.eventId}
+              onChange={(eventId) => onChange({ ...post, eventId })}
+              onCreateEvent={() => createEventFlow.openCreateEvent()}
+            />
+            {createEventFlow.modal}
+          </section>
+
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-foreground">When it posts</h3>
+              <p className="mt-0.5 text-body-sm text-muted-foreground">
+                One time per platform — use Suggest for {workspace.name}&apos;s best slots
+              </p>
             </div>
             <ContentPublishSchedule
               fileId={post.id}
@@ -304,13 +320,6 @@ export function ComposerCard({
                 });
               }}
             />
-            <EventAssociationPicker
-              events={workspaceEvents}
-              value={post.eventId}
-              onChange={(eventId) => onChange({ ...post, eventId })}
-              onCreateEvent={() => createEventFlow.openCreateEvent()}
-            />
-            {createEventFlow.modal}
           </section>
 
           <section className="space-y-4">

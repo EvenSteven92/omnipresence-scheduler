@@ -17,7 +17,11 @@ import { ContentQueueItem } from "@/components/scheduler/ContentQueueItem";
 import { ComposerFooter } from "@/components/scheduler/ComposerFooter";
 import { SchedulerWorkflowSteps } from "@/components/scheduler/SchedulerWorkflowSteps";
 import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
-import type { BulkScheduleResult } from "@/lib/schedule-engine";
+import {
+  defaultBulkRange,
+  smartDistributeBulk,
+  type BulkScheduleResult,
+} from "@/lib/schedule-engine";
 import { DraftDropStencil } from "@/components/scheduler/DraftDropStencil";
 import { PotentialPostsDropStencil } from "@/components/scheduler/PotentialPostsDropStencil";
 import type { Platform } from "@/lib/mock-data";
@@ -132,6 +136,8 @@ function NewPostPage() {
   const [bulkScheduleOpen, setBulkScheduleOpen] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiProgress, setAiProgress] = useState<{ done: number; total: number } | null>(null);
+  const [sourceTranscript, setSourceTranscript] = useState("");
+  const [planning, setPlanning] = useState(false);
 
   const allPosts = useMemo(() => [...queue, ...savedDrafts], [queue, savedDrafts]);
   const bulkScheduleFiles = useMemo(
@@ -181,7 +187,11 @@ function NewPostPage() {
   const addFiles = useCallback(
     (files: FileList | File[]) => {
       const arr = Array.from(files);
-      const created = arr.map((f) => defaultDraftFromFile(f, workspace.platforms));
+      const ts = sourceTranscript.trim();
+      const created = arr.map((f) => {
+        const d = defaultDraftFromFile(f, workspace.platforms);
+        return ts ? { ...d, transcript: ts } : d;
+      });
       setQueue((cur) => [...cur, ...created]);
       setSelectedIds((cur) => {
         const next = new Set(cur);
@@ -190,7 +200,7 @@ function NewPostPage() {
       });
       if (created[0]) setActiveId(created[0].id);
     },
-    [workspace.platforms],
+    [workspace.platforms, sourceTranscript],
   );
 
   function handleFileInputChange(files: FileList | null, input: HTMLInputElement | null) {
@@ -328,7 +338,11 @@ function NewPostPage() {
       { name: "qa_segment_a.mp4", sizeBytes: 125 * 1024 * 1024 },
       { name: "quote_card_set.png", sizeBytes: 4.4 * 1024 * 1024 },
     ];
-    const created = demo.map((f) => defaultDraftFromFile(f, workspace.platforms));
+    const ts = sourceTranscript.trim();
+    const created = demo.map((f) => {
+      const d = defaultDraftFromFile(f, workspace.platforms);
+      return ts ? { ...d, transcript: ts } : d;
+    });
     setQueue((cur) => [...cur, ...created]);
     setSelectedIds((cur) => {
       const next = new Set(cur);
@@ -336,6 +350,40 @@ function NewPostPage() {
       return next;
     });
     if (created[0]) setActiveId(created[0].id);
+  }
+
+  function applyTranscriptToAll() {
+    const ts = sourceTranscript.trim();
+    if (!ts) return;
+    setQueue((cur) => cur.map((d) => ({ ...d, transcript: ts })));
+    setSavedDrafts((cur) => cur.map((d) => ({ ...d, transcript: ts })));
+  }
+
+  async function planMyWeek() {
+    if (planning || queue.length === 0) return;
+    setPlanning(true);
+    try {
+      // 1) draft captions + hashtags for every queued reel (brand voice + event context)
+      await generateAllQueued();
+      // 2) spread them across the next 7 days at this brand's optimal times
+      const range = defaultBulkRange();
+      const result = smartDistributeBulk(
+        queue,
+        range.start,
+        range.end,
+        workspace.scheduledPosts,
+        undefined,
+        workspace.postingTimes,
+      );
+      setQueue((cur) =>
+        cur.map((d) => {
+          const times = result.byFile[d.id];
+          return times ? { ...d, proposedTimes: { ...(d.proposedTimes ?? {}), ...times } } : d;
+        }),
+      );
+    } finally {
+      setPlanning(false);
+    }
   }
 
   function saveToDraftZone(post: DraftPost) {
@@ -546,8 +594,24 @@ function NewPostPage() {
               <>
                 <button
                   type="button"
+                  onClick={planMyWeek}
+                  disabled={planning || aiBusy}
+                  data-testid="plan-my-week-btn"
+                  className="btn-action-primary btn-action mt-2 w-full justify-center disabled:opacity-50"
+                >
+                  {planning ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.75} />
+                  ) : (
+                    <CalendarClock className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  )}
+                  {planning && aiProgress
+                    ? `Planning ${aiProgress.done}/${aiProgress.total}…`
+                    : "Plan my week"}
+                </button>
+                <button
+                  type="button"
                   onClick={generateAllQueued}
-                  disabled={aiBusy}
+                  disabled={aiBusy || planning}
                   data-testid="generate-all-btn"
                   className="mt-2 flex w-full items-center justify-center gap-2 rounded-sm border border-accent/60 bg-accent/10 px-3 py-2 text-body-sm font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
                 >
@@ -695,10 +759,16 @@ function NewPostPage() {
               <>
                 <SchedulerWorkflowSteps active="upload" />
                 <p className="mb-6 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                  Each upload is one content card on your calendar, even when you post the same file
-                  to several platforms. Add files, pick networks, write copy, and set publish times
-                  per platform.
+                  Paste your transcript, drop a batch of {workspace.name} reels, and we&apos;ll draft
+                  captions in {workspace.name}&apos;s voice and spread them across the week. Each file
+                  becomes its own card you can track.
                 </p>
+                <SourceTranscriptPanel
+                  value={sourceTranscript}
+                  onChange={setSourceTranscript}
+                  onApply={applyTranscriptToAll}
+                  draftCount={allPosts.length}
+                />
                 <div
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -714,7 +784,7 @@ function NewPostPage() {
                 >
                   <Upload className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
                   <div className="text-center">
-                    <div className="text-title text-foreground">Drop files to start</div>
+                    <div className="text-title text-foreground">Drop your {workspace.name} reels</div>
                     <p className="mt-2 text-body-sm text-muted-foreground">MP4, MOV, JPG, PNG</p>
                   </div>
                   <button
@@ -740,6 +810,12 @@ function NewPostPage() {
               </>
             ) : activeDraft ? (
               <div className="mx-auto max-w-3xl">
+                <SourceTranscriptPanel
+                  value={sourceTranscript}
+                  onChange={setSourceTranscript}
+                  onApply={applyTranscriptToAll}
+                  draftCount={allPosts.length}
+                />
                 <SchedulerWorkflowSteps
                   active={readyToApply.length > 0 ? "schedule" : "configure"}
                 />
@@ -783,6 +859,49 @@ function NewPostPage() {
           onApprove={applyBulkSchedule}
         />
       ) : null}
+    </div>
+  );
+}
+
+function SourceTranscriptPanel({
+  value,
+  onChange,
+  onApply,
+  draftCount,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onApply: () => void;
+  draftCount: number;
+}) {
+  return (
+    <div className="mb-6 rounded-md border border-border bg-surface-elevated p-4 shadow-[var(--shadow-card)]">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-medium text-foreground">Source transcript</h3>
+          <p className="mt-0.5 text-body-sm text-muted-foreground">
+            Paste your sermon or episode transcript once — every reel&apos;s captions draw from it.
+          </p>
+        </div>
+        {draftCount > 0 && value.trim() ? (
+          <button
+            type="button"
+            onClick={onApply}
+            data-testid="apply-transcript-all"
+            className="btn-action shrink-0"
+          >
+            Apply to {draftCount} reel{draftCount === 1 ? "" : "s"}
+          </button>
+        ) : null}
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Paste the full transcript or talking points here…"
+        rows={3}
+        data-testid="source-transcript"
+        className="mt-3 w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
+      />
     </div>
   );
 }
