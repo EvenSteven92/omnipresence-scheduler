@@ -260,7 +260,9 @@ function platformMetricDelta(
   all: boolean,
 ): GrowthMatrixMetricDelta {
   if (all) return { pct: 0, trend: "flat", label: "" };
-  const seed = platform.split("").reduce((a, c) => a + c.charCodeAt(0), 0) + metric.charCodeAt(0);
+  const seed =
+    platform.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) +
+    metric.charCodeAt(0);
   const variance = ((seed % 21) - 10) * 1.2;
   const pct = Math.round((basePct + variance) * 10) / 10;
   const trend: MetricTrend = Math.abs(pct) < 0.05 ? "flat" : pct > 0 ? "up" : "down";

@@ -38,7 +38,8 @@ export function RepublishModal({
     });
     stashRepublishDraft(workspaceId, draft);
     onClose();
-    navigate({ to: "/scheduler", state: { republishDraft: draft } });
+    // Router history state is dynamic at runtime; the scheduler reads this back via a cast.
+    navigate({ to: "/scheduler", state: { republishDraft: draft } as never });
   }
 
   return (

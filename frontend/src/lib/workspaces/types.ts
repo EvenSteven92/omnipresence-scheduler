@@ -1,5 +1,7 @@
 import type { ConnectionStatus, Platform, PublishedPost, ScheduledPost } from "@/lib/mock-data";
 
+export type { Platform } from "@/lib/mock-data";
+
 export type WorkspaceId = "torcc" | "open-eyes" | "keka" | "first-love";
 
 export type WorkspaceOnboardingStatus = "complete" | "needs_accounts" | "draft";
