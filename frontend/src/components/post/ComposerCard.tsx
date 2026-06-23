@@ -225,6 +225,7 @@ export function ComposerCard({
         <div className="space-y-3">
           <CardThumbnail
             src={post.previewUrl}
+            post={{ id: post.id, title: post.filename, mediaKind: post.mediaKind }}
             alt={post.filename}
             kind={post.mediaKind}
             aspect={thumbAspect}
