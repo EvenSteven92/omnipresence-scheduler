@@ -27,6 +27,7 @@ export function PlatformPreview({
   format,
   defaultOpen = false,
   variant = "collapsible",
+  workspaceLabel = "torcc.church",
 }: {
   platforms: Platform[];
   caption: string;
@@ -38,6 +39,7 @@ export function PlatformPreview({
   defaultOpen?: boolean;
   /** `panel` renders always-open for the composer side pane. */
   variant?: "collapsible" | "panel" | "inline";
+  workspaceLabel?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen || variant === "panel");
   const [active, setActive] = useState<Platform | null>(platforms[0] ?? null);
@@ -109,20 +111,22 @@ export function PlatformPreview({
   }
 
   if (variant === "panel") {
+    const activePlatform = effective ?? "IG";
     return (
       <section
         data-testid="platform-preview-panel"
-        className="overflow-hidden rounded-sm border border-border bg-surface-elevated"
+        className="overflow-hidden rounded-lg border-[1.5px] border-foreground bg-card"
       >
-        <div className="border-b border-border px-4 py-3">
-          <h3 className="text-title">Preview</h3>
-          <p className="mt-0.5 text-body-sm text-muted-foreground">
-            {platforms.length === 0
-              ? "No platforms selected"
-              : `${platforms.length} network${platforms.length === 1 ? "" : "s"}`}
-          </p>
+        <div className="flex items-center gap-2.5 border-b-[1.5px] border-foreground px-3.5 py-2.5">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full border-[1.5px] border-foreground bg-accent font-display text-[0.6875rem] font-bold text-foreground">
+            {workspaceLabel.charAt(0).toUpperCase()}
+          </span>
+          <span className="text-[0.8125rem] font-bold text-foreground">{workspaceLabel}</span>
+          <span className="ml-auto font-mono text-[0.5625rem] font-semibold uppercase text-muted-foreground">
+            {activePlatform.replace("YT SHORTS", "YT").replace("TIKTOK", "TT")}
+          </span>
         </div>
-        <div className="p-4">{body}</div>
+        <div>{body}</div>
       </section>
     );
   }

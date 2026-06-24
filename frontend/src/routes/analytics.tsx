@@ -219,12 +219,12 @@ function AnalyticsPage() {
                 return (
                   <div key={m.label} data-testid={`kpi-${m.key}`} className="kpi-card metric-cell">
                     <div className="flex items-start justify-between">
-                      <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                      <div className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.1em] text-muted-foreground">
                         {m.label}
                       </div>
                       <Icon className="h-3 w-3 text-muted-foreground" strokeWidth={1.5} />
                     </div>
-                    <div className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
+                    <div className="mt-4 font-display text-[1.6875rem] font-bold tracking-tight text-foreground">
                       {m.value}
                     </div>
                     {m.delta ? (
@@ -232,7 +232,7 @@ function AnalyticsPage() {
                         title={
                           m.key === "engagement" ? "Percentage points vs prior period" : undefined
                         }
-                        className={`mt-1 text-[0.65rem] ${
+                        className={`mt-2 font-mono text-[0.6875rem] font-semibold ${
                           m.trend === "up"
                             ? "text-success"
                             : m.trend === "down"
@@ -240,7 +240,8 @@ function AnalyticsPage() {
                               : "text-muted-foreground"
                         }`}
                       >
-                        {m.delta}
+                        {m.delta}{" "}
+                        <span className="text-muted-foreground">vs prior</span>
                       </div>
                     ) : null}
                   </div>
@@ -514,13 +515,11 @@ function AnalyticsPage() {
 
             {/* Top performers */}
             <section className="section-block">
-              <div className="mb-4 flex items-end justify-between">
+              <div className="mb-4 flex items-end justify-between border-b-[1.5px] border-foreground pb-4">
                 <div>
-                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    Top performers · {timeframeLabel(timeframe)}
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Click a post to view its per-platform publish history.
+                  <div className="page-kicker">Top performing cards</div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {timeframeLabel(timeframe)} — click a card for publish history.
                   </p>
                 </div>
                 <button
@@ -528,7 +527,7 @@ function AnalyticsPage() {
                   onClick={handleScheduleSimilar}
                   disabled={topPublished.length === 0}
                   data-testid="schedule-similar-btn"
-                  className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-action text-[0.65rem] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Schedule similar <ArrowRight className="h-3 w-3" />
                 </button>

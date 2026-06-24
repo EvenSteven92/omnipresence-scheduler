@@ -74,9 +74,9 @@ function AlbumMediaGroupHeader({ group }: { group: AlbumMediaGroup }) {
   const Icon = meta.icon;
 
   return (
-    <div className={`flex items-center gap-2.5 border-b pb-2 ${meta.headerClass}`}>
+    <div className="flex items-center gap-2.5 border-b-[1.5px] border-foreground pb-2">
       <span
-        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border ${meta.iconClass}`}
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-[1.5px] border-foreground ${meta.iconClass}`}
       >
         <Icon className="h-3 w-3" strokeWidth={1.75} />
       </span>

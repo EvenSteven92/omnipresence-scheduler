@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, TrendingUp } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { CardStats } from "@/components/ui/CardStats";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import { ContentCard } from "@/components/ui/ContentCard";
@@ -13,20 +13,14 @@ import {
   rankEventPerformers,
   type RankedEventPerformer,
 } from "@/lib/events/display";
+import { inferCardMediaType } from "@/lib/card-display";
 import { TOP_PERFORMERS_DISPLAY_LIMIT } from "@/components/post/TopPerformerCard";
 import { timeframeLabel, type Timeframe } from "@/lib/timeframe";
 
-function TopBadge() {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-sm border border-success/60 bg-success/10 px-1.5 py-0.5 text-[0.55rem] uppercase tracking-[0.14em] text-success">
-      <TrendingUp className="h-2.5 w-2.5" /> Top
-    </span>
-  );
-}
-
-function TopEventPerformerCard({ row, isTop }: { row: RankedEventPerformer; isTop: boolean }) {
+function EventPerformerStreamCard({ row, rank }: { row: RankedEventPerformer; rank: number }) {
   const { event, perf } = row;
   const cardPost = eventPerformerToCardPost(row);
+  const mediaType = inferCardMediaType(cardPost.title);
 
   return (
     <Link
@@ -36,22 +30,24 @@ function TopEventPerformerCard({ row, isTop }: { row: RankedEventPerformer; isTo
       className="group block"
     >
       <ContentCard
-        size="sm"
-        orientation="stacked"
+        size="stream"
         fullWidth
-        className="transition-colors group-hover:border-accent/40"
-        title={cardPost.title}
-        meta={`${formatEventMeta(event.date, event.kind)} · ${perf.mediaCount} file${
-          perf.mediaCount === 1 ? "" : "s"
-        }`}
+        className="transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:shadow-[var(--shadow-card)]"
+        eyebrow={formatEventMeta(event.date, event.kind)}
+        title={event.title}
+        meta={`${perf.mediaCount} file${perf.mediaCount === 1 ? "" : "s"}`}
         thumbnail={
-          <CardThumbnail
-            post={cardPost}
-            alt={cardPost.title}
-            layout="block"
-            aspect="video"
-            badge={isTop ? <TopBadge /> : undefined}
-          />
+          <div className="flex items-center gap-3.5">
+            <span className="w-6 text-center font-display text-[1.375rem] font-extrabold text-muted-foreground">
+              {rank}
+            </span>
+            <CardThumbnail
+              post={cardPost}
+              alt={cardPost.title}
+              layout="square"
+              mediaType={mediaType}
+            />
+          </div>
         }
         trailing={
           <CardStats
@@ -88,31 +84,29 @@ export function TopEventPerformersSection({
 
   return (
     <section className={className} data-testid="top-event-performers">
-      <div className="mb-6 flex items-end justify-between gap-4">
+      <div className="mb-6 flex items-end justify-between gap-4 border-b-[1.5px] border-foreground pb-4">
         <div>
-          <div className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            Top event performers · {timeframeLabel(timeframe)}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Ranked by album engagement — ministry moments with live associated media.
+          <div className="page-kicker">Top event performers</div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ranked by album engagement — {timeframeLabel(timeframe)}.
           </p>
         </div>
         <Link
           to="/events"
-          className="inline-flex items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
+          className="btn-action text-[0.65rem]"
         >
-          All events <ArrowRight className="h-3 w-3" />
+          All albums <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
 
       {topEvents.length === 0 ? (
-        <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center text-sm text-muted-foreground">
+        <div className="rounded-md border border-dashed border-foreground bg-card/40 px-5 py-10 text-center text-sm text-muted-foreground">
           {emptyLabel}
         </div>
       ) : (
-        <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
+        <div className="flex flex-col gap-3">
           {topEvents.map((row, i) => (
-            <TopEventPerformerCard key={row.event.id} row={row} isTop={i === 0} />
+            <EventPerformerStreamCard key={row.event.id} row={row} rank={i + 1} />
           ))}
         </div>
       )}

@@ -51,12 +51,6 @@ export function CalendarDayDrawer({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const dateLabel = date.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-
   const groups = useMemo(() => {
     const ordered = groupDayPostsByEvent(posts, events, resolveEventId);
     const unassigned = ordered.filter((g) => g.event == null);
@@ -67,22 +61,28 @@ export function CalendarDayDrawer({
   return (
     <aside
       data-testid="calendar-day-drawer"
-      className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-border bg-surface shadow-2xl md:top-0"
+      className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l-[1.5px] border-foreground bg-card shadow-[var(--shadow-card)] md:top-0"
       style={{ top: "var(--sync-bar-height, 0px)" }}
     >
-      <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
+      <header className="flex items-start justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4">
         <div>
-          <h2 className="text-title">{dateLabel}</h2>
+          <div className="page-kicker">
+            {date.toLocaleDateString(undefined, { weekday: "long" }).toUpperCase()} ·{" "}
+            {date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }).toUpperCase()}
+          </div>
+          <h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">
+            {posts.length} card{posts.length === 1 ? "" : "s"} scheduled
+          </h2>
           <p className="mt-1 text-body-sm text-muted-foreground">
-            {posts.length} post{posts.length === 1 ? "" : "s"} · {events.length} event
-            {events.length === 1 ? "" : "s"}
+            {events.length} album{events.length === 1 ? "" : "s"} ·{" "}
+            {posts.reduce((n, p) => n + p.platforms.length, 0)} publishes
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close day panel"
-          className="rounded-sm border border-border bg-background p-1.5 text-muted-foreground hover:text-foreground"
+          className="rounded-md border-[1.5px] border-foreground bg-card p-1.5 text-muted-foreground hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </button>

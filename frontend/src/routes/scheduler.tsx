@@ -11,6 +11,8 @@ import { CalendarClock, Upload, Sparkles, Loader2 } from "lucide-react";
 import { aiGenerate } from "@/lib/ai-client";
 import { getEventById } from "@/lib/events/display";
 import { ComposerCard, type DraftPost } from "@/components/post/ComposerCard";
+import { ComposerPreviewPane } from "@/components/post/ComposerPreviewPane";
+import { mergeWorkspaceEvents, useCustomEvents } from "@/hooks/useCustomEvents";
 
 import { BulkScheduleModal } from "@/components/scheduler/BulkScheduleModal";
 import { ContentQueueItem } from "@/components/scheduler/ContentQueueItem";
@@ -117,6 +119,11 @@ type RepublishLocationState = {
 
 function NewPostPage() {
   const { workspace, workspaceId, addScheduledPosts } = useWorkspace();
+  const { customEvents } = useCustomEvents(workspaceId);
+  const workspaceEvents = useMemo(
+    () => mergeWorkspaceEvents(workspace.events, customEvents),
+    [workspace.events, customEvents],
+  );
   const republishFromNavigation = useRouterState({
     select: (state) =>
       state.location.pathname === "/scheduler"
@@ -497,6 +504,11 @@ function NewPostPage() {
   );
   const activeIndex = activeDraft ? allPosts.findIndex((d) => d.id === activeDraft.id) + 1 : 0;
   const activeInDraftZone = activeDraft ? savedDrafts.some((d) => d.id === activeDraft.id) : false;
+  const activePublishCount = useMemo(() => {
+    if (!activeDraft) return 0;
+    const times = activeDraft.proposedTimes ?? {};
+    return activeDraft.platforms.filter((p) => Boolean(times[p])).length;
+  }, [activeDraft]);
 
   const empty = allPosts.length === 0;
 
@@ -738,15 +750,22 @@ function NewPostPage() {
       <div className="composer-editor-pane">
         <PageHeader
           eyebrow={<WorkspaceEyebrow />}
-          title="New Post"
+          title={empty ? "New Post" : "Compose a card"}
+          description={
+            empty
+              ? undefined
+              : "One upload becomes one card — then schedule it across every channel."
+          }
           actions={
             <>
-              <span
-                className="rounded-sm border border-border bg-surface px-3 py-2 text-body-sm text-muted-foreground"
-                data-testid="status-pill"
-              >
-                {empty ? "Empty" : `${queue.length} in queue`}
-              </span>
+              {!empty ? (
+                <span
+                  className="rounded-md border-[1.5px] border-foreground bg-card px-3 py-2 font-mono text-body-sm text-muted-foreground"
+                  data-testid="status-pill"
+                >
+                  Card {activeIndex} of {allPosts.length}
+                </span>
+              ) : null}
               <NewEventPostActions showPostLink={false} />
             </>
           }
@@ -809,20 +828,18 @@ function NewPostPage() {
                 </div>
               </>
             ) : activeDraft ? (
-              <div className="mx-auto max-w-3xl">
+              <div className="mx-auto max-w-[52rem]">
                 <SourceTranscriptPanel
                   value={sourceTranscript}
                   onChange={setSourceTranscript}
                   onApply={applyTranscriptToAll}
                   draftCount={allPosts.length}
                 />
-                <SchedulerWorkflowSteps
-                  active={readyToApply.length > 0 ? "schedule" : "configure"}
-                />
-                <p className="mb-4 text-body-sm text-muted-foreground">
-                  Card {activeIndex} of {allPosts.length}
-                  {activeInDraftZone ? " · saved draft" : " · ready to configure"}
-                </p>
+                {activeInDraftZone ? (
+                  <p className="mb-4 font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-muted-foreground">
+                    Saved draft
+                  </p>
+                ) : null}
                 <ComposerCard
                   key={activeDraft.id}
                   index={activeIndex}
@@ -839,11 +856,21 @@ function NewPostPage() {
             </div>
           </div>
 
+          {activeDraft ? (
+            <aside className="composer-preview-pane hidden px-5 py-5 xl:block">
+              <ComposerPreviewPane
+                post={activeDraft}
+                events={workspaceEvents}
+                workspaceName={workspace.name}
+              />
+            </aside>
+          ) : null}
         </div>
 
         {activeDraft ? (
           <ComposerFooter
             readyCount={readyToApply.length}
+            publishCount={activePublishCount}
             canSave
             onSaveDraft={() => saveToDraftZone(activeDraft)}
             onSchedule={applyPendingSchedule}

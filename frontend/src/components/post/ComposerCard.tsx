@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Save, Sparkles, X, Loader2, GripVertical, AlertTriangle } from "lucide-react";
 import { CardThumbnail, type CardThumbnailAspect } from "@/components/ui/CardThumbnail";
-import { PLATFORMS, PLATFORMS_BY_SHORT, FORMAT_META, type PostFormat } from "@/lib/platforms";
+import { PLATFORMS, FORMAT_META, type PostFormat } from "@/lib/platforms";
 import { aiGenerate, type AiKind } from "@/lib/ai-client";
 import type { Platform } from "@/lib/mock-data";
-import { CharCounters } from "./CharCounters";
-import { PlatformPreview } from "./PlatformPreview";
+import { CHAR_LIMITS } from "./CharCounters";
 import { ContentPublishSchedule } from "./ContentPublishSchedule";
 import { PlatformSelectChip } from "./PlatformChip";
-import { CollapsibleSection } from "./CollapsibleSection";
 import { detectConflicts } from "@/lib/conflicts";
 import { useWorkspace } from "@/lib/workspace-context";
 import { EventAssociationPicker } from "@/components/events/EventAssociationPicker";
 import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
 import { mergeWorkspaceEvents, useCustomEvents } from "@/hooks/useCustomEvents";
 import { formatEventTime, getEventById } from "@/lib/events/display";
+import { platformDotColor } from "@/lib/card-display";
 
 export interface DraftPost {
   id: string;
@@ -39,6 +38,17 @@ export interface DraftPost {
   /** Object URL for the uploaded file — set in scheduler addFiles. */
   previewUrl?: string;
 }
+
+function ComposerSectionLabel({ n, title }: { n: string; title: string }) {
+  return (
+    <div className="mb-3.5 font-mono text-[0.625rem] font-bold tracking-[0.1em] text-muted-foreground">
+      {n} · {title}
+    </div>
+  );
+}
+
+const inputClass =
+  "w-full resize-y rounded-md border-[1.5px] border-foreground bg-background px-3.5 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/40";
 
 export function ComposerCard({
   post,
@@ -101,7 +111,6 @@ export function ComposerCard({
     [post.format, availablePlatforms],
   );
 
-  // Earliest proposed datetime across platforms (used by conflict detection).
   const earliestProposed = useMemo(() => {
     if (!post.proposedTimes) return undefined;
     const times = Object.values(post.proposedTimes).filter(Boolean) as string[];
@@ -109,7 +118,6 @@ export function ComposerCard({
     return times.sort()[0];
   }, [post.proposedTimes]);
 
-  // Conflict detection — uses the earliest proposed slot
   const conflicts = useMemo(() => {
     if (!earliestProposed) return [];
     return detectConflicts(
@@ -120,8 +128,14 @@ export function ComposerCard({
     );
   }, [earliestProposed, post.platforms, post.id, workspace.scheduledPosts]);
 
+  const linkedEvent = post.eventId ? getEventById(workspaceEvents, post.eventId) : undefined;
+  const thumbAspect: CardThumbnailAspect =
+    post.format === "portrait" || post.format === "story" ? "portrait" : "video";
+  const hashtagCount = post.hashtags.trim()
+    ? post.hashtags.trim().split(/\s+/).filter((h) => h.startsWith("#")).length
+    : 0;
+
   function toggleFormat(f: PostFormat) {
-    // Auto-drop platforms that don't accept the new format
     const allowed = new Set(
       availablePlatforms.filter((p) => p.formats.includes(f)).map((p) => p.short),
     );
@@ -165,22 +179,282 @@ export function ComposerCard({
     }
   }
 
-  const linkedEvent = post.eventId ? getEventById(workspaceEvents, post.eventId) : undefined;
-  const thumbAspect: CardThumbnailAspect =
-    post.format === "portrait" || post.format === "story" ? "portrait" : "video";
+  if (focused) {
+    return (
+      <div
+        data-testid={`composer-card-${post.id}`}
+        className="flex flex-col gap-4"
+      >
+        <section className="panel p-[18px]">
+          <ComposerSectionLabel n="01" title="MEDIA" />
+          <div className="flex items-center gap-4 rounded-md border-[1.5px] border-dashed border-foreground bg-background px-5 py-5">
+            <CardThumbnail
+              src={post.previewUrl}
+              post={{ id: post.id, title: post.filename, mediaKind: post.mediaKind }}
+              alt={post.filename}
+              kind={post.mediaKind}
+              aspect={thumbAspect}
+              layout="square"
+              className="!h-[74px] !w-[74px]"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-display text-[0.9375rem] font-semibold text-foreground">
+                {post.filename}
+              </div>
+              <div className="mt-1 font-mono text-[0.6875rem] font-medium text-muted-foreground">
+                {post.mediaKind === "video" ? "Video" : "Image"} · {FORMAT_META[post.format].label}
+                {post.sizeMB != null ? ` · ${post.sizeMB.toFixed(1)} MB` : ""}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onRemove}
+              aria-label="Remove card"
+              data-testid="composer-remove-btn"
+              className="shrink-0 rounded-md border-[1.5px] border-foreground bg-card px-3 py-2 font-mono text-[0.6875rem] font-semibold uppercase transition-colors hover:bg-secondary"
+            >
+              Remove
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-0 overflow-hidden rounded-md border-[1.5px] border-foreground">
+            {(Object.keys(FORMAT_META) as PostFormat[]).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => toggleFormat(f)}
+                data-testid={`format-${f}`}
+                className={`px-2 py-2.5 text-center font-mono text-[0.55rem] uppercase tracking-[0.14em] transition-colors ${
+                  post.format === f
+                    ? "bg-foreground text-background"
+                    : "bg-card text-muted-foreground hover:bg-secondary"
+                }`}
+              >
+                {FORMAT_META[f].label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel p-[18px]">
+          <ComposerSectionLabel n="02" title="CAPTION" />
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <AiButton
+              label="Caption"
+              busy={busy === "caption"}
+              onClick={() => runAi("caption")}
+              testid={`ai-caption-${post.id}`}
+            />
+            <AiButton
+              label="Hashtags"
+              busy={busy === "hashtags"}
+              onClick={() => runAi("hashtags")}
+              testid={`ai-hashtags-${post.id}`}
+            />
+            <AiButton
+              label="YouTube desc"
+              busy={busy === "yt_desc"}
+              onClick={() => runAi("yt_desc")}
+              testid={`ai-yt-desc-${post.id}`}
+            />
+          </div>
+          {post.platforms.length > 1 ? (
+            <div className="mb-3 flex flex-wrap gap-1">
+              <button
+                type="button"
+                onClick={() => setCaptionPlatform("all")}
+                className={`rounded-sm px-2.5 py-1 font-mono text-[0.6875rem] uppercase ${
+                  captionPlatform === "all"
+                    ? "border-[1.5px] border-foreground bg-accent text-foreground"
+                    : "text-muted-foreground"
+                }`}
+              >
+                All platforms
+              </button>
+              {post.platforms.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setCaptionPlatform(p)}
+                  className={`rounded-sm px-2.5 py-1 font-mono text-[0.6875rem] uppercase ${
+                    captionPlatform === p
+                      ? "border-[1.5px] border-foreground bg-accent text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <textarea
+            value={
+              captionPlatform === "all"
+                ? post.caption
+                : (post.platformCaptions?.[captionPlatform] ?? post.caption)
+            }
+            onChange={(e) => {
+              if (captionPlatform === "all") {
+                onChange({ ...post, caption: e.target.value });
+              } else {
+                onChange({
+                  ...post,
+                  platformCaptions: {
+                    ...(post.platformCaptions ?? {}),
+                    [captionPlatform]: e.target.value,
+                  },
+                });
+              }
+            }}
+            placeholder="Write your caption — customize per platform with the tabs above."
+            data-testid={`caption-input-${post.id}`}
+            rows={4}
+            className={inputClass}
+          />
+          <div className="mt-2 flex justify-between font-mono text-[0.6875rem] font-medium text-muted-foreground">
+            <span>HASHTAGS · {hashtagCount}</span>
+            <span>
+              {(() => {
+                const text =
+                  captionPlatform === "all"
+                    ? post.caption
+                    : (post.platformCaptions?.[captionPlatform] ?? post.caption);
+                const platforms =
+                  captionPlatform === "all" ? post.platforms : [captionPlatform];
+                const limit =
+                  platforms.length > 0
+                    ? Math.min(...platforms.map((p) => CHAR_LIMITS[p]))
+                    : 2200;
+                return `${text.length} / ${limit}`;
+              })()}
+            </span>
+          </div>
+          <textarea
+            value={post.hashtags}
+            onChange={(e) => onChange({ ...post, hashtags: e.target.value })}
+            placeholder="#holyspirit #sundayservice #worship"
+            data-testid={`hashtags-input-${post.id}`}
+            rows={2}
+            className={`${inputClass} mt-3 font-mono text-xs`}
+          />
+        </section>
+
+        <section className="panel p-[18px]">
+          <ComposerSectionLabel n="03" title="PLATFORMS" />
+          <div className="flex flex-wrap gap-2.5">
+            {availablePlatforms.map((meta) => {
+              const active = post.platforms.includes(meta.short);
+              const disabled = incompatiblePlatforms.has(meta.short);
+              return (
+                <button
+                  key={meta.short}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => !disabled && togglePlatform(meta.short)}
+                  title={disabled ? `${meta.full} doesn't support ${post.format}` : meta.full}
+                  data-testid={`platform-${meta.short.replace(/\s+/g, "-")}`}
+                  className={`inline-flex items-center gap-2 rounded-md border-[1.5px] border-foreground px-3 py-2.5 text-[0.8125rem] font-semibold transition-colors ${
+                    disabled
+                      ? "cursor-not-allowed opacity-40"
+                      : active
+                        ? "bg-accent text-foreground"
+                        : "bg-card text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ background: platformDotColor(meta.short) }}
+                  />
+                  {meta.full}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="panel p-[18px]">
+          <ComposerSectionLabel n="04" title="SCHEDULE" />
+          <ContentPublishSchedule
+            fileId={post.id}
+            platforms={post.platforms}
+            proposedTimes={post.proposedTimes}
+            scheduledPosts={workspace.scheduledPosts}
+            editable
+            onSuggestTimes={(times) => {
+              onChange({
+                ...post,
+                proposedTimes: { ...(post.proposedTimes ?? {}), ...times },
+              });
+            }}
+            onApplyTimes={(times) => {
+              onChange({
+                ...post,
+                proposedTimes: { ...(post.proposedTimes ?? {}), ...times },
+              });
+            }}
+          />
+        </section>
+
+        <section className="panel p-[18px]">
+          <ComposerSectionLabel n="05" title="ADD TO ALBUM" />
+          <EventAssociationPicker
+            events={workspaceEvents}
+            value={post.eventId}
+            onChange={(eventId) => onChange({ ...post, eventId })}
+            onCreateEvent={() => createEventFlow.openCreateEvent()}
+          />
+          {createEventFlow.modal}
+        </section>
+
+        <section className="panel p-[18px]">
+          <ComposerSectionLabel n="06" title="ADVANCED" />
+          <textarea
+            value={post.transcript}
+            onChange={(e) => onChange({ ...post, transcript: e.target.value })}
+            placeholder="Paste transcript or talking points for AI context…"
+            data-testid={`transcript-input-${post.id}`}
+            rows={3}
+            className={`${inputClass} font-mono text-xs`}
+          />
+        </section>
+
+        {error ? (
+          <div className="rounded-md border border-danger/60 bg-danger/10 px-4 py-3 text-[0.65rem] leading-relaxed text-danger">
+            {error}
+          </div>
+        ) : null}
+
+        {conflicts.length > 0 ? (
+          <div
+            data-testid={`conflict-banner-${post.id}`}
+            className="rounded-md border border-warning/60 bg-warning/10 px-4 py-3 text-[0.65rem] leading-relaxed text-warning"
+          >
+            <div className="mb-1 flex items-center gap-1.5 text-sm font-medium">
+              <AlertTriangle className="h-3 w-3" strokeWidth={2} />
+              Schedule conflict{conflicts.length === 1 ? "" : "s"} ({conflicts.length})
+            </div>
+            {conflicts.map((c) => (
+              <div key={c.withId} className="leading-snug">
+                · {c.sharedPlatforms.join(", ")} overlaps with “{c.withTitle}” (±{c.deltaMinutes} min)
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <article
       data-testid={`composer-card-${post.id}`}
       {...(dragHandlers ?? {})}
-      className={`flex flex-col overflow-hidden rounded-md border border-border bg-surface-elevated transition-opacity ${
+      className={`panel flex flex-col overflow-hidden transition-opacity ${
         isDragging ? "opacity-40" : "opacity-100"
       }`}
     >
-      <div className={`border-b border-border ${focused ? "px-5 py-3" : "px-5 py-4"}`}>
+      <div className="border-b-[1.5px] border-foreground px-5 py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-3">
-            {!focused && dragHandlers ? (
+            {dragHandlers ? (
               <span
                 title="Drag to reorder"
                 data-testid="drag-handle"
@@ -213,7 +487,7 @@ export function ComposerCard({
             type="button"
             onClick={onRemove}
             aria-label="Remove card"
-            className="shrink-0 rounded-sm border border-border bg-background/60 p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 rounded-sm border-[1.5px] border-foreground bg-card p-1.5 text-muted-foreground transition-colors hover:text-foreground"
             data-testid="composer-remove-btn"
           >
             <X className="h-3.5 w-3.5" />
@@ -221,8 +495,8 @@ export function ComposerCard({
         </div>
       </div>
 
-      <div className="composer-section grid gap-6 p-5 lg:grid-cols-[200px_1fr]">
-        <div className="space-y-3">
+      {expanded ? (
+        <div className="space-y-4 p-5">
           <CardThumbnail
             src={post.previewUrl}
             post={{ id: post.id, title: post.filename, mediaKind: post.mediaKind }}
@@ -231,238 +505,33 @@ export function ComposerCard({
             aspect={thumbAspect}
             layout="block"
           />
-          <div className="grid grid-cols-3 gap-0 overflow-hidden rounded-md border border-border">
-            {(Object.keys(FORMAT_META) as PostFormat[]).map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => toggleFormat(f)}
-                data-testid={`format-${f}`}
-                className={`px-2 py-2.5 text-center text-[0.55rem] uppercase tracking-[0.14em] transition-colors ${
-                  post.format === f
-                    ? "bg-foreground text-background"
-                    : "bg-background/60 text-muted-foreground hover:bg-secondary"
-                }`}
-              >
-                {FORMAT_META[f].label}
-              </button>
-            ))}
+          <div className="flex flex-wrap gap-2">
+            {availablePlatforms.map((meta) => {
+              const active = post.platforms.includes(meta.short);
+              const disabled = incompatiblePlatforms.has(meta.short);
+              return (
+                <PlatformSelectChip
+                  key={meta.short}
+                  platform={meta.short}
+                  active={active}
+                  disabled={disabled}
+                  onClick={() => !disabled && togglePlatform(meta.short)}
+                  title={disabled ? `${meta.full} doesn't support ${post.format}` : meta.full}
+                  data-testid={`platform-${meta.short.replace(/\s+/g, "-")}`}
+                />
+              );
+            })}
           </div>
-          <PlatformPreview
-            variant="inline"
-            platforms={post.platforms}
-            caption={post.caption}
-            platformCaptions={post.platformCaptions}
-            hashtags={post.hashtags}
-            filename={post.filename}
-            format={post.format}
-            defaultOpen={focused}
-          />
-        </div>
-
-        <div className="space-y-6">
-          <section className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium text-foreground">Where it goes</h3>
-              <p className="mt-0.5 text-body-sm text-muted-foreground">
-                Platforms &amp; event album
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {availablePlatforms.map((meta) => {
-                const active = post.platforms.includes(meta.short);
-                const disabled = incompatiblePlatforms.has(meta.short);
-                return (
-                  <PlatformSelectChip
-                    key={meta.short}
-                    platform={meta.short}
-                    active={active}
-                    disabled={disabled}
-                    onClick={() => !disabled && togglePlatform(meta.short)}
-                    title={disabled ? `${meta.full} doesn't support ${post.format}` : meta.full}
-                    data-testid={`platform-${meta.short.replace(/\s+/g, "-")}`}
-                  />
-                );
-              })}
-            </div>
-            <EventAssociationPicker
-              events={workspaceEvents}
-              value={post.eventId}
-              onChange={(eventId) => onChange({ ...post, eventId })}
-              onCreateEvent={() => createEventFlow.openCreateEvent()}
-            />
-            {createEventFlow.modal}
-          </section>
-
-          <section className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium text-foreground">When it posts</h3>
-              <p className="mt-0.5 text-body-sm text-muted-foreground">
-                One time per platform — use Suggest for {workspace.name}&apos;s best slots
-              </p>
-            </div>
-            <ContentPublishSchedule
-              fileId={post.id}
-              platforms={post.platforms}
-              proposedTimes={post.proposedTimes}
-              scheduledPosts={workspace.scheduledPosts}
-              editable
-              onSuggestTimes={(times) => {
-                onChange({
-                  ...post,
-                  proposedTimes: { ...(post.proposedTimes ?? {}), ...times },
-                });
-              }}
-              onApplyTimes={(times) => {
-                onChange({
-                  ...post,
-                  proposedTimes: { ...(post.proposedTimes ?? {}), ...times },
-                });
-              }}
-            />
-          </section>
-
-          <section className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium text-foreground">What it says</h3>
-              <p className="mt-0.5 text-body-sm text-muted-foreground">Caption, hashtags, and AI copy</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <AiButton
-                label="Caption"
-                busy={busy === "caption"}
-                onClick={() => runAi("caption")}
-                testid={`ai-caption-${post.id}`}
-              />
-              <AiButton
-                label="Hashtags"
-                busy={busy === "hashtags"}
-                onClick={() => runAi("hashtags")}
-                testid={`ai-hashtags-${post.id}`}
-              />
-              <AiButton
-                label="YouTube desc"
-                busy={busy === "yt_desc"}
-                onClick={() => runAi("yt_desc")}
-                testid={`ai-yt-desc-${post.id}`}
-              />
-            </div>
-            {post.platforms.length > 1 ? (
-              <div className="flex flex-wrap gap-1">
-                <button
-                  type="button"
-                  onClick={() => setCaptionPlatform("all")}
-                  className={`rounded-sm px-2.5 py-1 text-body-sm ${
-                    captionPlatform === "all"
-                      ? "bg-secondary text-foreground"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  All platforms
-                </button>
-                {post.platforms.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setCaptionPlatform(p)}
-                    className={`rounded-sm px-2.5 py-1 text-body-sm ${
-                      captionPlatform === p ? "bg-secondary text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <textarea
-              value={
-                captionPlatform === "all"
-                  ? post.caption
-                  : (post.platformCaptions?.[captionPlatform] ?? post.caption)
-              }
-              onChange={(e) => {
-                if (captionPlatform === "all") {
-                  onChange({ ...post, caption: e.target.value });
-                } else {
-                  onChange({
-                    ...post,
-                    platformCaptions: {
-                      ...(post.platformCaptions ?? {}),
-                      [captionPlatform]: e.target.value,
-                    },
-                  });
-                }
-              }}
-              placeholder="Write your caption — customize per platform with the tabs above."
-              data-testid={`caption-input-${post.id}`}
-              rows={4}
-              className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
-            />
-            <CharCounters
-              text={
-                captionPlatform === "all"
-                  ? post.caption
-                  : (post.platformCaptions?.[captionPlatform] ?? post.caption)
-              }
-              platforms={captionPlatform === "all" ? post.platforms : [captionPlatform]}
-            />
-            <textarea
-              value={post.hashtags}
-              onChange={(e) => onChange({ ...post, hashtags: e.target.value })}
-              placeholder="Hashtags (optional)"
-              data-testid={`hashtags-input-${post.id}`}
-              rows={2}
-              className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
-            />
-          </section>
-
-          <CollapsibleSection
-            title="Advanced"
-            subtitle="Transcript and AI context"
-            defaultOpen={false}
-          >
-            <textarea
-              value={post.transcript}
-              onChange={(e) => onChange({ ...post, transcript: e.target.value })}
-              placeholder="Paste transcript or talking points…"
-              data-testid={`transcript-input-${post.id}`}
-              rows={3}
-              className="w-full resize-y rounded-sm border border-border bg-background/60 px-4 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none"
-            />
-          </CollapsibleSection>
-        </div>
-      </div>
-
-      {error ? (
-        <div className="composer-section mx-5 mb-5 rounded-sm border border-danger/60 bg-danger/10 px-4 py-3 text-[0.65rem] leading-relaxed text-danger">
-          {error}
-        </div>
-      ) : null}
-
-      {conflicts.length > 0 ? (
-        <div
-          data-testid={`conflict-banner-${post.id}`}
-          className="composer-section mx-5 mb-5 rounded-sm border border-warning/60 bg-warning/10 px-4 py-3 text-[0.65rem] leading-relaxed text-warning"
-        >
-          <div className="mb-1 flex items-center gap-1.5 text-sm font-medium">
-            <AlertTriangle className="h-3 w-3" strokeWidth={2} />
-            Schedule conflict{conflicts.length === 1 ? "" : "s"} ({conflicts.length})
-          </div>
-          {conflicts.map((c) => (
-            <div key={c.withId} className="leading-snug">
-              · {c.sharedPlatforms.join(", ")} overlaps with “{c.withTitle}” (±{c.deltaMinutes} min)
-            </div>
-          ))}
         </div>
       ) : null}
 
       {!hideFooterActions ? (
-        <div className="border-t border-border">
+        <div className="border-t-[1.5px] border-foreground">
           <button
             type="button"
             onClick={onSaveDraft}
             data-testid={`save-draft-${post.id}`}
-            className="flex w-full items-center justify-center gap-2 bg-surface px-5 py-4 text-body-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            className="flex w-full items-center justify-center gap-2 bg-card px-5 py-4 text-body-sm font-medium text-foreground transition-colors hover:bg-secondary"
           >
             <Save className="h-3 w-3" strokeWidth={2} />
             Save draft
@@ -490,7 +559,7 @@ function AiButton({
       onClick={onClick}
       disabled={busy}
       data-testid={testid}
-      className="flex items-center gap-1.5 rounded-sm border border-border bg-background/60 px-2.5 py-1.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-60"
+      className="flex items-center gap-1.5 rounded-md border-[1.5px] border-foreground bg-card px-2.5 py-1.5 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-60"
     >
       {busy ? (
         <Loader2 className="h-2.5 w-2.5 animate-spin" />

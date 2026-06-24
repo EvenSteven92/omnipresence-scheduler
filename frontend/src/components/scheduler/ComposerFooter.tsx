@@ -2,11 +2,13 @@ import { CalendarCheck, Save } from "lucide-react";
 
 export function ComposerFooter({
   readyCount,
+  publishCount = 0,
   onSaveDraft,
   onSchedule,
   canSave,
 }: {
   readyCount: number;
+  publishCount?: number;
   onSaveDraft: () => void;
   onSchedule: () => void;
   canSave: boolean;
@@ -14,11 +16,11 @@ export function ComposerFooter({
   return (
     <footer
       data-testid="composer-footer"
-      className="flex shrink-0 items-center justify-between gap-4 border-t border-border bg-surface px-6 py-4"
+      className="flex shrink-0 items-center justify-between gap-4 border-t-[1.5px] border-foreground bg-card px-6 py-4"
     >
-      <p className="text-body-sm text-muted-foreground">
+      <p className="font-mono text-body-sm text-muted-foreground">
         {readyCount > 0
-          ? `${readyCount} post${readyCount === 1 ? "" : "s"} ready to schedule`
+          ? `${readyCount} card${readyCount === 1 ? "" : "s"} ready · ${publishCount} publish${publishCount === 1 ? "" : "es"} on this card`
           : "Set publish times for all platforms to schedule"}
       </p>
       <div className="flex items-center gap-2">
@@ -40,7 +42,7 @@ export function ComposerFooter({
           className="btn-action-primary btn-action disabled:opacity-50"
         >
           <CalendarCheck className="h-3.5 w-3.5" />
-          Schedule
+          Schedule {publishCount > 0 ? `${publishCount} publish${publishCount === 1 ? "" : "es"}` : ""}
         </button>
       </div>
     </footer>

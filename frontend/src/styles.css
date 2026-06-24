@@ -229,16 +229,11 @@
     overflow: hidden;
   }
   .composer-preview-pane {
-    width: 300px;
+    width: 420px;
     flex-shrink: 0;
-    border-left: 1px solid var(--color-border);
+    border-left: 1.5px solid var(--color-foreground);
     overflow-y: auto;
-    background: var(--color-surface);
-  }
-  @media (max-width: 1279px) {
-    .composer-preview-pane {
-      display: none;
-    }
+    background: var(--color-background);
   }
 
   .btn-action {

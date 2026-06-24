@@ -22,6 +22,7 @@ export function DayPostCountChip({
 }) {
   const needsEvent = unassociatedCount > 0;
   const eventLinked = eventHighlightCount > 0;
+  const cardWord = count === 1 ? "CARD" : "CARDS";
 
   return (
     <button
@@ -33,38 +34,31 @@ export function DayPostCountChip({
       data-testid="day-post-count-chip"
       data-needs-event={needsEvent ? "true" : "false"}
       data-event-highlight={eventLinked ? "true" : "false"}
-      className={`flex w-full cursor-pointer flex-col items-center justify-center gap-0.5 rounded-sm border font-mono uppercase tracking-[0.12em] text-foreground transition-colors hover:border-accent ${
+      className={`mt-auto flex w-full cursor-pointer items-center gap-2 rounded-md border-[1.5px] border-foreground px-2.5 py-2 transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)] ${
         eventLinked
-          ? "border-accent bg-accent/15 ring-2 ring-inset ring-accent/50"
+          ? "bg-accent ring-2 ring-inset ring-foreground/20"
           : needsEvent
-            ? "border-dashed border-warning/70 bg-warning/10 ring-1 ring-inset ring-warning/30"
+            ? "border-dashed border-warning bg-warning/15"
             : variant === "scheduled"
-              ? "border-muted-foreground/45 bg-background/40"
-              : "border-border bg-background/60"
-      } ${
-        dense
-          ? "min-h-[2.75rem] px-2 py-1.5 text-[0.6875rem]"
-          : "min-h-[4.5rem] px-2 py-2 text-[0.75rem]"
-      }`}
+              ? "bg-paper-2"
+              : "bg-accent"
+      } ${dense ? "min-h-[2.5rem]" : "min-h-[2.75rem]"}`}
     >
-      <span>
-        {count} card{count === 1 ? "" : "s"}
+      <span className="font-display text-base font-bold leading-none text-foreground">{count}</span>
+      <span className="font-mono text-[0.5625rem] font-semibold uppercase tracking-[0.06em] text-foreground">
+        {cardWord}
       </span>
       {eventLinked ? (
         <span
           data-testid="day-post-event-highlight-label"
-          className={`font-mono normal-case text-accent ${
-            dense ? "text-[0.45rem] tracking-[0.1em]" : "text-[0.5rem] tracking-[0.12em]"
-          }`}
+          className="ml-auto font-mono text-[0.45rem] normal-case tracking-[0.1em] text-foreground/70"
         >
-          {eventHighlightCount}_linked
+          {eventHighlightCount} linked
         </span>
       ) : needsEvent ? (
         <span
           data-testid="day-post-needs-event-label"
-          className={`font-mono normal-case text-warning ${
-            dense ? "text-[0.45rem] tracking-[0.1em]" : "text-[0.5rem] tracking-[0.12em]"
-          }`}
+          className="ml-auto font-mono text-[0.45rem] normal-case tracking-[0.1em] text-warning"
         >
           {unassociatedCount} needs event
         </span>

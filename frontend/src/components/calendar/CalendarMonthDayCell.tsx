@@ -62,14 +62,10 @@ export function CalendarMonthDayCell({
             }
           : undefined
       }
-      className={`group/cell relative flex min-h-[168px] min-w-0 flex-col gap-2 p-3 transition-colors ${
-        muted
-          ? "bg-surface/40 text-muted-foreground/40"
-          : hasPosts
-            ? "bg-surface shadow-sm"
-            : emptyMainDay
-              ? "bg-background/40 text-muted-foreground/70 hover:bg-background/60"
-              : "bg-surface"
+      className={`group/cell relative flex min-h-[168px] min-w-0 flex-col gap-2 bg-card p-3 transition-colors ${
+        muted ? "bg-paper-2/50 text-muted-foreground/40" : ""
+      } ${
+        !muted && emptyMainDay ? "text-muted-foreground/70 hover:bg-background/60" : ""
       } ${
         !muted && isToday
           ? "ring-1 ring-inset ring-accent"

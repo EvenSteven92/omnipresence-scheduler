@@ -23,8 +23,8 @@ function chipBorderClass(variant: PlatformChipVariant): string {
   if (variant === "warning") return "border-warning/60 bg-warning/10";
   if (variant === "muted") return "border-border/50 bg-background/40 opacity-70";
   if (variant === "scheduled") return "border-dashed border-muted-foreground/45 bg-background/40";
-  if (variant === "active") return "border-foreground bg-foreground text-background";
-  return "border-border bg-background/70";
+  if (variant === "active") return "border-[1.5px] border-foreground bg-accent text-foreground";
+  return "border-[1.5px] border-foreground bg-card";
 }
 
 /**
@@ -49,7 +49,7 @@ export function PlatformChip({
   const meta = PLATFORMS_BY_SHORT[platform];
   const s = SIZES[size];
   const borderClass = chipBorderClass(variant);
-  const labelClass = variant === "active" ? "text-background" : "text-foreground/90";
+  const labelClass = "text-foreground/90";
 
   return (
     <span
@@ -59,7 +59,7 @@ export function PlatformChip({
       <PlatformIcon
         platform={platform}
         className={`${s.icon} shrink-0`}
-        muted={variant === "muted" || variant === "active"}
+        muted={variant === "muted"}
       />
       {label ? (
         <span className={`truncate font-mono uppercase tracking-wide ${labelClass} ${s.text}`}>
@@ -108,7 +108,7 @@ export function PlatformSelectChip({
           ? "cursor-not-allowed border-border/40 bg-background/30 text-muted-foreground/40"
           : active
             ? chipBorderClass("active")
-            : "border-border bg-background/60 text-foreground hover:bg-secondary"
+            : "border-[1.5px] border-foreground bg-card text-foreground hover:bg-secondary"
       } ${className}`}
     >
       <PlatformIcon

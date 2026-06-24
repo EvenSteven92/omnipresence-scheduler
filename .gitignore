@@ -19,6 +19,9 @@ backend/__pycache__/
 **/__pycache__/
 *.pyc
 
+# Design reference imports (local only)
+.design-import/
+
 # OS / editor
 .DS_Store
 .idea/

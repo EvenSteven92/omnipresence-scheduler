@@ -327,15 +327,15 @@ function CalendarPage() {
               ) : null}
 
               <div className="mt-4 overflow-x-auto">
-                <div className="min-w-[48rem] overflow-hidden rounded-sm border border-border bg-border">
-                  <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] gap-px">
-                    <div className="bg-surface py-2 text-center text-[0.6875rem] text-muted-foreground">
+                <div className="min-w-[48rem] overflow-hidden rounded-lg border-[1.5px] border-foreground bg-foreground">
+                  <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] gap-[1.5px]">
+                    <div className="bg-paper-2 py-2.5 text-center font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
                       Wk
                     </div>
                     {CALENDAR_DOW.map((d) => (
                       <div
                         key={d}
-                        className="bg-surface py-2 text-center text-[0.6875rem] font-medium text-muted-foreground"
+                        className="bg-paper-2 py-2.5 text-center font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-muted-foreground"
                       >
                         {d}
                       </div>
@@ -347,7 +347,7 @@ function CalendarPage() {
                       >
                         <div
                           data-testid={`cal-week-${week.weekNumber}`}
-                          className="flex min-h-[168px] items-start justify-center bg-surface px-1 py-3"
+                          className="flex min-h-[168px] items-start justify-center bg-card px-1 py-3"
                         >
                           <span className="font-data text-[0.65rem] text-muted-foreground">
                             {week.weekNumber}
