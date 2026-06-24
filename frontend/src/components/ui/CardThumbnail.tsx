@@ -3,6 +3,7 @@ import { FileVideo, Image as ImageIcon, Play } from "lucide-react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import { demoPreviewForPost } from "@/lib/demo-media";
 import { inferMediaAspect, inferMediaKind } from "@/lib/scheduled-post-display";
+import type { CardMediaType } from "@/lib/card-display";
 import { cn } from "@/lib/utils";
 
 export type CardThumbnailAspect = "auto" | "video" | "square" | "portrait";
@@ -13,20 +14,22 @@ const ASPECT_RATIO: Record<Exclude<CardThumbnailAspect, "auto">, string> = {
   portrait: "9/16",
 };
 
-export type CardThumbnailLayout = "rail" | "banner" | "block" | "fixed";
+export type CardThumbnailLayout = "rail" | "banner" | "block" | "fixed" | "square";
 
-export type CardThumbnailHeight = "sm" | "md";
+export type CardThumbnailHeight = "sm" | "md" | "stream";
 
 const RAIL_HEIGHT: Record<CardThumbnailHeight, string> = {
   sm: "h-32",
   md: "h-44",
+  stream: "h-[86px] w-[86px]",
 };
 
 const LAYOUT_CLASS: Record<CardThumbnailLayout, string> = {
-  rail: "shrink-0 border-r border-border",
-  banner: "h-24 w-full shrink-0 border-b border-border",
-  block: "w-full shrink-0 border-b border-border",
+  rail: "shrink-0 border-r-[1.5px] border-foreground",
+  banner: "h-24 w-full shrink-0 border-b-[1.5px] border-foreground",
+  block: "w-full shrink-0 border-b-[1.5px] border-foreground",
   fixed: "h-full w-full",
+  square: "h-[86px] w-[86px] shrink-0 overflow-hidden rounded-md border-[1.5px] border-foreground",
 };
 
 function resolveAspectRatio(
@@ -59,6 +62,7 @@ export function CardThumbnail({
   kind,
   aspect = "auto",
   badge,
+  mediaType,
   layout = "rail",
   height = "md",
   className,
@@ -69,6 +73,7 @@ export function CardThumbnail({
   kind?: "video" | "image";
   aspect?: CardThumbnailAspect;
   badge?: ReactNode;
+  mediaType?: CardMediaType;
   layout?: CardThumbnailLayout;
   height?: CardThumbnailHeight;
   className?: string;
@@ -76,19 +81,18 @@ export function CardThumbnail({
   const title = post?.title ?? alt;
   const mediaKind = kind ?? post?.mediaKind ?? (post ? inferMediaKind(post.title) : "video");
   const imageSrc = src ?? (post ? demoPreviewForPost({ ...post, mediaKind }) : undefined);
-  // Use a <video> element only for an actual video source (real upload: blob/object URL, or a
-  // video file extension). Demo previews/covers are always poster images and must render as <img>.
-  const isVideoSrc =
-    !!imageSrc &&
-    (imageSrc.startsWith("blob:") ||
-      imageSrc.startsWith("data:video") ||
-      /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(imageSrc));
-  const aspectRatio = layout === "fixed" ? undefined : resolveAspectRatio(aspect, post?.title, mediaKind);
+  const aspectRatio =
+    layout === "fixed" || layout === "square" ? undefined : resolveAspectRatio(aspect, post?.title, mediaKind);
+  const typeLabel = mediaType ?? (mediaKind === "video" ? "VIDEO" : "IMAGE");
+
+  const isSquare = layout === "square";
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-none border-border bg-background",
+        "relative overflow-hidden bg-background",
+        !isSquare && "rounded-none",
+        isSquare && "rounded-md",
         LAYOUT_CLASS[layout],
         layout === "rail" && RAIL_HEIGHT[height],
         layout === "block" && "aspect-video",
@@ -96,32 +100,32 @@ export function CardThumbnail({
       )}
       style={aspectRatio ? { aspectRatio } : undefined}
     >
-      {isVideoSrc ? (
+      {imageSrc && mediaKind === "video" ? (
         <video
           src={imageSrc}
           muted
           playsInline
           preload="metadata"
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          className="h-full w-full object-cover"
         />
       ) : imageSrc ? (
-        <img
-          src={imageSrc}
-          alt={title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-          loading="lazy"
-        />
+        <img src={imageSrc} alt={title} className="h-full w-full object-cover" loading="lazy" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-background/60">
+        <div className="flex h-full w-full items-center justify-center bg-paper-2/60">
           <MediaFallback kind={mediaKind} />
         </div>
       )}
       {mediaKind === "video" && imageSrc ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/20">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/30 bg-background/70 shadow-lg backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full border-[1.5px] border-foreground bg-white/85 shadow-sm">
             <Play className="h-3 w-3 fill-foreground text-foreground" strokeWidth={0} />
           </span>
         </div>
+      ) : null}
+      {isSquare ? (
+        <span className="absolute bottom-0 left-0 bg-foreground px-1.5 py-0.5 font-mono text-[0.5rem] font-bold uppercase leading-none tracking-[0.06em] text-background">
+          {typeLabel}
+        </span>
       ) : null}
       {badge ? <div className="absolute right-2 top-2 z-10">{badge}</div> : null}
     </div>

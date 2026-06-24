@@ -20,14 +20,14 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative border-b border-border/60 px-2 py-2">
+    <div ref={rootRef} className="relative">
       <button
         type="button"
         data-testid="workspace-switcher"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex w-full items-center gap-2 rounded-sm border border-border bg-background/50 transition-colors hover:bg-secondary",
-          collapsed ? "justify-center px-2 py-2" : "px-2.5 py-2",
+          "flex w-full items-center gap-2.5 rounded-md border-[1.5px] border-foreground bg-card text-left transition-colors hover:bg-paper-2/60",
+          collapsed ? "justify-center px-2 py-2" : "px-2.5 py-2.5",
         )}
         aria-expanded={open}
         aria-haspopup="listbox"

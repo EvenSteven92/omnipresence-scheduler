@@ -13,25 +13,34 @@ export function CardStats({
   engagementRate: number;
   className?: string;
 }) {
+  const cells = [
+    { label: "Views", value: fmtCompact(views), accent: false },
+    { label: "Likes", value: fmtCompact(likes), accent: false },
+    { label: "Engagement", value: `${(engagementRate * 100).toFixed(1)}%`, accent: true },
+  ];
+
   return (
     <div
       className={cn(
-        "grid grid-cols-3 gap-2 border-t border-border bg-background/40 px-3 py-2.5 text-center",
+        "grid grid-cols-3 gap-px overflow-hidden rounded-md border-[1.5px] border-foreground bg-foreground",
         className,
       )}
     >
-      <div>
-        <div className="font-mono text-sm text-foreground">{fmtCompact(views)}</div>
-        <div className="text-body-sm text-muted-foreground">Views</div>
-      </div>
-      <div>
-        <div className="font-mono text-sm text-foreground">{fmtCompact(likes)}</div>
-        <div className="text-body-sm text-muted-foreground">Likes</div>
-      </div>
-      <div>
-        <div className="font-mono text-sm text-accent">{(engagementRate * 100).toFixed(1)}%</div>
-        <div className="text-body-sm text-muted-foreground">Engagement</div>
-      </div>
+      {cells.map(({ label, value, accent }) => (
+        <div key={label} className="bg-card px-3 py-2.5 text-center">
+          <div
+            className={cn(
+              "font-display text-lg font-bold leading-none text-foreground",
+              accent && "text-accent",
+            )}
+          >
+            {value}
+          </div>
+          <div className="mt-1 font-mono text-[0.5rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            {label}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

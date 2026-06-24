@@ -24,22 +24,26 @@ function AlbumCountsTrailing({
   publishedCount: number;
   totalViews: number;
 }) {
+  const cells = [
+    { label: "Cards", value: String(mediaCount) },
+    { label: "Live", value: String(publishedCount) },
+    { label: "Views", value: totalViews > 0 ? fmtCompact(totalViews) : "—", accent: true },
+  ];
+
   return (
-    <div className="grid grid-cols-3 gap-2 border-t border-border px-5 py-3 text-center">
-      <div>
-        <div className="font-mono text-sm text-foreground">{mediaCount}</div>
-        <div className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">Files</div>
-      </div>
-      <div>
-        <div className="font-mono text-sm text-foreground">{publishedCount}</div>
-        <div className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">Live</div>
-      </div>
-      <div>
-        <div className="font-mono text-sm text-accent">
-          {totalViews > 0 ? fmtCompact(totalViews) : "—"}
+    <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border-[1.5px] border-foreground bg-foreground">
+      {cells.map(({ label, value, accent }) => (
+        <div key={label} className="bg-card px-3 py-2.5 text-center">
+          <div
+            className={`font-display text-lg font-bold leading-none ${accent ? "text-accent" : "text-foreground"}`}
+          >
+            {value}
+          </div>
+          <div className="mt-1 font-mono text-[0.5rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            {label}
+          </div>
         </div>
-        <div className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">Views</div>
-      </div>
+      ))}
     </div>
   );
 }
@@ -63,7 +67,6 @@ export function EventAlbumCard({
       size="md"
       orientation="stacked"
       testId={`event-album-${event.id}`}
-      className="transition-colors hover:border-accent/40"
       thumbnail={
         <CardThumbnail
           src={cover.src}
@@ -71,30 +74,29 @@ export function EventAlbumCard({
           layout="block"
           aspect="video"
           badge={
-            <span className="rounded-sm border border-border/80 bg-background/80 px-2 py-0.5 text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground backdrop-blur-sm">
+            <span className="rounded-[5px] border-[1.5px] border-foreground bg-background px-2 py-0.5 font-mono text-[0.5625rem] font-bold uppercase tracking-[0.06em] text-foreground">
               {eventKindLabel(event.kind)}
             </span>
           }
         />
       }
       eyebrow={
-        <p className="text-lg font-semibold leading-none text-foreground">
-          {formatEventTime(event.date)}
+        <p className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.06em] text-accent">
+          {formatEventTime(event.date)} · {formatEventDate(event.date, "medium")}
         </p>
       }
       title={
         <Link
           to="/events/$eventId"
           params={{ eventId: event.id }}
-          className="text-sm font-medium leading-snug text-foreground transition-colors hover:text-accent"
+          className="font-display text-xl font-bold leading-snug text-foreground transition-colors hover:text-accent"
         >
           {event.title}
         </Link>
       }
-      meta={formatEventDate(event.date, "medium")}
       platforms={
         event.description ? (
-          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
             {event.description}
           </p>
         ) : null
@@ -106,11 +108,11 @@ export function EventAlbumCard({
             publishedCount={perf.publishedCount}
             totalViews={perf.totalViews}
           />
-          <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-3">
+          <div className="flex items-center justify-between gap-2 border-t-[1.5px] border-foreground px-5 py-3">
             <Link
               to="/events/$eventId"
               params={{ eventId: event.id }}
-              className="inline-flex items-center gap-1.5 rounded-sm bg-primary px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90"
+              className="btn-action-primary btn-action"
             >
               Open album <ArrowRight className="h-3 w-3" />
             </Link>
@@ -118,7 +120,7 @@ export function EventAlbumCard({
               to="/calendar"
               search={{ event: event.id }}
               data-testid={`event-view-calendar-${event.id}`}
-              className="inline-flex items-center gap-1 text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex items-center gap-1 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
             >
               <CalendarDays className="h-3 w-3" strokeWidth={1.75} />
               View on calendar

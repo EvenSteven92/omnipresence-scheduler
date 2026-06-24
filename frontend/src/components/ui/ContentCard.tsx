@@ -2,14 +2,15 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { CARD_PREVIEW_HEIGHT } from "@/components/post/MediaPreview";
 
-export type ContentCardSize = "chip" | "row" | "sm" | "md";
+export type ContentCardSize = "chip" | "row" | "stream" | "sm" | "md";
 
 export type ContentCardVariant = "default" | "scheduled" | "highlight";
 
 const VARIANT_BORDER: Record<ContentCardVariant, string> = {
-  default: "border-border bg-surface-elevated",
-  scheduled: "border-dashed border-muted-foreground/45 bg-background/40",
-  highlight: "border-dashed border-warning/70 bg-warning/10 ring-1 ring-inset ring-warning/30",
+  default: "border-[1.5px] border-foreground bg-card",
+  scheduled: "border-[1.5px] border-dashed border-muted-foreground/60 bg-background/40",
+  highlight:
+    "border-[1.5px] border-dashed border-warning bg-warning/10 ring-1 ring-inset ring-warning/30",
 };
 
 export function ContentCard({
@@ -32,7 +33,6 @@ export function ContentCard({
   onDragEnd,
 }: {
   size?: ContentCardSize;
-  /** `rail` = thumb left; `stacked` = thumb on top (16:9 landscape). */
   orientation?: "rail" | "stacked";
   variant?: ContentCardVariant;
   thumbnail?: ReactNode;
@@ -51,16 +51,79 @@ export function ContentCard({
   onDragEnd?: (e: React.DragEvent) => void;
 }) {
   const interactive = Boolean(onOpen);
+  const isStream = size === "stream";
   const isRow = size === "row";
-  const isStacked = orientation === "stacked" && !isRow;
+  const isStacked = orientation === "stacked" && !isRow && !isStream;
   const isMd = size === "md";
+
+  if (isStream) {
+    return (
+      <div
+        role={interactive ? "button" : undefined}
+        tabIndex={interactive ? 0 : undefined}
+        draggable={draggable}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onClick={
+          interactive
+            ? (e) => {
+                e.stopPropagation();
+                onOpen?.();
+              }
+            : undefined
+        }
+        onKeyDown={
+          interactive
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpen?.();
+                }
+              }
+            : undefined
+        }
+        data-testid={testId}
+        className={cn("block w-full", className)}
+      >
+        <div
+          className={cn(
+            "group flex items-center gap-4 rounded-lg border-[1.5px] border-foreground bg-card p-3.5 text-left transition-[transform,box-shadow] duration-150",
+            interactive &&
+              "cursor-pointer hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--color-foreground)]",
+            VARIANT_BORDER[variant],
+          )}
+        >
+          {thumbnail}
+          <div className="min-w-0 flex-1">
+            {eyebrow ? (
+              <div className="font-mono text-[0.625rem] font-bold uppercase leading-none tracking-[0.06em] text-accent">
+                {eyebrow}
+              </div>
+            ) : null}
+            <div className="mt-1.5 truncate font-display text-[1.0625rem] font-semibold leading-tight text-foreground">
+              {title}
+            </div>
+            {meta ? <div className="mt-1 text-body-sm text-muted-foreground">{meta}</div> : null}
+            {platforms ? <div className="mt-2.5 flex flex-wrap gap-1.5">{platforms}</div> : null}
+          </div>
+          {trailing ? (
+            <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
+              {trailing}
+            </div>
+          ) : null}
+        </div>
+        {children}
+      </div>
+    );
+  }
 
   const titleClass = cn(
     "block leading-tight text-foreground",
     size === "chip" && "line-clamp-1 text-[0.55rem]",
     size === "row" && "truncate text-sm font-medium",
-    size === "sm" && "line-clamp-2 text-[0.65rem]",
-    size === "md" && "line-clamp-2 text-sm font-medium",
+    size === "sm" && "line-clamp-2 font-display text-sm font-semibold",
+    size === "md" && "line-clamp-2 font-display text-xl font-bold",
   );
 
   const metaClass = cn(
@@ -95,23 +158,25 @@ export function ContentCard({
   );
 
   const frameClass = cn(
-    "group overflow-hidden rounded-md border text-left transition-colors",
+    "group overflow-hidden rounded-lg border text-left transition-[transform,box-shadow,border-color] duration-150",
     VARIANT_BORDER[variant],
     isRow
       ? cn(
-          "flex w-full items-center hover:bg-secondary/30",
+          "flex w-full items-center hover:bg-paper-2/40",
           fullWidth ? "gap-3 px-3 py-2" : "gap-4 px-4 py-3",
         )
       : isMd
-        ? "flex w-full flex-col"
+        ? "flex w-full flex-col hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)]"
         : cn(
             "flex",
             isStacked ? "flex-col" : "",
             fullWidth ? "w-full" : "inline-flex w-fit max-w-full",
-            // Fixed rail height applies only to side-thumbnail (rail) cards, never stacked.
             !isMd && !isStacked && CARD_PREVIEW_HEIGHT,
           ),
-    interactive && "cursor-pointer hover:border-accent/40",
+    interactive && !isMd && "cursor-pointer hover:border-foreground",
+    interactive &&
+      isMd &&
+      "cursor-pointer",
     className,
   );
 
@@ -142,7 +207,7 @@ export function ContentCard({
           : undefined
       }
       data-testid={testId}
-      className={cn(isRow || fullWidth ? "block w-full" : "inline-block w-fit max-w-full")}
+      className={cn(isRow || fullWidth || isStream ? "block w-full" : "inline-block w-fit max-w-full")}
     >
       <div className={frameClass}>
         {thumbnail}

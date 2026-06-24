@@ -538,12 +538,13 @@ function AnalyticsPage() {
                   No published posts in this range
                 </div>
               ) : (
-                <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
+                <div className="flex flex-col gap-3">
                   {topPublished.map((p, i) => (
                     <TopPerformerCard
                       key={p.id}
                       post={p}
-                      isTop={i === 0}
+                      rank={i + 1}
+                      events={workspace.events}
                       onOpen={() => setDetailPost(p)}
                     />
                   ))}

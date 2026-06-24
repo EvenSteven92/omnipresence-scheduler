@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
 import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/lib/workspace-context";
+import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
+import type { ContentEvent } from "@/lib/workspaces/types";
 import type { PublishedPost } from "@/lib/mock-data";
 import { PostDetailModal } from "@/components/post/PostDetailModal";
 import { ArrowRight } from "lucide-react";
@@ -40,7 +42,12 @@ export const Route = createFileRoute("/")({
 });
 
 function DashboardPage() {
-  const { workspace } = useWorkspace();
+  const { workspace, workspaceId } = useWorkspace();
+  const { customEvents } = useCustomEvents(workspaceId);
+  const events = useMemo(
+    () => mergeWorkspaceEvents(workspace.events, customEvents),
+    [workspace.events, customEvents],
+  );
   const timeframe = DASHBOARD_TIMEFRAME;
   const { publishedPosts } = workspace;
   const { data: youtubeMetrics } = useYouTubeMetrics(workspace.id);
@@ -67,7 +74,7 @@ function DashboardPage() {
     <div>
       <PageHeader
         eyebrow={<WorkspaceEyebrow />}
-        title="Dashboard"
+        title="Up next"
         actions={
           <>
             <Link to="/analytics" className="btn-action">
@@ -96,7 +103,11 @@ function DashboardPage() {
               workspace={workspace}
               youtubeLive={accountStatus?.youtube.connected ?? false}
             />
-            <TopPerformersStrip publishedPosts={livePublishedPosts} timeframe={timeframe} />
+            <TopPerformersStrip
+              publishedPosts={livePublishedPosts}
+              timeframe={timeframe}
+              events={events}
+            />
             <TopEventPerformersSection timeframe={timeframe} className="" />
           </aside>
         </div>
@@ -108,9 +119,11 @@ function DashboardPage() {
 function TopPerformersStrip({
   publishedPosts,
   timeframe,
+  events,
 }: {
   publishedPosts: PublishedPost[];
   timeframe: Timeframe;
+  events: ContentEvent[];
 }) {
   const [detailPost, setDetailPost] = useState<PublishedPost | null>(null);
   const top = useMemo(() => {
@@ -140,12 +153,13 @@ function TopPerformersStrip({
             No published posts in this range
           </p>
         ) : (
-          <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
+          <div className="flex flex-col gap-3">
             {top.map((p, i) => (
               <TopPerformerCard
                 key={p.id}
                 post={p}
-                isTop={i === 0}
+                rank={i + 1}
+                events={events}
                 onOpen={() => setDetailPost(p)}
               />
             ))}

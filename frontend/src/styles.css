@@ -32,12 +32,15 @@
   --color-warning: var(--warning);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Bricolage Grotesque", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-paper-2: var(--paper-2);
+  --color-line: var(--line);
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   --page-gutter: clamp(1.25rem, 4vw, 3rem);
   --page-top: 2rem;
   --page-bottom: 4rem;
@@ -50,32 +53,34 @@
   --text-body-size: 0.875rem;
   --text-title-size: 1rem;
   --text-display-size: 1.75rem;
-  /* Light, warm-neutral — OmniSocial. Accent is brand-overridable (see BrandTheme). */
-  --background: oklch(0.985 0.003 250);
-  --foreground: oklch(0.25 0.012 270);
-  --surface: oklch(1 0 0);
-  --surface-elevated: oklch(1 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.25 0.012 270);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.012 270);
-  --primary: oklch(0.64 0.2 47);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.955 0.004 270);
-  --secondary-foreground: oklch(0.3 0.012 270);
-  --muted: oklch(0.965 0.004 270);
-  --muted-foreground: oklch(0.52 0.012 270);
-  --accent: oklch(0.64 0.2 47);
-  --accent-foreground: oklch(0.99 0 0);
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.58 0.14 155);
-  --warning: oklch(0.62 0.15 70);
-  --border: oklch(0.92 0.004 270);
-  --input: oklch(0.9 0.005 270);
-  --ring: oklch(0.64 0.2 47);
-  --shadow-card: 0 1px 2px oklch(0.2 0.02 270 / 0.04), 0 2px 8px oklch(0.2 0.02 270 / 0.06);
-  --sidebar-width: 15rem;
+  /* Neobrutalist paper theme — OmniSocial Cards redesign. Accent is brand-overridable. */
+  --background: #f2ece1;
+  --foreground: #17130f;
+  --paper-2: #e8dfcf;
+  --line: #e0d6c5;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #17130f;
+  --popover: #ffffff;
+  --popover-foreground: #17130f;
+  --primary: #ff6a3d;
+  --primary-foreground: #17130f;
+  --secondary: #e8dfcf;
+  --secondary-foreground: #17130f;
+  --muted: #efeae0;
+  --muted-foreground: #9b917f;
+  --accent: #ff6a3d;
+  --accent-foreground: #17130f;
+  --destructive: #c94a4a;
+  --destructive-foreground: #ffffff;
+  --success: #3f9d5a;
+  --warning: #d9a441;
+  --border: #17130f;
+  --input: #e0d6c5;
+  --ring: #ff6a3d;
+  --shadow-card: 4px 4px 0 #17130f;
+  --sidebar-width: 14.75rem;
   --sidebar-width-collapsed: 4rem;
 }
 
@@ -123,10 +128,14 @@
     letter-spacing: -0.01em;
   }
   .text-display {
+    font-family: var(--font-display);
     font-size: var(--text-display-size);
     font-weight: 700;
     line-height: 1.2;
     letter-spacing: -0.02em;
+  }
+  .font-display {
+    font-family: var(--font-display);
   }
   .font-data {
     font-family: var(--font-mono);
@@ -148,11 +157,20 @@
     font-weight: 700;
   }
   .page-title {
-    font-size: var(--text-display-size);
+    font-family: var(--font-display);
+    font-size: 2.5rem;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.1;
     letter-spacing: -0.02em;
     color: var(--color-foreground);
+  }
+  .page-kicker {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-accent);
   }
 
   .page-content {
@@ -163,7 +181,8 @@
   .page-header {
     padding-inline: var(--page-gutter);
     padding-top: 2rem;
-    padding-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1.5px solid var(--color-foreground);
   }
   .section-block {
     margin-top: var(--section-gap);
@@ -227,14 +246,14 @@
     align-items: center;
     gap: 0.5rem;
     border-radius: var(--radius);
-    border: 1px solid var(--color-border);
+    border: 1.5px solid var(--color-foreground);
     background: var(--color-surface);
     padding: 0.5rem 0.875rem;
-    font-family: var(--font-sans);
+    font-family: var(--font-mono);
     font-size: var(--text-body-sm-size);
-    font-weight: 500;
+    font-weight: 600;
     color: var(--color-foreground);
-    transition: background-color 150ms ease;
+    transition: transform 120ms ease, box-shadow 120ms ease;
   }
   .btn-action:hover {
     background: var(--color-secondary);
@@ -244,12 +263,16 @@
     outline-offset: 2px;
   }
   .btn-action-primary {
-    border-color: transparent;
+    border-color: var(--color-foreground);
     background: var(--color-primary);
     color: var(--color-primary-foreground);
+    font-family: var(--font-display);
+    font-weight: 700;
+    box-shadow: 3px 3px 0 var(--color-foreground);
   }
   .btn-action-primary:hover {
-    opacity: 0.92;
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--color-foreground);
   }
 
   .metric-cell {
@@ -258,9 +281,8 @@
   .kpi-card {
     overflow: hidden;
     border-radius: var(--radius);
-    border: 1px solid var(--color-border);
+    border: 1.5px solid var(--color-foreground);
     background: var(--color-surface-elevated);
-    box-shadow: var(--shadow-card);
   }
   .composer-section {
     padding-inline: 1.25rem;
@@ -280,10 +302,9 @@
     background: var(--color-surface);
   }
   .panel {
-    border: 1px solid var(--color-border);
+    border: 1.5px solid var(--color-foreground);
     background: var(--color-surface-elevated);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-card);
   }
   .grid-bg {
     background-image:
