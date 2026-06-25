@@ -902,7 +902,7 @@ function SourceTranscriptPanel({
   draftCount: number;
 }) {
   return (
-    <div className="mb-6 rounded-md border border-border bg-surface-elevated p-4 shadow-[var(--shadow-card)]">
+    <div className="mb-6 panel p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-medium text-foreground">Source transcript</h3>

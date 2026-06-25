@@ -50,7 +50,7 @@ export function ComposerPreviewPane({
       </div>
       <ContentCard
         size="stream"
-        className="shadow-[var(--shadow-card)]"
+
         eyebrow={album}
         title={previewPost.title}
         platforms={publishes.map((entry) => (

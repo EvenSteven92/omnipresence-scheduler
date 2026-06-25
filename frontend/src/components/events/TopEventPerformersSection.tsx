@@ -32,7 +32,7 @@ function EventPerformerStreamCard({ row, rank }: { row: RankedEventPerformer; ra
       <ContentCard
         size="stream"
         fullWidth
-        className="transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:shadow-[var(--shadow-card)]"
+        className="card-pop card-pop-interactive"
         eyebrow={formatEventMeta(event.date, event.kind)}
         title={event.title}
         meta={`${perf.mediaCount} file${perf.mediaCount === 1 ? "" : "s"}`}

@@ -61,7 +61,7 @@ export function CalendarDayDrawer({
   return (
     <aside
       data-testid="calendar-day-drawer"
-      className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l-[1.5px] border-foreground bg-card shadow-[var(--shadow-card)] md:top-0"
+      className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l-[1.5px] border-foreground bg-card md:top-0"
       style={{ top: "var(--sync-bar-height, 0px)" }}
     >
       <header className="flex items-start justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4">
