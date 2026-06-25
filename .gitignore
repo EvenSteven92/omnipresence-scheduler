@@ -26,3 +26,6 @@ backend/__pycache__/
 .DS_Store
 .idea/
 .vscode/
+
+# Claude Design reference (local only)
+frontend/public/design-reference.html
