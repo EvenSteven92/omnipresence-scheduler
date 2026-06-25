@@ -58,6 +58,13 @@ export const WORKSPACES: WorkspaceProfile[] = [
           "IG STORY": "2026-05-14T09:30:00",
         },
         status: "scheduled",
+        caption:
+          "What does it mean to truly hear the Holy Spirit? Catch the full Week 18 highlight 🕊️ Full sermon on YouTube — link in bio.",
+        hashtags: "#holyspirit #sundayservice #worship #torcc",
+        dimensions: "1080×1920",
+        durationSec: 58,
+        sizeMB: 24.1,
+        createdAt: "2026-06-22T10:00:00",
       },
       {
         id: "torcc-2",

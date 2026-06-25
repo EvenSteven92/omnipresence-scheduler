@@ -1,14 +1,14 @@
-import { useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { CircleCheck, Clock, FilePen, Plus } from "lucide-react";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
-import { PostDetailModal } from "@/components/post/PostDetailModal";
+
 import { PlatformRow } from "@/components/post/PlatformRow";
 import { fmtCompact } from "@/components/PerformanceMetricCounters";
 import { eventMediaToCardPost, type EventMediaItem } from "@/lib/events/display";
 import { inferMediaKind } from "@/lib/scheduled-post-display";
-import type { PostDetailSource } from "@/lib/post-detail";
+
 import type { WorkspaceProfile } from "@/lib/workspaces/types";
 
 type AlbumMediaGroup = {
@@ -199,7 +199,7 @@ export function EventMediaMatrix({
   items: EventMediaItem[];
   workspace: WorkspaceProfile;
 }) {
-  const [detail, setDetail] = useState<PostDetailSource | null>(null);
+  const navigate = useNavigate();
 
   const groups = useMemo(() => groupAlbumMedia(items), [items]);
 
@@ -213,13 +213,7 @@ export function EventMediaMatrix({
   }, [items]);
 
   function openItem(item: EventMediaItem) {
-    const scheduled = workspace.scheduledPosts.find((p) => p.id === item.id);
-    if (scheduled) {
-      setDetail(scheduled);
-      return;
-    }
-    const publishedPost = workspace.publishedPosts.find((p) => p.id === item.id);
-    if (publishedPost) setDetail(publishedPost);
+    navigate({ to: "/card/$cardId", params: { cardId: item.id } });
   }
 
   if (items.length === 0) {
@@ -277,7 +271,6 @@ export function EventMediaMatrix({
         </div>
       </div>
 
-      {detail ? <PostDetailModal post={detail} onClose={() => setDetail(null)} /> : null}
     </>
   );
 }

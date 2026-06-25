@@ -79,12 +79,10 @@ function CalendarPage() {
 
   const {
     dayGrid,
-    detailPost,
     openPosts,
     selectFromGrid,
     openDetailFromEvent,
     closeDayGrid,
-    closeDetail,
   } = useCalendarPostSelection();
   const [viewMonth, setViewMonth] = useState(() => {
     const now = todayStart();
@@ -134,11 +132,6 @@ function CalendarPage() {
     const now = today();
     setViewMonth(new Date(now.getFullYear(), now.getMonth(), 1));
     setSelectedDateKey(now.toDateString());
-  }
-
-  function handleCloseDetail() {
-    const restoreEvent = closeDetail();
-    if (restoreEvent) setEventPostsModal(restoreEvent);
   }
 
   function openDayDrawer(date: Date, dayEvents: ContentEvent[], dayPosts: ScheduledPost[]) {
@@ -427,11 +420,9 @@ function CalendarPage() {
 
       <CalendarPostModals
         dayGrid={dayGrid}
-        detailPost={detailPost}
         events={events}
         resolveEventId={resolveEventId}
         onCloseDayGrid={closeDayGrid}
-        onCloseDetail={handleCloseDetail}
         onSelectFromGrid={selectFromGrid}
         highlightUnassociated={highlightUnassociated}
         isAssociated={isAssociated}

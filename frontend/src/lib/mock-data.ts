@@ -11,7 +11,17 @@ export type Platform =
   | "IG STORY"
   | "FB STORY";
 
-export interface ScheduledPost {
+/** Optional file metadata surfaced on the card detail page. */
+export interface CardFileMeta {
+  caption?: string;
+  hashtags?: string;
+  dimensions?: string;
+  durationSec?: number;
+  sizeMB?: number;
+  createdAt?: string;
+}
+
+export interface ScheduledPost extends CardFileMeta {
   id: string;
   title: string;
   platforms: Platform[];
@@ -24,7 +34,7 @@ export interface ScheduledPost {
   eventId?: string;
 }
 
-export interface PublishedPost {
+export interface PublishedPost extends CardFileMeta {
   id: string;
   title: string;
   platforms: Platform[];

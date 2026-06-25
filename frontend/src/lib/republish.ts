@@ -73,8 +73,8 @@ export function draftFromPostDetail(
     format,
     autoFormat: format,
     platforms: resolvedPlatforms,
-    caption: post.title,
-    hashtags: "",
+    caption: ("caption" in post && post.caption?.trim()) || post.title,
+    hashtags: ("hashtags" in post && post.hashtags) || "",
     transcript: "",
     eventId: options.eventId ?? post.eventId,
   };

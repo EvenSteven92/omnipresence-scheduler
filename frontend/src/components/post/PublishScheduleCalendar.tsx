@@ -96,8 +96,7 @@ export function PublishScheduleCalendar({
 
   const [viewMonth, setViewMonth] = useState(() => initialViewMonth(slots, scheduled));
   const [selectedDay, setSelectedDay] = useState<number | null>(() => today().getDate());
-  const { dayGrid, detailPost, openPosts, selectFromGrid, closeDayGrid, closeDetail } =
-    useCalendarPostSelection();
+  const { dayGrid, openPosts, selectFromGrid, closeDayGrid } = useCalendarPostSelection();
 
   const focusYear = viewMonth.getFullYear();
   const focusMonth = viewMonth.getMonth();
@@ -274,11 +273,9 @@ export function PublishScheduleCalendar({
 
       <CalendarPostModals
         dayGrid={dayGrid}
-        detailPost={detailPost}
         events={events}
         resolveEventId={resolveEventId}
         onCloseDayGrid={closeDayGrid}
-        onCloseDetail={closeDetail}
         onSelectFromGrid={selectFromGrid}
       />
     </div>

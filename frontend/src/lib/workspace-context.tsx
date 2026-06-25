@@ -18,6 +18,7 @@ interface WorkspaceContextValue {
   setWorkspaceId: (id: WorkspaceId) => void;
   addScheduledPosts: (posts: ScheduledPost[]) => void;
   upsertScheduledPost: (post: ScheduledPost) => void;
+  removeScheduledPost: (postId: string) => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -28,7 +29,7 @@ function initialWorkspaceId(): WorkspaceId {
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [workspaceId, setWorkspaceIdState] = useState<WorkspaceId>(initialWorkspaceId);
-  const { composerScheduled, addScheduledPosts, upsertScheduledPost } =
+  const { composerScheduled, addScheduledPosts, upsertScheduledPost, removeScheduledPost } =
     useComposerScheduledPosts(workspaceId);
 
   const setWorkspaceId = useCallback((id: WorkspaceId) => {
@@ -49,8 +50,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setWorkspaceId,
       addScheduledPosts,
       upsertScheduledPost,
+      removeScheduledPost,
     };
-  }, [workspaceId, setWorkspaceId, composerScheduled, addScheduledPosts, upsertScheduledPost]);
+  }, [
+    workspaceId,
+    setWorkspaceId,
+    composerScheduled,
+    addScheduledPosts,
+    upsertScheduledPost,
+    removeScheduledPost,
+  ]);
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

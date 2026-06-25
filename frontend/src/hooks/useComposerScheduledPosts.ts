@@ -94,5 +94,16 @@ export function useComposerScheduledPosts(workspaceId: WorkspaceId) {
     [workspaceId],
   );
 
-  return { composerScheduled, addScheduledPosts, upsertScheduledPost };
+  const removeScheduledPost = useCallback(
+    (postId: string) => {
+      setComposerScheduled((prev) => {
+        const next = prev.filter((p) => p.id !== postId);
+        writeComposerScheduledPosts(workspaceId, next);
+        return next;
+      });
+    },
+    [workspaceId],
+  );
+
+  return { composerScheduled, addScheduledPosts, upsertScheduledPost, removeScheduledPost };
 }

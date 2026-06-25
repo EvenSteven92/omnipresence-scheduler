@@ -54,8 +54,7 @@ import {
 import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/lib/workspace-context";
 import { TOP_PERFORMERS_DISPLAY_LIMIT, TopPerformerCard } from "@/components/post/TopPerformerCard";
-import { PostDetailModal } from "@/components/post/PostDetailModal";
-import type { PublishedPost } from "@/lib/mock-data";
+
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import { PlatformChip } from "@/components/post/PlatformChip";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
@@ -110,7 +109,7 @@ function AnalyticsPage() {
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryBusy, setSummaryBusy] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
-  const [detailPost, setDetailPost] = useState<PublishedPost | null>(null);
+
   const liveBundle = useMemo(
     () => ({ youtube: youtubeMetrics, meta: metaMetrics }),
     [youtubeMetrics, metaMetrics],
@@ -544,7 +543,9 @@ function AnalyticsPage() {
                       post={p}
                       rank={i + 1}
                       events={workspace.events}
-                      onOpen={() => setDetailPost(p)}
+                      onOpen={() =>
+                        navigate({ to: "/card/$cardId", params: { cardId: p.id } })
+                      }
                     />
                   ))}
                 </div>
@@ -556,9 +557,6 @@ function AnalyticsPage() {
         )}
       </div>
 
-      {detailPost ? (
-        <PostDetailModal post={detailPost} onClose={() => setDetailPost(null)} />
-      ) : null}
     </div>
   );
 }
