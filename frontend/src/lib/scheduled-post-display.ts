@@ -212,4 +212,34 @@ export function getUpcomingDaySlots(
   return slots;
 }
 
+export type QueueWeekStats = {
+  scheduled: number;
+  drafts: number;
+  gapDays: number;
+  publishes: number;
+};
+
+/** Dashboard "This week" rail — upcoming window counts and publish totals. */
+export function computeQueueWeekStats(
+  posts: ScheduledPost[],
+  fromDayStart: Date,
+  days = UPCOMING_WINDOW_DAYS,
+): QueueWeekStats {
+  const upcoming = getUpcomingContentCards(posts, fromDayStart, days);
+  const scheduled = upcoming.filter((p) => p.status === "scheduled").length;
+  const drafts = posts.filter((p) => p.status === "draft").length;
+  const gapDays = getQuietDaysInUpcomingWindow(posts, fromDayStart, days).length;
+  const publishes = upcoming.reduce((sum, p) => sum + p.platforms.length, 0);
+  return { scheduled, drafts, gapDays, publishes };
+}
+
+/** "Wed, Sun, Mon & Tue have nothing scheduled." */
+export function formatGapDaysSentence(gapLabels: string[]): string {
+  if (gapLabels.length === 0) return "Every day this week has something scheduled.";
+  if (gapLabels.length === 1) return `${gapLabels[0]} has nothing scheduled.`;
+  const last = gapLabels[gapLabels.length - 1]!;
+  const rest = gapLabels.slice(0, -1).join(", ");
+  return `${rest} & ${last} have nothing scheduled.`;
+}
+
 export { UPCOMING_WINDOW_DAYS };

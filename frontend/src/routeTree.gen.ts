@@ -17,6 +17,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
+import { Route as CardCardIdRouteImport } from './routes/card.$cardId'
 import { Route as ApiYoutubeSyncRouteImport } from './routes/api/youtube/sync'
 import { Route as ApiYoutubeMetricsRouteImport } from './routes/api/youtube/metrics'
 import { Route as ApiTeamSessionRouteImport } from './routes/api/team/session'
@@ -69,6 +70,11 @@ const EventsEventIdRoute = EventsEventIdRouteImport.update({
   id: '/$eventId',
   path: '/$eventId',
   getParentRoute: () => EventsRoute,
+} as any)
+const CardCardIdRoute = CardCardIdRouteImport.update({
+  id: '/card/$cardId',
+  path: '/card/$cardId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiYoutubeSyncRoute = ApiYoutubeSyncRouteImport.update({
   id: '/api/youtube/sync',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRouteWithChildren
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
+  '/card/$cardId': typeof CardCardIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/events/': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof CalendarRoute
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
+  '/card/$cardId': typeof CardCardIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/events': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/events': typeof EventsRouteWithChildren
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
+  '/card/$cardId': typeof CardCardIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/events/': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/scheduler'
     | '/workspaces'
+    | '/card/$cardId'
     | '/events/$eventId'
     | '/events/'
     | '/api/accounts/status'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/scheduler'
     | '/workspaces'
+    | '/card/$cardId'
     | '/events/$eventId'
     | '/events'
     | '/api/accounts/status'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/scheduler'
     | '/workspaces'
+    | '/card/$cardId'
     | '/events/$eventId'
     | '/events/'
     | '/api/accounts/status'
@@ -274,6 +286,7 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRouteWithChildren
   SchedulerRoute: typeof SchedulerRoute
   WorkspacesRoute: typeof WorkspacesRoute
+  CardCardIdRoute: typeof CardCardIdRoute
   ApiAccountsStatusRoute: typeof ApiAccountsStatusRoute
   ApiAiGenerateRoute: typeof ApiAiGenerateRoute
   ApiMetaMetricsRoute: typeof ApiMetaMetricsRoute
@@ -345,6 +358,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$eventId'
       preLoaderRoute: typeof EventsEventIdRouteImport
       parentRoute: typeof EventsRoute
+    }
+    '/card/$cardId': {
+      id: '/card/$cardId'
+      path: '/card/$cardId'
+      fullPath: '/card/$cardId'
+      preLoaderRoute: typeof CardCardIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/youtube/sync': {
       id: '/api/youtube/sync'
@@ -453,6 +473,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRouteWithChildren,
   SchedulerRoute: SchedulerRoute,
   WorkspacesRoute: WorkspacesRoute,
+  CardCardIdRoute: CardCardIdRoute,
   ApiAccountsStatusRoute: ApiAccountsStatusRoute,
   ApiAiGenerateRoute: ApiAiGenerateRoute,
   ApiMetaMetricsRoute: ApiMetaMetricsRoute,

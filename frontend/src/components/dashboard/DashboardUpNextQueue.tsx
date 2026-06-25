@@ -1,16 +1,14 @@
-import { Link } from "@tanstack/react-router";
-import { AlertTriangle, CalendarClock, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { CalendarClock } from "lucide-react";
+import { useMemo } from "react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { PostDetailModal } from "@/components/post/PostDetailModal";
 import { StreamContentCard } from "@/components/ui/StreamContentCard";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useWorkspace } from "@/lib/workspace-context";
 import { todayStart } from "@/lib/demo-clock";
 import {
   contentCardAnchorDate,
-  getQuietDaysInUpcomingWindow,
   getUpcomingContentCards,
   UPCOMING_WINDOW_DAYS,
 } from "@/lib/scheduled-post-display";
@@ -40,6 +38,7 @@ function groupPostsByDay(posts: ScheduledPost[]) {
 }
 
 export function DashboardUpNextQueue() {
+  const navigate = useNavigate();
   const { workspace, workspaceId } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
   const events = useMemo(
@@ -47,7 +46,6 @@ export function DashboardUpNextQueue() {
     [workspace.events, customEvents],
   );
   const scheduledPosts = workspace.scheduledPosts;
-  const [detailPost, setDetailPost] = useState<ScheduledPost | null>(null);
 
   const upcoming = useMemo(
     () => getUpcomingContentCards(scheduledPosts, todayStart(), UPCOMING_WINDOW_DAYS),
@@ -56,48 +54,12 @@ export function DashboardUpNextQueue() {
 
   const dayGroups = useMemo(() => groupPostsByDay(upcoming), [upcoming]);
 
-  const gapDays = useMemo(
-    () => getQuietDaysInUpcomingWindow(scheduledPosts, todayStart(), UPCOMING_WINDOW_DAYS),
-    [scheduledPosts],
-  );
+  function openCard(cardId: string) {
+    navigate({ to: "/card/$cardId", params: { cardId } });
+  }
 
   return (
     <section data-testid="dashboard-up-next" className="min-w-0">
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b-[1.5px] border-foreground pb-4">
-        <div>
-          <p className="page-kicker">Content queue</p>
-          <h2 className="mt-2 font-display text-[2rem] font-bold leading-none tracking-tight text-foreground">
-            Up next
-          </h2>
-          <p className="mt-2 text-body-sm text-muted-foreground">
-            Next {UPCOMING_WINDOW_DAYS} days — {upcoming.length} scheduled post
-            {upcoming.length === 1 ? "" : "s"}
-          </p>
-        </div>
-        <Link to="/calendar" className="btn-action text-body-sm">
-          View calendar
-        </Link>
-      </header>
-
-      {gapDays.length > 0 && upcoming.length > 0 ? (
-        <div
-          data-testid="queue-gap-warning"
-          className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border-[1.5px] border-foreground bg-foreground px-4 py-4 text-background"
-        >
-          <span className="flex items-center gap-2 text-sm">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            {gapDays.length} gap day{gapDays.length === 1 ? "" : "s"}: {gapDays.join(", ")}
-          </span>
-          <Link
-            to="/scheduler"
-            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-2 font-display text-sm font-bold text-foreground"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Fill the gaps
-          </Link>
-        </div>
-      ) : null}
-
       {upcoming.length === 0 ? (
         <EmptyState
           icon={CalendarClock}
@@ -131,7 +93,7 @@ export function DashboardUpNextQueue() {
                     post={post}
                     events={events}
                     testId={`up-next-${post.id}`}
-                    onOpen={() => setDetailPost(post)}
+                    onOpen={() => openCard(post.id)}
                   />
                 ))}
               </div>
@@ -139,10 +101,6 @@ export function DashboardUpNextQueue() {
           ))}
         </div>
       )}
-
-      {detailPost ? (
-        <PostDetailModal post={detailPost} onClose={() => setDetailPost(null)} />
-      ) : null}
     </section>
   );
 }

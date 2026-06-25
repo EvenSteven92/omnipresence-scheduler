@@ -1,175 +1,57 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
-import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
-import { useWorkspace } from "@/lib/workspace-context";
-import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
-import type { ContentEvent } from "@/lib/workspaces/types";
-import type { PublishedPost } from "@/lib/mock-data";
-import { PostDetailModal } from "@/components/post/PostDetailModal";
-import { ArrowRight } from "lucide-react";
-import { TOP_PERFORMERS_DISPLAY_LIMIT, TopPerformerCard } from "@/components/post/TopPerformerCard";
-import { useMemo, useState } from "react";
-import { useYouTubeMetrics } from "@/hooks/useYouTubeMetrics";
-import { useMetaMetrics } from "@/hooks/useMetaMetrics";
-import { usePlatformConnections } from "@/hooks/usePlatformConnections";
+import { useMemo } from "react";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
-import { TopEventPerformersSection } from "@/components/events/TopEventPerformersSection";
-import { GrowthMatrixChart } from "@/components/GrowthMatrixChart";
 import { DashboardUpNextQueue } from "@/components/dashboard/DashboardUpNextQueue";
-import { DashboardKpiRail } from "@/components/dashboard/DashboardKpiRail";
-import { DashboardChannelHealth } from "@/components/dashboard/DashboardChannelHealth";
-import {
-  buildLivePublishedPosts,
-  mergeGrowthMatrixRows,
-  mergeMetrics,
-} from "@/lib/live-metrics";
-import { filterPublishedInTimeframe, timeframeLabel, type Timeframe } from "@/lib/timeframe";
-
-const DASHBOARD_TIMEFRAME: Timeframe = { kind: "preset", preset: "1w" };
+import { DashboardQueueRail } from "@/components/dashboard/DashboardQueueRail";
+import { QueueCalendarToggle } from "@/components/dashboard/QueueCalendarToggle";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — TORCC OmniSocial" },
+      { title: "Queue — TORCC OmniSocial" },
       {
         name: "description",
-        content: "Cross-platform performance, scheduled queue, and draft pipeline at a glance.",
+        content: "Upcoming content cards grouped by day — schedule and publish across every channel.",
       },
     ],
   }),
-  component: DashboardPage,
+  component: QueuePage,
 });
 
-function DashboardPage() {
-  const { workspace, workspaceId } = useWorkspace();
-  const { customEvents } = useCustomEvents(workspaceId);
-  const events = useMemo(
-    () => mergeWorkspaceEvents(workspace.events, customEvents),
-    [workspace.events, customEvents],
-  );
-  const timeframe = DASHBOARD_TIMEFRAME;
-  const { publishedPosts } = workspace;
-  const { data: youtubeMetrics } = useYouTubeMetrics(workspace.id);
-  const { data: metaMetrics } = useMetaMetrics(workspace.id);
-  const { data: accountStatus } = usePlatformConnections(workspace.id);
-  const liveBundle = useMemo(
-    () => ({ youtube: youtubeMetrics, meta: metaMetrics }),
-    [youtubeMetrics, metaMetrics],
-  );
-  const livePublishedPosts = useMemo(
-    () => buildLivePublishedPosts(publishedPosts, liveBundle),
-    [publishedPosts, liveBundle],
-  );
-  const metrics = useMemo(
-    () => mergeMetrics(timeframe, workspace, liveBundle, livePublishedPosts),
-    [timeframe, workspace, liveBundle, livePublishedPosts],
-  );
-  const growthRows = useMemo(
-    () => mergeGrowthMatrixRows(timeframe, workspace, liveBundle, livePublishedPosts),
-    [timeframe, workspace, liveBundle, livePublishedPosts],
+function QueuePage() {
+  const headerActions = useMemo(
+    () => (
+      <>
+        <QueueCalendarToggle active="queue" />
+        <Link to="/scheduler" className="btn-action-primary btn-action">
+          + New card
+        </Link>
+        <NewEventPostActions showPostLink={false} />
+      </>
+    ),
+    [],
   );
 
   return (
     <div>
       <PageHeader
-        eyebrow={<WorkspaceEyebrow />}
+        eyebrow="Content queue"
         title="Up next"
-        actions={
-          <>
-            <Link to="/analytics" className="btn-action">
-              Analytics
-            </Link>
-            <NewEventPostActions />
-          </>
-        }
+        actions={headerActions}
       />
 
       <div className="page-content">
         <OnboardingChecklist className="mb-6" />
 
-        <div className="panel mb-6 p-6">
-          <GrowthMatrixChart rows={growthRows} timeframe={timeframe} defaultOpen={false} />
-        </div>
-
         <div className="page-grid">
-          <div className="page-grid-main space-y-6">
+          <div className="page-grid-main">
             <DashboardUpNextQueue />
           </div>
-
-          <aside className="page-grid-rail space-y-4">
-            <DashboardKpiRail metrics={metrics} liveBundle={liveBundle} />
-            <DashboardChannelHealth
-              workspace={workspace}
-              youtubeLive={accountStatus?.youtube.connected ?? false}
-            />
-            <TopPerformersStrip
-              publishedPosts={livePublishedPosts}
-              timeframe={timeframe}
-              events={events}
-            />
-            <TopEventPerformersSection timeframe={timeframe} className="" />
-          </aside>
+          <DashboardQueueRail />
         </div>
       </div>
     </div>
-  );
-}
-
-function TopPerformersStrip({
-  publishedPosts,
-  timeframe,
-  events,
-}: {
-  publishedPosts: PublishedPost[];
-  timeframe: Timeframe;
-  events: ContentEvent[];
-}) {
-  const [detailPost, setDetailPost] = useState<PublishedPost | null>(null);
-  const top = useMemo(() => {
-    const recent = filterPublishedInTimeframe(publishedPosts, timeframe);
-    return [...recent]
-      .sort((a, b) => b.engagementRate - a.engagementRate)
-      .slice(0, TOP_PERFORMERS_DISPLAY_LIMIT);
-  }, [publishedPosts, timeframe]);
-
-  return (
-    <section className="panel overflow-hidden">
-      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-border px-5 py-4">
-        <div>
-          <h2 className="text-title">Top performers</h2>
-          <p className="mt-1 text-body-sm text-muted-foreground">
-            {timeframeLabel(timeframe)} · ranked by engagement rate
-          </p>
-        </div>
-        <Link to="/analytics" className="btn-action text-body-sm">
-          Full analytics <ArrowRight className="h-3 w-3" />
-        </Link>
-      </header>
-
-      <div className="p-4">
-        {top.length === 0 ? (
-          <p className="py-6 text-center text-body-sm text-muted-foreground">
-            No published posts in this range
-          </p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {top.map((p, i) => (
-              <TopPerformerCard
-                key={p.id}
-                post={p}
-                rank={i + 1}
-                events={events}
-                onOpen={() => setDetailPost(p)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {detailPost ? (
-        <PostDetailModal post={detailPost} onClose={() => setDetailPost(null)} />
-      ) : null}
-    </section>
   );
 }
