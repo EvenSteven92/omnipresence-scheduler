@@ -88,9 +88,8 @@ export function ContentCard({
       >
         <div
           className={cn(
-            "group flex items-center gap-4 rounded-lg border-[1.5px] border-foreground bg-card p-3.5 text-left transition-[transform,box-shadow] duration-150",
-            interactive &&
-              "cursor-pointer hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--color-foreground)]",
+            "group card-pop flex items-center gap-4 rounded-lg border-[1.5px] border-foreground bg-card p-3.5 text-left",
+            interactive && "card-pop-interactive cursor-pointer",
             VARIANT_BORDER[variant],
           )}
         >
@@ -166,7 +165,7 @@ export function ContentCard({
           fullWidth ? "gap-3 px-3 py-2" : "gap-4 px-4 py-3",
         )
       : isMd
-        ? "flex w-full flex-col hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)]"
+        ? "card-pop flex w-full flex-col"
         : cn(
             "flex",
             isStacked ? "flex-col" : "",
@@ -174,9 +173,7 @@ export function ContentCard({
             !isMd && !isStacked && CARD_PREVIEW_HEIGHT,
           ),
     interactive && !isMd && "cursor-pointer hover:border-foreground",
-    interactive &&
-      isMd &&
-      "cursor-pointer",
+    interactive && isMd && "card-pop-interactive cursor-pointer",
     className,
   );
 
