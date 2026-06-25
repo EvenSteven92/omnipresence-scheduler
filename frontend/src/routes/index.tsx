@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
 import { useMemo } from "react";
-import { OnboardingChecklist } from "@/components/OnboardingChecklist";
-import { NewEventPostActions } from "@/components/NewEventPostActions";
+
 import { DashboardUpNextQueue } from "@/components/dashboard/DashboardUpNextQueue";
 import { DashboardQueueRail } from "@/components/dashboard/DashboardQueueRail";
 import { QueueCalendarToggle } from "@/components/dashboard/QueueCalendarToggle";
@@ -28,7 +27,6 @@ function QueuePage() {
         <Link to="/scheduler" className="btn-action-primary btn-action">
           + New card
         </Link>
-        <NewEventPostActions showPostLink={false} />
       </>
     ),
     [],
@@ -42,10 +40,8 @@ function QueuePage() {
         actions={headerActions}
       />
 
-      <div className="page-content">
-        <OnboardingChecklist className="mb-6" />
-
-        <div className="page-grid">
+      <div className="page-content mx-auto max-w-[1320px]">
+        <div className="queue-page-grid">
           <div className="page-grid-main">
             <DashboardUpNextQueue />
           </div>

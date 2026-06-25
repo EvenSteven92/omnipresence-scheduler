@@ -4,6 +4,7 @@ import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import { useWorkspace } from "@/lib/workspace-context";
 import { platformDotColor } from "@/lib/card-display";
 import { todayStart } from "@/lib/demo-clock";
+import type { Platform } from "@/lib/mock-data";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import {
   computeQueueWeekStats,
@@ -23,6 +24,9 @@ const STAT_CELLS: Array<{
   { key: "publishes", label: "Publishes" },
 ];
 
+/** Primary connected channels shown in the design mock. */
+const CHANNEL_ORDER: Platform[] = ["YT", "FB", "IG", "RUMBLE", "TIKTOK", "X"];
+
 export function DashboardQueueRail() {
   const { workspace, workspaceId } = useWorkspace();
   const { data: accountStatus } = usePlatformConnections(workspaceId);
@@ -40,11 +44,18 @@ export function DashboardQueueRail() {
 
   const gapSentence = formatGapDaysSentence(gapLabels);
 
-  const livePlatforms = accountStatus?.livePlatforms ?? workspace.platforms;
-  const liveCount = livePlatforms.length;
+  const livePlatforms = accountStatus?.livePlatforms ?? ["YT", "FB", "IG"];
+  const channelRows = useMemo(() => {
+    const liveSet = new Set(livePlatforms);
+    return CHANNEL_ORDER.filter(
+      (p) => workspace.platforms.includes(p) && liveSet.has(p),
+    );
+  }, [livePlatforms, workspace.platforms]);
+
+  const liveCount = channelRows.length;
 
   return (
-    <aside className="page-grid-rail flex flex-col gap-4" data-testid="dashboard-queue-rail">
+    <aside className="queue-rail flex flex-col gap-4" data-testid="dashboard-queue-rail">
       <section className="panel overflow-hidden p-[18px]">
         <div className="font-mono text-[0.625rem] font-bold tracking-[0.1em] text-muted-foreground">
           THIS WEEK
@@ -59,7 +70,11 @@ export function DashboardQueueRail() {
               <div className="font-display text-[1.75rem] font-bold leading-none text-foreground">
                 {stats[key]}
               </div>
-              <div className="mt-0.5 font-mono text-[0.5625rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              <div
+                className={`mt-0.5 font-mono text-[0.5625rem] font-semibold uppercase tracking-[0.06em] ${
+                  accent ? "text-foreground/80" : "text-muted-foreground"
+                }`}
+              >
                 {label}
               </div>
             </div>
@@ -69,12 +84,12 @@ export function DashboardQueueRail() {
 
       <section
         data-testid="queue-gaps-panel"
-        className="panel overflow-hidden bg-foreground p-[18px] text-background"
+        className="overflow-hidden rounded-lg border-[1.5px] border-foreground bg-foreground p-[18px] text-background"
       >
-        <div className="font-mono text-[0.625rem] font-bold tracking-[0.1em] opacity-70">
+        <div className="font-mono text-[0.625rem] font-bold tracking-[0.1em] text-background/70">
           GAPS IN QUEUE
         </div>
-        <p className="mt-2.5 font-display text-[1.1875rem] font-semibold leading-snug">
+        <p className="mt-2.5 font-display text-[1.1875rem] font-semibold leading-snug text-background">
           {gapSentence}
         </p>
         <Link
@@ -90,28 +105,27 @@ export function DashboardQueueRail() {
           CHANNELS · {liveCount} LIVE
         </div>
         <div className="flex flex-col gap-2.5">
-          {workspace.platforms.map((platform) => {
-            const meta = PLATFORMS_BY_SHORT[platform];
-            const isLive = livePlatforms.includes(platform);
-            return (
-              <div key={platform} className="flex items-center gap-2.5">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ background: platformDotColor(platform) }}
-                />
-                <span className="flex-1 text-[0.8125rem] font-semibold text-foreground">
-                  {meta?.full ?? platform}
-                </span>
-                <span
-                  className={`font-mono text-[0.5625rem] font-semibold uppercase ${
-                    isLive ? "text-success" : "text-muted-foreground"
-                  }`}
-                >
-                  {isLive ? "Live" : "Sample"}
-                </span>
-              </div>
-            );
-          })}
+          {channelRows.length === 0 ? (
+            <p className="text-body-sm text-muted-foreground">No live channels connected</p>
+          ) : (
+            channelRows.map((platform) => {
+              const meta = PLATFORMS_BY_SHORT[platform];
+              return (
+                <div key={platform} className="flex items-center gap-2.5">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ background: platformDotColor(platform) }}
+                  />
+                  <span className="flex-1 text-[0.8125rem] font-semibold text-foreground">
+                    {meta?.full ?? platform}
+                  </span>
+                  <span className="font-mono text-[0.5625rem] font-semibold uppercase text-success">
+                    Live
+                  </span>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
     </aside>

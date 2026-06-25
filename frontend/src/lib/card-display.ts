@@ -38,7 +38,7 @@ export function cardStatusFromPost(post: ScheduledPost): CardLifecycleStatus {
 export function cardStatusClass(status: CardLifecycleStatus): string {
   if (status === "SCHEDULED") return "bg-accent text-foreground";
   if (status === "LIVE") return "bg-[#3F9D5A] text-white";
-  return "border-[1.5px] border-foreground bg-transparent text-foreground";
+  return "border-[1.5px] border-foreground/25 bg-secondary text-muted-foreground";
 }
 
 export function platformDotColor(platform: Platform): string {
@@ -78,4 +78,22 @@ export function resolveAlbumLabel(
     if (event) return event.title;
   }
   return "Unassigned";
+}
+
+/** Neobrutalist stream-card placeholder gradients (Claude Design Cards). */
+const STREAM_GRADIENTS = [
+  "linear-gradient(135deg, #6d28d9 0%, #db2777 100%)",
+  "linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)",
+  "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+  "linear-gradient(135deg, #b45309 0%, #d97706 100%)",
+  "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
+  "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
+  "linear-gradient(135deg, #6d28d9 0%, #ec4899 100%)",
+] as const;
+
+export function streamCardGradient(post: Pick<ScheduledPost, "id" | "title">): string {
+  let hash = 0;
+  const key = post.id || post.title;
+  for (let i = 0; i < key.length; i++) hash = (hash + key.charCodeAt(i) * (i + 1)) % STREAM_GRADIENTS.length;
+  return STREAM_GRADIENTS[hash]!;
 }

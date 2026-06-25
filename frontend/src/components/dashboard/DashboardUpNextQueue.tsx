@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StreamContentCard } from "@/components/ui/StreamContentCard";
-import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useWorkspace } from "@/lib/workspace-context";
 import { todayStart } from "@/lib/demo-clock";
 import {
@@ -39,12 +38,7 @@ function groupPostsByDay(posts: ScheduledPost[]) {
 
 export function DashboardUpNextQueue() {
   const navigate = useNavigate();
-  const { workspace, workspaceId } = useWorkspace();
-  const { customEvents } = useCustomEvents(workspaceId);
-  const events = useMemo(
-    () => mergeWorkspaceEvents(workspace.events, customEvents),
-    [workspace.events, customEvents],
-  );
+  const { workspace } = useWorkspace();
   const scheduledPosts = workspace.scheduledPosts;
 
   const upcoming = useMemo(
@@ -91,7 +85,6 @@ export function DashboardUpNextQueue() {
                   <StreamContentCard
                     key={post.id}
                     post={post}
-                    events={events}
                     testId={`up-next-${post.id}`}
                     onOpen={() => openCard(post.id)}
                   />

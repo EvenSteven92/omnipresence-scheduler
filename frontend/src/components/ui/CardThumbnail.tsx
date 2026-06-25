@@ -3,7 +3,7 @@ import { FileVideo, Image as ImageIcon, Play } from "lucide-react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import { demoPreviewForPost } from "@/lib/demo-media";
 import { inferMediaAspect, inferMediaKind } from "@/lib/scheduled-post-display";
-import type { CardMediaType } from "@/lib/card-display";
+import { streamCardGradient, type CardMediaType } from "@/lib/card-display";
 import { cn } from "@/lib/utils";
 
 export type CardThumbnailAspect = "auto" | "video" | "square" | "portrait";
@@ -66,6 +66,7 @@ export function CardThumbnail({
   layout = "rail",
   height = "md",
   className,
+  variant = "media",
 }: {
   src?: string;
   post?: Pick<ScheduledPost, "id" | "title"> & { mediaKind?: "image" | "video" };
@@ -77,10 +78,15 @@ export function CardThumbnail({
   layout?: CardThumbnailLayout;
   height?: CardThumbnailHeight;
   className?: string;
+  /** `gradient` — solid color blocks like the Claude Design queue cards. */
+  variant?: "media" | "gradient";
 }) {
   const title = post?.title ?? alt;
   const mediaKind = kind ?? post?.mediaKind ?? (post ? inferMediaKind(post.title) : "video");
-  const imageSrc = src ?? (post ? demoPreviewForPost({ ...post, mediaKind }) : undefined);
+  const useGradient = variant === "gradient" && post;
+  const imageSrc =
+    useGradient ? undefined : src ?? (post ? demoPreviewForPost({ ...post, mediaKind }) : undefined);
+  const gradientStyle = useGradient ? { background: streamCardGradient(post) } : undefined;
   const aspectRatio =
     layout === "fixed" || layout === "square" ? undefined : resolveAspectRatio(aspect, post?.title, mediaKind);
   const typeLabel = mediaType ?? (mediaKind === "video" ? "VIDEO" : "IMAGE");
@@ -98,9 +104,9 @@ export function CardThumbnail({
         layout === "block" && "aspect-video",
         className,
       )}
-      style={aspectRatio ? { aspectRatio } : undefined}
+      style={{ ...(aspectRatio ? { aspectRatio } : {}), ...gradientStyle }}
     >
-      {imageSrc && mediaKind === "video" ? (
+      {useGradient ? null : imageSrc && mediaKind === "video" ? (
         <video
           src={imageSrc}
           muted
@@ -115,7 +121,7 @@ export function CardThumbnail({
           <MediaFallback kind={mediaKind} />
         </div>
       )}
-      {mediaKind === "video" && imageSrc ? (
+      {mediaKind === "video" && (useGradient || imageSrc) ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span className="flex h-7 w-7 items-center justify-center rounded-full border-[1.5px] border-foreground bg-white/85 shadow-sm">
             <Play className="h-3 w-3 fill-foreground text-foreground" strokeWidth={0} />

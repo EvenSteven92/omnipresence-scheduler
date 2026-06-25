@@ -10,7 +10,6 @@ import {
 
 import appCss from "../styles.css?url";
 import { Sidebar } from "@/components/Sidebar";
-import { SyncStatusBar } from "@/components/SyncStatusBar";
 import { BrandTheme } from "@/components/BrandTheme";
 import { WorkspaceProvider } from "@/lib/workspace-context";
 
@@ -102,7 +101,6 @@ function RootComponent() {
       <WorkspaceProvider>
         <BrandTheme />
         <div className="flex h-screen flex-col bg-background text-foreground">
-          <SyncStatusBar />
           <div className="flex min-h-0 flex-1 overflow-hidden">
             <Sidebar />
             <main className="min-h-0 flex-1 overflow-y-auto pb-14 md:pb-0">

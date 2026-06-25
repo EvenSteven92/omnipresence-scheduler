@@ -1,5 +1,4 @@
 import type { ScheduledPost } from "@/lib/mock-data";
-import type { ContentEvent } from "@/lib/workspaces/types";
 import { CardPublishChip } from "@/components/ui/CardPublishChip";
 import { CardStatusBadge } from "@/components/ui/CardStatusBadge";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
@@ -8,12 +7,10 @@ import {
   cardStatusFromPost,
   inferCardMediaType,
   publishEntriesForPost,
-  resolveAlbumLabel,
 } from "@/lib/card-display";
 
 export function StreamContentCard({
   post,
-  events,
   onOpen,
   testId,
   draggable,
@@ -21,7 +18,6 @@ export function StreamContentCard({
   onDragEnd,
 }: {
   post: ScheduledPost;
-  events: ContentEvent[];
   onOpen?: () => void;
   testId?: string;
   draggable?: boolean;
@@ -37,7 +33,6 @@ export function StreamContentCard({
     <ContentCard
       size="stream"
       testId={testId ?? `stream-card-${post.id}`}
-      eyebrow={resolveAlbumLabel(post, events)}
       title={post.title}
       platforms={publishes.map((entry) => (
         <CardPublishChip key={entry.platform} label={entry.label} dotColor={entry.dotColor} />
@@ -52,6 +47,7 @@ export function StreamContentCard({
           alt={post.title}
           layout="square"
           mediaType={mediaType}
+          variant="gradient"
         />
       }
       trailing={
@@ -62,7 +58,7 @@ export function StreamContentCard({
               {publishCount}
             </span>{" "}
             <span className="font-mono text-[0.5625rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              Pub
+              PUB
             </span>
           </div>
         </>

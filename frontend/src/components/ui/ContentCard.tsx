@@ -96,7 +96,7 @@ export function ContentCard({
           {thumbnail}
           <div className="min-w-0 flex-1">
             {eyebrow ? (
-              <div className="font-mono text-[0.625rem] font-bold uppercase leading-none tracking-[0.06em] text-accent">
+              <div className="truncate font-mono text-[0.625rem] font-bold uppercase leading-none tracking-[0.06em] text-accent">
                 {eyebrow}
               </div>
             ) : null}

@@ -211,6 +211,26 @@
     }
   }
 
+  /* Queue: main stream + ~296px rail (Claude Design Cards) */
+  .queue-page-grid {
+    display: grid;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (min-width: 1024px) {
+    .queue-page-grid {
+      grid-template-columns: minmax(0, 1fr) 18.5rem;
+    }
+  }
+  .queue-rail {
+    min-width: 0;
+  }
+  @media (max-width: 1023px) {
+    .queue-rail {
+      order: 2;
+    }
+  }
+
   /* Composer: queue · editor · preview */
   .composer-shell {
     display: flex;

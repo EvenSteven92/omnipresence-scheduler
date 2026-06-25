@@ -16,7 +16,7 @@ export function CardStatusBadge({
         className,
       )}
     >
-      {status === "LIVE" ? "Live" : status === "DRAFT" ? "Draft" : "Scheduled"}
+      {status}
     </span>
   );
 }

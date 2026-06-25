@@ -1,11 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarClock } from "lucide-react";
-import { useMemo } from "react";
+
 import type { ScheduledPost } from "@/lib/mock-data";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StreamContentCard } from "@/components/ui/StreamContentCard";
-import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
-import { useWorkspace } from "@/lib/workspace-context";
 import { contentCardAnchorDate } from "@/lib/scheduled-post-display";
 
 const DRAG_POST_TYPE = "application/x-scheduled-post";
@@ -25,13 +23,6 @@ export function CalendarQueueView({
   onDragPost?: (postId: string) => void;
   onDragEnd?: () => void;
 }) {
-  const { workspace, workspaceId } = useWorkspace();
-  const { customEvents } = useCustomEvents(workspaceId);
-  const events = useMemo(
-    () => mergeWorkspaceEvents(workspace.events, customEvents),
-    [workspace.events, customEvents],
-  );
-
   const sorted = [...posts].sort((a, b) => +contentCardAnchorDate(a) - +contentCardAnchorDate(b));
 
   if (sorted.length === 0) {
@@ -60,7 +51,6 @@ export function CalendarQueueView({
         <StreamContentCard
           key={post.id}
           post={post}
-          events={events}
           testId={`queue-item-${post.id}`}
           onOpen={() => onSelectPost(post)}
           draggable={draggable}

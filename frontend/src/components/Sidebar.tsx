@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LayoutList,
   CalendarDays,
@@ -11,20 +11,41 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { SidebarSyncFooter } from "@/components/SidebarSyncFooter";
+import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
+import { computeSidebarNavCounts, type SidebarNavCountKey } from "@/lib/sidebar-nav-counts";
+import { useWorkspace } from "@/lib/workspace-context";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "omni.sidebar.collapsed";
 
-const nav: { to: string; label: string; icon: LucideIcon }[] = [
-  { to: "/", label: "Queue", icon: LayoutList },
-  { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/events", label: "Albums", icon: LayoutGrid },
+const nav: {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  countKey?: SidebarNavCountKey;
+}[] = [
+  { to: "/", label: "Queue", icon: LayoutList, countKey: "queue" },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays, countKey: "calendar" },
+  { to: "/events", label: "Albums", icon: LayoutGrid, countKey: "albums" },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/workspaces", label: "Admin", icon: Settings2 },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { workspace, workspaceId } = useWorkspace();
+  const { customEvents } = useCustomEvents(workspaceId);
+
+  const events = useMemo(
+    () => mergeWorkspaceEvents(workspace.events, customEvents),
+    [workspace.events, customEvents],
+  );
+
+  const navCounts = useMemo(
+    () => computeSidebarNavCounts(workspace.scheduledPosts, events),
+    [workspace.scheduledPosts, events],
+  );
 
   useEffect(() => {
     try {
@@ -102,7 +123,7 @@ export function Sidebar() {
         ) : null}
 
         <nav className="mt-2 flex flex-1 flex-col gap-1" aria-label="Main">
-          {nav.map(({ to, label, icon: Icon }) => (
+          {nav.map(({ to, label, icon: Icon, countKey }) => (
             <SidebarItem
               key={to}
               to={to}
@@ -110,6 +131,7 @@ export function Sidebar() {
               Icon={Icon}
               collapsed={collapsed}
               exact={to === "/"}
+              badge={countKey ? navCounts[countKey] : undefined}
             />
           ))}
         </nav>
@@ -125,6 +147,7 @@ export function Sidebar() {
             <span className="text-lg leading-none">+</span>
             {!collapsed ? <span>New card</span> : null}
           </Link>
+          <SidebarSyncFooter collapsed={collapsed} />
         </div>
       </aside>
 
@@ -163,13 +186,17 @@ function SidebarItem({
   Icon,
   collapsed,
   exact,
+  badge,
 }: {
   to: string;
   label: string;
   Icon: LucideIcon;
   collapsed: boolean;
   exact?: boolean;
+  badge?: number;
 }) {
+  const showBadge = badge !== undefined && badge > 0;
+
   return (
     <Link
       to={to}
@@ -182,13 +209,23 @@ function SidebarItem({
         collapsed && "justify-center px-2",
       )}
       activeProps={{
-        className: cn(
-          "!border-foreground !bg-foreground !text-background",
-        ),
+        className: cn("!border-foreground !bg-foreground !text-background"),
       }}
     >
       <Icon className="h-[1.125rem] w-[1.125rem] shrink-0" strokeWidth={1.8} />
-      {!collapsed ? <span>{label}</span> : null}
+      {!collapsed ? (
+        <>
+          <span className="min-w-0 flex-1 truncate">{label}</span>
+          {showBadge ? (
+            <span
+              data-testid={`nav-badge-${label.toLowerCase()}`}
+              className="shrink-0 rounded-[5px] bg-accent px-1.5 py-0.5 font-mono text-[0.5625rem] font-bold leading-none tracking-[0.04em] text-foreground"
+            >
+              {badge}
+            </span>
+          ) : null}
+        </>
+      ) : null}
     </Link>
   );
 }
