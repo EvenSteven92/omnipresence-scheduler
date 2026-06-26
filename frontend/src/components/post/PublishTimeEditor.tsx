@@ -217,7 +217,7 @@ export function PublishTimeEditor({
           onClick={applySetTimes}
           disabled={platforms.length === 0}
           data-testid="set-times-btn"
-          className="flex w-full items-center justify-center gap-2 rounded-sm border border-accent bg-accent px-4 py-2.5 text-body-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="btn-action-primary btn-action w-full justify-center disabled:opacity-50"
         >
           <CalendarClock className="h-3 w-3" strokeWidth={1.75} />
           Set times

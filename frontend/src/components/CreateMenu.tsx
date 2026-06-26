@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { CalendarPlus, ChevronDown, FilePlus } from "lucide-react";
 import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
-import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
 export function CreateMenu({
@@ -29,14 +28,17 @@ export function CreateMenu({
   return (
     <>
       <div ref={rootRef} className={cn("relative", className)}>
-        <Button
-          variant="primary"
+        <button
+          type="button"
           data-testid={testId}
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-haspopup="menu"
           aria-label="Create"
-          className={cn("w-full", collapsed ? "justify-center px-2" : "justify-between")}
+          className={cn(
+            "btn-action-primary btn-action w-full",
+            collapsed ? "justify-center px-2" : "justify-between",
+          )}
         >
           <span className="flex items-center gap-2">
             <FilePlus className="h-4 w-4" strokeWidth={2} />
@@ -45,7 +47,7 @@ export function CreateMenu({
           {!collapsed ? (
             <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
           ) : null}
-        </Button>
+        </button>
         {open ? (
           <div
             role="menu"

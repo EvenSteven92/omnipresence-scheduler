@@ -267,7 +267,7 @@ export function BulkScheduleModal({
                 onClick={generatePreview}
                 disabled={busy}
                 data-testid="bulk-generate-preview"
-                className="flex items-center gap-1.5 rounded-sm border border-accent bg-accent px-2.5 py-1.5 text-[0.55rem] uppercase tracking-[0.14em] text-accent-foreground hover:opacity-90 disabled:opacity-50"
+                className="btn-action-primary btn-action px-2.5 py-1.5 text-[0.65rem] disabled:opacity-50"
               >
                 {busy ? (
                   <Loader2 className="h-2.5 w-2.5 animate-spin" />
@@ -285,7 +285,7 @@ export function BulkScheduleModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] hover:bg-secondary"
+            className="btn-action"
           >
             Cancel
           </button>
@@ -294,7 +294,7 @@ export function BulkScheduleModal({
             disabled={!preview || preview.slots.length === 0}
             onClick={() => preview && onApprove(preview)}
             data-testid="bulk-approve-schedule"
-            className="rounded-sm border border-accent bg-accent px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-accent-foreground hover:opacity-90 disabled:opacity-50"
+            className="btn-action-primary btn-action disabled:opacity-50"
           >
             Approve_schedule
           </button>

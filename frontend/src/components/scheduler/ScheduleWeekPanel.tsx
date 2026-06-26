@@ -252,7 +252,7 @@ export function ScheduleWeekPanel({
           onClick={onApply}
           disabled={readyCount === 0}
           data-testid="apply-schedule-btn"
-          className="flex w-full items-center justify-center gap-2 rounded-sm border border-accent bg-accent px-4 py-3 text-[0.65rem] uppercase tracking-[0.14em] text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-action-primary btn-action w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CalendarCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
           Apply_schedule

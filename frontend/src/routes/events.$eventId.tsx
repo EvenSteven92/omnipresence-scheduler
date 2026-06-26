@@ -44,7 +44,7 @@ function EventDetailPage() {
           <p className="text-sm text-muted-foreground">Event not found</p>
           <Link
             to="/events"
-            className="mt-4 inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary"
+            className="btn-action mt-4"
           >
             <ArrowLeft className="h-3 w-3" /> Back to events
           </Link>

@@ -2,8 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
 
-const newPostClass =
-  "flex items-center gap-2 rounded-sm bg-primary px-3 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-primary-foreground hover:opacity-90";
+const newPostClass = "btn-action-primary btn-action";
 
 const newEventLinkClass =
   "text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground";

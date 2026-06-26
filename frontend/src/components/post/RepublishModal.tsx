@@ -98,7 +98,7 @@ export function RepublishModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-sm border border-border bg-surface px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary"
+            className="btn-action"
           >
             Cancel
           </button>
@@ -106,7 +106,7 @@ export function RepublishModal({
             type="button"
             onClick={continueInComposer}
             data-testid="republish-continue"
-            className="flex items-center gap-1.5 rounded-sm border border-accent bg-accent px-3 py-2 text-[0.6rem] uppercase tracking-[0.14em] text-accent-foreground transition-opacity hover:opacity-90"
+            className="btn-action-primary btn-action"
           >
             <Repeat2 className="h-3 w-3" strokeWidth={1.75} />
             Continue_in_composer

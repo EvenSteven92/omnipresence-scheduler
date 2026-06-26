@@ -8,7 +8,6 @@ import type { Platform } from "@/lib/mock-data";
 import { Link2, RefreshCw, Check } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 
 const META_PLATFORMS = new Set<Platform>(["FB", "IG"]);
 const LIVE_NOW = new Set<Platform>(["YT", "FB", "IG"]);
@@ -175,28 +174,26 @@ export function ConnectPlatformSection({
                       ) : null}
                     </div>
                     {connected ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full"
+                      <button
+                        type="button"
+                        className="btn-action w-full justify-center disabled:opacity-50"
                         onClick={() => void (meta.short === "YT" ? syncYouTube() : syncMeta())}
                         disabled={!teamAuthed || syncing}
                       >
                         <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
                         Refresh
-                      </Button>
+                      </button>
                     ) : (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className="w-full"
+                      <button
+                        type="button"
+                        className="btn-action-primary btn-action w-full justify-center disabled:opacity-50"
                         disabled={!teamAuthed}
                         data-testid={`connect-platform-${meta.short.replace(/\s+/g, "-")}`}
                         onClick={() => handleConnect(meta.short === "FB" ? "FB" : meta.short)}
                       >
                         <Link2 className="h-3.5 w-3.5" />
                         Connect
-                      </Button>
+                      </button>
                     )}
                   </div>
                 );

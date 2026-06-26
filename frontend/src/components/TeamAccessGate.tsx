@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Lock } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 
 export function TeamAccessGate({ onAuthed }: { onAuthed: () => void }) {
   const [code, setCode] = useState("");
@@ -55,10 +54,14 @@ export function TeamAccessGate({ onAuthed }: { onAuthed: () => void }) {
               className="w-full rounded-sm border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
-          <Button type="submit" variant="primary" disabled={busy || !code.trim()}>
+          <button
+            type="submit"
+            disabled={busy || !code.trim()}
+            className="btn-action-primary btn-action disabled:opacity-50"
+          >
             <Lock className="h-3.5 w-3.5" />
             {busy ? "Checking…" : "Unlock"}
-          </Button>
+          </button>
         </form>
         {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
       </CardBody>

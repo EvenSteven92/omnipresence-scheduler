@@ -21,7 +21,7 @@ function NotFoundComponent() {
         <p className="label-mono mt-4">Route not found</p>
         <Link
           to="/"
-          className="mt-6 inline-flex items-center justify-center rounded-sm bg-primary px-4 py-2 text-[0.7rem] uppercase tracking-[0.14em] text-primary-foreground"
+          className="btn-action-primary btn-action mt-6"
         >
           Return home
         </Link>
@@ -43,7 +43,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             router.invalidate();
             reset();
           }}
-          className="mt-6 rounded-sm bg-primary px-4 py-2 text-[0.7rem] uppercase tracking-[0.14em] text-primary-foreground"
+          className="btn-action-primary btn-action mt-6"
         >
           Retry
         </button>
