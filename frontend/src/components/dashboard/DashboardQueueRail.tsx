@@ -44,13 +44,10 @@ export function DashboardQueueRail() {
 
   const gapSentence = formatGapDaysSentence(gapLabels);
 
-  const livePlatforms = accountStatus?.livePlatforms ?? ["YT", "FB", "IG"];
   const channelRows = useMemo(() => {
-    const liveSet = new Set(livePlatforms);
-    return CHANNEL_ORDER.filter(
-      (p) => workspace.platforms.includes(p) && liveSet.has(p),
-    );
-  }, [livePlatforms, workspace.platforms]);
+    const liveSet = new Set(accountStatus?.livePlatforms ?? ["YT", "FB", "IG"]);
+    return CHANNEL_ORDER.filter((p) => workspace.platforms.includes(p) && liveSet.has(p));
+  }, [accountStatus?.livePlatforms, workspace.platforms]);
 
   const liveCount = channelRows.length;
 

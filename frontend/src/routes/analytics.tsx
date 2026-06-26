@@ -152,11 +152,7 @@ function AnalyticsPage() {
     navigate({ to: "/scheduler" });
   }
 
-  const dataHonestyBadge = hasLiveMetrics(liveBundle) ? (
-    <LiveDataBadge />
-  ) : (
-    <SampleDataBadge />
-  );
+  const dataHonestyBadge = hasLiveMetrics(liveBundle) ? <LiveDataBadge /> : <SampleDataBadge />;
 
   async function generateSummary() {
     if (summaryBusy) return;
@@ -239,8 +235,7 @@ function AnalyticsPage() {
                               : "text-muted-foreground"
                         }`}
                       >
-                        {m.delta}{" "}
-                        <span className="text-muted-foreground">vs prior</span>
+                        {m.delta} <span className="text-muted-foreground">vs prior</span>
                       </div>
                     ) : null}
                   </div>
@@ -544,7 +539,11 @@ function AnalyticsPage() {
                       rank={i + 1}
                       events={workspace.events}
                       onOpen={() =>
-                        navigate({ to: "/card/$cardId", params: { cardId: p.id } })
+                        navigate({
+                          to: "/card/$cardId",
+                          params: { cardId: p.id },
+                          search: { from: "analytics" },
+                        })
                       }
                     />
                   ))}
@@ -556,7 +555,6 @@ function AnalyticsPage() {
           </>
         )}
       </div>
-
     </div>
   );
 }
@@ -612,14 +610,18 @@ function Panel({
   dataBadge?: React.ReactNode;
 }) {
   return (
-    <section className={`overflow-hidden rounded-sm border border-border bg-surface-elevated ${className}`}>
+    <section
+      className={`overflow-hidden rounded-sm border border-border bg-surface-elevated ${className}`}
+    >
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-6 py-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <div className="text-title text-sm">{title}</div>
             {dataBadge}
           </div>
-          {sub ? <p className="mt-1 text-body-sm leading-relaxed text-muted-foreground">{sub}</p> : null}
+          {sub ? (
+            <p className="mt-1 text-body-sm leading-relaxed text-muted-foreground">{sub}</p>
+          ) : null}
         </div>
         {action}
       </header>

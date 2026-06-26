@@ -70,11 +70,13 @@ export function publishEntriesForPost(post: ScheduledPost) {
 }
 
 export function resolveAlbumLabel(
-  post: Pick<ScheduledPost, "eventId" | "title">,
+  post: Pick<ScheduledPost, "id" | "eventId" | "title">,
   events: ContentEvent[],
+  resolveEventId?: (post: Pick<ScheduledPost, "id" | "eventId">) => string | undefined,
 ): string {
-  if (post.eventId) {
-    const event = getEventById(events, post.eventId);
+  const eventId = resolveEventId ? resolveEventId(post) : post.eventId;
+  if (eventId) {
+    const event = getEventById(events, eventId);
     if (event) return event.title;
   }
   return "Unassigned";
@@ -94,6 +96,7 @@ const STREAM_GRADIENTS = [
 export function streamCardGradient(post: Pick<ScheduledPost, "id" | "title">): string {
   let hash = 0;
   const key = post.id || post.title;
-  for (let i = 0; i < key.length; i++) hash = (hash + key.charCodeAt(i) * (i + 1)) % STREAM_GRADIENTS.length;
+  for (let i = 0; i < key.length; i++)
+    hash = (hash + key.charCodeAt(i) * (i + 1)) % STREAM_GRADIENTS.length;
   return STREAM_GRADIENTS[hash]!;
 }

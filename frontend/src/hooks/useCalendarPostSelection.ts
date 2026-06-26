@@ -28,7 +28,7 @@ export function useCalendarPostSelection() {
       const grid = dayGridRef.current;
       if (grid) setDetailReturn({ kind: "dayGrid", value: grid });
       setDayGrid(null);
-      navigate({ to: "/card/$cardId", params: { cardId: post.id } });
+      navigate({ to: "/card/$cardId", params: { cardId: post.id }, search: { from: "calendar" } });
     },
     [navigate],
   );
@@ -44,7 +44,7 @@ export function useCalendarPostSelection() {
   const openDetailFromEvent = useCallback(
     (post: PostDetailSource, event: ContentEvent) => {
       setDetailReturn({ kind: "event", value: event });
-      navigate({ to: "/card/$cardId", params: { cardId: post.id } });
+      navigate({ to: "/card/$cardId", params: { cardId: post.id }, search: { from: "album" } });
     },
     [navigate],
   );

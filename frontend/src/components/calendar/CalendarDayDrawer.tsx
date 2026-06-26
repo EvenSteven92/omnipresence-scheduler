@@ -68,7 +68,9 @@ export function CalendarDayDrawer({
         <div>
           <div className="page-kicker">
             {date.toLocaleDateString(undefined, { weekday: "long" }).toUpperCase()} ·{" "}
-            {date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }).toUpperCase()}
+            {date
+              .toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+              .toUpperCase()}
           </div>
           <h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">
             {posts.length} card{posts.length === 1 ? "" : "s"} scheduled
@@ -144,15 +146,11 @@ export function CalendarDayDrawer({
                         post={post}
                         dense
                         associated={group.event != null}
-                        highlightUnassociated={
-                          Boolean(highlightUnassociated && isAssociated && !isAssociated(post))
-                        }
+                        highlightUnassociated={Boolean(
+                          highlightUnassociated && isAssociated && !isAssociated(post),
+                        )}
                         onOpen={() => onSelectPost(post)}
-                        onAssociate={
-                          onAssociatePost
-                            ? (e) => onAssociatePost(post, e)
-                            : undefined
-                        }
+                        onAssociate={onAssociatePost ? (e) => onAssociatePost(post, e) : undefined}
                       />
                     ))}
                   </div>

@@ -31,7 +31,25 @@ import type { PublishedPost, ScheduledPost } from "@/lib/mock-data";
 import { useWorkspace } from "@/lib/workspace-context";
 import type { ContentEvent, WorkspaceId, WorkspaceProfile } from "@/lib/workspaces/types";
 
+export type CardDetailOrigin = "queue" | "calendar" | "analytics" | "album";
+
+const CARD_DETAIL_ORIGINS: readonly CardDetailOrigin[] = [
+  "queue",
+  "calendar",
+  "analytics",
+  "album",
+];
+
+type CardDetailSearch = { from?: CardDetailOrigin };
+
 export const Route = createFileRoute("/card/$cardId")({
+  validateSearch: (search: Record<string, unknown>): CardDetailSearch => ({
+    from:
+      typeof search.from === "string" &&
+      CARD_DETAIL_ORIGINS.includes(search.from as CardDetailOrigin)
+        ? (search.from as CardDetailOrigin)
+        : undefined,
+  }),
   head: ({ params }) => ({
     meta: [{ title: `Card — ${params.cardId} — TORCC OmniSocial` }],
   }),
@@ -40,6 +58,7 @@ export const Route = createFileRoute("/card/$cardId")({
 
 function CardDetailPage() {
   const { cardId } = Route.useParams();
+  const { from } = Route.useSearch();
   const { workspace, workspaceId, removeScheduledPost } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
   const { resolveEventId } = useEventAssociations(workspaceId);
@@ -72,6 +91,7 @@ function CardDetailPage() {
       events={events}
       workspace={workspace}
       workspaceId={workspaceId}
+      origin={from}
       resolveEventId={resolveEventId}
       removeScheduledPost={removeScheduledPost}
     />
@@ -83,6 +103,7 @@ function CardDetailView({
   events,
   workspace,
   workspaceId,
+  origin,
   resolveEventId,
   removeScheduledPost,
 }: {
@@ -90,6 +111,7 @@ function CardDetailView({
   events: ContentEvent[];
   workspace: WorkspaceProfile;
   workspaceId: WorkspaceId;
+  origin?: CardDetailOrigin;
   resolveEventId: (post: Pick<PostDetailSource, "id" | "eventId">) => string | undefined;
   removeScheduledPost: (postId: string) => void;
 }) {
@@ -102,8 +124,7 @@ function CardDetailView({
   const linkedEvent = eventId ? getEventById(events, eventId) : undefined;
   const mediaKind = inferMediaKind(post.title);
   const mediaType = inferCardMediaType(post.title, mediaKind);
-  const aspect =
-    inferMediaAspect(post.title, mediaKind) === "9/16" ? "portrait" : "video";
+  const aspect = inferMediaAspect(post.title, mediaKind) === "9/16" ? "portrait" : "video";
   const perf = cardPerformance(post);
   const slots = buildPlatformSlots(post.platforms, post.platformTimes, post.date);
   const caption = cardCaption(post);
@@ -133,16 +154,38 @@ function CardDetailView({
     navigate({ to: "/" });
   }
 
+  const backLabel =
+    origin === "calendar"
+      ? "Calendar"
+      : origin === "analytics"
+        ? "Analytics"
+        : origin === "album" && linkedEvent
+          ? "Album"
+          : "Queue";
+
+  function goBack() {
+    if (origin === "calendar") {
+      navigate({ to: "/calendar" });
+    } else if (origin === "analytics") {
+      navigate({ to: "/analytics" });
+    } else if (origin === "album" && linkedEvent) {
+      navigate({ to: "/events/$eventId", params: { eventId: linkedEvent.id } });
+    } else {
+      navigate({ to: "/" });
+    }
+  }
+
   return (
     <div>
       <div className="page-header flex flex-wrap items-end justify-between gap-5">
         <div className="min-w-0">
-          <Link
-            to="/"
+          <button
+            type="button"
+            onClick={goBack}
             className="font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground"
           >
-            ← Queue
-          </Link>
+            ← {backLabel}
+          </button>
           <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
             <span className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.06em] text-accent">
               {albumLabel}
@@ -186,7 +229,7 @@ function CardDetailView({
                 aspect={aspect}
                 layout="block"
                 mediaType={mediaType}
-                className="!aspect-[9/16] max-h-[520px] w-full !border-0"
+                className={`${aspect === "portrait" ? "!aspect-[9/16]" : "!aspect-video"} max-h-[520px] w-full !border-0`}
               />
             </section>
 
@@ -316,6 +359,14 @@ function CardDetailView({
                             </span>{" "}
                             <span className="font-mono text-[0.5625rem] font-semibold uppercase text-muted-foreground">
                               Likes
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-display text-[0.9375rem] font-bold">
+                              {fmtCompact(publishedPost.shares)}
+                            </span>{" "}
+                            <span className="font-mono text-[0.5625rem] font-semibold uppercase text-muted-foreground">
+                              Shares
                             </span>
                           </div>
                         </div>

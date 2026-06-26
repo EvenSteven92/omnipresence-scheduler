@@ -4,19 +4,14 @@ import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { PlatformPreview } from "@/components/post/PlatformPreview";
 import type { ContentEvent } from "@/lib/workspaces/types";
-import {
-  inferCardMediaType,
-  publishEntriesForPost,
-  resolveAlbumLabel,
-} from "@/lib/card-display";
+import { inferCardMediaType, publishEntriesForPost, resolveAlbumLabel } from "@/lib/card-display";
 import type { ScheduledPost } from "@/lib/mock-data";
 
 function draftToPreviewPost(draft: DraftPost): ScheduledPost {
   const times = Object.values(draft.proposedTimes ?? {}).filter(Boolean) as string[];
   const earliest = times.sort()[0];
   const title =
-    draft.caption.trim() ||
-    draft.filename.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+    draft.caption.trim() || draft.filename.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
 
   return {
     id: draft.id,
@@ -50,7 +45,6 @@ export function ComposerPreviewPane({
       </div>
       <ContentCard
         size="stream"
-
         eyebrow={album}
         title={previewPost.title}
         platforms={publishes.map((entry) => (

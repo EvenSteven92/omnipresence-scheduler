@@ -49,7 +49,7 @@ export function DashboardUpNextQueue() {
   const dayGroups = useMemo(() => groupPostsByDay(upcoming), [upcoming]);
 
   function openCard(cardId: string) {
-    navigate({ to: "/card/$cardId", params: { cardId } });
+    navigate({ to: "/card/$cardId", params: { cardId }, search: { from: "queue" } });
   }
 
   return (
@@ -71,7 +71,9 @@ export function DashboardUpNextQueue() {
           {dayGroups.map((group) => (
             <section key={group.date.toISOString()}>
               <div className="mb-3 flex items-baseline gap-3">
-                <span className="font-display text-xl font-bold text-foreground">{group.dateLabel}</span>
+                <span className="font-display text-xl font-bold text-foreground">
+                  {group.dateLabel}
+                </span>
                 <span className="font-mono text-[0.625rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                   {group.weekday}
                 </span>

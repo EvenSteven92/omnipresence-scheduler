@@ -50,7 +50,7 @@ export function youtubeVideosToPublishedPosts(videos: YouTubeLiveVideo[]): Publi
     date: video.publishedAt,
     views: video.views,
     likes: video.likes,
-    shares: video.comments,
+    shares: 0, // Shares not provided by the current YouTube Data API fetch
     engagementRate: video.engagementRate,
   }));
 }

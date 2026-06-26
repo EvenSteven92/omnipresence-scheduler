@@ -83,7 +83,9 @@ export function Sidebar() {
                 O
               </span>
               <span className="min-w-0 leading-none">
-                <span className="block font-display text-base font-bold text-foreground">OmniSocial</span>
+                <span className="block font-display text-base font-bold text-foreground">
+                  OmniSocial
+                </span>
                 <span className="mt-1 block font-mono text-[0.5625rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                   By TORCC
                 </span>

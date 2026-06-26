@@ -59,21 +59,24 @@ export function ContentCardChip({
   const thumbHeight = dense ? "sm" : "md";
   const fillsContainer = fit === "container" && rail;
 
-  const cardVariant = showHighlight ? "highlight" : variant === "scheduled" ? "scheduled" : "default";
+  const cardVariant = showHighlight
+    ? "highlight"
+    : variant === "scheduled"
+      ? "scheduled"
+      : "default";
 
-  const eyebrow =
-    !dense ? (
-      <span className="label-mono text-[0.5rem] text-muted-foreground/80">
-        1 card · {publishCount} publish{publishCount === 1 ? "" : "es"}
-      </span>
-    ) : null;
+  const eyebrow = !dense ? (
+    <span className="label-mono text-[0.5rem] text-muted-foreground/80">
+      1 card · {publishCount} publish{publishCount === 1 ? "" : "es"}
+    </span>
+  ) : null;
 
   const meta =
-    showSchedule && (dense || !dense) ? (
-      dense
+    showSchedule && (dense || !dense)
+      ? dense
         ? `${publishCount} · ${contentCardPublishSpread(post)}`
         : contentCardPublishSpread(post)
-    ) : undefined;
+      : undefined;
 
   const platforms = (
     <>

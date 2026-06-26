@@ -32,7 +32,8 @@
   --color-warning: var(--warning);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
-  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans:
+    "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-display: "Bricolage Grotesque", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --color-paper-2: var(--paper-2);
@@ -268,7 +269,9 @@
     font-size: var(--text-body-sm-size);
     font-weight: 600;
     color: var(--color-foreground);
-    transition: transform 120ms ease, box-shadow 120ms ease;
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease;
   }
   .btn-action:hover {
     background: var(--color-secondary);

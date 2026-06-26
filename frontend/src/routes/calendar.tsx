@@ -1,14 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays, List } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useEventAssociations } from "@/hooks/useEventAssociations";
 import { CalendarDayDrawer } from "@/components/calendar/CalendarDayDrawer";
-import { CalendarRail } from "@/components/calendar/CalendarRail";
-import { DRAG_POST_TYPE, CalendarQueueView as CalendarListView } from "@/components/calendar/CalendarQueueView";
+import { DRAG_POST_TYPE } from "@/components/calendar/CalendarQueueView";
+import { QueueCalendarToggle } from "@/components/dashboard/QueueCalendarToggle";
 import { parseCalendarDateSearch } from "@/lib/calendar-day-click";
 import { reschedulePostToDay } from "@/lib/reschedule-post";
 import { EventQueuedPostsModal } from "@/components/calendar/EventQueuedPostsModal";
@@ -27,7 +26,7 @@ import { CalendarPostModals } from "@/components/post/CalendarPostModals";
 import { useCalendarPostSelection } from "@/hooks/useCalendarPostSelection";
 import { isSameCalendarDay, today, todayStart } from "@/lib/demo-clock";
 import { buildMonthWeeks, CALENDAR_DOW } from "@/lib/calendar-grid";
-import { contentCardAnchorDate, groupContentCardsByDay } from "@/lib/scheduled-post-display";
+import { groupContentCardsByDay } from "@/lib/scheduled-post-display";
 
 type CalendarSearch = {
   event?: string;
@@ -65,25 +64,18 @@ function CalendarPage() {
     [workspace.events, customEvents],
   );
   const { isAssociated, resolveEventId, associate } = useEventAssociations(workspaceId);
-  const [viewMode, setViewMode] = useState<"calendar" | "queue">("queue");
   const [draggingPostId, setDraggingPostId] = useState<string | null>(null);
   const [dayDrawer, setDayDrawer] = useState<{
     date: Date;
     events: ContentEvent[];
     posts: ScheduledPost[];
   } | null>(null);
-  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
   const [highlightUnassociated, setHighlightUnassociated] = useState(false);
   const [associateTarget, setAssociateTarget] = useState<ScheduledPost | null>(null);
   const [eventPostsModal, setEventPostsModal] = useState<ContentEvent | null>(null);
 
-  const {
-    dayGrid,
-    openPosts,
-    selectFromGrid,
-    openDetailFromEvent,
-    closeDayGrid,
-  } = useCalendarPostSelection();
+  const { dayGrid, openPosts, selectFromGrid, openDetailFromEvent, closeDayGrid } =
+    useCalendarPostSelection();
   const [viewMonth, setViewMonth] = useState(() => {
     const now = todayStart();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -207,6 +199,7 @@ function CalendarPage() {
         title="Calendar"
         actions={
           <>
+            <QueueCalendarToggle active="calendar" />
             <button
               type="button"
               onClick={jumpToday}
@@ -228,37 +221,6 @@ function CalendarPage() {
       />
 
       <div className="page-content">
-        <div className="mb-6 flex max-w-md gap-1 rounded-sm border border-border bg-surface p-1">
-          <button
-            type="button"
-            data-testid="calendar-view-month"
-            onClick={() => setViewMode("calendar")}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
-              viewMode === "calendar"
-                ? "bg-secondary text-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <CalendarDays className="h-4 w-4" />
-            Calendar
-          </button>
-          <button
-            type="button"
-            data-testid="calendar-view-queue"
-            onClick={() => setViewMode("queue")}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
-              viewMode === "queue"
-                ? "bg-secondary text-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <List className="h-4 w-4" />
-            List
-          </button>
-        </div>
-
         {deepLinkNotice ? (
           <p
             data-testid="calendar-deep-link-notice"
@@ -268,128 +230,97 @@ function CalendarPage() {
           </p>
         ) : null}
 
-        {viewMode === "queue" ? (
-          <CalendarListView
-            posts={scheduledPosts}
-            draggable
-            onDragPost={setDraggingPostId}
-            onDragEnd={() => setDraggingPostId(null)}
-            onSelectPost={(post) => selectFromGrid(post)}
-          />
-        ) : (
-          <div className="page-grid">
-            <div className="page-grid-main">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => shiftMonth(-1)}
-                    data-testid="prev-month-btn"
-                    aria-label="Previous month"
-                    className="rounded-sm border border-border bg-surface p-1.5 text-foreground transition-colors hover:bg-secondary"
-                  >
-                    <ChevronLeft className="h-3 w-3" />
-                  </button>
-                  <span className="px-1 text-title">
-                    {viewMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => shiftMonth(1)}
-                    data-testid="next-month-btn"
-                    aria-label="Next month"
-                    className="rounded-sm border border-border bg-surface p-1.5 text-foreground transition-colors hover:bg-secondary"
-                  >
-                    <ChevronRight className="h-3 w-3" />
-                  </button>
-                  {!monthHasPosts ? (
-                    <span className="ml-2 text-body-sm text-muted-foreground">No posts this month</span>
-                  ) : null}
-                </div>
-                <CalendarLegendBar
-                  highlightUnassociated={highlightUnassociated}
-                  onToggleHighlight={() => setHighlightUnassociated((v) => !v)}
-                  unassociatedCount={unassociatedCount}
-                />
-              </div>
-
-              {draggingPostId ? (
-                <p className="mt-3 text-body-sm text-accent">
-                  Drop a post onto a day to reschedule
-                </p>
-              ) : null}
-
-              <div className="mt-4 overflow-x-auto">
-                <div className="min-w-[48rem] overflow-hidden rounded-lg border-[1.5px] border-foreground bg-foreground">
-                  <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] gap-[1.5px]">
-                    <div className="bg-paper-2 py-2.5 text-center font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                      Wk
-                    </div>
-                    {CALENDAR_DOW.map((d) => (
-                      <div
-                        key={d}
-                        className="bg-paper-2 py-2.5 text-center font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-muted-foreground"
-                      >
-                        {d}
-                      </div>
-                    ))}
-                    {weeks.map((week) => (
-                      <div
-                        key={`week-${week.weekNumber}-${week.cells[0]!.key}`}
-                        className="contents"
-                      >
-                        <div
-                          data-testid={`cal-week-${week.weekNumber}`}
-                          className="flex min-h-[168px] items-start justify-center bg-card px-1 py-3"
-                        >
-                          <span className="font-data text-[0.65rem] text-muted-foreground">
-                            {week.weekNumber}
-                          </span>
-                        </div>
-                        {week.cells.map((c) => {
-                          const posts = !c.muted ? byDay.get(c.d) : undefined;
-                          const dayEvents = !c.muted ? eventsByDay.get(c.d) : undefined;
-                          const isToday = isSameCalendarDay(c.date, now);
-                          const isSelected = !c.muted && selectedDateKey === c.date.toDateString();
-                          return (
-                            <CalendarMonthDayCell
-                              key={c.key}
-                              day={c.d}
-                              date={c.date}
-                              muted={c.muted}
-                              isToday={isToday}
-                              isSelected={isSelected}
-                              events={dayEvents}
-                              posts={posts}
-                              isAssociated={isAssociated}
-                              hoveredEventId={hoveredEventId}
-                              resolveEventId={resolveEventId}
-                              dropActive={Boolean(draggingPostId && !c.muted)}
-                              onDropPost={handleRescheduleDrop}
-                              onDateClick={() => handleDateClick(c.d, c.date)}
-                              onOpenPosts={openPosts}
-                            />
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <CalendarRail
-              scheduledPosts={scheduledPosts}
-              events={events}
-              focusYear={focusYear}
-              focusMonth={focusMonth}
-              onSelectPost={(post) => selectFromGrid(post)}
-              onSelectEvent={openEventPosts}
-              hoveredEventId={hoveredEventId}
-              onHoverEvent={setHoveredEventId}
-            />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => shiftMonth(-1)}
+              data-testid="prev-month-btn"
+              aria-label="Previous month"
+              className="rounded-sm border border-border bg-surface p-1.5 text-foreground transition-colors hover:bg-secondary"
+            >
+              <ChevronLeft className="h-3 w-3" />
+            </button>
+            <span className="px-1 text-title">
+              {viewMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+            </span>
+            <button
+              type="button"
+              onClick={() => shiftMonth(1)}
+              data-testid="next-month-btn"
+              aria-label="Next month"
+              className="rounded-sm border border-border bg-surface p-1.5 text-foreground transition-colors hover:bg-secondary"
+            >
+              <ChevronRight className="h-3 w-3" />
+            </button>
+            {!monthHasPosts ? (
+              <span className="ml-2 text-body-sm text-muted-foreground">No posts this month</span>
+            ) : null}
           </div>
-        )}
+          <CalendarLegendBar
+            highlightUnassociated={highlightUnassociated}
+            onToggleHighlight={() => setHighlightUnassociated((v) => !v)}
+            unassociatedCount={unassociatedCount}
+          />
+        </div>
+
+        {draggingPostId ? (
+          <p className="mt-3 text-body-sm text-accent">Drop a post onto a day to reschedule</p>
+        ) : null}
+
+        <div className="mt-4 overflow-x-auto">
+          <div className="min-w-[48rem] overflow-hidden rounded-lg border-[1.5px] border-foreground bg-foreground">
+            <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] gap-[1.5px]">
+              <div className="bg-paper-2 py-2.5 text-center font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                Wk
+              </div>
+              {CALENDAR_DOW.map((d) => (
+                <div
+                  key={d}
+                  className="bg-paper-2 py-2.5 text-center font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-muted-foreground"
+                >
+                  {d}
+                </div>
+              ))}
+              {weeks.map((week) => (
+                <div key={`week-${week.weekNumber}-${week.cells[0]!.key}`} className="contents">
+                  <div
+                    data-testid={`cal-week-${week.weekNumber}`}
+                    className="flex min-h-[168px] items-start justify-center bg-card px-1 py-3"
+                  >
+                    <span className="font-data text-[0.65rem] text-muted-foreground">
+                      {week.weekNumber}
+                    </span>
+                  </div>
+                  {week.cells.map((c) => {
+                    const posts = !c.muted ? byDay.get(c.d) : undefined;
+                    const dayEvents = !c.muted ? eventsByDay.get(c.d) : undefined;
+                    const isToday = isSameCalendarDay(c.date, now);
+                    const isSelected = !c.muted && selectedDateKey === c.date.toDateString();
+                    return (
+                      <CalendarMonthDayCell
+                        key={c.key}
+                        day={c.d}
+                        date={c.date}
+                        muted={c.muted}
+                        isToday={isToday}
+                        isSelected={isSelected}
+                        events={dayEvents}
+                        posts={posts}
+                        isAssociated={isAssociated}
+                        resolveEventId={resolveEventId}
+                        dropActive={Boolean(draggingPostId && !c.muted)}
+                        onDropPost={handleRescheduleDrop}
+                        onDateClick={() => handleDateClick(c.d, c.date)}
+                        onOpenPosts={openPosts}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {dayDrawer ? (

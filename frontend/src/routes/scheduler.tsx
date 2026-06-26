@@ -245,7 +245,7 @@ function NewPostPage() {
       setIsDragging(false);
       if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
     },
-    [workspace.platforms, addFiles],
+    [addFiles],
   );
 
   async function generateAllQueued() {
@@ -774,85 +774,89 @@ function NewPostPage() {
         <div className="flex min-h-0 flex-1 overflow-hidden">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className={empty ? "page-content" : "px-6 py-5"}>
-            {empty ? (
-              <>
-                <SchedulerWorkflowSteps active="upload" />
-                <p className="mb-6 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                  Paste your transcript, drop a batch of {workspace.name} reels, and we&apos;ll draft
-                  captions in {workspace.name}&apos;s voice and spread them across the week. Each file
-                  becomes its own card you can track.
-                </p>
-                <SourceTranscriptPanel
-                  value={sourceTranscript}
-                  onChange={setSourceTranscript}
-                  onApply={applyTranscriptToAll}
-                  draftCount={allPosts.length}
-                />
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={onDrop}
-                  onClick={() => fileInput.current?.click()}
-                  data-testid="dropzone"
-                  className={`flex cursor-pointer flex-col items-center justify-center gap-4 rounded-sm border border-dashed bg-surface px-8 py-14 transition-colors ${
-                    isDragging ? "border-accent bg-accent/5" : "border-border hover:bg-secondary/30"
-                  }`}
-                >
-                  <Upload className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
-                  <div className="text-center">
-                    <div className="text-title text-foreground">Drop your {workspace.name} reels</div>
-                    <p className="mt-2 text-body-sm text-muted-foreground">MP4, MOV, JPG, PNG</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addDemoSet();
+              {empty ? (
+                <>
+                  <SchedulerWorkflowSteps active="upload" />
+                  <p className="mb-6 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                    Paste your transcript, drop a batch of {workspace.name} reels, and we&apos;ll
+                    draft captions in {workspace.name}&apos;s voice and spread them across the week.
+                    Each file becomes its own card you can track.
+                  </p>
+                  <SourceTranscriptPanel
+                    value={sourceTranscript}
+                    onChange={setSourceTranscript}
+                    onApply={applyTranscriptToAll}
+                    draftCount={allPosts.length}
+                  />
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
                     }}
-                    data-testid="add-demo-set-btn"
-                    className="rounded-sm border border-border bg-background/60 px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary"
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={onDrop}
+                    onClick={() => fileInput.current?.click()}
+                    data-testid="dropzone"
+                    className={`flex cursor-pointer flex-col items-center justify-center gap-4 rounded-sm border border-dashed bg-surface px-8 py-14 transition-colors ${
+                      isDragging
+                        ? "border-accent bg-accent/5"
+                        : "border-border hover:bg-secondary/30"
+                    }`}
                   >
-                    Add demo set
-                  </button>
-                  <input
-                    ref={fileInput}
-                    type="file"
-                    multiple
-                    accept="image/*,video/*"
-                    className="hidden"
-                    onChange={(e) => handleFileInputChange(e.target.files, e.target)}
+                    <Upload className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+                    <div className="text-center">
+                      <div className="text-title text-foreground">
+                        Drop your {workspace.name} reels
+                      </div>
+                      <p className="mt-2 text-body-sm text-muted-foreground">MP4, MOV, JPG, PNG</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addDemoSet();
+                      }}
+                      data-testid="add-demo-set-btn"
+                      className="rounded-sm border border-border bg-background/60 px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground hover:bg-secondary"
+                    >
+                      Add demo set
+                    </button>
+                    <input
+                      ref={fileInput}
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      className="hidden"
+                      onChange={(e) => handleFileInputChange(e.target.files, e.target)}
+                    />
+                  </div>
+                </>
+              ) : activeDraft ? (
+                <div className="mx-auto max-w-[52rem]">
+                  <SourceTranscriptPanel
+                    value={sourceTranscript}
+                    onChange={setSourceTranscript}
+                    onApply={applyTranscriptToAll}
+                    draftCount={allPosts.length}
+                  />
+                  {activeInDraftZone ? (
+                    <p className="mb-4 font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-muted-foreground">
+                      Saved draft
+                    </p>
+                  ) : null}
+                  <ComposerCard
+                    key={activeDraft.id}
+                    index={activeIndex}
+                    post={activeDraft}
+                    focused
+                    hideFooterActions
+                    onChange={(next) => updateDraft(activeDraft.id, next)}
+                    onRemove={() => removeDraft(activeDraft.id)}
+                    onSaveDraft={() => saveToDraftZone(activeDraft)}
+                    expanded
                   />
                 </div>
-              </>
-            ) : activeDraft ? (
-              <div className="mx-auto max-w-[52rem]">
-                <SourceTranscriptPanel
-                  value={sourceTranscript}
-                  onChange={setSourceTranscript}
-                  onApply={applyTranscriptToAll}
-                  draftCount={allPosts.length}
-                />
-                {activeInDraftZone ? (
-                  <p className="mb-4 font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-muted-foreground">
-                    Saved draft
-                  </p>
-                ) : null}
-                <ComposerCard
-                  key={activeDraft.id}
-                  index={activeIndex}
-                  post={activeDraft}
-                  focused
-                  hideFooterActions
-                  onChange={(next) => updateDraft(activeDraft.id, next)}
-                  onRemove={() => removeDraft(activeDraft.id)}
-                  onSaveDraft={() => saveToDraftZone(activeDraft)}
-                  expanded
-                />
-              </div>
-            ) : null}
+              ) : null}
             </div>
           </div>
 

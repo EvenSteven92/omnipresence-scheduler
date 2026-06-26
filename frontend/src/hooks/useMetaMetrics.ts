@@ -86,9 +86,11 @@ export function metaInstagramMediaToPublishedPosts(media: MetaInstagramMedia[]):
     title: item.caption || "Instagram post",
     platforms: ["IG"],
     date: item.publishedAt,
-    views: item.likes + item.comments,
+    // Real views/reach are not available from the current basic media sync
+    // (would require instagram_manage_insights + /insights calls).
+    views: 0,
     likes: item.likes,
-    shares: item.comments,
+    shares: 0,
     engagementRate: item.engagementRate,
   }));
 }

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import { CardPublishChip } from "@/components/ui/CardPublishChip";
 import { CardStatusBadge } from "@/components/ui/CardStatusBadge";
@@ -7,7 +8,11 @@ import {
   cardStatusFromPost,
   inferCardMediaType,
   publishEntriesForPost,
+  resolveAlbumLabel,
 } from "@/lib/card-display";
+import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
+import { useEventAssociations } from "@/hooks/useEventAssociations";
+import { useWorkspace } from "@/lib/workspace-context";
 
 export function StreamContentCard({
   post,
@@ -24,15 +29,24 @@ export function StreamContentCard({
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: (e: React.DragEvent) => void;
 }) {
+  const { workspace, workspaceId } = useWorkspace();
+  const { customEvents } = useCustomEvents(workspaceId);
+  const { resolveEventId } = useEventAssociations(workspaceId);
+  const events = useMemo(
+    () => mergeWorkspaceEvents(workspace.events, customEvents),
+    [workspace.events, customEvents],
+  );
   const mediaType = inferCardMediaType(post.title);
   const status = cardStatusFromPost(post);
   const publishes = publishEntriesForPost(post);
   const publishCount = post.platforms.length;
+  const albumLabel = resolveAlbumLabel(post, events, resolveEventId);
 
   return (
     <ContentCard
       size="stream"
       testId={testId ?? `stream-card-${post.id}`}
+      eyebrow={albumLabel !== "Unassigned" ? albumLabel : undefined}
       title={post.title}
       platforms={publishes.map((entry) => (
         <CardPublishChip key={entry.platform} label={entry.label} dotColor={entry.dotColor} />

@@ -175,7 +175,13 @@ function AlbumMediaCard({
       platforms={<PlatformRow entries={entries} size="sm" compact />}
       onOpen={onOpen}
       thumbnail={
-        <CardThumbnail post={cardPost} alt={item.title} kind={mediaKind} layout="rail" height="md" />
+        <CardThumbnail
+          post={cardPost}
+          alt={item.title}
+          kind={mediaKind}
+          layout="rail"
+          height="md"
+        />
       }
       trailing={
         isPublished && maxMetrics ? (
@@ -213,7 +219,7 @@ export function EventMediaMatrix({
   }, [items]);
 
   function openItem(item: EventMediaItem) {
-    navigate({ to: "/card/$cardId", params: { cardId: item.id } });
+    navigate({ to: "/card/$cardId", params: { cardId: item.id }, search: { from: "album" } });
   }
 
   if (items.length === 0) {
@@ -270,7 +276,6 @@ export function EventMediaMatrix({
           ))}
         </div>
       </div>
-
     </>
   );
 }

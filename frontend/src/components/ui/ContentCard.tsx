@@ -140,7 +140,10 @@ export function ContentCard({
           ? "min-w-0 flex-1"
           : isStacked || isMd
             ? "flex-1"
-            : cn("min-w-0 shrink-0", size === "chip" ? "w-36" : fullWidth ? "min-w-0 flex-1" : "w-52"),
+            : cn(
+                "min-w-0 shrink-0",
+                size === "chip" ? "w-36" : fullWidth ? "min-w-0 flex-1" : "w-52",
+              ),
         size === "chip" && "gap-1 p-2",
         size === "row" && "gap-0",
         size === "sm" && "gap-1.5 p-2",
@@ -204,7 +207,9 @@ export function ContentCard({
           : undefined
       }
       data-testid={testId}
-      className={cn(isRow || fullWidth || isStream ? "block w-full" : "inline-block w-fit max-w-full")}
+      className={cn(
+        isRow || fullWidth || isStream ? "block w-full" : "inline-block w-fit max-w-full",
+      )}
     >
       <div className={frameClass}>
         {thumbnail}

@@ -42,7 +42,8 @@ export function ComposerFooter({
           className="btn-action-primary btn-action disabled:opacity-50"
         >
           <CalendarCheck className="h-3.5 w-3.5" />
-          Schedule {publishCount > 0 ? `${publishCount} publish${publishCount === 1 ? "" : "es"}` : ""}
+          Schedule{" "}
+          {publishCount > 0 ? `${publishCount} publish${publishCount === 1 ? "" : "es"}` : ""}
         </button>
       </div>
     </footer>

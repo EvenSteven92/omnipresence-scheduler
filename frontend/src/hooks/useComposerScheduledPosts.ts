@@ -85,8 +85,7 @@ export function useComposerScheduledPosts(workspaceId: WorkspaceId) {
     (post: ScheduledPost) => {
       setComposerScheduled((prev) => {
         const idx = prev.findIndex((p) => p.id === post.id);
-        const next =
-          idx === -1 ? [...prev, post] : prev.map((p, i) => (i === idx ? post : p));
+        const next = idx === -1 ? [...prev, post] : prev.map((p, i) => (i === idx ? post : p));
         writeComposerScheduledPosts(workspaceId, next);
         return next;
       });

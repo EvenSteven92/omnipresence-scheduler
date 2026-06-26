@@ -3,7 +3,6 @@ import { PageHeader } from "@/components/PageHeader";
 import { useMemo } from "react";
 
 import { DashboardUpNextQueue } from "@/components/dashboard/DashboardUpNextQueue";
-import { DashboardQueueRail } from "@/components/dashboard/DashboardQueueRail";
 import { QueueCalendarToggle } from "@/components/dashboard/QueueCalendarToggle";
 
 export const Route = createFileRoute("/")({
@@ -12,7 +11,8 @@ export const Route = createFileRoute("/")({
       { title: "Queue — TORCC OmniSocial" },
       {
         name: "description",
-        content: "Upcoming content cards grouped by day — schedule and publish across every channel.",
+        content:
+          "Upcoming content cards grouped by day — schedule and publish across every channel.",
       },
     ],
   }),
@@ -34,19 +34,10 @@ function QueuePage() {
 
   return (
     <div>
-      <PageHeader
-        eyebrow="Content queue"
-        title="Up next"
-        actions={headerActions}
-      />
+      <PageHeader eyebrow="Content queue" title="Up next" actions={headerActions} />
 
       <div className="page-content mx-auto max-w-[1320px]">
-        <div className="queue-page-grid">
-          <div className="page-grid-main">
-            <DashboardUpNextQueue />
-          </div>
-          <DashboardQueueRail />
-        </div>
+        <DashboardUpNextQueue />
       </div>
     </div>
   );

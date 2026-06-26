@@ -88,7 +88,10 @@ export function PlatformPreview({
 
   if (variant === "inline") {
     return (
-      <section data-testid="platform-preview-inline" className="overflow-hidden rounded-md border border-border">
+      <section
+        data-testid="platform-preview-inline"
+        className="overflow-hidden rounded-md border border-border"
+      >
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}

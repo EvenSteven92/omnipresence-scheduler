@@ -133,11 +133,7 @@ function EventsIndexPage() {
             title={`No ${eventKindLabel(kindFilter as ContentEventKind).toLowerCase()} events`}
             description="Try another category or create a new event album."
             action={
-              <button
-                type="button"
-                onClick={() => setKindFilter("all")}
-                className="btn-action"
-              >
+              <button type="button" onClick={() => setKindFilter("all")} className="btn-action">
                 Show all events
               </button>
             }

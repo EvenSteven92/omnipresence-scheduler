@@ -84,11 +84,14 @@ export function CardThumbnail({
   const title = post?.title ?? alt;
   const mediaKind = kind ?? post?.mediaKind ?? (post ? inferMediaKind(post.title) : "video");
   const useGradient = variant === "gradient" && post;
-  const imageSrc =
-    useGradient ? undefined : src ?? (post ? demoPreviewForPost({ ...post, mediaKind }) : undefined);
+  const imageSrc = useGradient
+    ? undefined
+    : (src ?? (post ? demoPreviewForPost({ ...post, mediaKind }) : undefined));
   const gradientStyle = useGradient ? { background: streamCardGradient(post) } : undefined;
   const aspectRatio =
-    layout === "fixed" || layout === "square" ? undefined : resolveAspectRatio(aspect, post?.title, mediaKind);
+    layout === "fixed" || layout === "square"
+      ? undefined
+      : resolveAspectRatio(aspect, post?.title, mediaKind);
   const typeLabel = mediaType ?? (mediaKind === "video" ? "VIDEO" : "IMAGE");
 
   const isSquare = layout === "square";

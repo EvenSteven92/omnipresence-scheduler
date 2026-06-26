@@ -17,7 +17,9 @@ export function PageHeader({
         {eyebrow != null && eyebrow !== "" ? <div className="page-kicker">{eyebrow}</div> : null}
         <h1 className="page-title">{title}</h1>
         {description ? (
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{description}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            {description}
+          </p>
         ) : null}
       </div>
       {actions ? (

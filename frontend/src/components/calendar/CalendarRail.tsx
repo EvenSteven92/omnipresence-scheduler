@@ -57,14 +57,12 @@ export function CalendarRail({
       <section className="panel overflow-hidden">
         <header className="border-b border-border px-4 py-3">
           <h2 className="text-title text-sm">Up next</h2>
-          <p className="mt-0.5 text-body-sm text-muted-foreground">Next {UPCOMING_WINDOW_DAYS} days</p>
+          <p className="mt-0.5 text-body-sm text-muted-foreground">
+            Next {UPCOMING_WINDOW_DAYS} days
+          </p>
         </header>
         <div className="max-h-64 overflow-y-auto p-3">
-          <CalendarQueueView
-            posts={upNext}
-            onSelectPost={onSelectPost}
-            compact
-          />
+          <CalendarQueueView posts={upNext} onSelectPost={onSelectPost} compact />
         </div>
       </section>
 

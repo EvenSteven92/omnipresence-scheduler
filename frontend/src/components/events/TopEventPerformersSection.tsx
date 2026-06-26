@@ -91,10 +91,7 @@ export function TopEventPerformersSection({
             Ranked by album engagement — {timeframeLabel(timeframe)}.
           </p>
         </div>
-        <Link
-          to="/events"
-          className="btn-action text-[0.65rem]"
-        >
+        <Link to="/events" className="btn-action text-[0.65rem]">
           All albums <ArrowRight className="h-3 w-3" />
         </Link>
       </div>

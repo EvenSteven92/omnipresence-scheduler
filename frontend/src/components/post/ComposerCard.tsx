@@ -132,7 +132,10 @@ export function ComposerCard({
   const thumbAspect: CardThumbnailAspect =
     post.format === "portrait" || post.format === "story" ? "portrait" : "video";
   const hashtagCount = post.hashtags.trim()
-    ? post.hashtags.trim().split(/\s+/).filter((h) => h.startsWith("#")).length
+    ? post.hashtags
+        .trim()
+        .split(/\s+/)
+        .filter((h) => h.startsWith("#")).length
     : 0;
 
   function toggleFormat(f: PostFormat) {
@@ -181,10 +184,7 @@ export function ComposerCard({
 
   if (focused) {
     return (
-      <div
-        data-testid={`composer-card-${post.id}`}
-        className="flex flex-col gap-4"
-      >
+      <div data-testid={`composer-card-${post.id}`} className="flex flex-col gap-4">
         <section className="panel p-[18px]">
           <ComposerSectionLabel n="01" title="MEDIA" />
           <div className="flex items-center gap-4 rounded-md border-[1.5px] border-dashed border-foreground bg-background px-5 py-5">
@@ -318,12 +318,9 @@ export function ComposerCard({
                   captionPlatform === "all"
                     ? post.caption
                     : (post.platformCaptions?.[captionPlatform] ?? post.caption);
-                const platforms =
-                  captionPlatform === "all" ? post.platforms : [captionPlatform];
+                const platforms = captionPlatform === "all" ? post.platforms : [captionPlatform];
                 const limit =
-                  platforms.length > 0
-                    ? Math.min(...platforms.map((p) => CHAR_LIMITS[p]))
-                    : 2200;
+                  platforms.length > 0 ? Math.min(...platforms.map((p) => CHAR_LIMITS[p])) : 2200;
                 return `${text.length} / ${limit}`;
               })()}
             </span>
@@ -434,7 +431,8 @@ export function ComposerCard({
             </div>
             {conflicts.map((c) => (
               <div key={c.withId} className="leading-snug">
-                · {c.sharedPlatforms.join(", ")} overlaps with “{c.withTitle}” (±{c.deltaMinutes} min)
+                · {c.sharedPlatforms.join(", ")} overlaps with “{c.withTitle}” (±{c.deltaMinutes}{" "}
+                min)
               </div>
             ))}
           </div>
