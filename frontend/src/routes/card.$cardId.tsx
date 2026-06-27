@@ -196,7 +196,11 @@ function CardDetailView({
           <h1 className="page-title mt-2 text-[2.125rem]">{post.title}</h1>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <button type="button" onClick={editCard} className="btn-action-primary btn-action">
+          <button
+            type="button"
+            onClick={editCard}
+            className="btn-action-primary btn-action !text-foreground"
+          >
             Edit card
           </button>
           <button
@@ -273,7 +277,7 @@ function CardDetailView({
           </div>
 
           <aside className="flex flex-col gap-4">
-            <section className="panel overflow-hidden bg-foreground p-[18px] text-background">
+            <section className="overflow-hidden rounded-lg border-[1.5px] border-foreground bg-foreground p-[18px] text-background">
               <div className="mb-3.5 flex items-center justify-between">
                 <span className="font-mono text-[0.625rem] font-bold tracking-[0.1em] opacity-70">
                   CARD PERFORMANCE
