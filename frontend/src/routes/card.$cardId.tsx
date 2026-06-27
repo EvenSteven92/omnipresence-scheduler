@@ -199,7 +199,7 @@ function CardDetailView({
           <button
             type="button"
             onClick={editCard}
-            className="btn-action-primary btn-action !text-foreground"
+            className="btn-action-primary btn-action"
           >
             Edit card
           </button>
