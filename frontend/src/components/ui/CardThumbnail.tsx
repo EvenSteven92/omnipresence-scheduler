@@ -42,6 +42,14 @@ function resolveAspectRatio(
   return inferMediaAspect(title, mediaKind);
 }
 
+function isVideoSrc(src: string): boolean {
+  return (
+    src.startsWith("blob:") ||
+    src.startsWith("data:video") ||
+    /\.(mp4|mov|webm|m4v|avi|mkv)(\?|#|$)/i.test(src)
+  );
+}
+
 function MediaFallback({ kind }: { kind: "image" | "video" }) {
   return (
     <div className="flex flex-col items-center gap-0.5 text-muted-foreground">
@@ -93,6 +101,7 @@ export function CardThumbnail({
       ? undefined
       : resolveAspectRatio(aspect, post?.title, mediaKind);
   const typeLabel = mediaType ?? (mediaKind === "video" ? "VIDEO" : "IMAGE");
+  const isVideoSrcUrl = !!imageSrc && isVideoSrc(imageSrc);
 
   const isSquare = layout === "square";
 
@@ -109,7 +118,7 @@ export function CardThumbnail({
       )}
       style={{ ...(aspectRatio ? { aspectRatio } : {}), ...gradientStyle }}
     >
-      {useGradient ? null : imageSrc && mediaKind === "video" ? (
+      {useGradient ? null : imageSrc && isVideoSrcUrl ? (
         <video
           src={imageSrc}
           muted

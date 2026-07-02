@@ -9,7 +9,7 @@ import { useWorkspace } from "@/lib/workspace-context";
 export function BrandTheme() {
   const { workspace } = useWorkspace();
   const accent = workspace.accent;
-  const accentForeground = workspace.accentForeground ?? "oklch(0.99 0 0)";
+  const accentForeground = workspace.accentForeground ?? "#17130f";
 
   useEffect(() => {
     const root = document.documentElement;

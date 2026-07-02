@@ -283,7 +283,7 @@
   .btn-action-primary {
     border-color: var(--color-foreground);
     background: var(--color-primary);
-    color: var(--color-foreground);
+    color: var(--color-primary-foreground);
     font-family: var(--font-display);
     font-weight: 700;
     box-shadow: 3px 3px 0 var(--color-foreground);

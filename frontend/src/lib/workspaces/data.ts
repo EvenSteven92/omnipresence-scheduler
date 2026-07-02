@@ -8,7 +8,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
     initials: "T",
     tagline: "Church · multi-platform ministry",
     onboardingStatus: "needs_accounts",
-    accent: "oklch(0.64 0.2 47)",
+    accent: "#ff6a3d",
     voice:
       "Warm, pastoral, and encouraging. Christ-centered and Scripture-aware. Invite reflection and hope; avoid hype, clickbait, and salesy language. Speak to the heart.",
     postingTimes: {
@@ -396,7 +396,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
     initials: "OE",
     tagline: "Long-form · news & commentary",
     onboardingStatus: "complete",
-    accent: "oklch(0.55 0.16 250)",
+    accent: "#3d7bff",
     voice:
       "Sharp, clear, and discerning. Journalistic commentary that seeks truth and context. Confident and direct without being sensational or partisan. Lead with the insight.",
     postingTimes: {
@@ -492,7 +492,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
     initials: "KK",
     tagline: "Short-form · building presence",
     onboardingStatus: "needs_accounts",
-    accent: "oklch(0.55 0.2 300)",
+    accent: "#a04dff",
     voice:
       "Bold, energetic, and culture-forward. Punchy and modern with a confident hook in the first line. Keep it fresh and scroll-stopping.",
     postingTimes: {
@@ -574,7 +574,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
     initials: "FL",
     tagline: "Radio · podcast · weekly episodes",
     onboardingStatus: "complete",
-    accent: "oklch(0.6 0.2 12)",
+    accent: "#ff3d6e",
     voice:
       "Conversational and intimate, with radio-host warmth. Hook the listener, tease the episode's best moment, and invite them to tune in. Friendly and inviting.",
     postingTimes: {

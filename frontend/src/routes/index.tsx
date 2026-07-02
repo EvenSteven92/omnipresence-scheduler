@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
 import { useMemo } from "react";
 
+import { DashboardQueueRail } from "@/components/dashboard/DashboardQueueRail";
 import { DashboardUpNextQueue } from "@/components/dashboard/DashboardUpNextQueue";
 import { QueueCalendarToggle } from "@/components/dashboard/QueueCalendarToggle";
 
@@ -37,7 +38,10 @@ function QueuePage() {
       <PageHeader eyebrow="Content queue" title="Up next" actions={headerActions} />
 
       <div className="page-content mx-auto max-w-[1320px]">
-        <DashboardUpNextQueue />
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_296px]">
+          <DashboardUpNextQueue />
+          <DashboardQueueRail />
+        </div>
       </div>
     </div>
   );
