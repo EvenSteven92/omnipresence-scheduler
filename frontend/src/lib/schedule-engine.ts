@@ -1,4 +1,4 @@
-import type { DraftPost } from "@/components/post/ComposerCard";
+import type { DraftPost } from "@/lib/composer-draft";
 import type { Platform, ScheduledPost } from "@/lib/mock-data";
 import { detectConflicts } from "@/lib/conflicts";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";

@@ -1,6 +1,6 @@
 import type { PublishedPost, ScheduledPost } from "@/lib/mock-data";
 import { demoCoverForEventKind, demoPreviewForPost } from "@/lib/demo-media";
-import type { DraftPost } from "@/components/post/ComposerCard";
+import type { DraftPost } from "@/lib/composer-draft";
 import { isSameCalendarDay } from "@/lib/demo-clock";
 import { contentCardAnchorDate, inferMediaAspect } from "@/lib/scheduled-post-display";
 import type { Timeframe } from "@/lib/timeframe";

@@ -1,4 +1,4 @@
-import type { DraftPost } from "@/components/post/ComposerCard";
+import type { DraftPost } from "@/lib/composer-draft";
 import type { PostFormat } from "@/lib/platforms";
 import type { Platform } from "@/lib/mock-data";
 import type { WorkspaceId } from "@/lib/workspaces/types";
@@ -73,6 +73,7 @@ export function draftFromPostDetail(
     format,
     autoFormat: format,
     platforms: resolvedPlatforms,
+    title: post.title,
     caption: ("caption" in post && post.caption?.trim()) || post.title,
     hashtags: ("hashtags" in post && post.hashtags) || "",
     transcript: "",

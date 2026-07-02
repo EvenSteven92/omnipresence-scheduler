@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import type { DraftPost } from "@/components/post/ComposerCard";
+import type { DraftPost } from "@/lib/composer-draft";
+import { draftDisplayTitle } from "@/lib/composer-draft";
 import type { ScheduledPost } from "@/lib/mock-data";
 import type { WorkspaceId } from "@/lib/workspaces/types";
 
@@ -47,7 +48,7 @@ export function draftToScheduledPost(draft: DraftPost): ScheduledPost | null {
   const isos = draft.platforms.map((p) => times[p]!).sort();
   return {
     id: draft.id,
-    title: draft.caption?.trim() || draft.filename,
+    title: draftDisplayTitle(draft),
     platforms: draft.platforms,
     date: isos[0]!,
     platformTimes: times,

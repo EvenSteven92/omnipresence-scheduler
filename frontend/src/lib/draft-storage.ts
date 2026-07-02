@@ -1,4 +1,4 @@
-import type { DraftPost } from "@/components/post/ComposerCard";
+import type { DraftPost } from "@/lib/composer-draft";
 import type { WorkspaceId } from "@/lib/workspaces/types";
 
 const QUEUE_PREFIX = "omni.drafts.queue.";
