@@ -1,14 +1,10 @@
-import { Link } from "@tanstack/react-router";
-import { CalendarDays, ArrowRight } from "lucide-react";
 import { useEventAssociations } from "@/hooks/useEventAssociations";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import {
   collectEventMedia,
   computeEventPerformance,
-  eventAlbumCover,
   eventKindLabel,
   fmtCompact,
-  formatEventDate,
   formatEventTime,
 } from "@/lib/events/display";
 import type { WorkspaceProfile } from "@/lib/workspaces/types";
@@ -48,31 +44,44 @@ function AlbumCountsTrailing({
   );
 }
 
+function albumDateEyebrow(iso: string): string {
+  const d = new Date(iso);
+  const day = d
+    .toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    .toUpperCase();
+  return `${formatEventTime(iso)} · ${day}`;
+}
+
 export function EventAlbumCard({
   event,
   workspace,
   workspaceId,
+  onOpen,
 }: {
   event: ContentEvent;
   workspace: WorkspaceProfile;
   workspaceId: WorkspaceProfile["id"];
+  onOpen: (event: ContentEvent) => void;
 }) {
   const { resolveEventId } = useEventAssociations(workspaceId);
   const media = collectEventMedia(workspace, event.id, { resolveEventId });
   const perf = computeEventPerformance(media);
-  const cover = eventAlbumCover(workspace, event, { resolveEventId });
 
   return (
     <ContentCard
       size="md"
       orientation="stacked"
       testId={`event-album-${event.id}`}
+      className="card-pop card-pop-interactive w-full"
+      onOpen={() => onOpen(event)}
       thumbnail={
         <CardThumbnail
-          src={cover.src}
-          alt={cover.alt}
+          post={{ id: event.id, title: event.title, mediaKind: "video" }}
+          alt={event.title}
+          kind="video"
           layout="block"
           aspect="video"
+          variant="gradient"
           badge={
             <span className="rounded-[5px] border-[1.5px] border-foreground bg-background px-2 py-0.5 font-mono text-[0.5625rem] font-bold uppercase tracking-[0.06em] text-foreground">
               {eventKindLabel(event.kind)}
@@ -82,51 +91,27 @@ export function EventAlbumCard({
       }
       eyebrow={
         <p className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.06em] text-accent">
-          {formatEventTime(event.date)} · {formatEventDate(event.date, "medium")}
+          {albumDateEyebrow(event.date)}
         </p>
       }
       title={
-        <Link
-          to="/events/$eventId"
-          params={{ eventId: event.id }}
-          className="font-display text-xl font-bold leading-snug text-foreground transition-colors hover:text-accent"
-        >
+        <span className="font-display text-xl font-bold leading-snug text-foreground">
           {event.title}
-        </Link>
+        </span>
       }
       platforms={
-        event.description ? (
-          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-            {event.description}
-          </p>
-        ) : null
-      }
-      trailing={
-        <>
+        <div className="space-y-3 px-5 pb-5">
+          {event.description ? (
+            <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+              {event.description}
+            </p>
+          ) : null}
           <AlbumCountsTrailing
             mediaCount={media.length}
             publishedCount={perf.publishedCount}
             totalViews={perf.totalViews}
           />
-          <div className="flex items-center justify-between gap-2 border-t-[1.5px] border-foreground px-5 py-3">
-            <Link
-              to="/events/$eventId"
-              params={{ eventId: event.id }}
-              className="btn-action-primary btn-action"
-            >
-              Open album <ArrowRight className="h-3 w-3" />
-            </Link>
-            <Link
-              to="/calendar"
-              search={{ event: event.id }}
-              data-testid={`event-view-calendar-${event.id}`}
-              className="inline-flex items-center gap-1 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <CalendarDays className="h-3 w-3" strokeWidth={1.75} />
-              View on calendar
-            </Link>
-          </div>
-        </>
+        </div>
       }
     />
   );

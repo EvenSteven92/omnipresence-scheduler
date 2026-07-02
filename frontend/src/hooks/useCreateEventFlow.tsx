@@ -24,7 +24,7 @@ export function useCreateEventFlow() {
     addEvent(event);
     associatePostIds.forEach((postId) => associate(postId, event.id));
     setOpen(false);
-    navigate({ to: "/events/$eventId", params: { eventId: event.id } });
+    navigate({ to: "/events", search: { album: event.id } });
   }
 
   const modal = open ? (

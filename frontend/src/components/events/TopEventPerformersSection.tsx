@@ -24,8 +24,8 @@ function EventPerformerStreamCard({ row, rank }: { row: RankedEventPerformer; ra
 
   return (
     <Link
-      to="/events/$eventId"
-      params={{ eventId: event.id }}
+      to="/events"
+      search={{ album: event.id }}
       data-testid={`top-event-${event.id}`}
       className="group block"
     >

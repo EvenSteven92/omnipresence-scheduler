@@ -10,13 +10,13 @@ import { DRAG_POST_TYPE } from "@/components/calendar/CalendarQueueView";
 import { QueueCalendarToggle } from "@/components/dashboard/QueueCalendarToggle";
 import { parseCalendarDateSearch } from "@/lib/calendar-day-click";
 import { reschedulePostToDay } from "@/lib/reschedule-post";
-import { EventQueuedPostsModal } from "@/components/calendar/EventQueuedPostsModal";
+import { AlbumCardsModal } from "@/components/events/AlbumCardsModal";
 import { CalendarLegendBar } from "@/components/calendar/CalendarLegendBar";
 import { CalendarMonthDayCell } from "@/components/calendar/CalendarMonthDayCell";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
 import { EventAssociateModal } from "@/components/events/EventAssociateModal";
-import { groupEventsByCalendarDay, queuedPostsForEvent } from "@/lib/events/display";
+import { groupEventsByCalendarDay } from "@/lib/events/display";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -74,7 +74,7 @@ function CalendarPage() {
   const [associateTarget, setAssociateTarget] = useState<ScheduledPost | null>(null);
   const [eventPostsModal, setEventPostsModal] = useState<ContentEvent | null>(null);
 
-  const { dayGrid, openPosts, selectFromGrid, openDetailFromEvent, closeDayGrid } =
+  const { dayGrid, openPosts, selectFromGrid, closeDayGrid } =
     useCalendarPostSelection();
   const [viewMonth, setViewMonth] = useState(() => {
     const now = todayStart();
@@ -177,14 +177,6 @@ function CalendarPage() {
   function openEventPosts(event: ContentEvent) {
     setEventPostsModal(event);
   }
-
-  const eventQueuedPosts = useMemo(
-    () =>
-      eventPostsModal
-        ? queuedPostsForEvent(scheduledPosts, eventPostsModal.id, resolveEventId)
-        : [],
-    [eventPostsModal, scheduledPosts, resolveEventId],
-  );
 
   function handleDateClick(day: number, date: Date) {
     const dayEvents = eventsByDay.get(day) ?? [];
@@ -371,14 +363,11 @@ function CalendarPage() {
       ) : null}
 
       {eventPostsModal ? (
-        <EventQueuedPostsModal
+        <AlbumCardsModal
           event={eventPostsModal}
-          posts={eventQueuedPosts}
+          workspace={workspace}
+          workspaceId={workspaceId}
           onClose={() => setEventPostsModal(null)}
-          onSelectPost={(post) => {
-            setEventPostsModal(null);
-            openDetailFromEvent(post, eventPostsModal);
-          }}
         />
       ) : null}
 

@@ -169,7 +169,7 @@ function CardDetailView({
     } else if (origin === "analytics") {
       navigate({ to: "/analytics" });
     } else if (origin === "album" && linkedEvent) {
-      navigate({ to: "/events/$eventId", params: { eventId: linkedEvent.id } });
+      navigate({ to: "/events", search: { album: linkedEvent.id } });
     } else {
       navigate({ to: "/" });
     }
@@ -390,8 +390,8 @@ function CardDetailView({
 
             {linkedEvent ? (
               <Link
-                to="/events/$eventId"
-                params={{ eventId: linkedEvent.id }}
+                to="/events"
+                search={{ album: linkedEvent.id }}
                 className="panel flex items-center gap-3 p-4 transition-colors hover:bg-paper-2/40"
               >
                 <span className="flex h-[34px] w-[34px] items-center justify-center rounded-md border-[1.5px] border-foreground bg-paper-2">

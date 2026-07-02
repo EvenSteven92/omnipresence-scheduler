@@ -16,7 +16,6 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
-import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
 import { Route as CardCardIdRouteImport } from './routes/card.$cardId'
 import { Route as ApiYoutubeSyncRouteImport } from './routes/api/youtube/sync'
 import { Route as ApiYoutubeMetricsRouteImport } from './routes/api/youtube/metrics'
@@ -64,11 +63,6 @@ const IndexRoute = IndexRouteImport.update({
 const EventsIndexRoute = EventsIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => EventsRoute,
-} as any)
-const EventsEventIdRoute = EventsEventIdRouteImport.update({
-  id: '/$eventId',
-  path: '/$eventId',
   getParentRoute: () => EventsRoute,
 } as any)
 const CardCardIdRoute = CardCardIdRouteImport.update({
@@ -147,7 +141,6 @@ export interface FileRoutesByFullPath {
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
   '/card/$cardId': typeof CardCardIdRoute
-  '/events/$eventId': typeof EventsEventIdRoute
   '/events/': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
@@ -169,7 +162,6 @@ export interface FileRoutesByTo {
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
   '/card/$cardId': typeof CardCardIdRoute
-  '/events/$eventId': typeof EventsEventIdRoute
   '/events': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
@@ -193,7 +185,6 @@ export interface FileRoutesById {
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
   '/card/$cardId': typeof CardCardIdRoute
-  '/events/$eventId': typeof EventsEventIdRoute
   '/events/': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
@@ -218,7 +209,6 @@ export interface FileRouteTypes {
     | '/scheduler'
     | '/workspaces'
     | '/card/$cardId'
-    | '/events/$eventId'
     | '/events/'
     | '/api/accounts/status'
     | '/api/ai/generate'
@@ -240,7 +230,6 @@ export interface FileRouteTypes {
     | '/scheduler'
     | '/workspaces'
     | '/card/$cardId'
-    | '/events/$eventId'
     | '/events'
     | '/api/accounts/status'
     | '/api/ai/generate'
@@ -263,7 +252,6 @@ export interface FileRouteTypes {
     | '/scheduler'
     | '/workspaces'
     | '/card/$cardId'
-    | '/events/$eventId'
     | '/events/'
     | '/api/accounts/status'
     | '/api/ai/generate'
@@ -350,13 +338,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/events/'
       preLoaderRoute: typeof EventsIndexRouteImport
-      parentRoute: typeof EventsRoute
-    }
-    '/events/$eventId': {
-      id: '/events/$eventId'
-      path: '/$eventId'
-      fullPath: '/events/$eventId'
-      preLoaderRoute: typeof EventsEventIdRouteImport
       parentRoute: typeof EventsRoute
     }
     '/card/$cardId': {
@@ -454,12 +435,10 @@ declare module '@tanstack/react-router' {
 }
 
 interface EventsRouteChildren {
-  EventsEventIdRoute: typeof EventsEventIdRoute
   EventsIndexRoute: typeof EventsIndexRoute
 }
 
 const EventsRouteChildren: EventsRouteChildren = {
-  EventsEventIdRoute: EventsEventIdRoute,
   EventsIndexRoute: EventsIndexRoute,
 }
 
