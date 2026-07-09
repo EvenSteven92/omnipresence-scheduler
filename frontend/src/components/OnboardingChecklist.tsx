@@ -1,12 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { Check, Circle, Link2, BarChart3, FilePlus } from "lucide-react";
+import { Check, Link2, BarChart3, FilePlus, Lock } from "lucide-react";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import { useWorkspace } from "@/lib/workspace-context";
-import { Card, CardBody, CardHeader } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
+import { useTeamSession } from "@/hooks/useTeamSession";
+import { cn } from "@/lib/utils";
 
+/**
+ * Compact setup checklist for non-admin surfaces (e.g. dashboard rail).
+ * Admin page uses the fuller OnboardingStepper instead.
+ */
 export function OnboardingChecklist({ className }: { className?: string }) {
   const { workspace, workspaceId } = useWorkspace();
+  const { data: teamAuthed = false } = useTeamSession();
   const { data: connections } = usePlatformConnections(workspaceId);
 
   const hasChannel =
@@ -15,87 +20,106 @@ export function OnboardingChecklist({ className }: { className?: string }) {
     (connections?.meta.instagram.connected ?? false);
 
   const hasPosts = workspace.scheduledPosts.length > 0 || workspace.publishedPosts.length > 0;
-  const complete = workspace.onboardingStatus === "complete" || (hasChannel && hasPosts);
+  const complete = workspace.onboardingStatus === "complete" || (hasChannel && hasPosts && teamAuthed);
 
   if (complete) return null;
 
   const steps = [
     {
+      id: "unlock",
+      done: teamAuthed,
+      icon: Lock,
+      title: "Unlock team access",
+      href: "/workspaces",
+      hash: "team-access",
+    },
+    {
       id: "connect",
       done: hasChannel,
       icon: Link2,
       title: "Connect a channel",
-      description: "Link YouTube, Facebook, or Instagram to pull live metrics.",
       href: "/workspaces",
       hash: "connect-platform",
-      cta: "Connect accounts",
     },
     {
       id: "post",
       done: hasPosts,
       icon: FilePlus,
-      title: "Create your first post",
-      description: "Upload media, pick platforms, and set publish times.",
+      title: "Schedule a post",
       href: "/scheduler",
-      cta: "New post",
     },
     {
       id: "analytics",
-      done: hasChannel,
+      done: hasChannel && hasPosts,
       icon: BarChart3,
-      title: "See your analytics",
-      description: "Review performance once a channel is connected.",
+      title: "Review analytics",
       href: "/analytics",
-      cta: "View analytics",
     },
   ] as const;
 
   const doneCount = steps.filter((s) => s.done).length;
+  const next = steps.find((s) => !s.done);
+  const pct = Math.round((doneCount / steps.length) * 100);
 
   return (
-    <Card className={className} elevated>
-      <CardHeader
-        title="Getting started"
-        description={`${doneCount} of ${steps.length} complete — follow these steps to set up ${workspace.name}.`}
-        action={<Badge tone="accent">Setup</Badge>}
-      />
-      <CardBody className="space-y-3 pt-0">
+    <section
+      className={cn(
+        "rounded-md border-[1.5px] border-foreground bg-card p-5 shadow-[var(--shadow-card)]",
+        className,
+      )}
+      data-testid="onboarding-checklist"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="page-kicker">Setup</p>
+          <h2 className="mt-1 font-display text-base font-bold text-foreground">Getting started</h2>
+          <p className="mt-0.5 text-body-sm text-muted-foreground">
+            {doneCount} of {steps.length} · {workspace.name}
+          </p>
+        </div>
+        <span className="font-data text-lg font-bold text-foreground">{pct}%</span>
+      </div>
+
+      <div className="mt-3 h-2 overflow-hidden rounded-sm border-[1.5px] border-foreground bg-paper-2">
+        <div className="h-full bg-accent transition-[width]" style={{ width: `${pct}%` }} />
+      </div>
+
+      <ul className="mt-4 space-y-2">
         {steps.map((step) => {
           const Icon = step.icon;
+          const isNext = next?.id === step.id;
           return (
-            <div
+            <li
               key={step.id}
-              className="flex items-start gap-3 rounded-sm border border-border bg-background/40 px-4 py-3"
+              className={cn(
+                "flex items-center gap-2.5 rounded-md border-[1.5px] border-foreground px-3 py-2",
+                step.done ? "bg-paper-2" : isNext ? "bg-accent/10" : "bg-card",
+              )}
             >
               <span
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-                  step.done
-                    ? "bg-success/15 text-success"
-                    : "border border-border text-muted-foreground"
-                }`}
+                className={cn(
+                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-[1.5px] border-foreground",
+                  step.done ? "bg-success text-background" : "bg-card text-muted-foreground",
+                )}
               >
-                {step.done ? <Check className="h-3.5 w-3.5" /> : <Circle className="h-3 w-3" />}
+                {step.done ? <Check className="h-3 w-3" strokeWidth={2.5} /> : <Icon className="h-3 w-3" />}
               </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.75} />
-                  <span className="text-sm font-medium text-foreground">{step.title}</span>
-                </div>
-                <p className="mt-1 text-body-sm text-muted-foreground">{step.description}</p>
-                {!step.done ? (
-                  <Link
-                    to={step.href}
-                    hash={"hash" in step ? step.hash : undefined}
-                    className="mt-2 inline-block text-sm font-medium text-accent hover:underline"
-                  >
-                    {step.cta} →
-                  </Link>
-                ) : null}
-              </div>
-            </div>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                {step.title}
+              </span>
+              {!step.done && isNext ? (
+                <Link
+                  to={step.href}
+                  hash={"hash" in step ? step.hash : undefined}
+                  className="shrink-0 font-mono text-[0.625rem] font-bold uppercase tracking-[0.06em] text-accent hover:underline"
+                >
+                  Go →
+                </Link>
+              ) : null}
+            </li>
           );
         })}
-      </CardBody>
-    </Card>
+      </ul>
+    </section>
   );
 }

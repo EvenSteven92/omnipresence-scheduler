@@ -1,9 +1,23 @@
 import { Link } from "@tanstack/react-router";
-import { Check, Circle, Link2, BarChart3, FilePlus } from "lucide-react";
+import { BarChart3, Check, FilePlus, Link2, Lock, type LucideIcon } from "lucide-react";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import { useWorkspace } from "@/lib/workspace-context";
+import { cn } from "@/lib/utils";
 
-export function OnboardingStepper() {
+type Step = {
+  id: string;
+  done: boolean;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  cta: string;
+  href?: string;
+  hash?: string;
+  /** In-page anchor when the action stays on Admin */
+  anchor?: string;
+};
+
+export function OnboardingStepper({ teamAuthed = false }: { teamAuthed?: boolean }) {
   const { workspace, workspaceId } = useWorkspace();
   const { data: connections } = usePlatformConnections(workspaceId);
 
@@ -14,94 +28,228 @@ export function OnboardingStepper() {
 
   const hasPosts = workspace.scheduledPosts.length > 0 || workspace.publishedPosts.length > 0;
 
-  const steps = [
+  const steps: Step[] = [
+    {
+      id: "unlock",
+      done: teamAuthed,
+      icon: Lock,
+      title: "Unlock team access",
+      description: "Enter the shared access code so you can connect live accounts.",
+      cta: "Enter code",
+      anchor: "team-access",
+    },
     {
       id: "connect",
       done: hasChannel,
       icon: Link2,
-      title: "Connect",
-      description: "Link YouTube, Facebook, or Instagram.",
-      href: "/workspaces",
-      hash: "connect-platform",
-      cta: "Connect a channel",
+      title: "Connect a channel",
+      description: "Link YouTube or Meta for live metrics and publishing.",
+      cta: teamAuthed ? "Connect channel" : "Unlock first",
+      href: teamAuthed ? "/workspaces" : undefined,
+      hash: teamAuthed ? "connect-platform" : undefined,
+      anchor: teamAuthed ? "connect-platform" : "team-access",
     },
     {
       id: "create",
       done: hasPosts,
       icon: FilePlus,
-      title: "Create",
-      description: "Upload media and schedule your first post.",
-      href: "/scheduler",
+      title: "Schedule a post",
+      description: "Upload media, pick platforms, and set publish times.",
       cta: "Create a post",
+      href: "/scheduler",
     },
     {
       id: "analyze",
       done: hasChannel && hasPosts,
       icon: BarChart3,
-      title: "Analyze",
-      description: "Review performance across platforms.",
+      title: "Review analytics",
+      description: "See performance once content is live on a channel.",
+      cta: "Open analytics",
       href: "/analytics",
-      cta: "View analytics",
     },
-  ] as const;
+  ];
 
   const doneCount = steps.filter((s) => s.done).length;
   const allDone = doneCount === steps.length;
+  const nextStep = steps.find((s) => !s.done);
+  const pct = Math.round((doneCount / steps.length) * 100);
 
-  if (allDone && workspace.onboardingStatus === "complete") return null;
+  if (allDone) {
+    return (
+      <section
+        data-testid="onboarding-stepper"
+        className="rounded-md border-[1.5px] border-foreground bg-card p-6 shadow-[var(--shadow-card)]"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-md border-[1.5px] border-foreground bg-success/15 text-success">
+              <Check className="h-5 w-5" strokeWidth={2.5} />
+            </span>
+            <div>
+              <p className="page-kicker text-success">Ready</p>
+              <h2 className="font-display text-xl font-bold text-foreground">
+                {workspace.name} is set up
+              </h2>
+              <p className="mt-0.5 text-body-sm text-muted-foreground">
+                Channels connected and content in the pipeline. Keep publishing from the queue.
+              </p>
+            </div>
+          </div>
+          <Link to="/" className="btn-action-primary btn-action">
+            Go to queue
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  function goToStep(step: Step) {
+    if (step.anchor) {
+      document.getElementById(step.anchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
 
   return (
     <section
       data-testid="onboarding-stepper"
-      className="rounded-md border border-border bg-surface-elevated p-6"
+      className="rounded-md border-[1.5px] border-foreground bg-card p-6 shadow-[var(--shadow-card)]"
     >
-      <h2 className="text-title">Getting started</h2>
-      <p className="mt-1 text-body-sm text-muted-foreground">
-        {doneCount} of {steps.length} complete for {workspace.name}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="page-kicker">Setup guide</p>
+          <h2 className="mt-1 font-display text-2xl font-bold tracking-tight text-foreground">
+            Get {workspace.name} live
+          </h2>
+          <p className="mt-1 max-w-lg text-body-sm text-muted-foreground">
+            Finish these steps to unlock live metrics, publishing, and analytics for this brand.
+          </p>
+        </div>
+        <div className="text-right">
+          <div className="font-data text-3xl font-bold tabular-nums text-foreground">
+            {doneCount}
+            <span className="text-muted-foreground">/{steps.length}</span>
+          </div>
+          <p className="text-eyebrow mt-0.5">steps complete</p>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div
+        className="mt-5 h-2.5 overflow-hidden rounded-sm border-[1.5px] border-foreground bg-paper-2"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Setup progress"
+      >
+        <div
+          className="h-full bg-accent transition-[width] duration-300"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="mt-1.5 font-mono text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        {pct}% complete
       </p>
 
-      <ol className="mt-6 space-y-3 text-left">
+      {/* Step cards */}
+      <ol className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {steps.map((step, index) => {
           const Icon = step.icon;
+          const isNext = nextStep?.id === step.id;
           return (
             <li
               key={step.id}
-              className="flex items-start gap-4 rounded-sm border border-border bg-background/40 px-5 py-4"
+              data-testid={`onboarding-step-${step.id}`}
+              className={cn(
+                "flex flex-col rounded-md border-[1.5px] border-foreground p-4 transition-colors",
+                step.done
+                  ? "bg-paper-2/80"
+                  : isNext
+                    ? "bg-accent/10 shadow-[3px_3px_0_0_var(--color-foreground)]"
+                    : "bg-card",
+              )}
             >
-              <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-                  step.done
-                    ? "bg-success/15 text-success"
-                    : "border border-border text-muted-foreground"
-                }`}
-              >
-                {step.done ? <Check className="h-4 w-4" /> : index + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-accent" strokeWidth={1.5} />
-                  <span className="text-title text-sm">{step.title}</span>
-                  {step.done ? (
-                    <span className="text-body-sm text-success">Done</span>
-                  ) : (
-                    <Circle className="h-3 w-3 text-muted-foreground" />
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-md border-[1.5px] border-foreground text-sm font-bold",
+                    step.done
+                      ? "bg-success text-background"
+                      : isNext
+                        ? "bg-accent text-foreground"
+                        : "bg-card text-muted-foreground",
                   )}
-                </div>
-                <p className="mt-1 text-body-sm text-muted-foreground">{step.description}</p>
-                {!step.done ? (
+                >
+                  {step.done ? <Check className="h-4 w-4" strokeWidth={2.5} /> : index + 1}
+                </span>
+                <Icon
+                  className={cn("h-4 w-4", step.done ? "text-success" : "text-foreground")}
+                  strokeWidth={1.75}
+                />
+              </div>
+              <h3 className="mt-3 font-display text-sm font-bold text-foreground">{step.title}</h3>
+              <p className="mt-1 flex-1 text-body-sm leading-snug text-muted-foreground">
+                {step.description}
+              </p>
+              {step.done ? (
+                <span className="mt-3 font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-success">
+                  Done
+                </span>
+              ) : isNext ? (
+                step.href ? (
                   <Link
                     to={step.href}
-                    hash={"hash" in step ? step.hash : undefined}
-                    className="btn-action-primary btn-action mt-3"
+                    hash={step.hash}
+                    className="btn-action-primary btn-action mt-3 w-full justify-center text-[0.75rem]"
                   >
                     {step.cta}
                   </Link>
-                ) : null}
-              </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => goToStep(step)}
+                    className="btn-action-primary btn-action mt-3 w-full justify-center text-[0.75rem]"
+                  >
+                    {step.cta}
+                  </button>
+                )
+              ) : (
+                <span className="mt-3 font-mono text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Later
+                </span>
+              )}
             </li>
           );
         })}
       </ol>
+
+      {/* Single next-action strip — research: one clear activation CTA */}
+      {nextStep ? (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t-[1.5px] border-foreground pt-5">
+          <div className="min-w-0">
+            <p className="text-eyebrow">Up next</p>
+            <p className="mt-0.5 font-display text-lg font-bold text-foreground">{nextStep.title}</p>
+            <p className="text-body-sm text-muted-foreground">{nextStep.description}</p>
+          </div>
+          {nextStep.href ? (
+            <Link
+              to={nextStep.href}
+              hash={nextStep.hash}
+              className="btn-action-primary btn-action shrink-0"
+            >
+              {nextStep.cta}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => goToStep(nextStep)}
+              className="btn-action-primary btn-action shrink-0"
+            >
+              {nextStep.cta}
+            </button>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }

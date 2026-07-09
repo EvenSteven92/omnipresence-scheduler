@@ -4,11 +4,11 @@ import type { ReactNode } from "react";
 type Tone = "default" | "success" | "warning" | "accent" | "muted";
 
 const tones: Record<Tone, string> = {
-  default: "border-border bg-surface text-foreground",
-  success: "border-success/40 bg-success/10 text-success",
-  warning: "border-warning/40 bg-warning/10 text-warning",
-  accent: "border-accent/40 bg-accent/10 text-accent",
-  muted: "border-border bg-background/60 text-muted-foreground",
+  default: "border-foreground bg-card text-foreground",
+  success: "border-foreground bg-success/15 text-success",
+  warning: "border-foreground bg-warning/15 text-warning",
+  accent: "border-foreground bg-accent/20 text-foreground",
+  muted: "border-foreground/40 bg-paper-2 text-muted-foreground",
 };
 
 export function Badge({
@@ -23,7 +23,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-md border-[1.5px] px-2 py-0.5 font-mono text-[0.625rem] font-bold uppercase tracking-[0.06em]",
         tones[tone],
         className,
       )}

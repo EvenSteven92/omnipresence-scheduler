@@ -2,23 +2,24 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/PageHeader";
-import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { ConnectPlatformSection } from "@/components/ConnectPlatformSection";
 import { TeamAccessGate } from "@/components/TeamAccessGate";
 import { useTeamSession } from "@/hooks/useTeamSession";
 import { useWorkspace } from "@/lib/workspace-context";
 import { useOAuthAutoSync } from "@/hooks/useOAuthAutoSync";
 import { OnboardingStepper } from "@/components/workspaces/OnboardingStepper";
-import { ArrowRight, Link2 } from "lucide-react";
+import { ArrowRight, Building2, Check, Link2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/Badge";
 
 export const Route = createFileRoute("/workspaces")({
   head: () => ({
     meta: [
-      { title: "Workspaces — TORCC OmniSocial" },
+      { title: "Admin — TORCC OmniSocial" },
       {
         name: "description",
         content:
-          "Manage company workspaces and connect social accounts for metrics and publishing.",
+          "Set up workspaces, unlock team access, and connect social accounts for metrics and publishing.",
       },
     ],
   }),
@@ -30,6 +31,7 @@ function WorkspacesPage() {
   const queryClient = useQueryClient();
   const { data: teamAuthed = false } = useTeamSession();
   const [banner, setBanner] = useState<string | null>(null);
+  const [bannerTone, setBannerTone] = useState<"success" | "warning" | "error">("success");
   const [oauthParams, setOauthParams] = useState<{ youtube?: string | null; meta?: string | null }>(
     {},
   );
@@ -37,10 +39,9 @@ function WorkspacesPage() {
   useOAuthAutoSync(workspaceId, oauthParams, teamAuthed);
 
   useEffect(() => {
-    if (window.location.hash === "#connect-platform") {
-      document
-        .getElementById("connect-platform")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (window.location.hash === "#connect-platform" || window.location.hash === "#team-access") {
+      const id = window.location.hash.slice(1);
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     const params = new URLSearchParams(window.location.search);
     const youtube = params.get("youtube");
@@ -48,21 +49,28 @@ function WorkspacesPage() {
     setOauthParams({ youtube, meta });
     if (youtube === "connected") {
       setBanner("YouTube connected — syncing metrics now.");
+      setBannerTone("success");
     } else if (youtube === "denied") {
       setBanner("YouTube connect was cancelled.");
+      setBannerTone("warning");
     } else if (youtube === "error") {
       setBanner(params.get("message") ?? "YouTube connect failed.");
+      setBannerTone("error");
     } else if (meta === "connected") {
       setBanner("Meta connected — syncing Facebook and Instagram metrics now.");
+      setBannerTone("success");
     } else if (meta === "partial") {
       setBanner(
         params.get("message") ??
           "Meta connected with limited access. Add pages_read_engagement in Login for Business, then reconnect.",
       );
+      setBannerTone("warning");
     } else if (meta === "denied") {
       setBanner("Meta connect was cancelled.");
+      setBannerTone("warning");
     } else if (meta === "error") {
       setBanner(params.get("message") ?? "Meta connect failed.");
+      setBannerTone("error");
     }
 
     if (params.has("youtube") || params.has("meta")) {
@@ -74,29 +82,41 @@ function WorkspacesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Workspaces"
-        title="Workspaces"
+        eyebrow="Admin"
+        title="Workspace setup"
+        description={`Configure ${workspace.name}: team access, channel connections, and brand switching.`}
         actions={
           <>
-            <Link to="/" className="btn-action">
-              Dashboard <ArrowRight className="h-3 w-3" />
+            <Link to="/" className="btn-action btn-action-secondary">
+              Queue <ArrowRight className="h-3 w-3" />
             </Link>
-            <NewEventPostActions />
+            <Link to="/scheduler" className="btn-action-primary btn-action">
+              + New post
+            </Link>
           </>
         }
       />
 
-      <div className="page-content space-y-6">
+      <div className="page-content mx-auto max-w-[1320px] space-y-6">
         {banner ? (
-          <div className="panel border border-accent/30 bg-accent/5 p-4 text-body-sm text-foreground">
+          <div
+            role="status"
+            className={cn(
+              "rounded-md border-[1.5px] border-foreground px-4 py-3 text-body-sm font-medium text-foreground",
+              bannerTone === "success" && "bg-success/10",
+              bannerTone === "warning" && "bg-warning/10",
+              bannerTone === "error" && "bg-destructive/10",
+            )}
+          >
             {banner}
           </div>
         ) : null}
 
+        {/* Full-width setup hero — progress-first onboarding */}
+        <OnboardingStepper teamAuthed={teamAuthed} />
+
         <div className="page-grid">
           <div className="page-grid-main space-y-6">
-            <OnboardingStepper />
-
             {!teamAuthed ? (
               <TeamAccessGate
                 onAuthed={() => {
@@ -104,63 +124,131 @@ function WorkspacesPage() {
                   queryClient.setQueryData(["team-session"], true);
                 }}
               />
-            ) : null}
+            ) : (
+              <section
+                id="team-access"
+                data-testid="team-access-unlocked"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border-[1.5px] border-foreground bg-success/10 px-5 py-4"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-md border-[1.5px] border-foreground bg-success text-background">
+                    <Check className="h-4 w-4" strokeWidth={2.5} />
+                  </span>
+                  <div>
+                    <p className="font-display text-sm font-bold text-foreground">
+                      Team access unlocked
+                    </p>
+                    <p className="text-body-sm text-muted-foreground">
+                      You can connect channels and refresh live metrics for this session.
+                    </p>
+                  </div>
+                </div>
+                <Badge tone="success">Active</Badge>
+              </section>
+            )}
 
             <ConnectPlatformSection workspace={workspace} teamAuthed={teamAuthed} />
           </div>
 
           <aside className="page-grid-rail space-y-4">
-            <div className="panel p-5">
-              <h2 className="text-title">How it works</h2>
-              <p className="mt-2 text-body-sm leading-relaxed text-muted-foreground">
-                Each workspace is one company or brand. Metrics, scheduled posts, platform
-                connections, and drafts only show that workspace&apos;s accounts. Switch companies
-                from the sidebar anytime.
+            {/* Active workspace spotlight */}
+            <section
+              data-testid="active-workspace-card"
+              className="rounded-md border-[1.5px] border-foreground bg-card p-5 shadow-[var(--shadow-card)]"
+            >
+              <p className="text-eyebrow">Active workspace</p>
+              <div className="mt-3 flex items-center gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border-[1.5px] border-foreground bg-accent font-display text-lg font-extrabold text-foreground">
+                  {workspace.initials}
+                </span>
+                <div className="min-w-0">
+                  <h2 className="truncate font-display text-xl font-bold text-foreground">
+                    {workspace.name}
+                  </h2>
+                  <OnboardingBadge status={workspace.onboardingStatus} />
+                </div>
+              </div>
+              <p className="mt-4 text-body-sm leading-relaxed text-muted-foreground">
+                Metrics, scheduled posts, and OAuth connections stay scoped to this brand. Switch
+                companies below or from the sidebar.
               </p>
-            </div>
+            </section>
 
-            <section className="panel space-y-2 p-4">
-              <h2 className="text-eyebrow mb-1">Your workspaces · {workspaces.length}</h2>
-              {workspaces.map((ws) => {
-                const active = ws.id === workspace.id;
-                return (
-                  <div
-                    key={ws.id}
-                    data-testid={`workspace-card-${ws.slug}`}
-                    className={`flex items-center gap-2.5 rounded-md border px-3 py-2.5 ${
-                      active ? "border-accent bg-accent/5" : "border-border bg-surface-elevated"
-                    }`}
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-foreground font-data text-xs font-bold text-background">
-                      {ws.initials}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-foreground">{ws.name}</div>
-                      <OnboardingBadge status={ws.onboardingStatus} />
+            {/* Workspace switcher list */}
+            <section className="rounded-md border-[1.5px] border-foreground bg-card p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="font-display text-sm font-bold text-foreground">Your workspaces</h2>
+                <span className="font-data text-body-sm text-muted-foreground">
+                  {workspaces.length}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {workspaces.map((ws) => {
+                  const active = ws.id === workspace.id;
+                  return (
+                    <div
+                      key={ws.id}
+                      data-testid={`workspace-card-${ws.slug}`}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-md border-[1.5px] border-foreground px-3 py-2.5",
+                        active ? "bg-accent/15 shadow-[2px_2px_0_0_var(--color-foreground)]" : "bg-card",
+                      )}
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-[1.5px] border-foreground bg-foreground font-data text-xs font-bold text-background">
+                        {ws.initials}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold text-foreground">
+                          {ws.name}
+                        </div>
+                        <OnboardingBadge status={ws.onboardingStatus} compact />
+                      </div>
+                      {active ? (
+                        <Badge tone="accent">Active</Badge>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setWorkspaceId(ws.id)}
+                          className="btn-action btn-action-secondary shrink-0 py-1.5 text-[0.7rem]"
+                        >
+                          Switch
+                        </button>
+                      )}
                     </div>
-                    {active ? (
-                      <span className="text-eyebrow shrink-0 text-accent">Active</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setWorkspaceId(ws.id)}
-                        className="btn-action shrink-0"
-                      >
-                        Switch
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
               <button
                 type="button"
                 disabled
-                className="btn-action mt-1 w-full justify-center gap-2 opacity-60"
+                className="btn-action btn-action-secondary mt-3 w-full justify-center gap-2 opacity-50"
                 title="Available when backend onboarding ships"
               >
                 <Link2 className="h-3 w-3" />
                 Add company (soon)
               </button>
+            </section>
+
+            {/* How it works */}
+            <section className="rounded-md border-[1.5px] border-foreground bg-paper-2 p-5">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-accent" strokeWidth={2} />
+                <h2 className="font-display text-sm font-bold text-foreground">How it works</h2>
+              </div>
+              <ol className="mt-3 space-y-2.5 text-body-sm leading-relaxed text-muted-foreground">
+                <li>
+                  <span className="font-semibold text-foreground">1. Unlock</span> — enter the team
+                  access code once per session.
+                </li>
+                <li>
+                  <span className="font-semibold text-foreground">2. Connect</span> — OAuth for
+                  YouTube and Meta pulls live metrics.
+                </li>
+                <li>
+                  <span className="font-semibold text-foreground">3. Publish</span> — schedule from
+                  Composer; each workspace stays isolated.
+                </li>
+              </ol>
             </section>
           </aside>
         </div>
@@ -169,23 +257,33 @@ function WorkspacesPage() {
   );
 }
 
-function OnboardingBadge({ status }: { status: string }) {
+function OnboardingBadge({ status, compact = false }: { status: string; compact?: boolean }) {
   const config =
     status === "complete"
-      ? { dot: "bg-success", label: "Connected", cls: "border-success/50 text-success" }
+      ? { label: "Connected", cls: "text-success" }
       : status === "needs_accounts"
-        ? { dot: "bg-warning", label: "Needs accounts", cls: "border-warning/50 text-warning" }
-        : {
-            dot: "bg-muted-foreground",
-            label: "Draft",
-            cls: "border-border text-muted-foreground",
-          };
+        ? { label: "Needs accounts", cls: "text-warning" }
+        : { label: "Draft", cls: "text-muted-foreground" };
 
   return (
     <span
-      className={`mt-2 inline-flex items-center gap-1.5 rounded-sm border px-2 py-1 text-[0.55rem] uppercase tracking-[0.1em] ${config.cls}`}
+      className={cn(
+        "inline-flex items-center gap-1.5 font-mono font-bold uppercase tracking-[0.08em]",
+        compact ? "mt-0.5 text-[0.55rem]" : "mt-1 text-[0.625rem]",
+        config.cls,
+      )}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} aria-hidden />
+      <span
+        className={cn(
+          "h-1.5 w-1.5 rounded-full",
+          status === "complete"
+            ? "bg-success"
+            : status === "needs_accounts"
+              ? "bg-warning"
+              : "bg-muted-foreground",
+        )}
+        aria-hidden
+      />
       {config.label}
     </span>
   );
