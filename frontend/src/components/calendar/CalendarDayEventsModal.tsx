@@ -47,8 +47,7 @@ export function CalendarDayEventsModal({
             <div className="text-title text-sm">Events this day</div>
             <p className="mt-2 text-sm font-semibold text-foreground">{dateLabel}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {events.length} event album{events.length === 1 ? "" : "s"} — pick one to see queued
-              posts.
+              {events.length} event{events.length === 1 ? "" : "s"} — pick one to see queued posts.
             </p>
           </div>
           <button

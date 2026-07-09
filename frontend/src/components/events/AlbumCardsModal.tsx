@@ -58,7 +58,7 @@ export function AlbumCardsModal({
     navigate({
       to: "/card/$cardId",
       params: { cardId: item.id },
-      search: { from: "album" },
+      search: { from: "event" },
     });
   }
 
@@ -98,8 +98,7 @@ export function AlbumCardsModal({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {items.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No cards in this album yet. Schedule content and link it to this album from the
-              composer.
+              No cards in this event yet. Schedule content and link it from the composer or calendar.
             </p>
           ) : (
             <div className="flex flex-col gap-3">

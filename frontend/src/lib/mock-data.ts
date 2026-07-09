@@ -30,7 +30,7 @@ export interface ScheduledPost extends CardFileMeta {
   /** Per-platform times — one content card, multiple publishes. */
   platformTimes?: Partial<Record<Platform, string>>;
   status: "scheduled" | "draft" | "published";
-  /** Associated ministry event album — not a tag/label. */
+  /** Associated ministry event — not a tag/label. */
   eventId?: string;
 }
 
@@ -41,7 +41,7 @@ export interface PublishedPost extends CardFileMeta {
   date: string;
   /** Per-platform publish times when they differ from the primary date. */
   platformTimes?: Partial<Record<Platform, string>>;
-  /** Associated ministry event album — not a tag/label. */
+  /** Associated ministry event — not a tag/label. */
   eventId?: string;
   views: number;
   likes: number;

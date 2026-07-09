@@ -75,7 +75,7 @@ export function CalendarDayDrawer({
             {posts.length} card{posts.length === 1 ? "" : "s"} scheduled
           </h2>
           <p className="mt-1 text-body-sm text-muted-foreground">
-            {events.length} album{events.length === 1 ? "" : "s"} ·{" "}
+            {events.length} event{events.length === 1 ? "" : "s"} ·{" "}
             {posts.reduce((n, p) => n + p.platforms.length, 0)} publishes
           </p>
         </div>

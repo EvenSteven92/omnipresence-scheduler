@@ -32,7 +32,7 @@ export interface DraftPost {
   proposedTimes?: Partial<Record<Platform, string>>;
   /** Unix ms when the user saved this card to the draft dropzone. */
   savedAt?: number;
-  /** Associated event album — groups this file with related ministry media. */
+  /** Associated event — groups this file with related ministry media. */
   eventId?: string;
   /** Object URL for the uploaded file — set in scheduler addFiles. */
   previewUrl?: string;

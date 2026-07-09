@@ -1,7 +1,7 @@
 import { Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Solid control to associate a card with an event album. */
+/** Solid control to associate a card with an event. */
 export function EventAssociateButton({
   onClick,
   dense = false,
@@ -23,7 +23,7 @@ export function EventAssociateButton({
       )}
     >
       <Link2 className={dense ? "h-3 w-3" : "h-3.5 w-3.5"} strokeWidth={2} />
-      Link album
+      Link event
     </button>
   );
 }

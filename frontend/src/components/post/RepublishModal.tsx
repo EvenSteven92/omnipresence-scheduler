@@ -80,7 +80,7 @@ export function RepublishModal({
           <ul className="space-y-2 border-[1.5px] border-foreground bg-paper-2 px-4 py-3 text-xs text-muted-foreground">
             <li className="flex items-start gap-2">
               <Repeat2 className="mt-0.5 h-3 w-3 shrink-0 text-accent" strokeWidth={1.75} />
-              <span>Same file, caption, and event album link</span>
+              <span>Same file, caption, and event link</span>
             </li>
             <li className="flex items-start gap-2">
               <CalendarClock className="mt-0.5 h-3 w-3 shrink-0 text-accent" strokeWidth={1.75} />

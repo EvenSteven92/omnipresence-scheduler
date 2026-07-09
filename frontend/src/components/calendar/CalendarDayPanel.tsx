@@ -16,7 +16,7 @@ import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import { CREATE } from "@/lib/create-actions";
 
 /**
- * Clean day detail panel — events (albums) + cards for the selected day.
+ * Clean day detail panel — events + cards for the selected day.
  * Create actions live here, not on every calendar cell.
  */
 export function CalendarDayPanel({
@@ -61,8 +61,8 @@ export function CalendarDayPanel({
         <p className="page-kicker">Day detail</p>
         <h2 className="mt-2 font-display text-xl font-bold text-foreground">Select a day</h2>
         <p className="mt-2 max-w-xs text-body-sm text-muted-foreground">
-          Click any date to review cards and event albums, link uploads to events, or create new
-          content for that day.
+          Click any date to review cards and events, link uploads, or create new content for that
+          day.
         </p>
       </aside>
     );
@@ -86,7 +86,7 @@ export function CalendarDayPanel({
             {heading}
           </h2>
           <p className="mt-1 text-body-sm text-muted-foreground">
-            {posts.length} card{posts.length === 1 ? "" : "s"} · {events.length} album
+            {posts.length} card{posts.length === 1 ? "" : "s"} · {events.length} event
             {events.length === 1 ? "" : "s"}
           </p>
         </div>
@@ -115,12 +115,12 @@ export function CalendarDayPanel({
       </div>
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4">
-        {/* Events / albums first — primary organization model */}
+        {/* Events first — primary organization model */}
         <section>
-          <h3 className="mb-2 font-display text-sm font-bold text-foreground">Event albums</h3>
+          <h3 className="mb-2 font-display text-sm font-bold text-foreground">Events</h3>
           {events.length === 0 ? (
             <p className="rounded-md border-[1.5px] border-foreground/30 bg-paper-2 px-3 py-4 text-body-sm text-muted-foreground">
-              No event albums on this day. Create one to group related cards (sermon, worship night,
+              No events on this day. Create one to group related cards (sermon, worship night,
               campaign…).
             </p>
           ) : (
@@ -161,7 +161,7 @@ export function CalendarDayPanel({
           {filteredPosts.length === 0 ? (
             <p className="rounded-md border-[1.5px] border-foreground/30 bg-paper-2 px-3 py-4 text-body-sm text-muted-foreground">
               {showUnlinkedOnly
-                ? "All cards on this day are linked to an album."
+                ? "All cards on this day are linked to an event."
                 : "No cards scheduled this day."}
             </p>
           ) : (
@@ -174,7 +174,7 @@ export function CalendarDayPanel({
                       group.event ? "text-muted-foreground" : "text-warning",
                     )}
                   >
-                    {group.event ? group.event.title : "Not linked to an album"}
+                    {group.event ? group.event.title : "Not linked to an event"}
                   </p>
                   <ul className="space-y-2">
                     {group.posts.map((post) => (
@@ -241,14 +241,14 @@ function DayPanelCardRow({
             e.stopPropagation();
             onAssociate();
           }}
-          title={linked ? "Change album" : "Link to album"}
+          title={linked ? "Change event" : "Link to event"}
           className={cn(
             "flex shrink-0 flex-col items-center justify-center gap-1 rounded-md border-[1.5px] border-foreground px-2 py-1.5 text-caption font-semibold transition-colors hover:bg-secondary",
             linked ? "bg-paper-2 text-foreground" : "bg-warning/15 text-foreground",
           )}
         >
           <Link2 className="h-3.5 w-3.5" />
-          {linked ? "Album" : "Link"}
+          {linked ? "Event" : "Link"}
         </button>
       </div>
       {/* Atomic when & where — one row per platform publish */}

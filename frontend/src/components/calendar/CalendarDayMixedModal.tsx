@@ -49,7 +49,7 @@ export function CalendarDayMixedModal({
             <p className="mt-2 text-sm font-semibold text-foreground">{dateLabel}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {posts.length} content card{posts.length === 1 ? "" : "s"} and {events.length} event
-              album{events.length === 1 ? "" : "s"} — pick what to open.
+              {events.length === 1 ? "" : "s"} — pick what to open.
             </p>
           </div>
           <button
@@ -96,7 +96,7 @@ export function CalendarDayMixedModal({
               <Layers className="h-4 w-4 text-foreground" strokeWidth={1.75} />
             </span>
             <span className="min-w-0">
-              <span className="block text-sm font-semibold text-foreground">Event albums</span>
+              <span className="block text-sm font-semibold text-foreground">Events</span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
                 {events.length} ministry moment{events.length === 1 ? "" : "s"} on this day
               </span>

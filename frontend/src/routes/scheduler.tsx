@@ -45,6 +45,7 @@ import { today } from "@/lib/demo-clock";
 import { useWorkspace } from "@/lib/workspace-context";
 import type { WorkspaceId } from "@/lib/workspaces/types";
 import { cn } from "@/lib/utils";
+import { CREATE } from "@/lib/create-actions";
 
 export const Route = createFileRoute("/scheduler")({
   head: () => ({
@@ -645,10 +646,10 @@ function ComposePage() {
                   />
                 </section>
 
-                {/* ALBUM */}
+                {/* EVENT */}
                 <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
                   <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                    04 · Event album
+                    04 · Event
                   </div>
                   <p className="mb-3 text-body-sm text-muted-foreground">
                     Link this card to a ministry moment so the calendar groups related media.
@@ -683,14 +684,14 @@ function ComposePage() {
                       onClick={() => setCreateAlbumOpen(true)}
                       className="btn-action btn-action-secondary min-h-9"
                     >
-                      + New album
+                      + {CREATE.event}
                     </button>
                   </div>
                   {activeDraft.eventId ? (
                     <p className="mt-3 text-caption text-muted-foreground">
                       Linked to{" "}
                       <span className="font-semibold text-foreground">
-                        {getEventById(workspaceEvents, activeDraft.eventId)?.title ?? "album"}
+                        {getEventById(workspaceEvents, activeDraft.eventId)?.title ?? "event"}
                       </span>
                     </p>
                   ) : null}

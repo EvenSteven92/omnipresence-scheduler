@@ -39,7 +39,7 @@ export const postTargets = pgTable(
   (table) => [uniqueIndex("post_targets_post_platform_uidx").on(table.postId, table.platform)],
 );
 
-/** Event albums (sermon, worship night, etc.). */
+/** Ministry events (sermon, worship night, etc.). */
 export const contentEvents = pgTable("content_events", {
   id: text("id").primaryKey(),
   workspaceId: text("workspace_id").notNull(),

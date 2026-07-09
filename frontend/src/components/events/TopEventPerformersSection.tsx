@@ -25,7 +25,7 @@ function EventPerformerStreamCard({ row, rank }: { row: RankedEventPerformer; ra
   return (
     <Link
       to="/events"
-      search={{ album: event.id }}
+      search={{ event: event.id }}
       data-testid={`top-event-${event.id}`}
       className="group block"
     >
@@ -91,11 +91,11 @@ export function TopEventPerformersSection({
             Top event performers
           </h2>
           <p className="mt-1 text-body-sm text-muted-foreground">
-            Ranked by album engagement — {timeframeLabel(timeframe)}.
+            Ranked by event engagement — {timeframeLabel(timeframe)}.
           </p>
         </div>
         <Link to="/events" className="btn-action btn-action-secondary">
-          All albums <ArrowRight className="h-3.5 w-3.5" />
+          All events <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 

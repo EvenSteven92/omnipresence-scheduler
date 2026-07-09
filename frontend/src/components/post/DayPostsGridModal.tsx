@@ -46,7 +46,7 @@ function DayPostsUnassignedGroupHeader({ postCount }: { postCount: number }) {
           Unassigned media
         </div>
         <p className="mt-0.5 text-[0.65rem] leading-snug text-muted-foreground">
-          Link these cards to an event album below.
+          Link these cards to an event below.
         </p>
       </div>
       <span className="shrink-0 font-mono text-[0.5rem] uppercase tracking-[0.12em] text-warning">
@@ -58,7 +58,7 @@ function DayPostsUnassignedGroupHeader({ postCount }: { postCount: number }) {
 
 /**
  * Day picker for scheduled content cards — one or many per day.
- * Cards are grouped by event album in a wrapping grid of uniform-height chips.
+ * Cards are grouped by event in a wrapping grid of uniform-height chips.
  */
 export function DayPostsGridModal({
   date,
@@ -125,7 +125,7 @@ export function DayPostsGridModal({
             <p className="mt-1 text-xs text-muted-foreground">
               {posts.length} content card{posts.length === 1 ? "" : "s"}
               {unassociatedCount > 0
-                ? ` · ${unassociatedCount} still need${unassociatedCount === 1 ? "s" : ""} an event album`
+                ? ` · ${unassociatedCount} still need${unassociatedCount === 1 ? "s" : ""} an event`
                 : " — pick one to open details."}
             </p>
           </div>

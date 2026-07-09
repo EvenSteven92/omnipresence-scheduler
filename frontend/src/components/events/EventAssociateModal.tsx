@@ -40,7 +40,7 @@ export function EventAssociateModal({
             <div className="text-sm font-medium text-foreground">Associate with event</div>
             <p className="mt-2 text-sm font-semibold text-foreground">{post.title}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Link this file to a ministry event album — sermon, worship night, etc.
+              Link this file to a ministry event — sermon, worship night, etc.
             </p>
           </div>
           <button

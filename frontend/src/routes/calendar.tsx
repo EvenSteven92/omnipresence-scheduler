@@ -42,7 +42,7 @@ export const Route = createFileRoute("/calendar")({
       {
         name: "description",
         content:
-          "Month view of scheduled cards and event albums — link uploads to events from the day panel.",
+          "Month view of scheduled cards and events — link uploads from the day panel.",
       },
     ],
   }),
@@ -168,7 +168,7 @@ function CalendarPage() {
       <PageHeader
         eyebrow={<WorkspaceEyebrow />}
         title="Calendar"
-        description="Plan the month. Open a day to link cards to event albums."
+        description="Plan the month. Open a day to link cards to events."
         actions={
           <>
             <QueueCalendarToggle active="calendar" />

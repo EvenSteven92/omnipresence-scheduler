@@ -31,13 +31,14 @@ import type { PublishedPost, ScheduledPost } from "@/lib/mock-data";
 import { useWorkspace } from "@/lib/workspace-context";
 import type { ContentEvent, WorkspaceId, WorkspaceProfile } from "@/lib/workspaces/types";
 
-export type CardDetailOrigin = "queue" | "calendar" | "analytics" | "album";
+export type CardDetailOrigin = "queue" | "calendar" | "analytics" | "event" | "album";
 
 const CARD_DETAIL_ORIGINS: readonly CardDetailOrigin[] = [
   "queue",
   "calendar",
   "analytics",
-  "album",
+  "event",
+  "album", // legacy deep-link
 ];
 
 type CardDetailSearch = { from?: CardDetailOrigin };
@@ -154,13 +155,14 @@ function CardDetailView({
     navigate({ to: "/" });
   }
 
+  const fromEvent = (origin === "event" || origin === "album") && linkedEvent;
   const backLabel =
     origin === "calendar"
       ? "Calendar"
       : origin === "analytics"
         ? "Analytics"
-        : origin === "album" && linkedEvent
-          ? "Album"
+        : fromEvent
+          ? "Events"
           : "Queue";
 
   function goBack() {
@@ -168,8 +170,8 @@ function CardDetailView({
       navigate({ to: "/calendar" });
     } else if (origin === "analytics") {
       navigate({ to: "/analytics" });
-    } else if (origin === "album" && linkedEvent) {
-      navigate({ to: "/events", search: { album: linkedEvent.id } });
+    } else if (fromEvent && linkedEvent) {
+      navigate({ to: "/events", search: { event: linkedEvent.id } });
     } else {
       navigate({ to: "/" });
     }
@@ -391,7 +393,7 @@ function CardDetailView({
             {linkedEvent ? (
               <Link
                 to="/events"
-                search={{ album: linkedEvent.id }}
+                search={{ event: linkedEvent.id }}
                 className="panel flex items-center gap-3 p-4 transition-colors hover:bg-paper-2/40"
               >
                 <span className="flex h-[34px] w-[34px] items-center justify-center rounded-md border-[1.5px] border-foreground bg-paper-2">
@@ -399,7 +401,7 @@ function CardDetailView({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-mono text-[0.5625rem] font-semibold uppercase text-muted-foreground">
-                    Part of album
+                    Part of event
                   </span>
                   <span className="mt-1 block truncate font-display text-[0.9375rem] font-bold text-foreground">
                     {linkedEvent.title}

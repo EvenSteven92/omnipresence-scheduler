@@ -44,7 +44,7 @@ export function useCalendarPostSelection() {
   const openDetailFromEvent = useCallback(
     (post: PostDetailSource, event: ContentEvent) => {
       setDetailReturn({ kind: "event", value: event });
-      navigate({ to: "/card/$cardId", params: { cardId: post.id }, search: { from: "album" } });
+      navigate({ to: "/card/$cardId", params: { cardId: post.id }, search: { from: "event" } });
     },
     [navigate],
   );

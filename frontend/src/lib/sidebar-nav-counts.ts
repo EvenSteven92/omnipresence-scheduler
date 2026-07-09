@@ -7,7 +7,7 @@ import {
   UPCOMING_WINDOW_DAYS,
 } from "@/lib/scheduled-post-display";
 
-export type SidebarNavCountKey = "queue" | "calendar" | "albums";
+export type SidebarNavCountKey = "queue" | "calendar" | "events";
 
 export function computeSidebarNavCounts(
   scheduledPosts: ScheduledPost[],
@@ -20,6 +20,6 @@ export function computeSidebarNavCounts(
   return {
     queue: upcoming.length,
     calendar: queueDays.size,
-    albums: events.length,
+    events: events.length,
   };
 }

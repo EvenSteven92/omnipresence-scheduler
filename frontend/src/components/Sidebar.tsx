@@ -28,7 +28,7 @@ const nav: {
 }[] = [
   { to: "/", label: "Queue", icon: LayoutList, countKey: "queue" },
   { to: "/calendar", label: "Calendar", icon: CalendarDays, countKey: "calendar" },
-  { to: "/events", label: "Albums", icon: LayoutGrid, countKey: "albums" },
+  { to: "/events", label: "Events", icon: LayoutGrid, countKey: "events" },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/workspaces", label: "Admin", icon: Settings2 },
 ];

@@ -1,6 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -9,7 +10,7 @@ import { EventAlbumCard } from "@/components/events/EventAlbumCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { eventKindLabel, getEventById } from "@/lib/events/display";
 import type { ContentEvent, ContentEventKind } from "@/lib/workspaces/types";
-import { FilePlus, Layers } from "lucide-react";
+import { Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CREATE } from "@/lib/create-actions";
 
@@ -24,28 +25,33 @@ const CATEGORY_FILTERS: { id: ContentEventKind | "all"; label: string }[] = [
 ];
 
 type EventsSearch = {
-  album?: string;
+  /** Deep-link to open an event modal. Accepts legacy `album` query. */
+  event?: string;
 };
 
 export const Route = createFileRoute("/events/")({
   head: () => ({
     meta: [
-      { title: "Albums — TORCC OmniSocial" },
+      { title: "Events — TORCC OmniSocial" },
       {
         name: "description",
         content:
-          "Event albums group related media — sermons, reels, clips — with combined performance.",
+          "Ministry events group related media — sermons, reels, clips — with combined performance.",
       },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): EventsSearch => ({
-    album: typeof search.album === "string" && search.album.length > 0 ? search.album : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): EventsSearch => {
+    const event =
+      (typeof search.event === "string" && search.event.length > 0 && search.event) ||
+      (typeof search.album === "string" && search.album.length > 0 && search.album) ||
+      undefined;
+    return { event };
+  },
   component: EventsIndexPage,
 });
 
 function EventsIndexPage() {
-  const { album: albumId } = Route.useSearch();
+  const { event: eventId } = Route.useSearch();
   const navigate = useNavigate();
   const { workspace, workspaceId } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
@@ -64,20 +70,20 @@ function EventsIndexPage() {
   );
 
   useEffect(() => {
-    if (!albumId) {
+    if (!eventId) {
       setModalEvent(null);
       return;
     }
-    const event = getEventById(events, albumId);
+    const event = getEventById(events, eventId);
     if (event) setModalEvent(event);
-  }, [albumId, events]);
+  }, [eventId, events]);
 
-  function openAlbum(event: ContentEvent) {
+  function openEvent(event: ContentEvent) {
     setModalEvent(event);
-    navigate({ to: "/events", search: { album: event.id }, replace: true });
+    navigate({ to: "/events", search: { event: event.id }, replace: true });
   }
 
-  function closeAlbumModal() {
+  function closeEventModal() {
     setModalEvent(null);
     navigate({ to: "/events", search: {}, replace: true });
   }
@@ -90,14 +96,9 @@ function EventsIndexPage() {
             Media library
           </span>
         }
-        title="Albums"
-        description="Every album is a ministry moment. Open one to see its cards."
-        actions={
-          <Link to="/scheduler" className="btn-action-primary btn-action">
-            <FilePlus className="h-3.5 w-3.5" strokeWidth={2} />
-            {CREATE.card}
-          </Link>
-        }
+        title="Events"
+        description="Every event is a ministry moment. Open one to see its cards."
+        actions={<NewEventPostActions flow={createEventFlow} />}
       />
 
       <div className="page-content">
@@ -138,8 +139,8 @@ function EventsIndexPage() {
         {events.length === 0 ? (
           <EmptyState
             icon={Layers}
-            title="No albums yet"
-            description="Create your first event album to group sermon reels, clips, and quote cards."
+            title="No events yet"
+            description="Create your first event to group sermon reels, clips, and quote cards."
             action={
               <button
                 type="button"
@@ -147,18 +148,18 @@ function EventsIndexPage() {
                 data-testid="events-empty-new-event"
                 className="btn-action-primary btn-action"
               >
-                New album
+                {CREATE.event}
               </button>
             }
           />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Layers}
-            title={`No ${eventKindLabel(kindFilter as ContentEventKind).toLowerCase()} albums`}
-            description="Try another category or create a new album."
+            title={`No ${eventKindLabel(kindFilter as ContentEventKind).toLowerCase()} events`}
+            description="Try another category or create a new event."
             action={
               <button type="button" onClick={() => setKindFilter("all")} className="btn-action">
-                Show all albums
+                Show all events
               </button>
             }
           />
@@ -173,7 +174,7 @@ function EventsIndexPage() {
                 event={event}
                 workspace={workspace}
                 workspaceId={workspaceId}
-                onOpen={openAlbum}
+                onOpen={openEvent}
               />
             ))}
           </div>
@@ -185,11 +186,10 @@ function EventsIndexPage() {
           event={modalEvent}
           workspace={workspace}
           workspaceId={workspaceId}
-          onClose={closeAlbumModal}
+          onClose={closeEventModal}
         />
       ) : null}
-
-      {createEventFlow.modal}
+      {/* createEventFlow.modal is rendered by NewEventPostActions */}
     </>
   );
 }

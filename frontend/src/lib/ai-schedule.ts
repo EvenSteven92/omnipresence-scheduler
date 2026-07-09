@@ -18,7 +18,7 @@ export type AiPrepareResult = {
 
 function buildBrief(draft: DraftPost, events: ContentEvent[]): string {
   const event = draft.eventId ? getEventById(events, draft.eventId) : undefined;
-  const eventContext = event ? `Event album: "${event.title}" (${event.kind}). ` : "";
+  const eventContext = event ? `Event: "${event.title}" (${event.kind}). ` : "";
   const transcript = draft.transcript?.trim();
   const caption = draft.caption?.trim();
   const core = transcript || caption || draft.filename;

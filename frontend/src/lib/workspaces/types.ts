@@ -46,7 +46,7 @@ export type ContentEventKind =
   | "conference"
   | "other";
 
-/** Event album — groups related media (sermon + reel + clips) under one ministry moment. */
+/** Ministry event — groups related media (sermon + reel + clips) under one moment. */
 export interface ContentEvent {
   id: string;
   title: string;
@@ -79,6 +79,6 @@ export interface WorkspaceProfile {
   scheduledPosts: ScheduledPost[];
   publishedPosts: PublishedPost[];
   platformConnections: PlatformConnectionRow[];
-  /** Event albums for associating related media files. */
+  /** Ministry events for associating related media files. */
   events: ContentEvent[];
 }

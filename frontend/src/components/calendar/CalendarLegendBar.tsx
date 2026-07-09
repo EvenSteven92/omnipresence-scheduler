@@ -41,7 +41,7 @@ export function CalendarLegendBar({
         type="button"
         onClick={onToggleHighlight}
         data-testid="highlight-unassociated-toggle"
-        title="Highlight posts not yet tied to an event album"
+        title="Highlight posts not yet tied to an event"
         className={`flex items-center gap-1.5 rounded-md border-[1.5px] px-2 py-1 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] transition-colors ${
           highlightUnassociated
             ? "border-warning bg-warning/15 text-warning"
@@ -61,10 +61,10 @@ export function CalendarLegendBar({
       <Legend swatch="bg-accent" label="Today · event" />
       <Legend
         swatch="bg-warning/40"
-        label="Needs album"
+        label="Needs event"
         active={unassociatedCount > 0}
       />
-      <Legend swatch="bg-secondary" label="Link album" icon />
+      <Legend swatch="bg-secondary" label="Link event" icon />
     </div>
   );
 }
