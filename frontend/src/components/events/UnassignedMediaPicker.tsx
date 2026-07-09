@@ -13,6 +13,7 @@ function inferMediaKind(title: string): "image" | "video" {
   return "video";
 }
 
+/** Pick posts that aren’t already on another event — used inside “Link posts”. */
 export function UnassignedMediaPicker({
   scheduledPosts,
   publishedPosts,
@@ -26,7 +27,7 @@ export function UnassignedMediaPicker({
   selectedIds: Set<string>;
   onToggle: (postId: string) => void;
 }) {
-  const unassigned = useMemo(() => {
+  const available = useMemo(() => {
     const items: AssociatablePost[] = [];
     scheduledPosts.forEach((post) => {
       if (!isAssociated(post)) items.push(post);
@@ -37,37 +38,31 @@ export function UnassignedMediaPicker({
     return items.sort((a, b) => a.title.localeCompare(b.title));
   }, [scheduledPosts, publishedPosts, isAssociated]);
 
-  if (unassigned.length === 0) {
+  if (available.length === 0) {
     return (
       <div
         data-testid="unassigned-media-empty"
-        className="rounded-md border-[1.5px] border-foreground bg-card px-4 py-6 text-center"
+        className="rounded-md border-[1.5px] border-dashed border-foreground/50 bg-background px-3 py-4 text-center"
       >
-        <p className="text-body-sm text-muted-foreground">All media is associated with events</p>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          Every file is already linked to an event album. You can associate more later from New Post
-          or the calendar day panel.
+        <p className="text-body-sm text-muted-foreground">No free posts to link</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          Every post is already on an event — or create posts later and link them then.
         </p>
       </div>
     );
   }
 
   return (
-    <div data-testid="unassigned-media-picker" className="space-y-3">
+    <div data-testid="unassigned-media-picker" className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-eyebrow">Unassigned media</div>
-        <span className="label-mono text-[0.5rem] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           {selectedIds.size > 0
             ? `${selectedIds.size} selected`
-            : `${unassigned.length} files`}
+            : `${available.length} available`}
         </span>
       </div>
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        Optional — select files to link to this album on create. You can always associate more
-        after.
-      </p>
-      <div className="grid max-h-52 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
-        {unassigned.map((post) => {
+      <div className="grid max-h-48 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+        {available.map((post) => {
           const selected = selectedIds.has(post.id);
           const mediaKind = inferMediaKind(post.title);
           return (
