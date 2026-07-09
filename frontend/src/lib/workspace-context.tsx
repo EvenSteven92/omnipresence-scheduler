@@ -9,16 +9,21 @@ import {
   type WorkspaceProfile,
 } from "@/lib/workspaces";
 import type { ScheduledPost } from "@/lib/mock-data";
-import { mergeScheduledPosts, useComposerScheduledPosts } from "@/hooks/useComposerScheduledPosts";
+import { mergeScheduledPosts } from "@/hooks/useComposerScheduledPosts";
+import { usePersistedPosts } from "@/hooks/usePersistedPosts";
 
 interface WorkspaceContextValue {
   workspaceId: WorkspaceId;
   workspace: WorkspaceProfile;
   workspaces: WorkspaceProfile[];
   setWorkspaceId: (id: WorkspaceId) => void;
-  addScheduledPosts: (posts: ScheduledPost[]) => void;
-  upsertScheduledPost: (post: ScheduledPost) => void;
-  removeScheduledPost: (postId: string) => void;
+  /** True when posts are stored in Postgres via /api/posts. */
+  postsDbMode: boolean;
+  postsLoading: boolean;
+  addScheduledPosts: (posts: ScheduledPost[]) => void | Promise<void>;
+  upsertScheduledPost: (post: ScheduledPost) => void | Promise<void>;
+  removeScheduledPost: (postId: string) => void | Promise<void>;
+  associatePost: (postId: string, eventId: string | undefined) => Promise<boolean>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -29,36 +34,72 @@ function initialWorkspaceId(): WorkspaceId {
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [workspaceId, setWorkspaceIdState] = useState<WorkspaceId>(initialWorkspaceId);
-  const { composerScheduled, addScheduledPosts, upsertScheduledPost, removeScheduledPost } =
-    useComposerScheduledPosts(workspaceId);
+  const {
+    posts: persistedPosts,
+    dbMode: postsDbMode,
+    isLoading: postsLoading,
+    addScheduledPosts,
+    upsertScheduledPost,
+    removeScheduledPost,
+    associatePost: associatePostId,
+  } = usePersistedPosts(workspaceId);
 
   const setWorkspaceId = useCallback((id: WorkspaceId) => {
     setWorkspaceIdState(id);
     writeStoredWorkspaceId(id);
   }, []);
 
+  const associatePost = useCallback(
+    async (postId: string, eventId: string | undefined) => {
+      // Local mode: clone seed card into session with eventId so merge wins over base.
+      // DB mode: PATCH /api/posts/:id with eventId.
+      if (!postsDbMode) {
+        const base = getWorkspace(workspaceId);
+        const scheduled = mergeScheduledPosts(base.scheduledPosts, persistedPosts);
+        const post = scheduled.find((p) => p.id === postId);
+        if (post) {
+          await upsertScheduledPost({ ...post, eventId: eventId || undefined });
+          return true;
+        }
+      }
+      return associatePostId(postId, eventId);
+    },
+    [workspaceId, postsDbMode, persistedPosts, upsertScheduledPost, associatePostId],
+  );
+
   const value = useMemo<WorkspaceContextValue>(() => {
     const base = getWorkspace(workspaceId);
+    // DB mode: use only remote posts (no seed schedule). Local mode: seed + session posts.
+    const scheduledPosts = postsDbMode
+      ? persistedPosts
+      : mergeScheduledPosts(base.scheduledPosts, persistedPosts);
+
     const workspace: WorkspaceProfile = {
       ...base,
-      scheduledPosts: mergeScheduledPosts(base.scheduledPosts, composerScheduled),
+      scheduledPosts,
     };
     return {
       workspaceId,
       workspace,
       workspaces: listWorkspaces(),
       setWorkspaceId,
+      postsDbMode,
+      postsLoading,
       addScheduledPosts,
       upsertScheduledPost,
       removeScheduledPost,
+      associatePost,
     };
   }, [
     workspaceId,
     setWorkspaceId,
-    composerScheduled,
+    persistedPosts,
+    postsDbMode,
+    postsLoading,
     addScheduledPosts,
     upsertScheduledPost,
     removeScheduledPost,
+    associatePost,
   ]);
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

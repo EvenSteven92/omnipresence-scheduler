@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import type { WorkspaceId } from "@/lib/workspaces/types";
+import { createEventRemote, fetchWorkspaceEvents } from "@/lib/api/posts";
 
 const STORAGE_PREFIX = "torcc.customEvents.";
 
@@ -28,28 +30,47 @@ function writeCustomEvents(workspaceId: WorkspaceId, events: ContentEvent[]) {
 }
 
 export function mergeWorkspaceEvents(base: ContentEvent[], custom: ContentEvent[]): ContentEvent[] {
-  return [...base, ...custom].sort((a, b) => +new Date(b.date) - +new Date(a.date));
+  const byId = new Map<string, ContentEvent>();
+  [...base, ...custom].forEach((e) => byId.set(e.id, e));
+  return [...byId.values()].sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
 
 export function useCustomEvents(workspaceId: WorkspaceId) {
-  const [customEvents, setCustomEvents] = useState<ContentEvent[]>(() =>
+  const queryClient = useQueryClient();
+  const remote = useQuery({
+    queryKey: ["workspace-events", workspaceId],
+    queryFn: () => fetchWorkspaceEvents(workspaceId),
+    staleTime: 15_000,
+  });
+
+  const dbMode = remote.data?.source === "db";
+  const [localEvents, setLocalEvents] = useState<ContentEvent[]>(() =>
     readCustomEvents(workspaceId),
   );
 
   useEffect(() => {
-    setCustomEvents(readCustomEvents(workspaceId));
-  }, [workspaceId]);
+    if (!dbMode) setLocalEvents(readCustomEvents(workspaceId));
+  }, [workspaceId, dbMode]);
+
+  const customEvents = dbMode ? (remote.data?.events ?? []) : localEvents;
 
   const addEvent = useCallback(
-    (event: ContentEvent) => {
-      setCustomEvents((prev) => {
+    async (event: ContentEvent) => {
+      if (dbMode) {
+        const created = await createEventRemote(workspaceId, event);
+        if (created) {
+          void queryClient.invalidateQueries({ queryKey: ["workspace-events", workspaceId] });
+          return;
+        }
+      }
+      setLocalEvents((prev) => {
         const next = [...prev, event];
         writeCustomEvents(workspaceId, next);
         return next;
       });
     },
-    [workspaceId],
+    [dbMode, workspaceId, queryClient],
   );
 
-  return { customEvents, addEvent };
+  return { customEvents, addEvent, dbMode };
 }

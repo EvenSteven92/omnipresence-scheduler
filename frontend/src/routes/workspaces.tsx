@@ -23,7 +23,7 @@ export const Route = createFileRoute("/workspaces")({
 });
 
 function WorkspacesPage() {
-  const { workspace, workspaces, setWorkspaceId, workspaceId } = useWorkspace();
+  const { workspace, workspaces, setWorkspaceId, workspaceId, postsDbMode } = useWorkspace();
   const [banner, setBanner] = useState<string | null>(null);
   const [bannerTone, setBannerTone] = useState<"success" | "warning" | "error">("success");
   const [oauthParams, setOauthParams] = useState<{ youtube?: string | null; meta?: string | null }>(
@@ -93,6 +93,27 @@ function WorkspacesPage() {
       />
 
       <div className="page-content mx-auto max-w-[1320px] space-y-6">
+        <div
+          className={cn(
+            "rounded-md border-[1.5px] border-foreground px-4 py-3 text-body-sm",
+            postsDbMode ? "bg-success/10 text-foreground" : "bg-paper-2 text-muted-foreground",
+          )}
+          data-testid="posts-storage-mode"
+        >
+          {postsDbMode ? (
+            <>
+              <span className="font-semibold text-foreground">Shared database</span> — scheduled
+              cards are stored in Postgres and sync for the whole team.
+            </>
+          ) : (
+            <>
+              <span className="font-semibold text-foreground">Local demo mode</span> — set{" "}
+              <code className="font-data text-foreground">DATABASE_URL</code> on Vercel and run{" "}
+              <code className="font-data text-foreground">migrate-posts-events.sql</code> to enable
+              shared schedules.
+            </>
+          )}
+        </div>
         {banner ? (
           <div
             role="status"

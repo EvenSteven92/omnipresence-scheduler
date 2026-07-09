@@ -1,5 +1,56 @@
 import { integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
+// ─── App content (posts / events) ────────────────────────────────────────────
+
+/** Atomic content card — one upload / creative unit. */
+export const posts = pgTable("posts", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  title: text("title").notNull(),
+  caption: text("caption").notNull().default(""),
+  hashtags: text("hashtags").notNull().default(""),
+  transcript: text("transcript").notNull().default(""),
+  mediaKind: text("media_kind").notNull().default("video"),
+  format: text("format").notNull().default("portrait"),
+  status: text("status").notNull().default("scheduled"),
+  eventId: text("event_id"),
+  dropboxUrl: text("dropbox_url"),
+  previewUrl: text("preview_url"),
+  /** Earliest platform publish time (ISO-aligned). */
+  primaryAt: timestamp("primary_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Per-platform publish slot for a card. */
+export const postTargets = pgTable(
+  "post_targets",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id").notNull(),
+    platform: text("platform").notNull(),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
+    status: text("status").notNull().default("scheduled"),
+    externalPostId: text("external_post_id"),
+    lastError: text("last_error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("post_targets_post_platform_uidx").on(table.postId, table.platform)],
+);
+
+/** Event albums (sermon, worship night, etc.). */
+export const contentEvents = pgTable("content_events", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  title: text("title").notNull(),
+  date: timestamp("date", { withTimezone: true }).notNull(),
+  kind: text("kind").notNull().default("other"),
+  description: text("description").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const connectedAccounts = pgTable(
   "connected_accounts",
   {

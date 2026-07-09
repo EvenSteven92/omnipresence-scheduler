@@ -33,12 +33,12 @@ export function mergeScheduledPosts(
   base: ScheduledPost[],
   custom: ScheduledPost[],
 ): ScheduledPost[] {
-  const seen = new Set(base.map((p) => p.id));
-  const merged = [...base];
-  custom.forEach((p) => {
-    if (!seen.has(p.id)) merged.push(p);
-  });
-  return merged.sort((a, b) => +new Date(a.date) - +new Date(b.date));
+  // Custom (session / edits) wins over seed when IDs match — needed for
+  // event associations and caption edits on demo seed cards.
+  const byId = new Map<string, ScheduledPost>();
+  base.forEach((p) => byId.set(p.id, p));
+  custom.forEach((p) => byId.set(p.id, p));
+  return [...byId.values()].sort((a, b) => +new Date(a.date) - +new Date(b.date));
 }
 
 export function draftToScheduledPost(draft: DraftPost): ScheduledPost | null {

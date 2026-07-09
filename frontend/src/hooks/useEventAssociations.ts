@@ -1,66 +1,29 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import type { ScheduledPost } from "@/lib/mock-data";
-import type { WorkspaceId } from "@/lib/workspaces/types";
+import { useWorkspace } from "@/lib/workspace-context";
 
-const STORAGE_PREFIX = "torcc.eventAssociations.";
-
-function storageKey(workspaceId: WorkspaceId): string {
-  return `${STORAGE_PREFIX}${workspaceId}`;
-}
-
-function readOverrides(workspaceId: WorkspaceId): Record<string, string | null> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.sessionStorage.getItem(storageKey(workspaceId));
-    if (!raw) return {};
-    return JSON.parse(raw) as Record<string, string | null>;
-  } catch {
-    return {};
-  }
-}
-
-function writeOverrides(workspaceId: WorkspaceId, map: Record<string, string | null>) {
-  try {
-    window.sessionStorage.setItem(storageKey(workspaceId), JSON.stringify(map));
-  } catch {
-    /* ignore */
-  }
-}
-
-export function useEventAssociations(workspaceId: WorkspaceId) {
-  const [overrides, setOverrides] = useState<Record<string, string | null>>(() =>
-    readOverrides(workspaceId),
-  );
-
-  useEffect(() => {
-    setOverrides(readOverrides(workspaceId));
-  }, [workspaceId]);
+/**
+ * Event ↔ card association.
+ * Resolves from post.eventId (DB or local). Writes via workspace.associatePost.
+ */
+export function useEventAssociations(_workspaceId?: string) {
+  const { associatePost } = useWorkspace();
 
   const resolveEventId = useCallback(
-    (post: Pick<ScheduledPost, "id" | "eventId">): string | undefined => {
-      if (post.id in overrides) {
-        const value = overrides[post.id];
-        return value ?? undefined;
-      }
-      return post.eventId;
-    },
-    [overrides],
+    (post: Pick<ScheduledPost, "id" | "eventId">): string | undefined => post.eventId,
+    [],
   );
 
   const isAssociated = useCallback(
-    (post: Pick<ScheduledPost, "id" | "eventId">) => Boolean(resolveEventId(post)),
-    [resolveEventId],
+    (post: Pick<ScheduledPost, "id" | "eventId">) => Boolean(post.eventId),
+    [],
   );
 
   const associate = useCallback(
     (postId: string, eventId: string | undefined) => {
-      setOverrides((prev) => {
-        const next = { ...prev, [postId]: eventId ?? null };
-        writeOverrides(workspaceId, next);
-        return next;
-      });
+      void associatePost(postId, eventId);
     },
-    [workspaceId],
+    [associatePost],
   );
 
   return { resolveEventId, isAssociated, associate };

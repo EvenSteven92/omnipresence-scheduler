@@ -54,6 +54,17 @@ Open **http://localhost:3000**. Vite proxies `/api/*` to the backend.
 | **Vercel project** | `torcc/omnipresence` (GitHub: `EvenSteven92/omnipresence-scheduler`) |
 | **Root directory** | `frontend` |
 
+### Database-backed posts (shared schedule)
+
+When `DATABASE_URL` (Neon / Vercel Postgres) is set on the Vercel project:
+
+1. Run `frontend/scripts/migrate-posts-events.sql` in the Neon SQL editor (once).
+2. Redeploy (or wait for next push).
+3. Compose → **Schedule** writes to Postgres via `POST /api/posts`.
+4. Calendar / queue load from `GET /api/posts?workspace=…`.
+
+Without `DATABASE_URL`, the app keeps working in **local demo mode** (seed data + sessionStorage).
+
 > **Domain note:** `omnipresence.vercel.app` is a *different* product (not this repo).  
 > Use **omnipresence-torcc.vercel.app**, or in Vercel → Project → Settings → Domains assign a custom domain / rename the production alias to this project.
 

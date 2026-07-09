@@ -17,8 +17,11 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as CardCardIdRouteImport } from './routes/card.$cardId'
+import { Route as ApiPostsRouteImport } from './routes/api/posts'
+import { Route as ApiEventsRouteImport } from './routes/api/events'
 import { Route as ApiYoutubeSyncRouteImport } from './routes/api/youtube/sync'
 import { Route as ApiYoutubeMetricsRouteImport } from './routes/api/youtube/metrics'
+import { Route as ApiPostsPostIdRouteImport } from './routes/api/posts.$postId'
 import { Route as ApiMetaSyncRouteImport } from './routes/api/meta/sync'
 import { Route as ApiMetaMetricsRouteImport } from './routes/api/meta/metrics'
 import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
@@ -68,6 +71,16 @@ const CardCardIdRoute = CardCardIdRouteImport.update({
   path: '/card/$cardId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPostsRoute = ApiPostsRouteImport.update({
+  id: '/api/posts',
+  path: '/api/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEventsRoute = ApiEventsRouteImport.update({
+  id: '/api/events',
+  path: '/api/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiYoutubeSyncRoute = ApiYoutubeSyncRouteImport.update({
   id: '/api/youtube/sync',
   path: '/api/youtube/sync',
@@ -77,6 +90,11 @@ const ApiYoutubeMetricsRoute = ApiYoutubeMetricsRouteImport.update({
   id: '/api/youtube/metrics',
   path: '/api/youtube/metrics',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPostsPostIdRoute = ApiPostsPostIdRouteImport.update({
+  id: '/$postId',
+  path: '/$postId',
+  getParentRoute: () => ApiPostsRoute,
 } as any)
 const ApiMetaSyncRoute = ApiMetaSyncRouteImport.update({
   id: '/api/meta/sync',
@@ -128,12 +146,15 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRouteWithChildren
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
+  '/api/events': typeof ApiEventsRoute
+  '/api/posts': typeof ApiPostsRouteWithChildren
   '/card/$cardId': typeof CardCardIdRoute
   '/events/': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/meta/metrics': typeof ApiMetaMetricsRoute
   '/api/meta/sync': typeof ApiMetaSyncRoute
+  '/api/posts/$postId': typeof ApiPostsPostIdRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
   '/api/accounts/meta/callback': typeof ApiAccountsMetaCallbackRoute
@@ -147,12 +168,15 @@ export interface FileRoutesByTo {
   '/calendar': typeof CalendarRoute
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
+  '/api/events': typeof ApiEventsRoute
+  '/api/posts': typeof ApiPostsRouteWithChildren
   '/card/$cardId': typeof CardCardIdRoute
   '/events': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/meta/metrics': typeof ApiMetaMetricsRoute
   '/api/meta/sync': typeof ApiMetaSyncRoute
+  '/api/posts/$postId': typeof ApiPostsPostIdRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
   '/api/accounts/meta/callback': typeof ApiAccountsMetaCallbackRoute
@@ -168,12 +192,15 @@ export interface FileRoutesById {
   '/events': typeof EventsRouteWithChildren
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
+  '/api/events': typeof ApiEventsRoute
+  '/api/posts': typeof ApiPostsRouteWithChildren
   '/card/$cardId': typeof CardCardIdRoute
   '/events/': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/meta/metrics': typeof ApiMetaMetricsRoute
   '/api/meta/sync': typeof ApiMetaSyncRoute
+  '/api/posts/$postId': typeof ApiPostsPostIdRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
   '/api/accounts/meta/callback': typeof ApiAccountsMetaCallbackRoute
@@ -190,12 +217,15 @@ export interface FileRouteTypes {
     | '/events'
     | '/scheduler'
     | '/workspaces'
+    | '/api/events'
+    | '/api/posts'
     | '/card/$cardId'
     | '/events/'
     | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/meta/metrics'
     | '/api/meta/sync'
+    | '/api/posts/$postId'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
     | '/api/accounts/meta/callback'
@@ -209,12 +239,15 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/scheduler'
     | '/workspaces'
+    | '/api/events'
+    | '/api/posts'
     | '/card/$cardId'
     | '/events'
     | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/meta/metrics'
     | '/api/meta/sync'
+    | '/api/posts/$postId'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
     | '/api/accounts/meta/callback'
@@ -229,12 +262,15 @@ export interface FileRouteTypes {
     | '/events'
     | '/scheduler'
     | '/workspaces'
+    | '/api/events'
+    | '/api/posts'
     | '/card/$cardId'
     | '/events/'
     | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/meta/metrics'
     | '/api/meta/sync'
+    | '/api/posts/$postId'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
     | '/api/accounts/meta/callback'
@@ -250,6 +286,8 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRouteWithChildren
   SchedulerRoute: typeof SchedulerRoute
   WorkspacesRoute: typeof WorkspacesRoute
+  ApiEventsRoute: typeof ApiEventsRoute
+  ApiPostsRoute: typeof ApiPostsRouteWithChildren
   CardCardIdRoute: typeof CardCardIdRoute
   ApiAccountsStatusRoute: typeof ApiAccountsStatusRoute
   ApiAiGenerateRoute: typeof ApiAiGenerateRoute
@@ -321,6 +359,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CardCardIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/posts': {
+      id: '/api/posts'
+      path: '/api/posts'
+      fullPath: '/api/posts'
+      preLoaderRoute: typeof ApiPostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/events': {
+      id: '/api/events'
+      path: '/api/events'
+      fullPath: '/api/events'
+      preLoaderRoute: typeof ApiEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/youtube/sync': {
       id: '/api/youtube/sync'
       path: '/api/youtube/sync'
@@ -334,6 +386,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/youtube/metrics'
       preLoaderRoute: typeof ApiYoutubeMetricsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/posts/$postId': {
+      id: '/api/posts/$postId'
+      path: '/$postId'
+      fullPath: '/api/posts/$postId'
+      preLoaderRoute: typeof ApiPostsPostIdRouteImport
+      parentRoute: typeof ApiPostsRoute
     }
     '/api/meta/sync': {
       id: '/api/meta/sync'
@@ -405,6 +464,18 @@ const EventsRouteChildren: EventsRouteChildren = {
 const EventsRouteWithChildren =
   EventsRoute._addFileChildren(EventsRouteChildren)
 
+interface ApiPostsRouteChildren {
+  ApiPostsPostIdRoute: typeof ApiPostsPostIdRoute
+}
+
+const ApiPostsRouteChildren: ApiPostsRouteChildren = {
+  ApiPostsPostIdRoute: ApiPostsPostIdRoute,
+}
+
+const ApiPostsRouteWithChildren = ApiPostsRoute._addFileChildren(
+  ApiPostsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
@@ -412,6 +483,8 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRouteWithChildren,
   SchedulerRoute: SchedulerRoute,
   WorkspacesRoute: WorkspacesRoute,
+  ApiEventsRoute: ApiEventsRoute,
+  ApiPostsRoute: ApiPostsRouteWithChildren,
   CardCardIdRoute: CardCardIdRoute,
   ApiAccountsStatusRoute: ApiAccountsStatusRoute,
   ApiAiGenerateRoute: ApiAiGenerateRoute,
