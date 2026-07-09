@@ -3,11 +3,11 @@ import type { ContentEvent } from "@/lib/workspaces/types";
 import { cn } from "@/lib/utils";
 import { demoPreviewForPost } from "@/lib/demo-media";
 
-const MAX_THUMBS = 3;
+const MAX_THUMBS = 2;
 
 /**
- * Minimal month cell — day number, optional event marker, post thumbs/count.
- * No create buttons or hover stencils. Click opens the day panel.
+ * Compact month cell — never expands the grid.
+ * minmax(0,1fr) parent + min-w-0 + overflow-hidden keep thumbs/events clipped.
  */
 export function CalendarDayCell({
   day,
@@ -36,6 +36,7 @@ export function CalendarDayCell({
   const eventCount = events.length;
   const thumbs = posts.slice(0, MAX_THUMBS);
   const overflow = Math.max(0, postCount - MAX_THUMBS);
+  const primaryEvent = events[0];
 
   return (
     <button
@@ -62,7 +63,8 @@ export function CalendarDayCell({
           : undefined
       }
       className={cn(
-        "group relative flex min-h-[7.5rem] flex-col items-stretch gap-1.5 p-2 text-left transition-colors",
+        /* min-w-0 is required so CSS grid children can shrink below content size */
+        "group relative flex h-[6.75rem] min-w-0 w-full flex-col overflow-hidden p-1.5 text-left transition-colors sm:h-[7.25rem] sm:p-2",
         muted
           ? "cursor-default bg-paper-2/60 text-muted-foreground/40"
           : "cursor-pointer bg-card hover:bg-paper-2/50",
@@ -71,10 +73,10 @@ export function CalendarDayCell({
         dropActive && !muted && "bg-accent/20 ring-2 ring-inset ring-accent",
       )}
     >
-      <div className="flex items-center justify-between gap-1">
+      <div className="flex min-w-0 shrink-0 items-center justify-between gap-1">
         <span
           className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-md font-data text-sm font-semibold",
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-data text-xs font-semibold sm:h-7 sm:w-7 sm:text-sm",
             isToday && !muted && "bg-accent text-foreground",
             isSelected && !isToday && !muted && "bg-foreground text-background",
             !isToday && !isSelected && "text-foreground",
@@ -83,35 +85,33 @@ export function CalendarDayCell({
           {day}
         </span>
         {postCount > 0 && !muted ? (
-          <span className="rounded-md border border-foreground/20 bg-paper-2 px-1.5 py-0.5 font-data text-[0.7rem] font-semibold text-foreground">
+          <span className="max-w-[3rem] truncate rounded-md border border-foreground/20 bg-paper-2 px-1 py-0.5 font-data text-[0.65rem] font-semibold tabular-nums text-foreground">
             {postCount}
           </span>
         ) : null}
       </div>
 
-      {eventCount > 0 && !muted ? (
-        <div className="flex flex-wrap gap-1">
-          {events.slice(0, 2).map((ev) => (
-            <span
-              key={ev.id}
-              className="max-w-full truncate rounded-sm border border-foreground bg-foreground px-1.5 py-0.5 font-mono text-[0.6rem] font-bold uppercase tracking-wide text-background"
-              title={ev.title}
-            >
-              {ev.title}
-            </span>
-          ))}
-          {eventCount > 2 ? (
-            <span className="font-data text-[0.65rem] text-muted-foreground">+{eventCount - 2}</span>
-          ) : null}
+      {primaryEvent && !muted ? (
+        <div className="mt-1 min-w-0 shrink-0">
+          <span
+            className="block w-full truncate rounded-sm border border-foreground bg-foreground px-1 py-0.5 font-mono text-[0.55rem] font-bold uppercase leading-tight tracking-wide text-background"
+            title={
+              eventCount > 1
+                ? `${primaryEvent.title} (+${eventCount - 1} more)`
+                : primaryEvent.title
+            }
+          >
+            {eventCount > 1 ? `${primaryEvent.title} +${eventCount - 1}` : primaryEvent.title}
+          </span>
         </div>
       ) : null}
 
       {thumbs.length > 0 && !muted ? (
-        <div className="mt-auto flex items-end gap-1">
+        <div className="mt-auto flex min-w-0 items-end gap-0.5 overflow-hidden pt-1">
           {thumbs.map((post) => (
             <span
               key={post.id}
-              className="h-8 w-8 shrink-0 overflow-hidden rounded-sm border border-foreground bg-paper-2"
+              className="h-6 w-6 shrink-0 overflow-hidden rounded-sm border border-foreground bg-paper-2 sm:h-7 sm:w-7"
               title={post.title}
             >
               <img
@@ -123,7 +123,7 @@ export function CalendarDayCell({
             </span>
           ))}
           {overflow > 0 ? (
-            <span className="flex h-8 min-w-8 items-center justify-center rounded-sm border border-foreground bg-paper-2 px-1 font-data text-[0.65rem] font-bold text-foreground">
+            <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-sm border border-foreground bg-paper-2 px-0.5 font-data text-[0.6rem] font-bold text-foreground sm:h-7 sm:min-w-7">
               +{overflow}
             </span>
           ) : null}

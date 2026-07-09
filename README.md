@@ -46,15 +46,32 @@ Open **http://localhost:3000**. Vite proxies `/api/*` to the backend.
 - **AI copy** (`POST /api/ai/generate`): `emergentintegrations` package + `EMERGENT_LLM_KEY`
 - **Real scheduling / X publish**: not implemented yet (see `memory/PRD.md`)
 
-## Deploy to Vercel (frontend demo)
+## Production
+
+| | |
+|---|---|
+| **Live app (this project)** | https://omnipresence-torcc.vercel.app |
+| **Vercel project** | `torcc/omnipresence` (GitHub: `EvenSteven92/omnipresence-scheduler`) |
+| **Root directory** | `frontend` |
+
+> **Domain note:** `omnipresence.vercel.app` is a *different* product (not this repo).  
+> Use **omnipresence-torcc.vercel.app**, or in Vercel → Project → Settings → Domains assign a custom domain / rename the production alias to this project.
+
+### Deploy to Vercel (frontend demo)
 
 The UI runs on Vercel with mock workspace data. The FastAPI backend (news ticker, AI) is optional and not included in the Vercel deploy.
 
-1. Push this repo to GitHub.
-2. In [Vercel → New Project](https://vercel.com/new), import the repository.
+1. Push this repo to GitHub (production deploys from `main`).
+2. In [Vercel → New Project](https://vercel.com/new), import the repository (or use the existing `torcc/omnipresence` project).
 3. Set **Root Directory** to `frontend`.
 4. Framework should auto-detect **TanStack Start** (Nitro + `vercel` preset in `vite.config.ts`).
 5. Deploy — no env vars required for the mock-data demo.
+
+To attach `your-domain.com` or reclaim a `*.vercel.app` name for **this** project:
+
+1. Open [Vercel Dashboard](https://vercel.com/torcc/omnipresence/settings/domains) for **omnipresence**.
+2. **Add** the domain (or remove it from the other project first if it’s already assigned).
+3. Confirm DNS if using a custom domain.
 
 Local Vercel-shaped build:
 

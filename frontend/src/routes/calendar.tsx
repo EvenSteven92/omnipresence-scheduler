@@ -250,14 +250,18 @@ function CalendarPage() {
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div
             data-testid="calendar-month-grid"
-            className="overflow-hidden rounded-md border-[1.5px] border-foreground bg-foreground shadow-[var(--shadow-card)]"
+            className="min-w-0 overflow-hidden rounded-md border-[1.5px] border-foreground bg-foreground shadow-[var(--shadow-card)]"
             onDragEnd={() => setDraggingPostId(null)}
           >
-            <div className="grid grid-cols-7 gap-px bg-foreground">
+            {/* minmax(0,1fr) — default minmax(auto) lets thumb content blow out the grid */}
+            <div
+              className="grid gap-px bg-foreground"
+              style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
+            >
               {CALENDAR_DOW.map((d) => (
                 <div
                   key={d}
-                  className="bg-paper-2 py-2.5 text-center font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground"
+                  className="min-w-0 bg-paper-2 py-2 text-center font-mono text-[0.65rem] font-bold uppercase tracking-[0.06em] text-muted-foreground sm:py-2.5 sm:text-caption"
                 >
                   {d}
                 </div>
