@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { BarChart3, Check, FilePlus, Link2, Lock, type LucideIcon } from "lucide-react";
+import { BarChart3, Check, FilePlus, Link2, type LucideIcon } from "lucide-react";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import { useWorkspace } from "@/lib/workspace-context";
 import { cn } from "@/lib/utils";
@@ -13,11 +13,10 @@ type Step = {
   cta: string;
   href?: string;
   hash?: string;
-  /** In-page anchor when the action stays on Admin */
   anchor?: string;
 };
 
-export function OnboardingStepper({ teamAuthed = false }: { teamAuthed?: boolean }) {
+export function OnboardingStepper() {
   const { workspace, workspaceId } = useWorkspace();
   const { data: connections } = usePlatformConnections(workspaceId);
 
@@ -30,24 +29,15 @@ export function OnboardingStepper({ teamAuthed = false }: { teamAuthed?: boolean
 
   const steps: Step[] = [
     {
-      id: "unlock",
-      done: teamAuthed,
-      icon: Lock,
-      title: "Unlock team access",
-      description: "Enter the shared access code so you can connect live accounts.",
-      cta: "Enter code",
-      anchor: "team-access",
-    },
-    {
       id: "connect",
       done: hasChannel,
       icon: Link2,
       title: "Connect a channel",
       description: "Link YouTube or Meta for live metrics and publishing.",
-      cta: teamAuthed ? "Connect channel" : "Unlock first",
-      href: teamAuthed ? "/workspaces" : undefined,
-      hash: teamAuthed ? "connect-platform" : undefined,
-      anchor: teamAuthed ? "connect-platform" : "team-access",
+      cta: "Connect channel",
+      href: "/workspaces",
+      hash: "connect-platform",
+      anchor: "connect-platform",
     },
     {
       id: "create",
@@ -133,7 +123,6 @@ export function OnboardingStepper({ teamAuthed = false }: { teamAuthed?: boolean
         </div>
       </div>
 
-      {/* Progress bar */}
       <div
         className="mt-5 h-2.5 overflow-hidden rounded-sm border-[1.5px] border-foreground bg-paper-2"
         role="progressbar"
@@ -151,8 +140,7 @@ export function OnboardingStepper({ teamAuthed = false }: { teamAuthed?: boolean
         {pct}% complete
       </p>
 
-      {/* Step cards */}
-      <ol className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <ol className="mt-6 grid gap-3 sm:grid-cols-3">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isNext = nextStep?.id === step.id;
@@ -223,7 +211,6 @@ export function OnboardingStepper({ teamAuthed = false }: { teamAuthed?: boolean
         })}
       </ol>
 
-      {/* Single next-action strip — research: one clear activation CTA */}
       {nextStep ? (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t-[1.5px] border-foreground pt-5">
           <div className="min-w-0">

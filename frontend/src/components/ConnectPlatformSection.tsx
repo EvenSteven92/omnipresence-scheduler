@@ -16,10 +16,11 @@ const LIVE_NOW = new Set<Platform>(["YT", "FB", "IG"]);
 export function ConnectPlatformSection({
   workspace,
   id = "connect-platform",
-  teamAuthed = false,
+  teamAuthed = true,
 }: {
   workspace: WorkspaceProfile;
   id?: string;
+  /** @deprecated Team access code removed; always treated as true. */
   teamAuthed?: boolean;
 }) {
   const queryClient = useQueryClient();
@@ -106,7 +107,6 @@ export function ConnectPlatformSection({
   }
 
   function handleConnect(platform: Platform) {
-    if (!teamAuthed) return;
     if (platform === "YT") {
       window.location.href = `/api/accounts/youtube/connect?workspace=${workspace.id}`;
       return;
@@ -144,13 +144,6 @@ export function ConnectPlatformSection({
       </div>
 
       <div className="space-y-6 p-5">
-        {!teamAuthed ? (
-          <p className="rounded-md border-[1.5px] border-warning bg-warning/10 px-4 py-3 text-sm text-foreground">
-            Unlock team access above before connecting accounts. Connect buttons stay disabled until
-            then.
-          </p>
-        ) : null}
-
         {syncMessage ? (
           <p
             className={cn(
@@ -208,7 +201,7 @@ export function ConnectPlatformSection({
                       variant="secondary"
                       className="w-full"
                       onClick={() => void (meta.short === "YT" ? syncYouTube() : syncMeta())}
-                      disabled={!teamAuthed || syncing}
+                      disabled={syncing}
                     >
                       <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
                       {syncing ? "Refreshing…" : "Refresh metrics"}
@@ -218,7 +211,6 @@ export function ConnectPlatformSection({
                       type="button"
                       variant="primary"
                       className="w-full"
-                      disabled={!teamAuthed}
                       data-testid={`connect-platform-${meta.short.replace(/\s+/g, "-")}`}
                       onClick={() => handleConnect(meta.short === "FB" ? "FB" : meta.short)}
                     >

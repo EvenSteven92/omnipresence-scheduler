@@ -1,8 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Check, Link2, BarChart3, FilePlus, Lock } from "lucide-react";
+import { Check, Link2, BarChart3, FilePlus } from "lucide-react";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
 import { useWorkspace } from "@/lib/workspace-context";
-import { useTeamSession } from "@/hooks/useTeamSession";
 import { cn } from "@/lib/utils";
 
 /**
@@ -11,7 +10,6 @@ import { cn } from "@/lib/utils";
  */
 export function OnboardingChecklist({ className }: { className?: string }) {
   const { workspace, workspaceId } = useWorkspace();
-  const { data: teamAuthed = false } = useTeamSession();
   const { data: connections } = usePlatformConnections(workspaceId);
 
   const hasChannel =
@@ -20,19 +18,11 @@ export function OnboardingChecklist({ className }: { className?: string }) {
     (connections?.meta.instagram.connected ?? false);
 
   const hasPosts = workspace.scheduledPosts.length > 0 || workspace.publishedPosts.length > 0;
-  const complete = workspace.onboardingStatus === "complete" || (hasChannel && hasPosts && teamAuthed);
+  const complete = workspace.onboardingStatus === "complete" || (hasChannel && hasPosts);
 
   if (complete) return null;
 
   const steps = [
-    {
-      id: "unlock",
-      done: teamAuthed,
-      icon: Lock,
-      title: "Unlock team access",
-      href: "/workspaces",
-      hash: "team-access",
-    },
     {
       id: "connect",
       done: hasChannel,
@@ -102,7 +92,11 @@ export function OnboardingChecklist({ className }: { className?: string }) {
                   step.done ? "bg-success text-background" : "bg-card text-muted-foreground",
                 )}
               >
-                {step.done ? <Check className="h-3 w-3" strokeWidth={2.5} /> : <Icon className="h-3 w-3" />}
+                {step.done ? (
+                  <Check className="h-3 w-3" strokeWidth={2.5} />
+                ) : (
+                  <Icon className="h-3 w-3" />
+                )}
               </span>
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                 {step.title}

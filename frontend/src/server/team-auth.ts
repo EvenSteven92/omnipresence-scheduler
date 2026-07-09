@@ -49,6 +49,10 @@ export function teamSessionCookie(token: string) {
   return `${TEAM_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000${secure}`;
 }
 
-export function requireTeamSession(request: Request) {
-  return verifyTeamSessionToken(readTeamCookie(request));
+/**
+ * Team access code gate is disabled — all sessions are allowed.
+ * Cookie verification remains available if we re-enable later.
+ */
+export function requireTeamSession(_request: Request) {
+  return true;
 }

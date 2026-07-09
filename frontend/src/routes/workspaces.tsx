@@ -1,14 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/PageHeader";
 import { ConnectPlatformSection } from "@/components/ConnectPlatformSection";
-import { TeamAccessGate } from "@/components/TeamAccessGate";
-import { useTeamSession } from "@/hooks/useTeamSession";
 import { useWorkspace } from "@/lib/workspace-context";
 import { useOAuthAutoSync } from "@/hooks/useOAuthAutoSync";
 import { OnboardingStepper } from "@/components/workspaces/OnboardingStepper";
-import { ArrowRight, Building2, Check, Link2 } from "lucide-react";
+import { ArrowRight, Building2, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 
@@ -18,8 +15,7 @@ export const Route = createFileRoute("/workspaces")({
       { title: "Admin — TORCC OmniSocial" },
       {
         name: "description",
-        content:
-          "Set up workspaces, unlock team access, and connect social accounts for metrics and publishing.",
+        content: "Set up workspaces and connect social accounts for metrics and publishing.",
       },
     ],
   }),
@@ -28,20 +24,19 @@ export const Route = createFileRoute("/workspaces")({
 
 function WorkspacesPage() {
   const { workspace, workspaces, setWorkspaceId, workspaceId } = useWorkspace();
-  const queryClient = useQueryClient();
-  const { data: teamAuthed = false } = useTeamSession();
   const [banner, setBanner] = useState<string | null>(null);
   const [bannerTone, setBannerTone] = useState<"success" | "warning" | "error">("success");
   const [oauthParams, setOauthParams] = useState<{ youtube?: string | null; meta?: string | null }>(
     {},
   );
 
-  useOAuthAutoSync(workspaceId, oauthParams, teamAuthed);
+  useOAuthAutoSync(workspaceId, oauthParams, true);
 
   useEffect(() => {
-    if (window.location.hash === "#connect-platform" || window.location.hash === "#team-access") {
-      const id = window.location.hash.slice(1);
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (window.location.hash === "#connect-platform") {
+      document
+        .getElementById("connect-platform")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     const params = new URLSearchParams(window.location.search);
     const youtube = params.get("youtube");
@@ -84,7 +79,7 @@ function WorkspacesPage() {
       <PageHeader
         eyebrow="Admin"
         title="Workspace setup"
-        description={`Configure ${workspace.name}: team access, channel connections, and brand switching.`}
+        description={`Configure ${workspace.name}: channel connections and brand switching.`}
         actions={
           <>
             <Link to="/" className="btn-action btn-action-secondary">
@@ -112,42 +107,11 @@ function WorkspacesPage() {
           </div>
         ) : null}
 
-        {/* Full-width setup hero — progress-first onboarding */}
-        <OnboardingStepper teamAuthed={teamAuthed} />
+        <OnboardingStepper />
 
         <div className="page-grid">
           <div className="page-grid-main space-y-6">
-            {!teamAuthed ? (
-              <TeamAccessGate
-                onAuthed={() => {
-                  sessionStorage.setItem("team_authed", "1");
-                  queryClient.setQueryData(["team-session"], true);
-                }}
-              />
-            ) : (
-              <section
-                id="team-access"
-                data-testid="team-access-unlocked"
-                className="flex flex-wrap items-center justify-between gap-3 rounded-md border-[1.5px] border-foreground bg-success/10 px-5 py-4"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-md border-[1.5px] border-foreground bg-success text-background">
-                    <Check className="h-4 w-4" strokeWidth={2.5} />
-                  </span>
-                  <div>
-                    <p className="font-display text-sm font-bold text-foreground">
-                      Team access unlocked
-                    </p>
-                    <p className="text-body-sm text-muted-foreground">
-                      You can connect channels and refresh live metrics for this session.
-                    </p>
-                  </div>
-                </div>
-                <Badge tone="success">Active</Badge>
-              </section>
-            )}
-
-            <ConnectPlatformSection workspace={workspace} teamAuthed={teamAuthed} />
+            <ConnectPlatformSection workspace={workspace} teamAuthed />
           </div>
 
           <aside className="page-grid-rail space-y-4">
@@ -237,16 +201,16 @@ function WorkspacesPage() {
               </div>
               <ol className="mt-3 space-y-2.5 text-body-sm leading-relaxed text-muted-foreground">
                 <li>
-                  <span className="font-semibold text-foreground">1. Unlock</span> — enter the team
-                  access code once per session.
-                </li>
-                <li>
-                  <span className="font-semibold text-foreground">2. Connect</span> — OAuth for
+                  <span className="font-semibold text-foreground">1. Connect</span> — OAuth for
                   YouTube and Meta pulls live metrics.
                 </li>
                 <li>
-                  <span className="font-semibold text-foreground">3. Publish</span> — schedule from
+                  <span className="font-semibold text-foreground">2. Publish</span> — schedule from
                   Composer; each workspace stays isolated.
+                </li>
+                <li>
+                  <span className="font-semibold text-foreground">3. Review</span> — analytics and
+                  calendar stay scoped to this brand.
                 </li>
               </ol>
             </section>
