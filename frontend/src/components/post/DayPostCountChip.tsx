@@ -36,22 +36,22 @@ export function DayPostCountChip({
       data-event-highlight={eventLinked ? "true" : "false"}
       className={`card-pop card-pop-interactive mt-auto flex w-full cursor-pointer items-center gap-2 rounded-md border border-foreground px-2.5 py-2 ${
         eventLinked
-          ? "bg-accent ring-2 ring-inset ring-foreground/20"
+          ? "bg-foreground text-white ring-2 ring-inset ring-white/20"
           : needsEvent
-            ? "border-warning bg-warning/15"
+            ? "border-warning bg-warning/15 text-foreground"
             : variant === "scheduled"
-              ? "bg-paper-2"
-              : "bg-accent"
+              ? "bg-paper-2 text-foreground"
+              : "bg-foreground text-white"
       } ${dense ? "min-h-[2.5rem]" : "min-h-[2.75rem]"}`}
     >
-      <span className="font-display text-base font-bold leading-none text-foreground">{count}</span>
-      <span className="font-mono text-[0.5625rem] font-semibold uppercase tracking-[0.06em] text-foreground">
+      <span className="font-display text-base font-semibold leading-none">{count}</span>
+      <span className="text-[0.5625rem] font-medium uppercase tracking-[0.06em] opacity-80">
         {cardWord}
       </span>
       {eventLinked ? (
         <span
           data-testid="day-post-event-highlight-label"
-          className="ml-auto font-mono text-[0.45rem] normal-case tracking-[0.1em] text-foreground/70"
+          className="ml-auto text-[0.45rem] normal-case tracking-[0.1em] text-white/70"
         >
           {eventHighlightCount} linked
         </span>

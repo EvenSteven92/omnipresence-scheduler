@@ -135,8 +135,8 @@ export function CalendarDayPanel({
                       onClick={() => onOpenEvent(event)}
                       className="flex w-full items-center gap-3 rounded-md border border-foreground bg-paper-2 px-3 py-3 text-left transition-colors hover:bg-secondary"
                     >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-foreground bg-accent">
-                        <Layers className="h-4 w-4" strokeWidth={2} />
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-foreground bg-foreground text-white">
+                        <Layers className="h-4 w-4 text-white" strokeWidth={2} />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-display text-sm font-bold text-foreground">
