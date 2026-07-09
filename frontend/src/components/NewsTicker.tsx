@@ -46,9 +46,9 @@ export function NewsTicker() {
   return (
     <div
       data-testid="news-ticker"
-      className="relative flex h-10 w-full shrink-0 items-stretch overflow-hidden border-b-[1.5px] border-foreground bg-card text-foreground"
+      className="relative flex h-10 w-full shrink-0 items-stretch overflow-hidden border-b border-foreground bg-card text-foreground"
     >
-      <div className="z-10 flex shrink-0 items-center gap-2 border-r-[1.5px] border-foreground bg-paper-2 px-3.5">
+      <div className="z-10 flex shrink-0 items-center gap-2 border-r border-foreground bg-paper-2 px-3.5">
         <span className="relative flex h-2 w-2">
           <span className="absolute inset-0 animate-ping rounded-full bg-accent/80" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
@@ -83,7 +83,7 @@ export function NewsTicker() {
                 rel="noopener noreferrer"
                 className="group flex items-center gap-2 text-body-sm"
               >
-                <span className="rounded-md border-[1.5px] border-foreground bg-paper-2 px-1.5 py-0.5 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                <span className="rounded-md border border-foreground bg-paper-2 px-1.5 py-0.5 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                   {h.source}
                 </span>
                 <span className="text-foreground group-hover:text-accent">{h.title}</span>

@@ -63,9 +63,9 @@ export function TimeframeSelector({
 
   const chip = (active: boolean) =>
     cn(
-      "rounded-md border-[1.5px] border-foreground px-3.5 py-2 font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] transition-colors",
+      "rounded-md border border-foreground px-3.5 py-2 font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] transition-colors",
       active
-        ? "bg-foreground text-background shadow-[2px_2px_0_0_var(--color-accent)]"
+        ? "bg-foreground text-background"
         : "bg-card text-foreground hover:bg-secondary",
     );
 
@@ -126,7 +126,7 @@ export function TimeframeSelector({
           }}
           data-testid="tf-custom-count"
           aria-label="custom count"
-          className="w-14 rounded-md border-[1.5px] border-foreground bg-paper-2 px-2 py-2 text-center font-data text-[0.7rem] text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed"
+          className="w-14 rounded-md border border-foreground bg-paper-2 px-2 py-2 text-center font-data text-[0.7rem] text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed"
         />
         <div ref={unitRef} className="relative">
           <button
@@ -134,13 +134,13 @@ export function TimeframeSelector({
             disabled={!isCustom}
             onClick={() => setUnitOpen((o) => !o)}
             data-testid="tf-custom-unit"
-            className="flex items-center gap-1.5 rounded-md border-[1.5px] border-foreground bg-card px-3 py-2 font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-md border border-foreground bg-card px-3 py-2 font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed"
           >
             {UNITS.find((u) => u.id === customUnit)?.label}
             <ChevronDown className="h-3 w-3" />
           </button>
           {unitOpen && isCustom && (
-            <div className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-md border-[1.5px] border-foreground bg-card shadow-[4px_4px_0_0_var(--color-foreground)]">
+            <div className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-md border border-foreground bg-card ">
               {UNITS.map((u) => (
                 <button
                   key={u.id}

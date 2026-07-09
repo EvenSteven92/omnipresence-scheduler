@@ -77,7 +77,7 @@ export function CalendarDayCell({
         <span
           className={cn(
             "flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-data text-xs font-semibold sm:h-7 sm:w-7 sm:text-sm",
-            isToday && !muted && "bg-accent text-foreground",
+            isToday && !muted && "bg-foreground text-background",
             isSelected && !isToday && !muted && "bg-foreground text-background",
             !isToday && !isSelected && "text-foreground",
           )}

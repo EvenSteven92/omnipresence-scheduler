@@ -70,9 +70,9 @@ export function AlbumCardsModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[min(90vh,720px)] w-full max-w-[640px] flex-col overflow-hidden rounded-lg border-[1.5px] border-foreground bg-background shadow-[4px_4px_0_0_var(--color-foreground)]"
+        className="flex max-h-[min(90vh,720px)] w-full max-w-[640px] flex-col overflow-hidden rounded-lg border border-foreground bg-background "
       >
-        <div className="relative shrink-0 border-b-[1.5px] border-foreground/15 px-5 py-5 pr-14">
+        <div className="relative shrink-0 border-b border-foreground/15 px-5 py-5 pr-14">
           <p className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.1em] text-accent">
             {eventKindLabel(event.kind)}
           </p>
@@ -89,7 +89,7 @@ export function AlbumCardsModal({
             onClick={onClose}
             data-testid="album-cards-modal-close"
             aria-label="Close"
-            className="absolute right-4 top-4 rounded-md border-[1.5px] border-foreground bg-card p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="absolute right-4 top-4 rounded-md border border-foreground bg-card p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
             <X className="h-4 w-4" strokeWidth={1.75} />
           </button>

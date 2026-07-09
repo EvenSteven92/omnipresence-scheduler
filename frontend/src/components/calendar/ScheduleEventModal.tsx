@@ -19,7 +19,7 @@ const EVENT_KINDS: ContentEventKind[] = [
 ];
 
 const fieldClass =
-  "w-full rounded-md border-[1.5px] border-foreground bg-paper-2 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring";
+  "w-full rounded-md border border-foreground bg-paper-2 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring";
 
 /**
  * Create a real-world ministry event (Sunday service, worship night, etc.).
@@ -114,7 +114,7 @@ export function ScheduleEventModal({
         aria-labelledby="new-event-title"
       >
         {/* Header — GCal-style: short title, no product essay */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-foreground px-5 py-4">
           <h2 id="new-event-title" className="text-base font-semibold text-foreground">
             {CREATE.event}
           </h2>
@@ -122,7 +122,7 @@ export function ScheduleEventModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 rounded-sm border-[1.5px] border-foreground bg-background p-1.5 text-muted-foreground hover:text-foreground"
+            className="shrink-0 rounded-sm border border-foreground bg-background p-1.5 text-muted-foreground hover:text-foreground"
           >
             <XIcon className="h-3 w-3" />
           </button>
@@ -141,7 +141,7 @@ export function ScheduleEventModal({
               autoFocus
               className={cn(
                 fieldClass,
-                "border-0 border-b-[1.5px] border-foreground bg-transparent px-0 py-2 text-lg font-medium rounded-none shadow-none focus:ring-0 focus:border-primary",
+                "border-0 border-b border-foreground bg-transparent px-0 py-2 text-lg font-medium rounded-none shadow-none focus:ring-0 focus:border-primary",
               )}
             />
           </label>
@@ -212,7 +212,7 @@ export function ScheduleEventModal({
           </label>
 
           {/* Progressive disclosure — link posts (not front-loaded media jargon) */}
-          <div className="rounded-md border-[1.5px] border-foreground/80 bg-paper-2/40">
+          <div className="rounded-md border border-foreground/80 bg-paper-2/40">
             <button
               type="button"
               onClick={() => setShowLinkPosts((v) => !v)}
@@ -237,7 +237,7 @@ export function ScheduleEventModal({
               />
             </button>
             {showLinkPosts ? (
-              <div className="border-t-[1.5px] border-foreground/60 px-3 pb-3 pt-2">
+              <div className="border-t border-foreground/60 px-3 pb-3 pt-2">
                 <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
                   Attach existing posts to this event. You can also link them later from a post or
                   the calendar.
@@ -254,7 +254,7 @@ export function ScheduleEventModal({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t-[1.5px] border-foreground px-5 py-4">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-foreground px-5 py-4">
           <button type="button" onClick={onClose} className="btn-action">
             Cancel
           </button>

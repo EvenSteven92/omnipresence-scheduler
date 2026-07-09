@@ -65,7 +65,7 @@ export function GrowthMatrixChart({
                 className="kpi-card flex flex-col border-l-[3px] px-4 py-4"
                 style={{ borderLeftColor: meta?.brandColor ?? "var(--color-border)" }}
               >
-                <div className="mb-4 flex items-center justify-between gap-2 border-b-[1.5px] border-foreground pb-3">
+                <div className="mb-4 flex items-center justify-between gap-2 border-b border-foreground pb-3">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <PlatformChip
                       platform={row.platform}

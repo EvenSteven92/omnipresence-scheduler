@@ -121,7 +121,7 @@ export function CalendarMonthDayCell({
           aria-label="Add a post or event to this day"
           className="absolute inset-0 z-10 flex items-center justify-center"
         >
-          <span className="inline-flex items-center gap-1.5 rounded-md border-[1.5px] border-foreground bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground opacity-0 shadow-[2px_2px_0_0_var(--color-foreground)] transition-opacity group-hover/cell:opacity-100">
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-foreground bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground opacity-0  transition-opacity group-hover/cell:opacity-100">
             <Plus className="h-3.5 w-3.5 text-accent" strokeWidth={2} />
             New
           </span>

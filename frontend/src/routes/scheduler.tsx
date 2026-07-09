@@ -409,7 +409,7 @@ function ComposePage() {
                   type="button"
                   onClick={() => setActiveIndex(i)}
                   className={cn(
-                    "shrink-0 rounded-md border-[1.5px] border-foreground px-3 py-1.5 text-caption font-semibold",
+                    "shrink-0 rounded-md border border-foreground px-3 py-1.5 text-caption font-semibold",
                     i === activeIndex ? "bg-accent" : "bg-card",
                   )}
                 >
@@ -421,12 +421,12 @@ function ComposePage() {
 
           <div className="flex flex-col gap-4">
             {/* MEDIA */}
-            <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
+            <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
               <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
                 01 · Media
               </div>
               {activeDraft ? (
-                <div className="flex items-center gap-4 rounded-md border-[1.5px] border-foreground bg-paper-2 px-4 py-4">
+                <div className="flex items-center gap-4 rounded-md border border-foreground bg-paper-2 px-4 py-4">
                   <CardThumbnail
                     src={activeDraft.previewUrl}
                     post={{
@@ -484,7 +484,7 @@ function ComposePage() {
                   }}
                   data-testid="media-dropzone"
                   className={cn(
-                    "flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-md border-[1.5px] border-foreground bg-paper-2 px-5 py-10 text-center transition-colors hover:bg-secondary",
+                    "flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-md border border-foreground bg-paper-2 px-5 py-10 text-center transition-colors hover:bg-secondary",
                     isDragging && "bg-accent/15",
                   )}
                 >
@@ -513,7 +513,7 @@ function ComposePage() {
             {activeDraft ? (
               <>
                 {/* AI STRIP */}
-                <section className="rounded-md border-[1.5px] border-foreground bg-accent/10 p-4 shadow-[var(--shadow-card)]">
+                <section className="rounded-md border border-foreground bg-accent/10 p-4 shadow-[var(--shadow-card)]">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-display text-sm font-bold text-foreground">
@@ -541,7 +541,7 @@ function ComposePage() {
                 </section>
 
                 {/* COPY */}
-                <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
+                <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
                   <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
                     02 · Caption & context
                   </div>
@@ -551,7 +551,7 @@ function ComposePage() {
                     onChange={(e) => updateActive((d) => ({ ...d, title: e.target.value }))}
                     placeholder="Card title"
                     data-testid="card-title-input"
-                    className="mb-3 w-full border-0 border-b-[1.5px] border-foreground/25 bg-transparent px-0 py-1 font-display text-lg font-semibold text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none"
+                    className="mb-3 w-full border-0 border-b border-foreground/25 bg-transparent px-0 py-1 font-display text-lg font-semibold text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none"
                   />
                   <textarea
                     value={activeDraft.caption}
@@ -559,7 +559,7 @@ function ComposePage() {
                     placeholder="Write your caption…"
                     rows={5}
                     data-testid="caption-input"
-                    className="w-full resize-y rounded-md border-[1.5px] border-foreground bg-paper-2 px-3.5 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full resize-y rounded-md border border-foreground bg-paper-2 px-3.5 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                   <div className="mt-2 flex justify-between text-caption font-medium text-muted-foreground">
                     <span>
@@ -599,13 +599,13 @@ function ComposePage() {
                       placeholder="Paste sermon notes or reel transcript — AI uses this for caption, hashtags, and timing context…"
                       rows={4}
                       data-testid="transcript-input"
-                      className="mt-2 w-full resize-y rounded-md border-[1.5px] border-foreground bg-background px-3.5 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="mt-2 w-full resize-y rounded-md border border-foreground bg-background px-3.5 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   ) : null}
                 </section>
 
                 {/* PLATFORMS */}
-                <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
+                <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
                   <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
                     03 · Where it posts
                   </div>
@@ -619,7 +619,7 @@ function ComposePage() {
                           onClick={() => togglePlatform(meta.short)}
                           data-testid={`platform-${meta.short.replace(/\s+/g, "-")}`}
                           className={cn(
-                            "inline-flex items-center gap-2 rounded-md border-[1.5px] border-foreground px-3 py-2.5 text-body-sm font-semibold transition-colors",
+                            "inline-flex items-center gap-2 rounded-md border border-foreground px-3 py-2.5 text-body-sm font-semibold transition-colors",
                             active
                               ? "bg-accent text-foreground"
                               : "bg-card text-foreground hover:bg-secondary",
@@ -637,7 +637,7 @@ function ComposePage() {
                 </section>
 
                 {/* Mobile publish plan (hidden on xl where rail shows) */}
-                <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)] xl:hidden">
+                <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)] xl:hidden">
                   <ComposerPublishPlan
                     draft={activeDraft}
                     scheduleReasons={scheduleReasons[activeDraft.id]}
@@ -647,7 +647,7 @@ function ComposePage() {
                 </section>
 
                 {/* EVENT */}
-                <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
+                <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
                   <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
                     04 · Event
                   </div>
@@ -669,7 +669,7 @@ function ComposePage() {
                           }
                           data-testid={`album-${event.id}`}
                           className={cn(
-                            "rounded-md border-[1.5px] border-foreground px-3 py-2 text-body-sm font-semibold transition-colors",
+                            "rounded-md border border-foreground px-3 py-2 text-body-sm font-semibold transition-colors",
                             active
                               ? "bg-accent text-foreground"
                               : "bg-card text-foreground hover:bg-secondary",

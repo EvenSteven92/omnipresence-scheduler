@@ -5,10 +5,10 @@ type Tone = "default" | "success" | "warning" | "accent" | "muted";
 
 const tones: Record<Tone, string> = {
   default: "border-foreground bg-card text-foreground",
-  success: "border-foreground bg-success/15 text-success",
-  warning: "border-foreground bg-warning/15 text-warning",
-  accent: "border-foreground bg-accent/20 text-foreground",
-  muted: "border-foreground/40 bg-paper-2 text-muted-foreground",
+  success: "border-success/40 bg-success/10 text-success",
+  warning: "border-warning/40 bg-warning/10 text-warning",
+  accent: "border-foreground bg-foreground text-background",
+  muted: "border-line bg-paper-2 text-muted-foreground",
 };
 
 export function Badge({
@@ -23,7 +23,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-md border-[1.5px] px-2 py-0.5 font-mono text-caption font-bold uppercase tracking-[0.06em]",
+        "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-caption font-medium uppercase tracking-[0.06em]",
         tones[tone],
         className,
       )}

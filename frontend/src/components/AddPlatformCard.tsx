@@ -24,7 +24,7 @@ export function AddPlatformCard({
       hash="connect-platform"
       data-testid={testId}
       className={cn(
-        "kpi-card flex border-[1.5px] border-foreground bg-card transition-[transform,box-shadow,background-color] duration-150 hover:bg-secondary",
+        "kpi-card flex border border-foreground bg-card transition-[transform,box-shadow,background-color] duration-150 hover:bg-secondary",
         variant === "strip"
           ? "min-w-[10.5rem] max-w-[13rem] flex-1 basis-[calc(25%-0.75rem)] flex-col justify-center gap-3 px-5 py-4 sm:basis-[calc(20%-0.8rem)] lg:min-w-[11.5rem]"
           : "min-h-[11.5rem] flex-col items-center justify-center gap-3 px-4 py-6 text-center",
@@ -32,7 +32,7 @@ export function AddPlatformCard({
     >
       <span
         className={cn(
-          "inline-flex items-center justify-center rounded-md border-[1.5px] border-foreground bg-accent text-foreground",
+          "inline-flex items-center justify-center rounded-md border border-foreground bg-accent text-foreground",
           variant === "strip" ? "h-8 w-8" : "h-10 w-10",
         )}
       >

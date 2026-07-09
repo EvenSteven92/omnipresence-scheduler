@@ -34,7 +34,7 @@ export function DayPostCountChip({
       data-testid="day-post-count-chip"
       data-needs-event={needsEvent ? "true" : "false"}
       data-event-highlight={eventLinked ? "true" : "false"}
-      className={`card-pop card-pop-interactive mt-auto flex w-full cursor-pointer items-center gap-2 rounded-md border-[1.5px] border-foreground px-2.5 py-2 ${
+      className={`card-pop card-pop-interactive mt-auto flex w-full cursor-pointer items-center gap-2 rounded-md border border-foreground px-2.5 py-2 ${
         eventLinked
           ? "bg-accent ring-2 ring-inset ring-foreground/20"
           : needsEvent

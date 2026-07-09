@@ -57,7 +57,7 @@ export function DashboardQueueRail() {
         <div className="font-mono text-[0.625rem] font-bold tracking-[0.1em] text-muted-foreground">
           THIS WEEK
         </div>
-        <div className="mt-3.5 grid grid-cols-2 gap-[1.5px] overflow-hidden rounded-md border-[1.5px] border-foreground bg-line">
+        <div className="mt-3.5 grid grid-cols-2 gap-[1.5px] overflow-hidden rounded-md border border-foreground bg-line">
           {STAT_CELLS.map(({ key, label, accent }) => (
             <div
               key={key}
@@ -81,7 +81,7 @@ export function DashboardQueueRail() {
 
       <section
         data-testid="queue-gaps-panel"
-        className="overflow-hidden rounded-lg border-[1.5px] border-foreground bg-foreground p-[18px] text-background"
+        className="overflow-hidden rounded-lg border border-foreground bg-foreground p-[18px] text-background"
       >
         <div className="font-mono text-[0.625rem] font-bold tracking-[0.1em] text-background/70">
           GAPS IN QUEUE

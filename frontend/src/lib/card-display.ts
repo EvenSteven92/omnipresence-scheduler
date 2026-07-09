@@ -36,9 +36,9 @@ export function cardStatusFromPost(post: ScheduledPost): CardLifecycleStatus {
 }
 
 export function cardStatusClass(status: CardLifecycleStatus): string {
-  if (status === "SCHEDULED") return "bg-accent text-foreground";
-  if (status === "LIVE") return "bg-[#3F9D5A] text-white";
-  return "border-[1.5px] border-foreground/25 bg-secondary text-muted-foreground";
+  if (status === "SCHEDULED") return "border border-foreground bg-foreground text-background";
+  if (status === "LIVE") return "bg-success text-white";
+  return "border border-line bg-secondary text-muted-foreground";
 }
 
 export function platformDotColor(platform: Platform): string {

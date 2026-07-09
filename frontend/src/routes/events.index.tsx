@@ -92,7 +92,7 @@ function EventsIndexPage() {
     <>
       <PageHeader
         eyebrow={
-          <span className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.1em] text-accent">
+          <span className="text-[0.625rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
             Media library
           </span>
         }
@@ -123,10 +123,10 @@ function EventsIndexPage() {
                 onClick={() => setKindFilter(filter.id)}
                 data-testid={`event-filter-${filter.id}`}
                 className={cn(
-                  "rounded-md border-[1.5px] px-3 py-1.5 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.06em] transition-colors",
+                  "rounded-md border px-3 py-1.5 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.06em] transition-colors",
                   active
-                    ? "border-foreground bg-accent text-foreground"
-                    : "border-foreground bg-card text-muted-foreground hover:bg-secondary",
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-line bg-card text-muted-foreground hover:bg-secondary",
                 )}
               >
                 {filter.label}

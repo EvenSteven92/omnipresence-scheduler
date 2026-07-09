@@ -12,7 +12,7 @@ export function SchedulePostAffordance({ dense = false }: { dense?: boolean }) {
       data-testid="schedule-post-affordance"
       aria-label={CREATE.card}
       className={cn(
-        "flex w-full items-center justify-center gap-1.5 rounded-md border-[1.5px] border-transparent text-muted-foreground transition-colors group-hover/cell:border-foreground group-hover/cell:bg-card group-hover/cell:text-foreground",
+        "flex w-full items-center justify-center gap-1.5 rounded-md border border-transparent text-muted-foreground transition-colors group-hover/cell:border-foreground group-hover/cell:bg-card group-hover/cell:text-foreground",
         dense ? "min-h-[2.75rem] px-2 py-1.5" : "min-h-[4.5rem] px-2 py-2",
       )}
     >

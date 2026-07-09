@@ -260,7 +260,7 @@ function CardDetailView({
               <div className="mb-3 font-mono text-[0.625rem] font-bold tracking-[0.1em] text-muted-foreground">
                 SOURCE FILE
               </div>
-              <div className="flex flex-col gap-[1.5px] overflow-hidden rounded-md border-[1.5px] border-foreground bg-line">
+              <div className="flex flex-col gap-[1.5px] overflow-hidden rounded-md border border-foreground bg-line">
                 {metaRows.map((row) => (
                   <div
                     key={row.key}
@@ -279,7 +279,7 @@ function CardDetailView({
           </div>
 
           <aside className="flex flex-col gap-4">
-            <section className="overflow-hidden rounded-lg border-[1.5px] border-foreground bg-foreground p-[18px] text-background">
+            <section className="overflow-hidden rounded-lg border border-foreground bg-foreground p-[18px] text-background">
               <div className="mb-3.5 flex items-center justify-between">
                 <span className="font-mono text-[0.625rem] font-bold tracking-[0.1em] opacity-70">
                   CARD PERFORMANCE
@@ -331,7 +331,7 @@ function CardDetailView({
                   return (
                     <div
                       key={slot.platform}
-                      className="rounded-lg border-[1.5px] border-foreground px-3 py-3"
+                      className="rounded-lg border border-foreground px-3 py-3"
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <span
@@ -383,7 +383,7 @@ function CardDetailView({
                 <button
                   type="button"
                   onClick={editCard}
-                  className="rounded-md border-[1.5px] border-foreground bg-card px-3 py-3 font-mono text-[0.6875rem] font-bold uppercase text-foreground hover:bg-secondary"
+                  className="rounded-md border border-foreground bg-card px-3 py-3 font-mono text-[0.6875rem] font-bold uppercase text-foreground hover:bg-secondary"
                 >
                   + Add publish
                 </button>
@@ -396,7 +396,7 @@ function CardDetailView({
                 search={{ event: linkedEvent.id }}
                 className="panel flex items-center gap-3 p-4 transition-colors hover:bg-paper-2/40"
               >
-                <span className="flex h-[34px] w-[34px] items-center justify-center rounded-md border-[1.5px] border-foreground bg-paper-2">
+                <span className="flex h-[34px] w-[34px] items-center justify-center rounded-md border border-foreground bg-paper-2">
                   <Layers className="h-4 w-4" strokeWidth={1.75} />
                 </span>
                 <span className="min-w-0 flex-1">

@@ -54,12 +54,12 @@ export function NewEventSidebarButton({ testId = "sidebar-new-event-btn" }: { te
         onClick={() => openCreateEvent()}
         data-testid={testId}
         aria-label={CREATE.event}
-        className="group relative flex h-11 w-full items-center justify-center rounded-md border-[1.5px] border-transparent text-muted-foreground transition-colors hover:border-foreground hover:bg-secondary hover:text-foreground"
+        className="group relative flex h-11 w-full items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:border-foreground hover:bg-secondary hover:text-foreground"
       >
         <CalendarPlus className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
         <span
           role="tooltip"
-          className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border-[1.5px] border-foreground bg-card px-2.5 py-1.5 text-caption font-medium text-foreground opacity-0 shadow-[var(--shadow-card)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+          className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-foreground bg-card px-2.5 py-1.5 text-caption font-medium text-foreground opacity-0 shadow-[var(--shadow-card)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
         >
           {CREATE.event}
         </span>

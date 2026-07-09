@@ -29,11 +29,11 @@ function EventCountsTrailing({
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border-[1.5px] border-foreground bg-foreground">
+    <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-foreground bg-foreground">
       {cells.map(({ label, value, accent }) => (
         <div key={label} className="bg-card px-3 py-2.5 text-center">
           <div
-            className={`font-display text-lg font-bold leading-none ${accent ? "text-accent" : "text-foreground"}`}
+            className={`font-display text-lg font-semibold leading-none ${accent ? "text-success" : "text-foreground"}`}
           >
             {value}
           </div>
@@ -88,14 +88,14 @@ export function EventAlbumCard({
           aspect="video"
           variant="media"
           badge={
-            <span className="rounded-[5px] border-[1.5px] border-foreground bg-background px-2 py-0.5 font-mono text-[0.5625rem] font-bold uppercase tracking-[0.06em] text-foreground">
+            <span className="rounded-[5px] border border-foreground bg-background px-2 py-0.5 font-mono text-[0.5625rem] font-bold uppercase tracking-[0.06em] text-foreground">
               {eventKindLabel(event.kind)}
             </span>
           }
         />
       }
       eyebrow={
-        <p className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.06em] text-accent">
+        <p className="text-[0.625rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">
           {eventDateEyebrow(event.date)}
         </p>
       }

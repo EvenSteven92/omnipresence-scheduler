@@ -9,7 +9,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
     initials: "T",
     tagline: "Church · multi-platform ministry",
     onboardingStatus: "needs_accounts",
-    accent: "#ff6a3d",
+    accent: "#000000",
     voice:
       "Warm, pastoral, and encouraging. Christ-centered and Scripture-aware. Invite reflection and hope; avoid hype, clickbait, and salesy language. Speak to the heart.",
     postingTimes: {

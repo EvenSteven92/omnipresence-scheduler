@@ -7,10 +7,10 @@ export type ContentCardSize = "chip" | "row" | "stream" | "sm" | "md";
 export type ContentCardVariant = "default" | "scheduled" | "highlight";
 
 const VARIANT_BORDER: Record<ContentCardVariant, string> = {
-  default: "border-[1.5px] border-foreground bg-card",
-  scheduled: "border-[1.5px] border-foreground bg-paper-2/80",
-  highlight: "border-[1.5px] border-warning bg-warning/10",
-};
+  default: "border border-line bg-card",
+  scheduled: "border border-line bg-paper-2",
+  highlight: "border border-warning bg-warning/10",
+}
 
 export function ContentCard({
   size = "sm",
@@ -87,7 +87,7 @@ export function ContentCard({
       >
         <div
           className={cn(
-            "group card-pop flex items-center gap-4 rounded-lg border-[1.5px] border-foreground bg-card p-3.5 text-left",
+            "group card-pop flex items-center gap-4 rounded-lg border border-line bg-card p-3.5 text-left",
             interactive && "card-pop-interactive cursor-pointer",
             VARIANT_BORDER[variant],
           )}

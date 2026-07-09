@@ -68,11 +68,11 @@ export function OnboardingStepper() {
     return (
       <section
         data-testid="onboarding-stepper"
-        className="rounded-md border-[1.5px] border-foreground bg-card p-6 shadow-[var(--shadow-card)]"
+        className="rounded-md border border-foreground bg-card p-6 shadow-[var(--shadow-card)]"
       >
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-md border-[1.5px] border-foreground bg-success/15 text-success">
+            <span className="flex h-10 w-10 items-center justify-center rounded-md border border-foreground bg-success/15 text-success">
               <Check className="h-5 w-5" strokeWidth={2.5} />
             </span>
             <div>
@@ -102,7 +102,7 @@ export function OnboardingStepper() {
   return (
     <section
       data-testid="onboarding-stepper"
-      className="rounded-md border-[1.5px] border-foreground bg-card p-6 shadow-[var(--shadow-card)]"
+      className="rounded-md border border-foreground bg-card p-6 shadow-[var(--shadow-card)]"
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
@@ -124,7 +124,7 @@ export function OnboardingStepper() {
       </div>
 
       <div
-        className="mt-5 h-2.5 overflow-hidden rounded-sm border-[1.5px] border-foreground bg-paper-2"
+        className="mt-5 h-2.5 overflow-hidden rounded-sm border border-foreground bg-paper-2"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -149,18 +149,18 @@ export function OnboardingStepper() {
               key={step.id}
               data-testid={`onboarding-step-${step.id}`}
               className={cn(
-                "flex flex-col rounded-md border-[1.5px] border-foreground p-4 transition-colors",
+                "flex flex-col rounded-md border border-foreground p-4 transition-colors",
                 step.done
                   ? "bg-paper-2/80"
                   : isNext
-                    ? "bg-accent/10 shadow-[3px_3px_0_0_var(--color-foreground)]"
+                    ? "bg-accent/10 "
                     : "bg-card",
               )}
             >
               <div className="flex items-center justify-between gap-2">
                 <span
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-md border-[1.5px] border-foreground text-sm font-bold",
+                    "flex h-8 w-8 items-center justify-center rounded-md border border-foreground text-sm font-bold",
                     step.done
                       ? "bg-success text-background"
                       : isNext
@@ -212,7 +212,7 @@ export function OnboardingStepper() {
       </ol>
 
       {nextStep ? (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t-[1.5px] border-foreground pt-5">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-foreground pt-5">
           <div className="min-w-0">
             <p className="text-eyebrow">Up next</p>
             <p className="mt-0.5 font-display text-lg font-bold text-foreground">{nextStep.title}</p>

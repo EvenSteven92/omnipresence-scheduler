@@ -54,7 +54,7 @@ export function PlatformPreview({
   const body = (
     <div className={variant === "panel" ? "" : "px-4 pb-4"}>
       {platforms.length === 0 ? (
-        <div className="rounded-md border-[1.5px] border-foreground bg-paper-2 px-3 py-6 text-center text-body-sm text-muted-foreground">
+        <div className="rounded-md border border-foreground bg-paper-2 px-3 py-6 text-center text-body-sm text-muted-foreground">
           Select platforms above to see how your post will look on each network.
         </div>
       ) : (
@@ -118,10 +118,10 @@ export function PlatformPreview({
     return (
       <section
         data-testid="platform-preview-panel"
-        className="overflow-hidden rounded-lg border-[1.5px] border-foreground bg-card"
+        className="overflow-hidden rounded-lg border border-foreground bg-card"
       >
-        <div className="flex items-center gap-2.5 border-b-[1.5px] border-foreground px-3.5 py-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border-[1.5px] border-foreground bg-accent font-display text-[0.6875rem] font-bold text-foreground">
+        <div className="flex items-center gap-2.5 border-b border-foreground px-3.5 py-2.5">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground bg-accent font-display text-[0.6875rem] font-bold text-foreground">
             {workspaceLabel.charAt(0).toUpperCase()}
           </span>
           <span className="text-[0.8125rem] font-bold text-foreground">{workspaceLabel}</span>
@@ -242,7 +242,7 @@ function PlatformMock({
   if (platform === "RUMBLE")
     return <RumbleMock caption={display} tags={tags} filename={filename} />;
   return (
-    <div className="rounded-md border-[1.5px] border-foreground bg-paper-2 px-3 py-4 text-center text-body-sm text-muted-foreground">
+    <div className="rounded-md border border-foreground bg-paper-2 px-3 py-4 text-center text-body-sm text-muted-foreground">
       Preview for {network}
     </div>
   );

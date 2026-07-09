@@ -6,7 +6,7 @@ import { formatEventMeta, groupDayPostsByEvent } from "@/lib/events/display";
 import { ContentCardChip } from "@/components/post/ContentCardChip";
 
 const needsEventSectionClass =
-  "rounded-md border-[1.5px] border-warning bg-warning/10";
+  "rounded-md border border-warning bg-warning/10";
 
 function DayPostsEventGroupHeader({
   event,
@@ -16,7 +16,7 @@ function DayPostsEventGroupHeader({
   postCount: number;
 }) {
   return (
-    <div className="flex items-center gap-2.5 border-b-[1.5px] border-foreground pb-2">
+    <div className="flex items-center gap-2.5 border-b border-foreground pb-2">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-accent/30 bg-accent/5">
         <Layers className="h-3 w-3 text-accent" strokeWidth={1.5} />
       </span>
@@ -38,7 +38,7 @@ function DayPostsEventGroupHeader({
 function DayPostsUnassignedGroupHeader({ postCount }: { postCount: number }) {
   return (
     <div className="flex items-center gap-2.5 border-b border-warning/30 pb-2">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-[1.5px] border-warning bg-warning/15">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-warning bg-warning/15">
         <AlertTriangle className="h-3 w-3 text-warning" strokeWidth={1.75} />
       </span>
       <div className="min-w-0 flex-1">
@@ -118,7 +118,7 @@ export function DayPostsGridModal({
         onClick={(e) => e.stopPropagation()}
         className="flex max-h-[90vh] w-full max-w-3xl flex-col modal-shell overflow-hidden"
       >
-        <div className="flex items-start justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-foreground px-5 py-4">
           <div className="min-w-0">
             <div className="text-title text-sm">Posts for this day</div>
             <h2 className="mt-1.5 text-base font-semibold text-foreground">{dateLabel}</h2>
@@ -134,7 +134,7 @@ export function DayPostsGridModal({
             onClick={onClose}
             data-testid="day-posts-grid-close"
             aria-label="close"
-            className="shrink-0 rounded-sm border-[1.5px] border-foreground bg-background p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 rounded-sm border border-foreground bg-background p-1.5 text-muted-foreground transition-colors hover:text-foreground"
           >
             <XIcon className="h-3 w-3" />
           </button>

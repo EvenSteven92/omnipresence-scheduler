@@ -28,9 +28,9 @@ export function ComposerQueueRail({
   return (
     <aside
       data-testid="composer-queue-rail"
-      className="composer-queue-pane flex flex-col border-r-[1.5px] border-foreground bg-paper-2"
+      className="composer-queue-pane flex flex-col border-r border-foreground bg-paper-2"
     >
-      <div className="border-b-[1.5px] border-foreground px-4 py-3">
+      <div className="border-b border-foreground px-4 py-3">
         <p className="page-kicker">Batch queue</p>
         <h2 className="mt-1 font-display text-base font-bold text-foreground">
           {queue.length === 0 ? "No cards yet" : `${queue.length} card${queue.length === 1 ? "" : "s"}`}
@@ -62,9 +62,9 @@ export function ComposerQueueRail({
               data-testid={`queue-card-${draft.id}`}
               onClick={() => onSelect(draft.id)}
               className={cn(
-                "flex w-full gap-2.5 rounded-md border-[1.5px] border-foreground p-2 text-left transition-colors",
+                "flex w-full gap-2.5 rounded-md border border-foreground p-2 text-left transition-colors",
                 active
-                  ? "bg-accent/20 shadow-[2px_2px_0_0_var(--color-foreground)]"
+                  ? "bg-accent/20 "
                   : "bg-card hover:bg-secondary",
               )}
             >
@@ -122,7 +122,7 @@ export function ComposerQueueRail({
           type="button"
           onClick={onAddClick}
           data-testid="queue-add-files"
-          className="flex w-full flex-col items-center justify-center gap-1.5 rounded-md border-[1.5px] border-dashed border-foreground/50 bg-card px-3 py-6 text-body-sm font-semibold text-foreground transition-colors hover:border-foreground hover:bg-secondary"
+          className="flex w-full flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-foreground/50 bg-card px-3 py-6 text-body-sm font-semibold text-foreground transition-colors hover:border-foreground hover:bg-secondary"
         >
           <Upload className="h-5 w-5 text-accent" />
           Add files

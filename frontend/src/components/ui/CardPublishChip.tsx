@@ -12,7 +12,7 @@ export function CardPublishChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-[5px] border-[1.5px] border-foreground px-1.5 py-1 font-mono text-[0.625rem] font-semibold leading-none text-foreground",
+        "inline-flex items-center gap-1.5 rounded-[5px] border border-foreground px-1.5 py-1 font-mono text-[0.625rem] font-semibold leading-none text-foreground",
         className,
       )}
     >

@@ -121,9 +121,9 @@ export function ConnectPlatformSection({
     <section
       id={id}
       data-testid="connect-platform-section"
-      className="scroll-mt-8 rounded-md border-[1.5px] border-foreground bg-card shadow-[var(--shadow-card)]"
+      className="scroll-mt-8 rounded-md border border-foreground bg-card shadow-[var(--shadow-card)]"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-foreground px-5 py-4">
         <div className="min-w-0">
           <h2 className="font-display text-lg font-bold text-foreground">Connect channels</h2>
           <p className="mt-1 max-w-xl text-body-sm text-muted-foreground">
@@ -141,7 +141,7 @@ export function ConnectPlatformSection({
         {syncMessage ? (
           <p
             className={cn(
-              "rounded-md border-[1.5px] border-foreground px-4 py-2.5 text-sm font-medium",
+              "rounded-md border border-foreground px-4 py-2.5 text-sm font-medium",
               syncMessage.tone === "success"
                 ? "bg-success/10 text-success"
                 : "bg-destructive/10 text-destructive",
@@ -169,7 +169,7 @@ export function ConnectPlatformSection({
                 <div
                   key={meta.short}
                   className={cn(
-                    "flex flex-col gap-3 rounded-md border-[1.5px] border-foreground p-4",
+                    "flex flex-col gap-3 rounded-md border border-foreground p-4",
                     connected ? "bg-paper-2" : "bg-card",
                   )}
                 >
@@ -228,7 +228,7 @@ export function ConnectPlatformSection({
                 <div
                   key={meta.short}
                   data-testid={`connect-platform-${meta.short.replace(/\s+/g, "-")}`}
-                  className="flex items-center gap-3 rounded-md border-[1.5px] border-foreground/40 bg-paper-2 px-4 py-4"
+                  className="flex items-center gap-3 rounded-md border border-foreground/40 bg-paper-2 px-4 py-4"
                 >
                   <PlatformChip platform={meta.short} size="lg" variant="muted" />
                   <div className="min-w-0 flex-1">
@@ -259,7 +259,7 @@ export function LiveConnectionStrip({ workspace }: { workspace: WorkspaceProfile
         return (
           <div
             key={c.platform}
-            className="inline-flex items-center gap-2 rounded-md border-[1.5px] border-foreground bg-success/10 px-3 py-2"
+            className="inline-flex items-center gap-2 rounded-md border border-foreground bg-success/10 px-3 py-2"
           >
             <PlatformChip platform={c.platform} size="md" />
             <span className="text-body-sm font-medium text-foreground">
@@ -272,7 +272,7 @@ export function LiveConnectionStrip({ workspace }: { workspace: WorkspaceProfile
       {demoPlatforms.slice(0, 4).map((p) => (
         <div
           key={p}
-          className="inline-flex items-center gap-2 rounded-md border-[1.5px] border-foreground/40 bg-paper-2 px-3 py-2"
+          className="inline-flex items-center gap-2 rounded-md border border-foreground/40 bg-paper-2 px-3 py-2"
         >
           <PlatformChip platform={p} size="md" variant="muted" />
           <Badge tone="muted">Sample</Badge>

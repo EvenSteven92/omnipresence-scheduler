@@ -13,9 +13,9 @@ function Legend({
 }) {
   if (!active) return null;
   return (
-    <span className="flex items-center gap-1.5 rounded-md border-[1.5px] border-foreground bg-card px-2 py-1 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+    <span className="flex items-center gap-1.5 rounded-md border border-foreground bg-card px-2 py-1 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
       {icon ? (
-        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border-[1.5px] border-foreground bg-secondary">
+        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-foreground bg-secondary">
           <Layers className="h-2 w-2" strokeWidth={2} />
         </span>
       ) : (
@@ -42,7 +42,7 @@ export function CalendarLegendBar({
         onClick={onToggleHighlight}
         data-testid="highlight-unassociated-toggle"
         title="Highlight posts not yet tied to an event"
-        className={`flex items-center gap-1.5 rounded-md border-[1.5px] px-2 py-1 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] transition-colors ${
+        className={`flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] transition-colors ${
           highlightUnassociated
             ? "border-warning bg-warning/15 text-warning"
             : "border-foreground bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"

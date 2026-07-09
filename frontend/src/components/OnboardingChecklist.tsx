@@ -54,7 +54,7 @@ export function OnboardingChecklist({ className }: { className?: string }) {
   return (
     <section
       className={cn(
-        "rounded-md border-[1.5px] border-foreground bg-card p-5 shadow-[var(--shadow-card)]",
+        "rounded-md border border-foreground bg-card p-5 shadow-[var(--shadow-card)]",
         className,
       )}
       data-testid="onboarding-checklist"
@@ -70,7 +70,7 @@ export function OnboardingChecklist({ className }: { className?: string }) {
         <span className="font-data text-lg font-bold text-foreground">{pct}%</span>
       </div>
 
-      <div className="mt-3 h-2 overflow-hidden rounded-sm border-[1.5px] border-foreground bg-paper-2">
+      <div className="mt-3 h-2 overflow-hidden rounded-sm border border-foreground bg-paper-2">
         <div className="h-full bg-accent transition-[width]" style={{ width: `${pct}%` }} />
       </div>
 
@@ -82,13 +82,13 @@ export function OnboardingChecklist({ className }: { className?: string }) {
             <li
               key={step.id}
               className={cn(
-                "flex items-center gap-2.5 rounded-md border-[1.5px] border-foreground px-3 py-2",
+                "flex items-center gap-2.5 rounded-md border border-foreground px-3 py-2",
                 step.done ? "bg-paper-2" : isNext ? "bg-accent/10" : "bg-card",
               )}
             >
               <span
                 className={cn(
-                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-[1.5px] border-foreground",
+                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-foreground",
                   step.done ? "bg-success text-background" : "bg-card text-muted-foreground",
                 )}
               >

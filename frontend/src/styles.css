@@ -33,8 +33,8 @@
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
   --font-sans:
-    "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Bricolage Grotesque", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --color-paper-2: var(--paper-2);
   --color-line: var(--line);
@@ -55,34 +55,33 @@
   --text-title-size: 1.0625rem;
   --text-display-size: 1.875rem;
   --text-caption-size: 0.75rem;
-  /* Neobrutalist paper theme — OmniSocial Cards redesign. Accent is brand-overridable. */
-  --background: #f2ece1;
-  --foreground: #17130f;
-  --paper-2: #e8dfcf;
-  --line: #d4c9b5;
+  /* Editorial Mono — Vidéographe-inspired. Black primary, cool greys, no orange. */
+  --background: #ffffff;
+  --foreground: #000000;
+  --paper-2: #f9f9f9;
+  --line: #d6d6d6;
   --surface: #ffffff;
   --surface-elevated: #ffffff;
   --card: #ffffff;
-  --card-foreground: #17130f;
+  --card-foreground: #000000;
   --popover: #ffffff;
-  --popover-foreground: #17130f;
-  --primary: #ff6a3d;
-  --primary-foreground: #17130f;
-  --secondary: #e8dfcf;
-  --secondary-foreground: #17130f;
-  --muted: #efeae0;
-  /* Darker muted for ~4.5:1 on paper cream (was #9b917f) */
-  --muted-foreground: #5c5549;
-  --accent: #ff6a3d;
-  --accent-foreground: #17130f;
-  --destructive: #c94a4a;
+  --popover-foreground: #000000;
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --secondary: #ebebeb;
+  --secondary-foreground: #000000;
+  --muted: #f9f9f9;
+  --muted-foreground: #626566;
+  --accent: #000000;
+  --accent-foreground: #ffffff;
+  --destructive: #e56b6f;
   --destructive-foreground: #ffffff;
-  --success: #3f9d5a;
-  --warning: #d9a441;
-  --border: #17130f;
-  --input: #e0d6c5;
-  --ring: #ff6a3d;
-  --shadow-card: 4px 4px 0 #17130f;
+  --success: #2ca487;
+  --warning: #e19005;
+  --border: #000000;
+  --input: #f9f9f9;
+  --ring: #000000;
+  --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06);
   --sidebar-width: 14.75rem;
   --sidebar-width-collapsed: 4rem;
 }
@@ -112,18 +111,28 @@
     outline-offset: 2px;
   }
   ::selection {
-    background-color: var(--color-accent);
-    color: var(--color-accent-foreground);
+    background-color: var(--color-foreground);
+    color: var(--color-background);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer utilities {
-  /* Typography */
+  /* Typography — Inter grotesk, tight display tracking, grey captions */
   .text-eyebrow {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: var(--text-eyebrow-size);
-    line-height: 1.45;
+    line-height: 1.2;
     letter-spacing: 0.08em;
+    font-weight: 500;
     text-transform: uppercase;
     color: var(--color-muted-foreground);
   }
@@ -141,53 +150,55 @@
   }
   .text-title {
     font-size: var(--text-title-size);
-    font-weight: 600;
-    line-height: 1.35;
-    letter-spacing: -0.01em;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
   }
   .text-display {
     font-family: var(--font-display);
     font-size: var(--text-display-size);
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
   }
   .font-display {
     font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
   .font-data {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
 
-  /* Legacy utilities — gradually migrate callers to ui/* */
+  /* Legacy utilities — captions use sans uppercase (mono reserved for data) */
   .label-mono {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: var(--text-eyebrow-size);
-    line-height: 1.45;
+    line-height: 1.2;
     letter-spacing: 0.08em;
+    font-weight: 500;
     text-transform: uppercase;
     color: var(--color-muted-foreground);
   }
   .display-mono {
     font-family: var(--font-mono);
-    letter-spacing: 0.04em;
-    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-weight: 600;
   }
   .page-kicker {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: var(--text-caption-size);
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--color-accent);
+    color: var(--color-muted-foreground);
   }
   .page-title {
     font-family: var(--font-display);
     font-size: clamp(1.75rem, 3vw, 2.25rem);
-    font-weight: 700;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
     color: var(--color-foreground);
   }
 
@@ -206,7 +217,7 @@
     padding-inline: var(--page-gutter);
     padding-top: 1.75rem;
     padding-bottom: 1.25rem;
-    border-bottom: 1.5px solid var(--color-foreground);
+    border-bottom: 1px solid var(--color-line);
   }
   .section-block {
     margin-top: var(--section-gap);
@@ -311,12 +322,12 @@
     width: 22rem;
     flex-shrink: 0;
     min-height: 0;
-    border-left: 1.5px solid var(--color-foreground);
+    border-left: 1px solid var(--color-line);
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    background: var(--color-background);
+    background: var(--color-paper-2);
     display: none;
   }
   @media (min-width: 1280px) {
@@ -331,17 +342,18 @@
     justify-content: center;
     gap: 0.5rem;
     min-height: 2.5rem;
-    border-radius: var(--radius);
-    border: 1.5px solid var(--color-foreground);
+    border-radius: calc(var(--radius) - 2px);
+    border: 1px solid var(--color-foreground);
     background: var(--color-surface);
     padding: 0.5rem 0.875rem;
     font-family: var(--font-sans);
     font-size: var(--text-body-sm-size);
-    font-weight: 600;
+    font-weight: 500;
     color: var(--color-foreground);
     transition:
-      transform 120ms ease,
-      box-shadow 120ms ease;
+      background-color 120ms ease,
+      color 120ms ease,
+      border-color 120ms ease;
   }
   .btn-action:hover {
     background: var(--color-secondary);
@@ -354,13 +366,15 @@
     border-color: var(--color-foreground);
     background: var(--color-primary);
     color: var(--color-primary-foreground);
-    font-family: var(--font-display);
-    font-weight: 700;
-    box-shadow: 3px 3px 0 var(--color-foreground);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    box-shadow: none;
   }
   .btn-action-primary:hover {
-    transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0 var(--color-foreground);
+    background: #262626;
+    color: var(--color-primary-foreground);
+    transform: none;
+    box-shadow: none;
   }
   .btn-action-secondary {
     border-color: var(--color-foreground);
@@ -371,19 +385,19 @@
     background: var(--color-secondary);
   }
   .panel-elevated {
-    border: 1.5px solid var(--color-foreground);
+    border: 1px solid var(--color-line);
     background: var(--color-surface-elevated);
     border-radius: var(--radius);
     box-shadow: var(--shadow-card);
   }
   .modal-shell {
-    border: 1.5px solid var(--color-foreground);
+    border: 1px solid var(--color-foreground);
     background: var(--color-surface);
     border-radius: var(--radius);
-    box-shadow: 6px 6px 0 var(--color-foreground);
+    box-shadow: var(--shadow-card);
   }
   .modal-backdrop {
-    background: color-mix(in oklab, var(--color-foreground) 35%, transparent);
+    background: rgba(0, 0, 0, 0.4);
   }
 
   .metric-cell {
@@ -392,7 +406,7 @@
   .kpi-card {
     overflow: hidden;
     border-radius: var(--radius);
-    border: 1.5px solid var(--color-foreground);
+    border: 1px solid var(--color-line);
     background: var(--color-surface-elevated);
   }
   .composer-section {
@@ -413,18 +427,19 @@
     background: var(--color-surface);
   }
   .panel {
-    border: 1.5px solid var(--color-foreground);
+    border: 1px solid var(--color-line);
     background: var(--color-surface-elevated);
     border-radius: var(--radius);
   }
+  /* Calm card hover — color only, no slide/pop */
   .card-pop {
     transition:
-      transform 120ms ease,
-      box-shadow 120ms ease;
+      background-color 120ms ease,
+      border-color 120ms ease;
   }
   .card-pop-interactive:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 4px 4px 0 var(--color-foreground);
+    border-color: var(--color-foreground);
+    background-color: var(--color-paper-2);
   }
   .grid-bg {
     background-image:
@@ -442,14 +457,13 @@
   }
 }
 
+/* Opacity-only fade if needed — no vertical slide */
 @keyframes fadeSwap {
   0% {
     opacity: 0;
-    transform: translateY(4px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

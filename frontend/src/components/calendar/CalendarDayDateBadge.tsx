@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { CREATE } from "@/lib/create-actions";
 
-/** Top-left date control — orange fill when today or an event lands on this day. */
+/** Top-left date control — ink fill when today or an event lands on this day. */
 export function CalendarDayDateBadge({
   day,
   muted,
@@ -16,7 +16,7 @@ export function CalendarDayDateBadge({
   isToday: boolean;
   hasEvent: boolean;
   eventCount?: number;
-  /** Empty main-calendar day — date inverts to dark text when the cell fills orange. */
+  /** Empty main-calendar day — date inverts when the cell is hovered. */
   emptyDayCellHover?: boolean;
   onClick?: () => void;
 }) {

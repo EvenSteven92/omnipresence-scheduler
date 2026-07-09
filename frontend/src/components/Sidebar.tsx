@@ -75,19 +75,19 @@ export function Sidebar() {
         data-testid="app-sidebar"
         data-collapsed={collapsed ? "true" : "false"}
         style={{ width: collapsed ? "var(--sidebar-width-collapsed)" : "var(--sidebar-width)" }}
-        className="relative hidden h-full min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain border-r-[1.5px] border-foreground bg-background px-4 py-5 transition-[width] duration-200 md:flex"
+        className="relative hidden h-full min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-line bg-background px-4 py-5 transition-[width] duration-200 md:flex"
       >
         <div className="flex items-center justify-between gap-2 px-1">
           {!collapsed ? (
             <Link to="/" className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-md border-[1.5px] border-foreground bg-accent font-display text-lg font-extrabold text-foreground">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md border border-foreground bg-foreground font-display text-lg font-semibold text-background">
                 O
               </span>
               <span className="min-w-0 leading-none">
-                <span className="block font-display text-base font-bold text-foreground">
+                <span className="block font-display text-base font-semibold text-foreground">
                   OmniSocial
                 </span>
-                <span className="mt-1 block font-mono text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                <span className="mt-1 block text-caption font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   By TORCC
                 </span>
               </span>
@@ -95,7 +95,7 @@ export function Sidebar() {
           ) : (
             <Link
               to="/"
-              className="mx-auto flex h-9 w-9 items-center justify-center rounded-md border-[1.5px] border-foreground bg-accent font-display text-lg font-extrabold text-foreground"
+              className="mx-auto flex h-9 w-9 items-center justify-center rounded-md border border-foreground bg-foreground font-display text-lg font-semibold text-background"
               title="OmniSocial"
             >
               O
@@ -120,7 +120,7 @@ export function Sidebar() {
         </div>
 
         {!collapsed ? (
-          <p className="mt-5 px-2 font-mono text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          <p className="mt-5 px-2 text-caption font-medium uppercase tracking-[0.1em] text-muted-foreground">
             Workspace
           </p>
         ) : null}
@@ -139,11 +139,11 @@ export function Sidebar() {
           ))}
         </nav>
 
-        <div className="mt-auto space-y-3 border-t-[1.5px] border-foreground/15 pt-4">
+        <div className="mt-auto space-y-3 border-t border-line pt-4">
           <Link
             to="/scheduler"
             className={cn(
-              "flex items-center justify-center gap-2 rounded-lg border-[1.5px] border-foreground bg-accent px-4 py-3.5 font-display text-sm font-bold text-foreground shadow-[3px_3px_0_0_var(--color-foreground)] transition-[transform,box-shadow] duration-150 hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_0_var(--color-foreground)]",
+              "flex items-center justify-center gap-2 rounded-md border border-foreground bg-primary px-4 py-3.5 font-display text-sm font-medium text-primary-foreground transition-colors duration-150 hover:bg-[#262626]",
               collapsed && "px-2",
             )}
           >
@@ -156,7 +156,7 @@ export function Sidebar() {
 
       <nav
         data-testid="mobile-nav"
-        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t-[1.5px] border-foreground bg-background px-2 py-2 md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-line bg-background px-2 py-2 md:hidden"
         aria-label="Mobile"
       >
         {nav.slice(0, 4).map(({ to, label, icon: Icon }) => (
@@ -173,7 +173,7 @@ export function Sidebar() {
         ))}
         <Link
           to="/scheduler"
-          className="flex flex-col items-center gap-0.5 rounded-md border-[1.5px] border-foreground bg-accent px-3 py-1.5 font-display text-[0.65rem] font-bold text-foreground"
+          className="flex flex-col items-center gap-0.5 rounded-md border border-foreground bg-primary px-3 py-1.5 font-display text-[0.65rem] font-medium text-primary-foreground"
         >
           <span className="text-lg leading-none">+</span>
           <span>{CREATE.card}</span>
@@ -207,8 +207,8 @@ function SidebarItem({
       data-testid={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
       title={collapsed ? label : undefined}
       className={cn(
-        "group flex items-center gap-3 rounded-md border-[1.5px] border-transparent px-3 py-2.5 font-display text-sm font-semibold text-foreground transition-colors",
-        "hover:bg-paper-2/60",
+        "group flex items-center gap-3 rounded-md border border-transparent px-3 py-2.5 font-display text-sm font-medium text-muted-foreground transition-colors",
+        "hover:bg-paper-2 hover:text-foreground",
         collapsed && "justify-center px-2",
       )}
       activeProps={{
@@ -222,7 +222,7 @@ function SidebarItem({
           {showBadge ? (
             <span
               data-testid={`nav-badge-${label.toLowerCase()}`}
-              className="shrink-0 rounded-md bg-accent px-1.5 py-0.5 font-mono text-caption font-bold leading-none tracking-[0.04em] text-foreground"
+              className="shrink-0 rounded-md bg-secondary px-1.5 py-0.5 font-data text-caption font-semibold leading-none tracking-[0.04em] text-foreground group-[.active]:bg-background/15 group-[.active]:text-background"
             >
               {badge}
             </span>

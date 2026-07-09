@@ -63,7 +63,7 @@ export function ComposerPublishPlan({
       </div>
 
       {draft.platforms.length === 0 ? (
-        <p className="rounded-md border-[1.5px] border-foreground/40 bg-paper-2 px-3 py-4 text-body-sm text-muted-foreground">
+        <p className="rounded-md border border-foreground/40 bg-paper-2 px-3 py-4 text-body-sm text-muted-foreground">
           Select platforms in the editor to plan publishes.
         </p>
       ) : (
@@ -85,7 +85,7 @@ export function ComposerPublishPlan({
               <li
                 key={platform}
                 data-testid={`publish-plan-${platform.replace(/\s+/g, "-")}`}
-                className="rounded-md border-[1.5px] border-foreground bg-card p-3"
+                className="rounded-md border border-foreground bg-card p-3"
               >
                 <div className="flex items-center gap-2">
                   <span
@@ -98,7 +98,7 @@ export function ComposerPublishPlan({
                 </div>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <label className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-md border-[1.5px] border-foreground bg-paper-2 px-2.5 py-1.5 text-caption font-semibold text-foreground">
+                  <label className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-foreground bg-paper-2 px-2.5 py-1.5 text-caption font-semibold text-foreground">
                     <CalendarDays className="h-3.5 w-3.5" />
                     {formatWhen(slot.iso).split(",").slice(0, 2).join(",")}
                     <input
@@ -111,7 +111,7 @@ export function ComposerPublishPlan({
                       className="absolute inset-0 cursor-pointer opacity-0"
                     />
                   </label>
-                  <label className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-md border-[1.5px] border-foreground bg-paper-2 px-2.5 py-1.5 text-caption font-semibold text-foreground">
+                  <label className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-foreground bg-paper-2 px-2.5 py-1.5 text-caption font-semibold text-foreground">
                     <Clock className="h-3.5 w-3.5" />
                     {new Date(slot.iso).toLocaleTimeString(undefined, {
                       hour: "numeric",
