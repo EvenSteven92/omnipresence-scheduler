@@ -41,7 +41,7 @@ export function DashboardKpiRail({
             <div
               key={m.key}
               data-testid={`metric-${m.key}`}
-              className="rounded-sm border border-border bg-background/40 px-4 py-3"
+              className="rounded-sm border-[1.5px] border-foreground bg-paper-2 px-4 py-3"
             >
               <div className="flex items-center justify-between">
                 <span className="text-body-sm text-muted-foreground">{m.label}</span>

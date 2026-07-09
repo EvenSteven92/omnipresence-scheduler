@@ -229,7 +229,7 @@ function CalendarPage() {
               onClick={() => shiftMonth(-1)}
               data-testid="prev-month-btn"
               aria-label="Previous month"
-              className="rounded-sm border border-border bg-surface p-1.5 text-foreground transition-colors hover:bg-secondary"
+              className="rounded-sm border-[1.5px] border-foreground bg-surface p-1.5 text-foreground transition-colors hover:bg-secondary"
             >
               <ChevronLeft className="h-3 w-3" />
             </button>
@@ -241,7 +241,7 @@ function CalendarPage() {
               onClick={() => shiftMonth(1)}
               data-testid="next-month-btn"
               aria-label="Next month"
-              className="rounded-sm border border-border bg-surface p-1.5 text-foreground transition-colors hover:bg-secondary"
+              className="rounded-sm border-[1.5px] border-foreground bg-surface p-1.5 text-foreground transition-colors hover:bg-secondary"
             >
               <ChevronRight className="h-3 w-3" />
             </button>

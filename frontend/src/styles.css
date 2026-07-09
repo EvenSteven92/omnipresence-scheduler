@@ -48,17 +48,18 @@
   --section-gap: 2.5rem;
   --stack-gap: 1.25rem;
   --control-gap: 0.75rem;
-  /* Type scale */
-  --text-eyebrow-size: 0.6875rem;
-  --text-body-sm-size: 0.8125rem;
-  --text-body-size: 0.875rem;
-  --text-title-size: 1rem;
-  --text-display-size: 1.75rem;
+  /* Type scale — body ≥16px (WCAG/readability); captions floor ~12px */
+  --text-eyebrow-size: 0.75rem;
+  --text-body-sm-size: 0.875rem;
+  --text-body-size: 1rem;
+  --text-title-size: 1.0625rem;
+  --text-display-size: 1.875rem;
+  --text-caption-size: 0.75rem;
   /* Neobrutalist paper theme — OmniSocial Cards redesign. Accent is brand-overridable. */
   --background: #f2ece1;
   --foreground: #17130f;
   --paper-2: #e8dfcf;
-  --line: #e0d6c5;
+  --line: #d4c9b5;
   --surface: #ffffff;
   --surface-elevated: #ffffff;
   --card: #ffffff;
@@ -70,7 +71,8 @@
   --secondary: #e8dfcf;
   --secondary-foreground: #17130f;
   --muted: #efeae0;
-  --muted-foreground: #9b917f;
+  /* Darker muted for ~4.5:1 on paper cream (was #9b917f) */
+  --muted-foreground: #5c5549;
   --accent: #ff6a3d;
   --accent-foreground: #17130f;
   --destructive: #c94a4a;
@@ -95,8 +97,13 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-size: var(--text-body-size);
-    line-height: 1.5;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+  }
+  /* Prefer keyboard focus visibility app-wide */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
   }
   ::selection {
     background-color: var(--color-accent);
@@ -120,7 +127,11 @@
   }
   .text-body {
     font-size: var(--text-body-size);
-    line-height: 1.5;
+    line-height: 1.55;
+  }
+  .text-caption {
+    font-size: var(--text-caption-size);
+    line-height: 1.45;
   }
   .text-title {
     font-size: var(--text-title-size);
@@ -157,21 +168,21 @@
     letter-spacing: 0.04em;
     font-weight: 700;
   }
-  .page-title {
-    font-family: var(--font-display);
-    font-size: 2.5rem;
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    color: var(--color-foreground);
-  }
   .page-kicker {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--text-caption-size);
     font-weight: 600;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--color-accent);
+  }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--color-foreground);
   }
 
   .page-content {
@@ -181,7 +192,7 @@
   }
   .page-header {
     padding-inline: var(--page-gutter);
-    padding-top: 2rem;
+    padding-top: 1.75rem;
     padding-bottom: 1.25rem;
     border-bottom: 1.5px solid var(--color-foreground);
   }
@@ -260,12 +271,14 @@
   .btn-action {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
+    min-height: 2.5rem;
     border-radius: var(--radius);
     border: 1.5px solid var(--color-foreground);
     background: var(--color-surface);
     padding: 0.5rem 0.875rem;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: var(--text-body-sm-size);
     font-weight: 600;
     color: var(--color-foreground);

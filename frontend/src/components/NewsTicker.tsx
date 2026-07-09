@@ -40,35 +40,33 @@ export function NewsTicker() {
     };
   }, []);
 
-  // Duplicate the list so the keyframe scroll loops seamlessly
   const loop = items.length > 0 ? [...items, ...items] : [];
-  // Slow the scroll for longer lists so reading speed stays comfortable
   const durationSec = Math.max(60, items.length * 6);
 
   return (
     <div
       data-testid="news-ticker"
-      className="relative flex h-9 w-full shrink-0 items-stretch overflow-hidden border-b border-border bg-surface text-foreground"
+      className="relative flex h-10 w-full shrink-0 items-stretch overflow-hidden border-b-[1.5px] border-foreground bg-card text-foreground"
     >
-      {/* Source label */}
-      <div className="z-10 flex shrink-0 items-center gap-2.5 border-r border-border bg-background/80 px-4 backdrop-blur">
+      <div className="z-10 flex shrink-0 items-center gap-2 border-r-[1.5px] border-foreground bg-paper-2 px-3.5">
         <span className="relative flex h-2 w-2">
           <span className="absolute inset-0 animate-ping rounded-full bg-accent/80" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
         </span>
-        <Radio className="h-3 w-3 text-accent" strokeWidth={1.75} />
-        <span className="label-mono">live_wire · world+us</span>
+        <Radio className="h-3.5 w-3.5 text-accent" strokeWidth={1.75} />
+        <span className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.08em] text-foreground">
+          Live wire
+        </span>
       </div>
 
-      {/* Marquee track */}
       <div className="relative flex-1 overflow-hidden">
         {error && items.length === 0 ? (
-          <div className="flex h-full items-center px-4 label-mono text-muted-foreground">
-            news_feed_unavailable
+          <div className="flex h-full items-center px-4 text-body-sm text-muted-foreground">
+            News feed unavailable
           </div>
         ) : items.length === 0 ? (
-          <div className="flex h-full items-center px-4 label-mono text-muted-foreground">
-            warming_up…
+          <div className="flex h-full items-center px-4 text-body-sm text-muted-foreground">
+            Loading headlines…
           </div>
         ) : (
           <div
@@ -83,20 +81,19 @@ export function NewsTicker() {
                 href={h.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center gap-2 text-xs"
+                className="group flex items-center gap-2 text-body-sm"
               >
-                <span className="rounded-sm border border-border bg-background/40 px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
+                <span className="rounded-md border-[1.5px] border-foreground bg-paper-2 px-1.5 py-0.5 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                   {h.source}
                 </span>
                 <span className="text-foreground group-hover:text-accent">{h.title}</span>
-                <ExternalLink className="h-2.5 w-2.5 text-muted-foreground/60 group-hover:text-accent" />
+                <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-accent" />
               </a>
             ))}
           </div>
         )}
-        {/* Edge fade-out so headlines don't slam into the source pill */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-surface to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-surface to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-card to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-card to-transparent" />
       </div>
     </div>
   );

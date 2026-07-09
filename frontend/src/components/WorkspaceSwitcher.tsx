@@ -62,12 +62,12 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
           role="listbox"
           aria-label="Select workspace"
           className={cn(
-            "absolute z-50 overflow-hidden rounded-sm border border-border bg-popover shadow-xl",
+            "absolute z-50 overflow-hidden rounded-md border-[1.5px] border-foreground bg-card shadow-[var(--shadow-card)]",
             collapsed ? "left-full top-0 ml-2 w-64" : "left-2 right-2 top-full mt-1",
           )}
         >
-          <div className="border-b border-border px-3 py-2.5">
-            <p className="text-sm font-medium text-foreground">Workspaces</p>
+          <div className="border-b-[1.5px] border-foreground px-3 py-2.5">
+            <p className="text-sm font-semibold text-foreground">Workspaces</p>
             <p className="mt-0.5 text-body-sm text-muted-foreground">
               Each company has its own platforms and content.
             </p>
@@ -91,7 +91,7 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
                       active ? "bg-secondary" : "hover:bg-secondary/60",
                     )}
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-border bg-background font-data text-[0.6rem] font-semibold">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-[1.5px] border-foreground bg-paper-2 font-data text-[0.7rem] font-semibold">
                       {ws.initials}
                     </span>
                     <span className="min-w-0 flex-1">
@@ -122,7 +122,7 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
               );
             })}
           </ul>
-          <div className="border-t border-border p-2">
+          <div className="border-t-[1.5px] border-foreground p-2">
             <Link
               to="/workspaces"
               onClick={() => setOpen(false)}

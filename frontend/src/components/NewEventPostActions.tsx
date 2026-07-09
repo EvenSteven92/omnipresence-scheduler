@@ -2,24 +2,18 @@ import { Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
 
-const newPostClass = "btn-action-primary btn-action";
-
-const newEventLinkClass =
-  "text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground";
-
 type CreateEventFlow = ReturnType<typeof useCreateEventFlow>;
 
-/** Shared header pair — New Post (primary) + New Event (secondary link). */
+/** Shared header pair — New post (primary) + New event (secondary). */
 export function NewEventPostActions({
   eventDate,
   flow,
-  postLabel = "New Post",
+  postLabel = "New post",
   postTestId = "new-post-btn",
   eventTestId = "new-event-btn",
   showPostLink = true,
 }: {
   eventDate?: Date;
-  /** Share one modal instance when the page also opens create-event from elsewhere. */
   flow?: CreateEventFlow;
   postLabel?: string;
   postTestId?: string;
@@ -32,17 +26,17 @@ export function NewEventPostActions({
   return (
     <>
       {showPostLink ? (
-        <Link to="/scheduler" data-testid={postTestId} className={newPostClass}>
-          <Plus className="h-3 w-3" /> {postLabel}
+        <Link to="/scheduler" data-testid={postTestId} className="btn-action-primary btn-action">
+          <Plus className="h-3.5 w-3.5" /> {postLabel}
         </Link>
       ) : null}
       <button
         type="button"
         onClick={() => openCreateEvent(eventDate)}
         data-testid={eventTestId}
-        className={newEventLinkClass}
+        className="btn-action btn-action-secondary"
       >
-        New Event
+        New event
       </button>
       {modal}
     </>
@@ -58,15 +52,15 @@ export function NewEventSidebarButton({ testId = "sidebar-new-event-btn" }: { te
         type="button"
         onClick={() => openCreateEvent()}
         data-testid={testId}
-        aria-label="New Event"
-        className="group relative flex h-11 w-full items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        aria-label="New event"
+        className="group relative flex h-11 w-full items-center justify-center rounded-md border-[1.5px] border-transparent text-muted-foreground transition-colors hover:border-foreground hover:bg-secondary hover:text-foreground"
       >
-        <Plus className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+        <Plus className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
         <span
           role="tooltip"
-          className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-sm border border-border bg-surface px-2.5 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-foreground opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+          className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border-[1.5px] border-foreground bg-card px-2.5 py-1.5 text-caption font-medium text-foreground opacity-0 shadow-[var(--shadow-card)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
         >
-          New Event
+          New event
         </span>
       </button>
       {modal}

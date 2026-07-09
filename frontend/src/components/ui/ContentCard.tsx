@@ -118,16 +118,16 @@ export function ContentCard({
 
   const titleClass = cn(
     "block leading-tight text-foreground",
-    size === "chip" && "line-clamp-1 text-[0.55rem]",
+    size === "chip" && "line-clamp-1 text-caption font-semibold",
     size === "row" && "truncate text-sm font-medium",
     size === "sm" && "line-clamp-2 font-display text-sm font-semibold",
     size === "md" && "line-clamp-2 font-display text-xl font-bold",
   );
 
   const metaClass = cn(
-    size === "chip" && "block font-mono text-[0.5rem] text-accent",
+    size === "chip" && "block text-caption text-accent",
     size === "row" && "mt-0.5 block text-body-sm text-muted-foreground",
-    size === "sm" && "block font-mono text-[0.55rem] text-accent",
+    size === "sm" && "block text-caption text-accent",
     size === "md" && "block text-body-sm text-muted-foreground",
   );
 

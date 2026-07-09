@@ -77,9 +77,9 @@ export function SyncStatusBar() {
   return (
     <div
       data-testid="sync-status-bar"
-      className="flex h-9 w-full shrink-0 items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 text-body-sm"
+      className="flex min-h-10 w-full shrink-0 items-center justify-between gap-3 border-b-[1.5px] border-foreground bg-card px-4 py-2 text-body-sm"
     >
-      <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+      <div className="flex min-w-0 items-center gap-2 text-foreground">
         {tone === "ok" ? (
           <CheckCircle2 className="h-4 w-4 shrink-0 text-success" strokeWidth={1.75} />
         ) : tone === "warning" ? (
@@ -87,14 +87,14 @@ export function SyncStatusBar() {
         ) : (
           <Link2 className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.75} />
         )}
-        <span className="truncate">{message}</span>
+        <span className="truncate text-muted-foreground">{message}</span>
       </div>
       <Link
         to="/workspaces"
         hash="connect-platform"
-        className="shrink-0 text-sm font-medium text-accent transition-opacity hover:opacity-80"
+        className="shrink-0 font-semibold text-foreground underline decoration-accent decoration-2 underline-offset-2 hover:text-accent"
       >
-        {cta} →
+        {cta}
       </Link>
     </div>
   );

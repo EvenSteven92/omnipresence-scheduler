@@ -57,7 +57,9 @@ export function UnassignedMediaPicker({
       <div className="flex items-center justify-between gap-2">
         <div className="text-eyebrow">Unassigned media</div>
         <span className="label-mono text-[0.5rem] text-muted-foreground">
-          {selectedIds.size > 0 ? `${selectedIds.size}_selected` : `${unassigned.length}_files`}
+          {selectedIds.size > 0
+            ? `${selectedIds.size} selected`
+            : `${unassigned.length} files`}
         </span>
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">
@@ -91,7 +93,7 @@ export function UnassignedMediaPicker({
                   className={`absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-sm border transition-colors ${
                     selected
                       ? "border-accent bg-accent text-accent-foreground"
-                      : "border-border/80 bg-background/80 text-transparent group-hover:border-accent/60"
+                      : "border-border/80 bg-card text-transparent group-hover:border-accent/60"
                   }`}
                 >
                   <Check className="h-2.5 w-2.5" strokeWidth={2.5} />

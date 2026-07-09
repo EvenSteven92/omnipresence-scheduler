@@ -35,7 +35,7 @@ export function EventAssociateModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md modal-shell overflow-hidden"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4">
           <div className="min-w-0">
             <div className="text-sm font-medium text-foreground">Associate with event</div>
             <p className="mt-2 text-sm font-semibold text-foreground">{post.title}</p>
@@ -47,7 +47,7 @@ export function EventAssociateModal({
             type="button"
             onClick={onClose}
             aria-label="close"
-            className="shrink-0 rounded-sm border border-border bg-background p-1.5 text-muted-foreground hover:text-foreground"
+            className="shrink-0 rounded-sm border-[1.5px] border-foreground bg-background p-1.5 text-muted-foreground hover:text-foreground"
           >
             <XIcon className="h-3 w-3" />
           </button>

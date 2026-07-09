@@ -42,7 +42,7 @@ export function CalendarDayEventsModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md modal-shell overflow-hidden"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4">
           <div>
             <div className="text-title text-sm">Events this day</div>
             <p className="mt-2 text-sm font-semibold text-foreground">{dateLabel}</p>
@@ -55,7 +55,7 @@ export function CalendarDayEventsModal({
             type="button"
             onClick={onClose}
             aria-label="close"
-            className="shrink-0 rounded-sm border border-border bg-background p-1.5 text-muted-foreground hover:text-foreground"
+            className="shrink-0 rounded-sm border-[1.5px] border-foreground bg-background p-1.5 text-muted-foreground hover:text-foreground"
           >
             <XIcon className="h-3 w-3" />
           </button>
@@ -69,7 +69,7 @@ export function CalendarDayEventsModal({
                 data-testid={`day-event-select-${event.id}`}
                 className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-secondary/30"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-border bg-background/60">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border-[1.5px] border-foreground bg-paper-2">
                   <Layers className="h-3.5 w-3.5 text-accent" strokeWidth={1.5} />
                 </span>
                 <span className="min-w-0 flex-1">

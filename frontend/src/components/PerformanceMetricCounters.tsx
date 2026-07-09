@@ -47,7 +47,9 @@ export function PerformanceMetricCounters({
 
         return (
           <div key={m.key}>
-            <div className="label-mono text-[0.5rem] text-muted-foreground">{m.label}</div>
+            <div className="text-caption font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              {m.label}
+            </div>
             <div
               className={`mt-2 font-semibold tracking-tight text-foreground tabular-nums ${valueClass}`}
             >

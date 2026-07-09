@@ -57,7 +57,7 @@ export function EventAssociationPicker({
             onClick={() => onChange(undefined)}
             data-testid="event-association-clear"
             aria-label="Remove event association"
-            className="shrink-0 rounded-sm border border-border bg-surface p-1 text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 rounded-sm border-[1.5px] border-foreground bg-surface p-1 text-muted-foreground transition-colors hover:text-foreground"
           >
             <X className="h-3 w-3" />
           </button>
@@ -76,7 +76,7 @@ export function EventAssociationPicker({
               className={`rounded-sm border px-3 py-2.5 text-left transition-colors ${
                 active
                   ? "border-accent bg-accent/10"
-                  : "border-border bg-background/60 hover:border-accent/40 hover:bg-secondary/40"
+                  : "border-border bg-paper-2 hover:border-accent/40 hover:bg-secondary/40"
               }`}
             >
               <div className="text-xs font-semibold leading-snug text-foreground">

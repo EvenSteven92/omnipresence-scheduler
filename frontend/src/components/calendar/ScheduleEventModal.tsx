@@ -17,7 +17,7 @@ const EVENT_KINDS: ContentEventKind[] = [
 ];
 
 const fieldClass =
-  "w-full rounded-sm border border-border bg-background/60 px-3 py-2.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none";
+  "w-full rounded-md border-[1.5px] border-foreground bg-paper-2 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring";
 
 /** Create event album — name, description, date, time, optional media association. */
 export function ScheduleEventModal({
@@ -102,7 +102,7 @@ export function ScheduleEventModal({
         onClick={(e) => e.stopPropagation()}
         className="flex max-h-[min(90vh,720px)] w-full max-w-xl flex-col modal-shell overflow-hidden"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4">
           <div>
             <div className="text-sm font-medium text-foreground">New event</div>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
@@ -114,7 +114,7 @@ export function ScheduleEventModal({
             type="button"
             onClick={onClose}
             aria-label="close"
-            className="shrink-0 rounded-sm border border-border bg-background p-1.5 text-muted-foreground hover:text-foreground"
+            className="shrink-0 rounded-sm border-[1.5px] border-foreground bg-background p-1.5 text-muted-foreground hover:text-foreground"
           >
             <XIcon className="h-3 w-3" />
           </button>
@@ -122,7 +122,7 @@ export function ScheduleEventModal({
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
           <label className="block space-y-1.5">
-            <span className="label-mono text-[0.5rem] text-muted-foreground">name</span>
+            <span className="text-caption font-semibold text-muted-foreground">Name</span>
             <input
               type="text"
               value={title}
@@ -135,7 +135,7 @@ export function ScheduleEventModal({
           </label>
 
           <label className="block space-y-1.5">
-            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">
+            <span className="text-caption font-semibold text-muted-foreground">
               Short description
             </span>
             <textarea
@@ -150,7 +150,7 @@ export function ScheduleEventModal({
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1.5">
-              <span className="label-mono text-[0.5rem] text-muted-foreground">date</span>
+              <span className="text-caption font-semibold text-muted-foreground">Date</span>
               <input
                 type="date"
                 value={eventDate}
@@ -160,7 +160,7 @@ export function ScheduleEventModal({
               />
             </label>
             <label className="block space-y-1.5">
-              <span className="label-mono text-[0.5rem] text-muted-foreground">time</span>
+              <span className="text-caption font-semibold text-muted-foreground">Time</span>
               <input
                 type="time"
                 value={eventTime}
@@ -172,18 +172,16 @@ export function ScheduleEventModal({
           </div>
 
           {previewLabel ? (
-            <p className="rounded-sm border border-border bg-background/40 px-3 py-2 text-xs text-muted-foreground">
-              <span className="label-mono text-[0.45rem] text-muted-foreground">
-                scheduled_for{" "}
+            <p className="rounded-sm border-[1.5px] border-foreground bg-paper-2 px-3 py-2 text-xs text-muted-foreground">
+              <span className="text-caption font-semibold text-muted-foreground">
+                Scheduled for{" "}
               </span>
               <span className="font-medium text-foreground">{previewLabel}</span>
             </p>
           ) : null}
 
           <label className="block space-y-1.5">
-            <span className="text-[0.5rem] uppercase tracking-[0.12em] text-muted-foreground">
-              Event type
-            </span>
+            <span className="text-caption font-semibold text-muted-foreground">Event type</span>
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value as ContentEventKind)}
@@ -207,7 +205,7 @@ export function ScheduleEventModal({
           />
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-4">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t-[1.5px] border-foreground px-5 py-4">
           <button
             type="button"
             onClick={onClose}

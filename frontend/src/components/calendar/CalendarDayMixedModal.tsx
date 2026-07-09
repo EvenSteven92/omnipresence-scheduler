@@ -43,7 +43,7 @@ export function CalendarDayMixedModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md modal-shell overflow-hidden"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4">
           <div>
             <div className="label-mono">this_day_has_both</div>
             <p className="mt-2 text-sm font-semibold text-foreground">{dateLabel}</p>
@@ -56,7 +56,7 @@ export function CalendarDayMixedModal({
             type="button"
             onClick={onClose}
             aria-label="close"
-            className="shrink-0 rounded-sm border border-border bg-background p-1.5 text-muted-foreground hover:text-foreground"
+            className="shrink-0 rounded-sm border-[1.5px] border-foreground bg-background p-1.5 text-muted-foreground hover:text-foreground"
           >
             <XIcon className="h-3 w-3" />
           </button>
@@ -72,7 +72,7 @@ export function CalendarDayMixedModal({
             data-testid="day-mixed-view-posts"
             className="flex w-full items-center gap-3 rounded-sm border border-accent/50 bg-accent/10 px-4 py-3 text-left transition-colors hover:bg-accent/20"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-accent/40 bg-background/80">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-accent/40 bg-card">
               <LayoutGrid className="h-4 w-4 text-accent" strokeWidth={1.75} />
             </span>
             <span className="min-w-0">
@@ -90,9 +90,9 @@ export function CalendarDayMixedModal({
               onViewEvents();
             }}
             data-testid="day-mixed-view-events"
-            className="flex w-full items-center gap-3 rounded-sm border border-border bg-background/40 px-4 py-3 text-left transition-colors hover:bg-secondary"
+            className="flex w-full items-center gap-3 rounded-sm border-[1.5px] border-foreground bg-paper-2 px-4 py-3 text-left transition-colors hover:bg-secondary"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-border bg-surface">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border-[1.5px] border-foreground bg-surface">
               <Layers className="h-4 w-4 text-foreground" strokeWidth={1.75} />
             </span>
             <span className="min-w-0">

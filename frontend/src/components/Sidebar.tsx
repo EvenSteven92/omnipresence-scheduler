@@ -86,7 +86,7 @@ export function Sidebar() {
                 <span className="block font-display text-base font-bold text-foreground">
                   OmniSocial
                 </span>
-                <span className="mt-1 block font-mono text-[0.5625rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                <span className="mt-1 block font-mono text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                   By TORCC
                 </span>
               </span>
@@ -119,7 +119,7 @@ export function Sidebar() {
         </div>
 
         {!collapsed ? (
-          <p className="mt-5 px-2 font-mono text-[0.5625rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          <p className="mt-5 px-2 font-mono text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             Workspace
           </p>
         ) : null}
@@ -221,7 +221,7 @@ function SidebarItem({
           {showBadge ? (
             <span
               data-testid={`nav-badge-${label.toLowerCase()}`}
-              className="shrink-0 rounded-[5px] bg-accent px-1.5 py-0.5 font-mono text-[0.5625rem] font-bold leading-none tracking-[0.04em] text-foreground"
+              className="shrink-0 rounded-md bg-accent px-1.5 py-0.5 font-mono text-caption font-bold leading-none tracking-[0.04em] text-foreground"
             >
               {badge}
             </span>

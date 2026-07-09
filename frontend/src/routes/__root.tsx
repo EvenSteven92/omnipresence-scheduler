@@ -17,8 +17,8 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="display-mono text-7xl text-foreground">404</h1>
-        <p className="label-mono mt-4">Route not found</p>
+        <h1 className="font-display text-7xl font-bold text-foreground">404</h1>
+        <p className="mt-4 text-body-sm text-muted-foreground">Route not found</p>
         <Link
           to="/"
           className="btn-action-primary btn-action mt-6"
@@ -36,8 +36,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <p className="label-mono">Runtime error</p>
-        <h1 className="mt-2 text-lg text-foreground">{error.message}</h1>
+        <p className="page-kicker">Runtime error</p>
+        <h1 className="mt-2 font-display text-lg font-bold text-foreground">{error.message}</h1>
         <button
           onClick={() => {
             router.invalidate();

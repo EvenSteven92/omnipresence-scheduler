@@ -32,7 +32,7 @@ export function AgendaEventRow({
       }`}
     >
       <span
-        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border bg-background/60 ${
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border bg-paper-2 ${
           highlighted ? "border-accent/50" : "border-border"
         }`}
       >
