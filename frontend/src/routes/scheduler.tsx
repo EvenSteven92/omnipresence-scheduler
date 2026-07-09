@@ -326,7 +326,7 @@ function ComposePage() {
   }
 
   return (
-    <div className="composer-shell min-h-0 flex-1" data-testid="compose-page">
+    <div className="composer-shell" data-testid="compose-page">
       <ComposerQueueRail
         queue={queue}
         activeId={activeDraft?.id ?? null}
@@ -341,8 +341,8 @@ function ComposePage() {
         onDrop={handleDrop}
       />
 
-      <div className="composer-editor-pane overflow-y-auto">
-        <div className="page-content mx-auto max-w-[720px] px-4 py-5 md:px-6">
+      <div className="composer-editor-pane">
+        <div className="mx-auto w-full max-w-[720px] px-4 py-5 pb-24 md:px-6 md:pb-10">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
               <Link
@@ -702,8 +702,8 @@ function ComposePage() {
       </div>
 
       {activeDraft ? (
-        <aside className="composer-preview-pane p-5">
-          <div className="sticky top-0 flex flex-col gap-6">
+        <aside className="composer-preview-pane p-5 pb-16">
+          <div className="flex flex-col gap-6">
             <ComposerPublishPlan
               draft={activeDraft}
               scheduleReasons={scheduleReasons[activeDraft.id]}

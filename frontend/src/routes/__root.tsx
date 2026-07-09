@@ -82,11 +82,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="h-full overflow-hidden">
         {children}
         <Scripts />
       </body>
@@ -100,10 +100,20 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <WorkspaceProvider>
         <BrandTheme />
-        <div className="flex h-screen flex-col bg-background text-foreground">
+        {/*
+          App shell scroll contract:
+          - Outer shell is 100dvh and does not scroll (avoids double-scroll / mobile chrome bugs)
+          - <main> is the ONLY page scrollport for normal routes
+          - Full-height tools (composer) fill main and scroll inside their panes
+        */}
+        <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-background text-foreground">
           <div className="flex min-h-0 flex-1 overflow-hidden">
             <Sidebar />
-            <main className="min-h-0 flex-1 overflow-y-auto pb-14 md:pb-0">
+            <main
+              id="app-scroll"
+              data-testid="app-scroll"
+              className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-y-contain pb-16 md:pb-0 [-webkit-overflow-scrolling:touch]"
+            >
               <Outlet />
             </main>
           </div>

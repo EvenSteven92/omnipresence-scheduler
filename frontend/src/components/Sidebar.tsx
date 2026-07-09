@@ -74,7 +74,7 @@ export function Sidebar() {
         data-testid="app-sidebar"
         data-collapsed={collapsed ? "true" : "false"}
         style={{ width: collapsed ? "var(--sidebar-width-collapsed)" : "var(--sidebar-width)" }}
-        className="relative hidden h-full shrink-0 flex-col border-r-[1.5px] border-foreground bg-background px-4 py-5 transition-[width] duration-200 md:flex"
+        className="relative hidden h-full min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain border-r-[1.5px] border-foreground bg-background px-4 py-5 transition-[width] duration-200 md:flex"
       >
         <div className="flex items-center justify-between gap-2 px-1">
           {!collapsed ? (
