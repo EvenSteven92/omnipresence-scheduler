@@ -1,4 +1,5 @@
 import type { WorkspaceProfile } from "@/lib/workspaces/types";
+import { ALL_WORKSPACE_PLATFORMS } from "@/lib/platforms";
 
 export const WORKSPACES: WorkspaceProfile[] = [
   {
@@ -16,7 +17,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
       "YT SHORTS": ["12:00", "17:00", "20:30"],
       TIKTOK: ["07:45", "19:00", "22:00"],
     },
-    platforms: ["YT", "RUMBLE", "FB", "IG", "X", "TIKTOK", "IG STORY", "FB STORY", "YT SHORTS"],
+    platforms: [...ALL_WORKSPACE_PLATFORMS],
     metrics: {
       views: 12_480,
       likes: 842,
@@ -403,7 +404,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
       YT: ["15:00", "20:30"],
       X: ["08:15", "12:40", "18:05"],
     },
-    platforms: ["YT", "RUMBLE", "X", "FB"],
+    platforms: [...ALL_WORKSPACE_PLATFORMS],
     metrics: {
       views: 284_200,
       likes: 18_400,
@@ -500,7 +501,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
       TIKTOK: ["07:45", "19:00", "22:30"],
       "YT SHORTS": ["12:00", "17:00", "21:00"],
     },
-    platforms: ["IG", "TIKTOK", "FB", "YT SHORTS", "IG STORY"],
+    platforms: [...ALL_WORKSPACE_PLATFORMS],
     metrics: {
       views: 48_900,
       likes: 6_240,
@@ -582,7 +583,7 @@ export const WORKSPACES: WorkspaceProfile[] = [
       "YT SHORTS": ["12:00", "17:00", "21:00"],
       IG: ["11:00", "17:30", "21:15"],
     },
-    platforms: ["YT", "YT SHORTS", "IG", "TIKTOK", "X", "IG STORY"],
+    platforms: [...ALL_WORKSPACE_PLATFORMS],
     metrics: {
       views: 22_400,
       likes: 1_480,

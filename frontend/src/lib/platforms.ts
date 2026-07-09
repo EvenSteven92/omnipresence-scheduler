@@ -92,6 +92,9 @@ export const PLATFORMS_BY_SHORT: Record<string, PlatformMeta> = Object.fromEntri
   PLATFORMS.map((p) => [p.short, p]),
 );
 
+/** Full channel set available to every workspace (compose, connect, analytics). */
+export const ALL_WORKSPACE_PLATFORMS: Platform[] = PLATFORMS.map((p) => p.short);
+
 export type PostFormat = "landscape" | "portrait" | "story";
 
 export const FORMAT_META: Record<PostFormat, { label: string; aspect: string; sub: string }> = {

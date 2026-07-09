@@ -30,7 +30,7 @@ function WorkspacesPage() {
     {},
   );
 
-  useOAuthAutoSync(workspaceId, oauthParams, true);
+  useOAuthAutoSync(workspaceId, oauthParams);
 
   useEffect(() => {
     if (window.location.hash === "#connect-platform") {
@@ -111,7 +111,7 @@ function WorkspacesPage() {
 
         <div className="page-grid">
           <div className="page-grid-main space-y-6">
-            <ConnectPlatformSection workspace={workspace} teamAuthed />
+            <ConnectPlatformSection workspace={workspace} />
           </div>
 
           <aside className="page-grid-rail space-y-4">

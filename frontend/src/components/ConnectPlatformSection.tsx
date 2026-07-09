@@ -16,12 +16,9 @@ const LIVE_NOW = new Set<Platform>(["YT", "FB", "IG"]);
 export function ConnectPlatformSection({
   workspace,
   id = "connect-platform",
-  teamAuthed = true,
 }: {
   workspace: WorkspaceProfile;
   id?: string;
-  /** @deprecated Team access code removed; always treated as true. */
-  teamAuthed?: boolean;
 }) {
   const queryClient = useQueryClient();
   const { data: accountStatus, refetch } = usePlatformConnections(workspace.id);
@@ -35,12 +32,9 @@ export function ConnectPlatformSection({
     text: string;
   } | null>(null);
 
-  const availableCards = PLATFORMS.filter(
-    (p) => workspace.platforms.includes(p.short) && LIVE_NOW.has(p.short),
-  );
-  const comingSoonCards = PLATFORMS.filter(
-    (p) => workspace.platforms.includes(p.short) && !LIVE_NOW.has(p.short),
-  );
+  // Every workspace offers the same channel list
+  const availableCards = PLATFORMS.filter((p) => LIVE_NOW.has(p.short));
+  const comingSoonCards = PLATFORMS.filter((p) => !LIVE_NOW.has(p.short));
 
   const connectedCount = [
     youtubeConnected,

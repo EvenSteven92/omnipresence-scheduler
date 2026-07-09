@@ -5,7 +5,7 @@ import { getYouTubeOAuthConfig, YOUTUBE_SCOPES } from "./config";
 const STATE_COOKIE = "yt_oauth_state";
 
 function stateSecret() {
-  return process.env.SESSION_SECRET ?? process.env.TEAM_ACCESS_CODE ?? "dev-youtube-oauth";
+  return process.env.SESSION_SECRET ?? "dev-youtube-oauth";
 }
 
 export function createOAuthState(workspaceId: string) {

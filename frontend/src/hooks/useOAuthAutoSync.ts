@@ -6,13 +6,12 @@ import type { WorkspaceId } from "@/lib/workspaces/types";
 export function useOAuthAutoSync(
   workspaceId: WorkspaceId,
   params: { youtube?: string | null; meta?: string | null },
-  teamAuthed: boolean,
 ) {
   const queryClient = useQueryClient();
   const ran = useRef(false);
 
   useEffect(() => {
-    if (!teamAuthed || ran.current) return;
+    if (ran.current) return;
     const shouldSyncYt = params.youtube === "connected";
     const shouldSyncMeta = params.meta === "connected" || params.meta === "partial";
     if (!shouldSyncYt && !shouldSyncMeta) return;
@@ -40,5 +39,5 @@ export function useOAuthAutoSync(
     }
 
     void run();
-  }, [workspaceId, params.youtube, params.meta, teamAuthed, queryClient]);
+  }, [workspaceId, params.youtube, params.meta, queryClient]);
 }

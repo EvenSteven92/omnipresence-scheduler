@@ -8,7 +8,7 @@ import {
 } from "./config";
 
 function stateSecret() {
-  return process.env.SESSION_SECRET ?? process.env.TEAM_ACCESS_CODE ?? "dev-meta-oauth";
+  return process.env.SESSION_SECRET ?? "dev-meta-oauth";
 }
 
 export function createOAuthState(workspaceId: string) {

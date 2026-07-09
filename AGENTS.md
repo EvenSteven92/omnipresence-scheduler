@@ -99,7 +99,7 @@ When changing KPIs or growth matrix, check **both** mock workspace data and `liv
 | Calendar interactions | `frontend/src/routes/calendar.tsx`, `calendar-day-click.ts` |
 | OAuth YouTube | `frontend/src/server/youtube/` |
 | OAuth Meta | `frontend/src/server/meta/` |
-| Team gate (Workspaces) | `frontend/src/server/team-auth.ts`, `TeamAccessGate.tsx` |
+| Admin / workspaces | `frontend/src/routes/workspaces.tsx`, `ConnectPlatformSection.tsx` |
 
 ### Vercel cron (Hobby-safe: daily)
 
@@ -117,7 +117,7 @@ Set in Vercel project settings (and locally in `frontend/.env` if needed). Never
 | Variable | Purpose |
 |----------|---------|
 | `DATABASE_URL` | Neon Postgres (required for OAuth + live metrics) |
-| `SESSION_SECRET` or `TEAM_ACCESS_CODE` | Team session cookie signing |
+| `SESSION_SECRET` | OAuth state signing (optional; has dev fallback) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | YouTube OAuth |
 | `GOOGLE_REDIRECT_URI` | Optional override; defaults from `VERCEL_URL` |
 | `META_APP_ID`, `META_APP_SECRET` | Meta OAuth |

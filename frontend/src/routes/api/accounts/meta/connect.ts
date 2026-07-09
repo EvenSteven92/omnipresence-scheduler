@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { isDatabaseConfigured } from "@/server/db/client";
-import { requireTeamSession } from "@/server/team-auth";
 import { buildMetaAuthorizeUrl } from "@/server/meta/oauth";
 import { DEFAULT_WORKSPACE_ID } from "@/server/meta/config";
 
@@ -9,9 +8,6 @@ export const Route = createFileRoute("/api/accounts/meta/connect")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!requireTeamSession(request)) {
-          return Response.json({ detail: "Team login required" }, { status: 401 });
-        }
         if (!isDatabaseConfigured()) {
           return Response.json({ detail: "DATABASE_URL is not configured" }, { status: 503 });
         }
