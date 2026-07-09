@@ -5,6 +5,8 @@ import { useMemo } from "react";
 import { DashboardQueueRail } from "@/components/dashboard/DashboardQueueRail";
 import { DashboardUpNextQueue } from "@/components/dashboard/DashboardUpNextQueue";
 import { QueueCalendarToggle } from "@/components/dashboard/QueueCalendarToggle";
+import { CREATE } from "@/lib/create-actions";
+import { FilePlus } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,7 +28,8 @@ function QueuePage() {
       <>
         <QueueCalendarToggle active="queue" />
         <Link to="/scheduler" className="btn-action-primary btn-action">
-          + New card
+          <FilePlus className="h-3.5 w-3.5" strokeWidth={2} />
+          {CREATE.card}
         </Link>
       </>
     ),

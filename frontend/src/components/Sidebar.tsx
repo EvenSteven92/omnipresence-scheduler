@@ -15,6 +15,7 @@ import { SidebarSyncFooter } from "@/components/SidebarSyncFooter";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { computeSidebarNavCounts, type SidebarNavCountKey } from "@/lib/sidebar-nav-counts";
 import { useWorkspace } from "@/lib/workspace-context";
+import { CREATE } from "@/lib/create-actions";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "omni.sidebar.collapsed";
@@ -147,7 +148,7 @@ export function Sidebar() {
             )}
           >
             <span className="text-lg leading-none">+</span>
-            {!collapsed ? <span>New card</span> : null}
+            {!collapsed ? <span>{CREATE.card}</span> : null}
           </Link>
           <SidebarSyncFooter collapsed={collapsed} />
         </div>
@@ -175,7 +176,7 @@ export function Sidebar() {
           className="flex flex-col items-center gap-0.5 rounded-md border-[1.5px] border-foreground bg-accent px-3 py-1.5 font-display text-[0.65rem] font-bold text-foreground"
         >
           <span className="text-lg leading-none">+</span>
-          <span>New card</span>
+          <span>{CREATE.card}</span>
         </Link>
       </nav>
     </>

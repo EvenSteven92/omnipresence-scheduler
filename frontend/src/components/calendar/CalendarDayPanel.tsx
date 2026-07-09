@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { CalendarPlus, Layers, Link2, Plus, X } from "lucide-react";
+import { CalendarPlus, FilePlus, Layers, Link2, X } from "lucide-react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { formatEventMeta, groupDayPostsByEvent } from "@/lib/events/display";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
+import { CREATE } from "@/lib/create-actions";
 
 /**
  * Clean day detail panel — events (albums) + cards for the selected day.
@@ -104,12 +105,12 @@ export function CalendarDayPanel({
           to="/scheduler"
           className="btn-action-primary btn-action min-h-9 flex-1 justify-center text-body-sm"
         >
-          <Plus className="h-3.5 w-3.5" />
-          New card
+          <FilePlus className="h-3.5 w-3.5" strokeWidth={2} />
+          {CREATE.card}
         </Link>
         <Button type="button" variant="secondary" size="sm" className="min-h-9 flex-1" onClick={onCreateEvent}>
-          <CalendarPlus className="h-3.5 w-3.5" />
-          New event
+          <CalendarPlus className="h-3.5 w-3.5" strokeWidth={2} />
+          {CREATE.event}
         </Button>
       </div>
 

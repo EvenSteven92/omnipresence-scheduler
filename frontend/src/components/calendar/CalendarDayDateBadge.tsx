@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { CREATE } from "@/lib/create-actions";
 
 /** Top-left date control — orange fill when today or an event lands on this day. */
 export function CalendarDayDateBadge({
@@ -61,7 +62,7 @@ export function CalendarDayDateBadge({
               emptyDayCellHover ? "text-accent-foreground" : "text-accent"
             }`}
           >
-            New event
+            {CREATE.event}
           </span>
         ) : null}
       </button>

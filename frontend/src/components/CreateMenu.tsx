@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { CalendarPlus, ChevronDown, FilePlus } from "lucide-react";
 import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
+import { CREATE } from "@/lib/create-actions";
 import { cn } from "@/lib/utils";
 
 export function CreateMenu({
@@ -61,7 +62,7 @@ export function CreateMenu({
               className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-secondary"
             >
               <FilePlus className="h-4 w-4 text-accent" strokeWidth={1.75} />
-              New post
+              {CREATE.card}
             </Link>
             <button
               type="button"
@@ -74,7 +75,7 @@ export function CreateMenu({
               className="flex w-full items-center gap-2.5 border-t-[1.5px] border-foreground px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-secondary"
             >
               <CalendarPlus className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
-              New event
+              {CREATE.event}
             </button>
           </div>
         ) : null}

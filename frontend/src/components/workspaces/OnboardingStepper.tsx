@@ -43,7 +43,7 @@ export function OnboardingStepper() {
       id: "create",
       done: hasPosts,
       icon: FilePlus,
-      title: "Schedule a post",
+      title: "Schedule a card",
       description: "Upload media, pick platforms, and set publish times.",
       cta: "Create a post",
       href: "/scheduler",

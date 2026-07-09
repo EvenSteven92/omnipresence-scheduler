@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { FilePlus } from "lucide-react";
+import { CREATE } from "@/lib/create-actions";
 
 /** Hover-reveal solid control for empty calendar days. */
 export function EmptyDayNewPostAffordance() {
@@ -9,10 +10,11 @@ export function EmptyDayNewPostAffordance() {
         to="/scheduler"
         onClick={(e) => e.stopPropagation()}
         data-testid="empty-day-new-post"
+        aria-label={CREATE.card}
         className="pointer-events-auto inline-flex items-center gap-1.5 rounded-md border-[1.5px] border-foreground bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground shadow-[2px_2px_0_0_var(--color-foreground)] transition-[transform,box-shadow,background-color] hover:translate-x-px hover:translate-y-px hover:bg-secondary hover:shadow-[1px_1px_0_0_var(--color-foreground)]"
       >
-        <Plus className="h-3.5 w-3.5 text-accent" strokeWidth={2} />
-        Add
+        <FilePlus className="h-3.5 w-3.5 text-accent" strokeWidth={2} />
+        {CREATE.card}
       </Link>
     </div>
   );

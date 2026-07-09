@@ -9,8 +9,9 @@ import { EventAlbumCard } from "@/components/events/EventAlbumCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { eventKindLabel, getEventById } from "@/lib/events/display";
 import type { ContentEvent, ContentEventKind } from "@/lib/workspaces/types";
-import { Layers } from "lucide-react";
+import { FilePlus, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CREATE } from "@/lib/create-actions";
 
 const CATEGORY_FILTERS: { id: ContentEventKind | "all"; label: string }[] = [
   { id: "all", label: "All" },
@@ -93,7 +94,8 @@ function EventsIndexPage() {
         description="Every album is a ministry moment. Open one to see its cards."
         actions={
           <Link to="/scheduler" className="btn-action-primary btn-action">
-            + New card
+            <FilePlus className="h-3.5 w-3.5" strokeWidth={2} />
+            {CREATE.card}
           </Link>
         }
       />

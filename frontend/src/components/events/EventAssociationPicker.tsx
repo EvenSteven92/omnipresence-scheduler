@@ -1,5 +1,6 @@
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { formatEventDateTime, formatEventMeta } from "@/lib/events/display";
+import { CREATE } from "@/lib/create-actions";
 import { Layers, X } from "lucide-react";
 
 export function EventAssociationPicker({
@@ -19,7 +20,7 @@ export function EventAssociationPicker({
     return (
       <div className="space-y-3">
         <p className="text-body-sm text-muted-foreground">
-          No event albums yet. Create one to group this file with related media.
+          No events yet. Create one to group this card with related media.
         </p>
         {onCreateEvent ? (
           <button
@@ -27,7 +28,7 @@ export function EventAssociationPicker({
             onClick={onCreateEvent}
             className="text-sm font-medium text-accent hover:underline"
           >
-            Create event album →
+            {CREATE.event} →
           </button>
         ) : null}
       </div>
@@ -37,8 +38,8 @@ export function EventAssociationPicker({
   return (
     <div data-testid="event-association-picker" className="space-y-3">
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Associate this file with a ministry event — like linking a reel to its sermon album. Not a
-        tag; files stay grouped under the event.
+        Link this card to a ministry event (sermon, worship night…). Cards stay grouped under that
+        event.
       </p>
 
       {selected ? (
@@ -95,7 +96,7 @@ export function EventAssociationPicker({
           onClick={onCreateEvent}
           className="text-sm font-medium text-muted-foreground transition-colors hover:text-accent"
         >
-          + New event album
+          + {CREATE.event}
         </button>
       ) : null}
     </div>

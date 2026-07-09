@@ -35,7 +35,7 @@ export function OnboardingChecklist({ className }: { className?: string }) {
       id: "post",
       done: hasPosts,
       icon: FilePlus,
-      title: "Schedule a post",
+      title: "Schedule a card",
       href: "/scheduler",
     },
     {

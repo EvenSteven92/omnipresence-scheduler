@@ -6,6 +6,7 @@ import { eventKindLabel } from "@/lib/events/display";
 import { createEventFromInput, type CreateEventInput } from "@/lib/events/create";
 import { toDateInputValue, toTimeInputValue } from "@/lib/schedule-engine";
 import { UnassignedMediaPicker } from "@/components/events/UnassignedMediaPicker";
+import { CREATE } from "@/lib/create-actions";
 import { cn } from "@/lib/utils";
 
 const EVENT_KINDS: ContentEventKind[] = [
@@ -115,7 +116,7 @@ export function ScheduleEventModal({
         {/* Header — GCal-style: short title, no product essay */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4">
           <h2 id="new-event-title" className="text-base font-semibold text-foreground">
-            New event
+            {CREATE.event}
           </h2>
           <button
             type="button"

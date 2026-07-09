@@ -5,9 +5,10 @@ import { ConnectPlatformSection } from "@/components/ConnectPlatformSection";
 import { useWorkspace } from "@/lib/workspace-context";
 import { useOAuthAutoSync } from "@/hooks/useOAuthAutoSync";
 import { OnboardingStepper } from "@/components/workspaces/OnboardingStepper";
-import { ArrowRight, Building2, Link2 } from "lucide-react";
+import { ArrowRight, Building2, FilePlus, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
+import { CREATE } from "@/lib/create-actions";
 
 export const Route = createFileRoute("/workspaces")({
   head: () => ({
@@ -86,7 +87,8 @@ function WorkspacesPage() {
               Queue <ArrowRight className="h-3 w-3" />
             </Link>
             <Link to="/scheduler" className="btn-action-primary btn-action">
-              + New post
+              <FilePlus className="h-3.5 w-3.5" strokeWidth={2} />
+              {CREATE.card}
             </Link>
           </>
         }

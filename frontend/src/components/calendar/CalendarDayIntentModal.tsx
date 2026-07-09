@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { CalendarPlus, FilePlus, X as XIcon } from "lucide-react";
+import { CREATE } from "@/lib/create-actions";
 
 export function CalendarDayIntentModal({
   date,
@@ -41,7 +42,7 @@ export function CalendarDayIntentModal({
             <div className="page-kicker">Plan this day</div>
             <p className="mt-2 text-sm font-semibold text-foreground">{dateLabel}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Nothing scheduled yet — start with a content card or an event album.
+              Nothing planned yet — add a card or an event for this day.
             </p>
           </div>
           <button
@@ -65,9 +66,9 @@ export function CalendarDayIntentModal({
               <FilePlus className="h-4 w-4 text-accent" strokeWidth={1.75} />
             </span>
             <span className="min-w-0">
-              <span className="block text-sm font-semibold text-foreground">Schedule a post</span>
+              <span className="block text-sm font-semibold text-foreground">{CREATE.card}</span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
-                Upload media and queue publishes for this day.
+                Upload media and set where & when to publish.
               </span>
             </span>
           </Link>
@@ -85,11 +86,9 @@ export function CalendarDayIntentModal({
               <CalendarPlus className="h-4 w-4 text-foreground" strokeWidth={1.75} />
             </span>
             <span className="min-w-0">
-              <span className="block text-sm font-semibold text-foreground">
-                Create event album
-              </span>
+              <span className="block text-sm font-semibold text-foreground">{CREATE.event}</span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
-                Group sermon reels, clips, and cards under one ministry moment.
+                A real-world moment (sermon, worship night…) to group cards under.
               </span>
             </span>
           </button>
