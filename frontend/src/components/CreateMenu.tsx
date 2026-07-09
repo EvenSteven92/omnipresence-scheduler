@@ -37,12 +37,12 @@ export function CreateMenu({
           aria-haspopup="menu"
           aria-label="Create"
           className={cn(
-            "btn-action-primary btn-action w-full",
+            "btn-action btn-action-primary w-full !text-white",
             collapsed ? "justify-center px-2" : "justify-between",
           )}
         >
-          <span className="flex items-center gap-2">
-            <FilePlus className="h-4 w-4" strokeWidth={2} />
+          <span className="flex items-center gap-2 text-white">
+            <FilePlus className="h-4 w-4 text-white" strokeWidth={2} />
             {!collapsed ? "Create" : null}
           </span>
           {!collapsed ? (

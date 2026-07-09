@@ -24,9 +24,9 @@ export function NewEventPostActions({
         <Link
           to="/scheduler"
           data-testid="new-post-btn"
-          className="btn-action-primary btn-action"
+          className="btn-action btn-action-primary !text-white"
         >
-          <FilePlus className="h-3.5 w-3.5" strokeWidth={2} />
+          <FilePlus className="h-3.5 w-3.5 text-white" strokeWidth={2} />
           {CREATE.card}
         </Link>
       ) : null}

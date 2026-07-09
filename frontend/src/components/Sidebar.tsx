@@ -143,12 +143,12 @@ export function Sidebar() {
           <Link
             to="/scheduler"
             className={cn(
-              "flex items-center justify-center gap-2 rounded-md border border-foreground bg-primary px-4 py-3.5 font-display text-sm font-medium text-primary-foreground transition-colors duration-150 hover:bg-[#262626]",
+              "flex items-center justify-center gap-2 rounded-md border border-foreground bg-primary px-4 py-3.5 font-display text-sm font-medium text-white transition-colors duration-150 hover:bg-[#262626] hover:text-white",
               collapsed && "px-2",
             )}
           >
-            <span className="text-lg leading-none">+</span>
-            {!collapsed ? <span>{CREATE.card}</span> : null}
+            <span className="text-lg leading-none text-white">+</span>
+            {!collapsed ? <span className="text-white">{CREATE.card}</span> : null}
           </Link>
           <SidebarSyncFooter collapsed={collapsed} />
         </div>
@@ -173,10 +173,10 @@ export function Sidebar() {
         ))}
         <Link
           to="/scheduler"
-          className="flex flex-col items-center gap-0.5 rounded-md border border-foreground bg-primary px-3 py-1.5 font-display text-[0.65rem] font-medium text-primary-foreground"
+          className="flex flex-col items-center gap-0.5 rounded-md border border-foreground bg-primary px-3 py-1.5 font-display text-[0.65rem] font-medium text-white"
         >
-          <span className="text-lg leading-none">+</span>
-          <span>{CREATE.card}</span>
+          <span className="text-lg leading-none text-white">+</span>
+          <span className="text-white">{CREATE.card}</span>
         </Link>
       </nav>
     </>

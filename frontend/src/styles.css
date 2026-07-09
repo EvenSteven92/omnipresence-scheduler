@@ -362,19 +362,27 @@
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
+  /* Combined selector so base .btn-action color cannot win over primary */
+  .btn-action.btn-action-primary,
   .btn-action-primary {
     border-color: var(--color-foreground);
     background: var(--color-primary);
-    color: var(--color-primary-foreground);
+    color: #ffffff;
     font-family: var(--font-sans);
     font-weight: 500;
     box-shadow: none;
   }
+  .btn-action.btn-action-primary:hover,
   .btn-action-primary:hover {
     background: #262626;
-    color: var(--color-primary-foreground);
+    color: #ffffff;
     transform: none;
     box-shadow: none;
+  }
+  .btn-action.btn-action-primary svg,
+  .btn-action-primary svg {
+    color: #ffffff;
+    stroke: currentColor;
   }
   .btn-action-secondary {
     border-color: var(--color-foreground);
