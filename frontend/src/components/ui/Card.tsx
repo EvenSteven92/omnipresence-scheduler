@@ -13,8 +13,8 @@ export function Card({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-sm border border-border",
-        elevated ? "bg-surface-elevated shadow-sm" : "bg-surface",
+        "overflow-hidden rounded-md border-[1.5px] border-foreground bg-card",
+        elevated && "shadow-[var(--shadow-card)]",
         className,
       )}
     >
@@ -37,7 +37,7 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-start justify-between gap-3 border-b border-border px-5 py-4",
+        "flex flex-wrap items-start justify-between gap-3 border-b-[1.5px] border-foreground px-5 py-4",
         className,
       )}
     >

@@ -54,7 +54,7 @@ export function PlatformPreview({
   const body = (
     <div className={variant === "panel" ? "" : "px-4 pb-4"}>
       {platforms.length === 0 ? (
-        <div className="rounded-sm border border-dashed border-border bg-background/30 px-3 py-6 text-center text-body-sm text-muted-foreground">
+        <div className="rounded-md border-[1.5px] border-foreground bg-paper-2 px-3 py-6 text-center text-body-sm text-muted-foreground">
           Select platforms above to see how your post will look on each network.
         </div>
       ) : (
@@ -242,7 +242,7 @@ function PlatformMock({
   if (platform === "RUMBLE")
     return <RumbleMock caption={display} tags={tags} filename={filename} />;
   return (
-    <div className="rounded-sm border border-dashed border-border px-3 py-4 text-center text-body-sm text-muted-foreground">
+    <div className="rounded-md border-[1.5px] border-foreground bg-paper-2 px-3 py-4 text-center text-body-sm text-muted-foreground">
       Preview for {network}
     </div>
   );

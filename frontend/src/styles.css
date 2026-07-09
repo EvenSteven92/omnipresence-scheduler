@@ -292,6 +292,29 @@
     transform: translate(1px, 1px);
     box-shadow: 2px 2px 0 var(--color-foreground);
   }
+  .btn-action-secondary {
+    border-color: var(--color-foreground);
+    background: var(--color-surface);
+    color: var(--color-foreground);
+  }
+  .btn-action-secondary:hover {
+    background: var(--color-secondary);
+  }
+  .panel-elevated {
+    border: 1.5px solid var(--color-foreground);
+    background: var(--color-surface-elevated);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+  }
+  .modal-shell {
+    border: 1.5px solid var(--color-foreground);
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    box-shadow: 6px 6px 0 var(--color-foreground);
+  }
+  .modal-backdrop {
+    background: color-mix(in oklab, var(--color-foreground) 35%, transparent);
+  }
 
   .metric-cell {
     padding: 1.25rem 1.25rem;

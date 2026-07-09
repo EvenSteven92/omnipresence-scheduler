@@ -53,17 +53,13 @@ function initialViewMonth(slots: PlatformSlot[], scheduled: ScheduledPost[]): Da
 function Legend({
   swatch,
   label,
-  dashed = false,
 }: {
   swatch: string;
   label: string;
-  dashed?: boolean;
 }) {
   return (
-    <span className="flex items-center gap-1.5 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
-      <span
-        className={`inline-block h-2 w-2 rounded-sm ${swatch} ${dashed ? "border border-dashed border-muted-foreground/50 bg-transparent" : ""}`}
-      />
+    <span className="flex items-center gap-1.5 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+      <span className={`inline-block h-2 w-2 rounded-sm border border-foreground ${swatch}`} />
       {label}
     </span>
   );
@@ -166,7 +162,7 @@ export function PublishScheduleCalendar({
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Legend swatch="bg-accent" label="today" />
-          <Legend swatch="" label="scheduled" dashed />
+          <Legend swatch="bg-paper-2" label="Scheduled" />
           <Legend swatch="bg-foreground" label="this post" />
         </div>
       </div>

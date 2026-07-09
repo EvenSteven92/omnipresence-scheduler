@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { X as XIcon, Layers, ArrowRight } from "lucide-react";
-import { ScheduleEventStencil } from "@/components/calendar/ScheduleEventStencil";
+import { ScheduleEventAffordance } from "@/components/calendar/ScheduleEventAffordance";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { formatEventMeta } from "@/lib/events/display";
 
@@ -36,11 +36,11 @@ export function CalendarDayEventsModal({
     <div
       onClick={onClose}
       data-testid="calendar-day-events-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-6"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md overflow-hidden rounded-sm border border-border bg-surface shadow-2xl"
+        className="w-full max-w-md modal-shell overflow-hidden"
       >
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
@@ -83,8 +83,8 @@ export function CalendarDayEventsModal({
             </li>
           ))}
         </ul>
-        <div className="border-t border-border px-5 py-4">
-          <ScheduleEventStencil onClick={onScheduleEvent} />
+        <div className="border-t-[1.5px] border-foreground px-5 py-4">
+          <ScheduleEventAffordance onClick={onScheduleEvent} />
         </div>
       </div>
     </div>

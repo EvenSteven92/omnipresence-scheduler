@@ -414,7 +414,7 @@ function ComposePage() {
             <section className="panel p-[18px]">
               <SectionLabel n="01" title="MEDIA" />
               {activeDraft ? (
-                <div className="flex items-center gap-4 rounded-md border-[1.5px] border-dashed border-foreground bg-background px-5 py-5">
+                <div className="flex items-center gap-4 rounded-md border-[1.5px] border-foreground bg-paper-2 px-5 py-5">
                   <CardThumbnail
                     src={activeDraft.previewUrl}
                     post={{
@@ -472,8 +472,8 @@ function ComposePage() {
                   }}
                   data-testid="media-dropzone"
                   className={cn(
-                    "flex min-h-[140px] cursor-pointer flex-col items-center justify-center rounded-md border-[1.5px] border-dashed border-foreground bg-background px-5 py-8 text-center transition-colors",
-                    isDragging && "bg-accent/10",
+                    "flex min-h-[140px] cursor-pointer flex-col items-center justify-center rounded-md border-[1.5px] border-foreground bg-paper-2 px-5 py-8 text-center transition-colors hover:bg-secondary",
+                    isDragging && "bg-accent/15",
                   )}
                 >
                   <p className="font-display text-sm font-semibold text-foreground">
@@ -701,7 +701,7 @@ function ComposePage() {
                     <button
                       type="button"
                       onClick={() => setCreateAlbumOpen(true)}
-                      className="rounded-md border-[1.5px] border-dashed border-foreground px-3 py-2 font-mono text-[0.6875rem] font-semibold uppercase text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      className="rounded-md border-[1.5px] border-foreground bg-card px-3 py-2 font-mono text-[0.6875rem] font-semibold uppercase text-foreground transition-colors hover:bg-secondary"
                     >
                       + New album
                     </button>

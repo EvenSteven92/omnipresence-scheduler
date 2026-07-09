@@ -6,7 +6,7 @@ import { formatEventMeta, groupDayPostsByEvent } from "@/lib/events/display";
 import { ContentCardChip } from "@/components/post/ContentCardChip";
 
 const needsEventSectionClass =
-  "rounded-sm border border-dashed border-warning/70 bg-warning/10 ring-1 ring-inset ring-warning/30";
+  "rounded-md border-[1.5px] border-warning bg-warning/10";
 
 function DayPostsEventGroupHeader({
   event,
@@ -38,12 +38,12 @@ function DayPostsEventGroupHeader({
 function DayPostsUnassignedGroupHeader({ postCount }: { postCount: number }) {
   return (
     <div className="flex items-center gap-2.5 border-b border-warning/30 pb-2">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-dashed border-warning/60 bg-warning/15">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-[1.5px] border-warning bg-warning/15">
         <AlertTriangle className="h-3 w-3 text-warning" strokeWidth={1.75} />
       </span>
       <div className="min-w-0 flex-1">
         <div className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-warning">
-          unassigned_media
+          Unassigned media
         </div>
         <p className="mt-0.5 text-[0.65rem] leading-snug text-muted-foreground">
           Link these cards to an event album below.
@@ -112,11 +112,11 @@ export function DayPostsGridModal({
     <div
       onClick={onClose}
       data-testid="day-posts-grid-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4 sm:p-6"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-sm border border-border bg-surface shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-3xl flex-col modal-shell overflow-hidden"
       >
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div className="min-w-0">

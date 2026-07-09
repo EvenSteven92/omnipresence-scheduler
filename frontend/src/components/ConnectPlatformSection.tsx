@@ -209,7 +209,7 @@ export function ConnectPlatformSection({
                   <div
                     key={meta.short}
                     data-testid={`connect-platform-${meta.short.replace(/\s+/g, "-")}`}
-                    className="flex items-center gap-3 rounded-sm border border-dashed border-border px-4 py-4 opacity-60"
+                    className="flex items-center gap-3 rounded-md border-[1.5px] border-foreground/50 bg-paper-2 px-4 py-4 opacity-70"
                   >
                     <PlatformChip platform={meta.short} size="xl" />
                     <div className="min-w-0 flex-1">

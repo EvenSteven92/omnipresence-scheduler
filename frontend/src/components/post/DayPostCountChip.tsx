@@ -38,7 +38,7 @@ export function DayPostCountChip({
         eventLinked
           ? "bg-accent ring-2 ring-inset ring-foreground/20"
           : needsEvent
-            ? "border-dashed border-warning bg-warning/15"
+            ? "border-warning bg-warning/15"
             : variant === "scheduled"
               ? "bg-paper-2"
               : "bg-accent"

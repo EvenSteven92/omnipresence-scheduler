@@ -126,7 +126,7 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
             <Link
               to="/workspaces"
               onClick={() => setOpen(false)}
-              className="flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+              className="flex w-full items-center justify-center gap-2 rounded-md border-[1.5px] border-foreground bg-card px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
             >
               <Plus className="h-3.5 w-3.5" />
               Manage workspaces

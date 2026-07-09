@@ -13,13 +13,13 @@ function Legend({
 }) {
   if (!active) return null;
   return (
-    <span className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2 py-1 text-[0.55rem] uppercase tracking-[0.14em] text-muted-foreground">
+    <span className="flex items-center gap-1.5 rounded-md border-[1.5px] border-foreground bg-card px-2 py-1 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
       {icon ? (
-        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-dashed border-border bg-background/40">
-          <Layers className="h-2 w-2" strokeWidth={1.75} />
+        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border-[1.5px] border-foreground bg-secondary">
+          <Layers className="h-2 w-2" strokeWidth={2} />
         </span>
       ) : (
-        <span className={`inline-block h-2 w-2 rounded-sm border ${swatch}`} />
+        <span className={`inline-block h-2 w-2 rounded-sm border border-foreground ${swatch}`} />
       )}
       {label}
     </span>
@@ -42,31 +42,29 @@ export function CalendarLegendBar({
         onClick={onToggleHighlight}
         data-testid="highlight-unassociated-toggle"
         title="Highlight posts not yet tied to an event album"
-        className={`flex items-center gap-1.5 rounded-sm border px-2 py-1 text-[0.55rem] uppercase tracking-[0.14em] transition-colors ${
+        className={`flex items-center gap-1.5 rounded-md border-[1.5px] px-2 py-1 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] transition-colors ${
           highlightUnassociated
-            ? "border-warning/70 bg-warning/10 text-warning"
-            : "border-border bg-surface text-muted-foreground hover:bg-secondary hover:text-foreground"
+            ? "border-warning bg-warning/15 text-warning"
+            : "border-foreground bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
         }`}
       >
         <span
-          className={`inline-block h-2 w-2 rounded-sm border ${
-            highlightUnassociated
-              ? "border-dashed border-warning bg-warning/30"
-              : "border-dashed border-muted-foreground/50 bg-transparent"
+          className={`inline-block h-2 w-2 rounded-sm border border-foreground ${
+            highlightUnassociated ? "bg-warning" : "bg-transparent"
           }`}
         />
         Show unlinked posts
         {unassociatedCount > 0 ? (
-          <span className="font-mono text-[0.5rem] opacity-80">({unassociatedCount})</span>
+          <span className="font-data text-[0.5rem] opacity-80">({unassociatedCount})</span>
         ) : null}
       </button>
       <Legend swatch="bg-accent" label="Today · event" />
       <Legend
-        swatch="border-dashed border-warning/70 bg-warning/20"
-        label="Needs event"
+        swatch="bg-warning/40"
+        label="Needs album"
         active={unassociatedCount > 0}
       />
-      <Legend swatch="border-dashed border-border bg-background/30" label="Link to event" icon />
+      <Legend swatch="bg-secondary" label="Link album" icon />
     </div>
   );
 }

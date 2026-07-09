@@ -1,15 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 
-/** Centered add control — visible when an empty main-calendar day cell is hovered. */
+/** Hover-reveal solid control for empty calendar days. */
 export function EmptyDayNewPostAffordance() {
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity group-hover/cell:opacity-100">
+    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity group-hover/cell:opacity-100 group-focus-within/cell:opacity-100">
       <Link
         to="/scheduler"
         onClick={(e) => e.stopPropagation()}
         data-testid="empty-day-new-post"
-        className="group/newpost pointer-events-auto flex items-center gap-1.5 rounded-sm border border-border bg-background/90 px-2.5 py-1.5 text-xs text-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-accent/60 hover:bg-accent/10"
+        className="pointer-events-auto inline-flex items-center gap-1.5 rounded-md border-[1.5px] border-foreground bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground shadow-[2px_2px_0_0_var(--color-foreground)] transition-[transform,box-shadow,background-color] hover:translate-x-px hover:translate-y-px hover:bg-secondary hover:shadow-[1px_1px_0_0_var(--color-foreground)]"
       >
         <Plus className="h-3.5 w-3.5 text-accent" strokeWidth={2} />
         Add

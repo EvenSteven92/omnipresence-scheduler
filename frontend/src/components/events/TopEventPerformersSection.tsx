@@ -97,7 +97,7 @@ export function TopEventPerformersSection({
       </div>
 
       {topEvents.length === 0 ? (
-        <div className="rounded-md border border-dashed border-foreground bg-card/40 px-5 py-10 text-center text-sm text-muted-foreground">
+        <div className="rounded-md border-[1.5px] border-foreground bg-card px-5 py-10 text-center text-sm text-muted-foreground">
           {emptyLabel}
         </div>
       ) : (

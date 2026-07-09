@@ -46,11 +46,11 @@ export function RepublishModal({
     <div
       onClick={onClose}
       data-testid="republish-modal"
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center modal-backdrop p-6"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md overflow-hidden rounded-sm border border-border bg-surface shadow-2xl"
+        className="w-full max-w-md modal-shell overflow-hidden"
       >
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div className="min-w-0">

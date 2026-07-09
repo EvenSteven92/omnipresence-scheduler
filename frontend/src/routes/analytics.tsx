@@ -527,7 +527,7 @@ function AnalyticsPage() {
                 </button>
               </div>
               {topPublished.length === 0 ? (
-                <div className="rounded-sm border border-dashed border-border bg-surface/40 px-5 py-10 text-center text-sm text-muted-foreground">
+                <div className="rounded-md border-[1.5px] border-foreground bg-card px-5 py-10 text-center text-sm text-muted-foreground">
                   No published posts in this range
                 </div>
               ) : (

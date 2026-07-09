@@ -381,7 +381,7 @@ function CardDetailView({
                 <button
                   type="button"
                   onClick={editCard}
-                  className="rounded-lg border border-dashed border-foreground bg-transparent px-3 py-3 font-mono text-[0.6875rem] font-bold uppercase text-muted-foreground hover:bg-secondary/40"
+                  className="rounded-md border-[1.5px] border-foreground bg-card px-3 py-3 font-mono text-[0.6875rem] font-bold uppercase text-foreground hover:bg-secondary"
                 >
                   + Add publish
                 </button>

@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, Layers, Plus, X } from "lucide-react";
+import { Layers, Plus, X } from "lucide-react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { formatEventMeta } from "@/lib/events/display";
 import { ContentCardChip } from "@/components/post/ContentCardChip";
-import { ScheduleEventStencil } from "@/components/calendar/ScheduleEventStencil";
-import { EmptyDayNewPostAffordance } from "@/components/calendar/EmptyDayNewPostAffordance";
+import { ScheduleEventAffordance } from "@/components/calendar/ScheduleEventAffordance";
 import { groupDayPostsByEvent } from "@/lib/events/display";
 import { Link } from "@tanstack/react-router";
 
@@ -90,12 +89,12 @@ export function CalendarDayDrawer({
         </button>
       </header>
 
-      <div className="flex border-b border-border">
+      <div className="flex border-b-[1.5px] border-foreground">
         <button
           type="button"
           data-testid="day-drawer-tab-posts"
           onClick={() => setTab("posts")}
-          className={`flex-1 px-4 py-3 text-body-sm font-medium transition-colors ${
+          className={`flex-1 px-4 py-3 text-body-sm font-semibold transition-colors ${
             tab === "posts"
               ? "border-b-2 border-accent text-foreground"
               : "text-muted-foreground hover:text-foreground"
@@ -107,7 +106,7 @@ export function CalendarDayDrawer({
           type="button"
           data-testid="day-drawer-tab-events"
           onClick={() => setTab("events")}
-          className={`flex-1 px-4 py-3 text-body-sm font-medium transition-colors ${
+          className={`flex-1 px-4 py-3 text-body-sm font-semibold transition-colors ${
             tab === "events"
               ? "border-b-2 border-accent text-foreground"
               : "text-muted-foreground hover:text-foreground"
@@ -122,7 +121,6 @@ export function CalendarDayDrawer({
           posts.length === 0 ? (
             <div className="space-y-4">
               <p className="text-body-sm text-muted-foreground">No posts scheduled for this day.</p>
-              <EmptyDayNewPostAffordance />
               <Link to="/scheduler" className="btn-action-primary btn-action w-full justify-center">
                 <Plus className="h-3.5 w-3.5" />
                 Create a post
@@ -161,7 +159,7 @@ export function CalendarDayDrawer({
         ) : events.length === 0 ? (
           <div className="space-y-4">
             <p className="text-body-sm text-muted-foreground">No events on this day.</p>
-            <ScheduleEventStencil onClick={onCreateEvent} />
+            <ScheduleEventAffordance onClick={onCreateEvent} />
           </div>
         ) : (
           <ul className="space-y-2">
@@ -171,7 +169,7 @@ export function CalendarDayDrawer({
                   type="button"
                   onClick={() => onSelectEvent(event)}
                   data-testid={`drawer-event-${event.id}`}
-                  className="flex w-full items-center gap-3 rounded-sm border border-border bg-background/40 px-4 py-3 text-left transition-colors hover:bg-secondary/30"
+                  className="flex w-full items-center gap-3 rounded-md border-[1.5px] border-foreground bg-card px-4 py-3 text-left transition-colors hover:bg-secondary"
                 >
                   <Layers className="h-4 w-4 shrink-0 text-accent" />
                   <span className="min-w-0 flex-1">
@@ -184,14 +182,7 @@ export function CalendarDayDrawer({
               </li>
             ))}
             <li className="pt-2">
-              <button
-                type="button"
-                onClick={onCreateEvent}
-                className="flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-border px-4 py-3 text-body-sm text-muted-foreground hover:bg-secondary/30 hover:text-foreground"
-              >
-                <CalendarPlus className="h-4 w-4" />
-                New event
-              </button>
+              <ScheduleEventAffordance onClick={onCreateEvent} />
             </li>
           </ul>
         )}

@@ -41,12 +41,12 @@ export function UnassignedMediaPicker({
     return (
       <div
         data-testid="unassigned-media-empty"
-        className="rounded-sm border border-dashed border-border bg-background/30 px-4 py-6 text-center"
+        className="rounded-md border-[1.5px] border-foreground bg-card px-4 py-6 text-center"
       >
         <p className="text-body-sm text-muted-foreground">All media is associated with events</p>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
           Every file is already linked to an event album. You can associate more later from New Post
-          or the calendar stencil.
+          or the calendar day panel.
         </p>
       </div>
     );
@@ -74,10 +74,10 @@ export function UnassignedMediaPicker({
               type="button"
               onClick={() => onToggle(post.id)}
               data-testid={`unassigned-media-${post.id}`}
-              className={`group relative overflow-hidden rounded-sm border text-left transition-colors ${
+              className={`group relative overflow-hidden rounded-md border-[1.5px] text-left transition-colors ${
                 selected
-                  ? "border-accent bg-accent/10"
-                  : "border-border bg-background/40 hover:border-accent/50 hover:bg-secondary/30"
+                  ? "border-foreground bg-accent/15"
+                  : "border-foreground bg-card hover:bg-secondary"
               }`}
             >
               <div className="relative aspect-video overflow-hidden bg-background">

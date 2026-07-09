@@ -5,7 +5,7 @@ import {
   inferMediaKind,
   scheduledPostPlatformEntries,
 } from "@/lib/scheduled-post-display";
-import { EventAssociateStencil } from "@/components/events/EventAssociateStencil";
+import { EventAssociateButton } from "@/components/events/EventAssociateButton";
 import { usesRailCardLayout } from "@/components/post/MediaPreview";
 import { PlatformChip } from "./PlatformChip";
 import { PlatformRow } from "./PlatformRow";
@@ -95,7 +95,7 @@ export function ContentCardChip({
         <PlatformRow entries={entries} size="sm" compact />
       )}
       {needsEvent && onAssociate ? (
-        <EventAssociateStencil dense={dense} onClick={onAssociate} />
+        <EventAssociateButton dense={dense} onClick={onAssociate} />
       ) : null}
     </>
   );

@@ -8,9 +8,8 @@ export type ContentCardVariant = "default" | "scheduled" | "highlight";
 
 const VARIANT_BORDER: Record<ContentCardVariant, string> = {
   default: "border-[1.5px] border-foreground bg-card",
-  scheduled: "border-[1.5px] border-dashed border-muted-foreground/60 bg-background/40",
-  highlight:
-    "border-[1.5px] border-dashed border-warning bg-warning/10 ring-1 ring-inset ring-warning/30",
+  scheduled: "border-[1.5px] border-foreground bg-paper-2/80",
+  highlight: "border-[1.5px] border-warning bg-warning/10",
 };
 
 export function ContentCard({

@@ -1,4 +1,4 @@
-import { AddPlatformStencilCard } from "@/components/AddPlatformStencilCard";
+import { AddPlatformCard } from "@/components/AddPlatformCard";
 import { CollapsibleSection } from "@/components/post/CollapsibleSection";
 import {
   PERFORMANCE_METRICS,
@@ -65,7 +65,7 @@ export function GrowthMatrixChart({
                 className="kpi-card flex flex-col border-l-[3px] px-4 py-4"
                 style={{ borderLeftColor: meta?.brandColor ?? "var(--color-border)" }}
               >
-                <div className="mb-4 flex items-center justify-between gap-2 border-b border-border pb-3">
+                <div className="mb-4 flex items-center justify-between gap-2 border-b-[1.5px] border-foreground pb-3">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <PlatformChip
                       platform={row.platform}
@@ -88,7 +88,7 @@ export function GrowthMatrixChart({
             );
           })}
 
-          <AddPlatformStencilCard testId="growth-matrix-add-platform" variant="grid" />
+          <AddPlatformCard testId="growth-matrix-add-platform" variant="grid" />
         </div>
       </CollapsibleSection>
     </div>
