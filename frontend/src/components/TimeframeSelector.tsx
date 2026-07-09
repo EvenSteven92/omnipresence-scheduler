@@ -7,6 +7,7 @@ import {
   isAllTime,
   timeframeLabel,
 } from "@/lib/timeframe";
+import { cn } from "@/lib/utils";
 
 const UNITS: { id: TimeframeUnit; label: string }[] = [
   { id: "day", label: "day(s)" },
@@ -17,7 +18,7 @@ const UNITS: { id: TimeframeUnit; label: string }[] = [
 
 /**
  * Inline timeframe selector — preset chips + custom (count + unit) + all-time.
- * Reused by Dashboard and Analytics.
+ * Paper neobrutalist chrome for Analytics and other surfaces.
  */
 export function TimeframeSelector({
   value,
@@ -28,8 +29,6 @@ export function TimeframeSelector({
   onChange: (next: Timeframe) => void;
   className?: string;
 }) {
-  // Local "draft" custom value — only commits to parent on blur/Enter, so typing
-  // doesn't spam re-renders downstream.
   const [customCount, setCustomCount] = useState<number>(
     value.kind === "custom" ? value.count : 14,
   );
@@ -39,7 +38,6 @@ export function TimeframeSelector({
   const [unitOpen, setUnitOpen] = useState(false);
   const unitRef = useRef<HTMLDivElement | null>(null);
 
-  // Sync local draft when parent value changes externally
   useEffect(() => {
     if (value.kind === "custom") {
       setCustomCount(value.count);
@@ -47,7 +45,6 @@ export function TimeframeSelector({
     }
   }, [value]);
 
-  // Close unit dropdown on outside click
   useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (!unitRef.current?.contains(e.target as Node)) setUnitOpen(false);
@@ -64,9 +61,17 @@ export function TimeframeSelector({
   const isCustom = value.kind === "custom";
   const isAll = isAllTime(value);
 
+  const chip = (active: boolean) =>
+    cn(
+      "rounded-md border-[1.5px] border-foreground px-3.5 py-2 font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] transition-colors",
+      active
+        ? "bg-foreground text-background shadow-[2px_2px_0_0_var(--color-accent)]"
+        : "bg-card text-foreground hover:bg-secondary",
+    );
+
   return (
     <div
-      className={`flex flex-wrap items-center gap-3 ${className}`}
+      className={cn("flex flex-wrap items-center gap-2", className)}
       data-testid="timeframe-selector"
     >
       {PRESETS.map((p) => {
@@ -77,11 +82,7 @@ export function TimeframeSelector({
             type="button"
             onClick={() => onChange({ kind: "preset", preset: p.id })}
             data-testid={`tf-preset-${p.id}`}
-            className={`rounded-sm border border-border px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
-              active
-                ? "bg-foreground text-background"
-                : "bg-surface text-foreground hover:bg-secondary"
-            }`}
+            className={chip(active)}
           >
             {p.label}
           </button>
@@ -92,11 +93,7 @@ export function TimeframeSelector({
         type="button"
         onClick={() => onChange({ kind: "custom", count: customCount, unit: customUnit })}
         data-testid="tf-preset-custom"
-        className={`rounded-sm border border-border px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
-          isCustom
-            ? "bg-foreground text-background"
-            : "bg-surface text-foreground hover:bg-secondary"
-        }`}
+        className={chip(isCustom)}
       >
         Custom
       </button>
@@ -105,18 +102,16 @@ export function TimeframeSelector({
         type="button"
         onClick={() => onChange({ kind: "all" })}
         data-testid="tf-preset-all"
-        className={`rounded-sm border border-border px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
-          isAll ? "bg-foreground text-background" : "bg-surface text-foreground hover:bg-secondary"
-        }`}
+        className={chip(isAll)}
       >
         All-time
       </button>
 
-      {/* Custom count + unit (only enabled when Custom is active) */}
       <div
-        className={`ml-1 flex items-center gap-2 transition-opacity ${
-          isCustom ? "opacity-100" : "opacity-40"
-        }`}
+        className={cn(
+          "ml-1 flex items-center gap-2 transition-opacity",
+          isCustom ? "opacity-100" : "opacity-40",
+        )}
       >
         <input
           type="number"
@@ -131,7 +126,7 @@ export function TimeframeSelector({
           }}
           data-testid="tf-custom-count"
           aria-label="custom count"
-          className="w-14 rounded-sm border border-border bg-surface px-2.5 py-2 text-center font-mono text-[0.65rem] text-foreground focus:border-accent focus:outline-none disabled:cursor-not-allowed"
+          className="w-14 rounded-md border-[1.5px] border-foreground bg-paper-2 px-2 py-2 text-center font-data text-[0.7rem] text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed"
         />
         <div ref={unitRef} className="relative">
           <button
@@ -139,13 +134,13 @@ export function TimeframeSelector({
             disabled={!isCustom}
             onClick={() => setUnitOpen((o) => !o)}
             data-testid="tf-custom-unit"
-            className="flex items-center gap-1.5 rounded-sm border border-border bg-surface px-4 py-2 text-[0.65rem] uppercase tracking-[0.14em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-md border-[1.5px] border-foreground bg-card px-3 py-2 font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed"
           >
             {UNITS.find((u) => u.id === customUnit)?.label}
-            <ChevronDown className="h-2.5 w-2.5" />
+            <ChevronDown className="h-3 w-3" />
           </button>
           {unitOpen && isCustom && (
-            <div className="absolute right-0 top-full z-20 mt-1 w-32 overflow-hidden rounded-sm border border-border bg-surface shadow-lg">
+            <div className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-md border-[1.5px] border-foreground bg-card shadow-[4px_4px_0_0_var(--color-foreground)]">
               {UNITS.map((u) => (
                 <button
                   key={u.id}
@@ -156,11 +151,12 @@ export function TimeframeSelector({
                     commitCustom(customCount, u.id);
                   }}
                   data-testid={`tf-unit-${u.id}`}
-                  className={`block w-full px-4 py-2.5 text-left text-[0.65rem] uppercase tracking-[0.14em] transition-colors ${
+                  className={cn(
+                    "block w-full px-4 py-2.5 text-left font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] transition-colors",
                     customUnit === u.id
                       ? "bg-foreground text-background"
-                      : "text-foreground hover:bg-secondary"
-                  }`}
+                      : "text-foreground hover:bg-secondary",
+                  )}
                 >
                   {u.label}
                 </button>
@@ -171,10 +167,10 @@ export function TimeframeSelector({
       </div>
 
       <div
-        className="ml-2 hidden text-xs text-muted-foreground lg:block"
+        className="ml-auto hidden text-body-sm text-muted-foreground lg:block"
         data-testid="timeframe-label"
       >
-        Showing {timeframeLabel(value)}
+        Showing <span className="font-medium text-foreground">{timeframeLabel(value)}</span>
       </div>
     </div>
   );

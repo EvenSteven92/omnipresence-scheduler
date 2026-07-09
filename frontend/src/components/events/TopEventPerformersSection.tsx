@@ -84,15 +84,18 @@ export function TopEventPerformersSection({
 
   return (
     <section className={className} data-testid="top-event-performers">
-      <div className="mb-6 flex items-end justify-between gap-4 border-b-[1.5px] border-foreground pb-4">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b-[1.5px] border-foreground pb-3">
         <div>
-          <div className="page-kicker">Top event performers</div>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="page-kicker">Events</p>
+          <h2 className="mt-1 font-display text-xl font-bold text-foreground">
+            Top event performers
+          </h2>
+          <p className="mt-1 text-body-sm text-muted-foreground">
             Ranked by album engagement — {timeframeLabel(timeframe)}.
           </p>
         </div>
-        <Link to="/events" className="btn-action text-[0.65rem]">
-          All albums <ArrowRight className="h-3 w-3" />
+        <Link to="/events" className="btn-action btn-action-secondary">
+          All albums <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
