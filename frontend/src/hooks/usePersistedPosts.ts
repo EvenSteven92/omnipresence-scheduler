@@ -76,6 +76,8 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
           date: p.date,
           status: p.status,
           eventId: p.eventId ?? null,
+          dropboxUrl: p.dropboxUrl ?? null,
+          previewUrl: p.previewUrl ?? p.dropboxDirectUrl ?? null,
         }));
         const saved = await savePosts(payload);
         if (saved) {
@@ -113,6 +115,8 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
             date: post.date,
             status: post.status,
             eventId: post.eventId ?? null,
+            dropboxUrl: post.dropboxUrl ?? null,
+            previewUrl: post.previewUrl ?? post.dropboxDirectUrl ?? null,
           },
         ]);
         if (saved) {

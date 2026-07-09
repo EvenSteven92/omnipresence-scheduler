@@ -3,6 +3,7 @@ import { ChevronDown, Loader2, Sparkles, Wand2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ScheduleEventModal } from "@/components/calendar/ScheduleEventModal";
+import { DropboxLinkField } from "@/components/composer/DropboxLinkField";
 import { ComposerPreviewRail } from "@/components/composer/ComposerPreviewRail";
 import { ComposerPublishPlan } from "@/components/composer/ComposerPublishPlan";
 import { ComposerQueueRail } from "@/components/composer/ComposerQueueRail";
@@ -14,6 +15,7 @@ import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import {
   applyProposedTimes,
   countHashtagsInText,
+  defaultDraftFromDropbox,
   defaultDraftFromFile,
   distributeBulkDraftTimes,
   formatMediaMeta,
@@ -487,15 +489,14 @@ function ComposePage() {
                   data-testid="media-dropzone"
                   className={cn(
                     "flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-md border border-foreground bg-paper-2 px-5 py-10 text-center transition-colors hover:bg-secondary",
-                    isDragging && "bg-accent/15",
+                    isDragging && "bg-secondary",
                   )}
                 >
-                  <p className="font-display text-lg font-bold text-foreground">
+                  <p className="font-display text-lg font-semibold text-foreground">
                     Drop reels, clips, or images
                   </p>
                   <p className="mt-2 max-w-sm text-body-sm text-muted-foreground">
-                    Batch upload (e.g. 14 sermon reels) — each file becomes its own card with
-                    independent platforms and times.
+                    Batch upload, or start a card and paste a Dropbox share link below.
                   </p>
                 </div>
               )}
@@ -510,6 +511,61 @@ function ComposePage() {
                   e.target.value = "";
                 }}
               />
+              {activeDraft ? (
+                <div className="mt-4 border-t border-line pt-4">
+                  <DropboxLinkField
+                    value={activeDraft.dropboxUrl}
+                    directUrl={activeDraft.dropboxDirectUrl}
+                    onResolved={(result) => {
+                      updateActive((d) => ({
+                        ...d,
+                        dropboxUrl: result.shareUrl,
+                        dropboxDirectUrl: result.directUrl,
+                        // Prefer local blob preview when user uploaded a file
+                        previewUrl: d.previewUrl?.startsWith("blob:")
+                          ? d.previewUrl
+                          : result.directUrl,
+                        filename:
+                          d.filename && d.filename !== "untitled"
+                            ? d.filename
+                            : result.filename ?? d.filename,
+                        mediaKind:
+                          result.mediaKind === "image" || result.mediaKind === "video"
+                            ? result.mediaKind
+                            : d.mediaKind,
+                      }));
+                    }}
+                    onClear={() => {
+                      updateActive((d) => ({
+                        ...d,
+                        dropboxUrl: undefined,
+                        dropboxDirectUrl: undefined,
+                        previewUrl: d.previewUrl?.startsWith("blob:") ? d.previewUrl : undefined,
+                      }));
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="mt-4 border-t border-line pt-4">
+                  <DropboxLinkField
+                    onResolved={(result) => {
+                      const base = defaultDraftFromDropbox(result, workspace.platforms);
+                      const assigned = pendingSlotsFromQueue(queue);
+                      const times = suggestTimesForDraft(
+                        base,
+                        workspace.scheduledPosts,
+                        assigned,
+                        workspace.postingTimes,
+                      );
+                      const draft = applyProposedTimes(base, times);
+                      const startLen = queue.length;
+                      setQueue((cur) => [...cur, draft]);
+                      setActiveIndex(startLen);
+                    }}
+                    onClear={() => {}}
+                  />
+                </div>
+              )}
             </section>
 
             {activeDraft ? (

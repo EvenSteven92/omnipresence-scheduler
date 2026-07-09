@@ -49,6 +49,10 @@ function rowToScheduledPost(
     date: post.primaryAt.toISOString(),
     status: (post.status as ScheduledPost["status"]) || "scheduled",
     eventId: post.eventId ?? undefined,
+    dropboxUrl: post.dropboxUrl ?? undefined,
+    previewUrl: post.previewUrl ?? undefined,
+    // Direct URL stored in preview_url when sourced from Dropbox resolve
+    dropboxDirectUrl: post.previewUrl?.includes("dropbox") ? post.previewUrl : undefined,
   };
 }
 

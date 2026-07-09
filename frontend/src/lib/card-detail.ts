@@ -71,6 +71,10 @@ export function cardSourceFileRows(post: PostDetailSource): SourceFileRow[] {
     },
   );
 
+  if (post.dropboxUrl) {
+    rows.push({ key: "DROPBOX", value: post.dropboxUrl });
+  }
+
   return rows;
 }
 

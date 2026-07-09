@@ -25,6 +25,7 @@ import { Route as ApiPostsPostIdRouteImport } from './routes/api/posts.$postId'
 import { Route as ApiMetaSyncRouteImport } from './routes/api/meta/sync'
 import { Route as ApiMetaMetricsRouteImport } from './routes/api/meta/metrics'
 import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
+import { Route as ApiDropboxResolveRouteImport } from './routes/api/dropbox/resolve'
 import { Route as ApiAccountsStatusRouteImport } from './routes/api/accounts/status'
 import { Route as ApiAccountsYoutubeConnectRouteImport } from './routes/api/accounts/youtube/connect'
 import { Route as ApiAccountsYoutubeCallbackRouteImport } from './routes/api/accounts/youtube/callback'
@@ -111,6 +112,11 @@ const ApiAiGenerateRoute = ApiAiGenerateRouteImport.update({
   path: '/api/ai/generate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDropboxResolveRoute = ApiDropboxResolveRouteImport.update({
+  id: '/api/dropbox/resolve',
+  path: '/api/dropbox/resolve',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAccountsStatusRoute = ApiAccountsStatusRouteImport.update({
   id: '/api/accounts/status',
   path: '/api/accounts/status',
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/events/': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
+  '/api/dropbox/resolve': typeof ApiDropboxResolveRoute
   '/api/meta/metrics': typeof ApiMetaMetricsRoute
   '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/posts/$postId': typeof ApiPostsPostIdRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/events': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
+  '/api/dropbox/resolve': typeof ApiDropboxResolveRoute
   '/api/meta/metrics': typeof ApiMetaMetricsRoute
   '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/posts/$postId': typeof ApiPostsPostIdRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/events/': typeof EventsIndexRoute
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
+  '/api/dropbox/resolve': typeof ApiDropboxResolveRoute
   '/api/meta/metrics': typeof ApiMetaMetricsRoute
   '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/posts/$postId': typeof ApiPostsPostIdRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/events/'
     | '/api/accounts/status'
     | '/api/ai/generate'
+    | '/api/dropbox/resolve'
     | '/api/meta/metrics'
     | '/api/meta/sync'
     | '/api/posts/$postId'
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/api/accounts/status'
     | '/api/ai/generate'
+    | '/api/dropbox/resolve'
     | '/api/meta/metrics'
     | '/api/meta/sync'
     | '/api/posts/$postId'
@@ -268,6 +279,7 @@ export interface FileRouteTypes {
     | '/events/'
     | '/api/accounts/status'
     | '/api/ai/generate'
+    | '/api/dropbox/resolve'
     | '/api/meta/metrics'
     | '/api/meta/sync'
     | '/api/posts/$postId'
@@ -291,6 +303,7 @@ export interface RootRouteChildren {
   CardCardIdRoute: typeof CardCardIdRoute
   ApiAccountsStatusRoute: typeof ApiAccountsStatusRoute
   ApiAiGenerateRoute: typeof ApiAiGenerateRoute
+  ApiDropboxResolveRoute: typeof ApiDropboxResolveRoute
   ApiMetaMetricsRoute: typeof ApiMetaMetricsRoute
   ApiMetaSyncRoute: typeof ApiMetaSyncRoute
   ApiYoutubeMetricsRoute: typeof ApiYoutubeMetricsRoute
@@ -415,6 +428,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAiGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/dropbox/resolve': {
+      id: '/api/dropbox/resolve'
+      path: '/api/dropbox/resolve'
+      fullPath: '/api/dropbox/resolve'
+      preLoaderRoute: typeof ApiDropboxResolveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/accounts/status': {
       id: '/api/accounts/status'
       path: '/api/accounts/status'
@@ -488,6 +508,7 @@ const rootRouteChildren: RootRouteChildren = {
   CardCardIdRoute: CardCardIdRoute,
   ApiAccountsStatusRoute: ApiAccountsStatusRoute,
   ApiAiGenerateRoute: ApiAiGenerateRoute,
+  ApiDropboxResolveRoute: ApiDropboxResolveRoute,
   ApiMetaMetricsRoute: ApiMetaMetricsRoute,
   ApiMetaSyncRoute: ApiMetaSyncRoute,
   ApiYoutubeMetricsRoute: ApiYoutubeMetricsRoute,

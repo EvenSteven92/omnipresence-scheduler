@@ -65,6 +65,12 @@ When `DATABASE_URL` (Neon / Vercel Postgres) is set on the Vercel project:
 
 Without `DATABASE_URL`, the app keeps working in **local demo mode** (seed data + sessionStorage).
 
+### Dropbox media links
+
+On **Compose**, each card can store a **public Dropbox share link** (`dropbox.com/s/…` or `/scl/fi/…`). The app normalizes it to a direct `dl=1` URL via `POST /api/dropbox/resolve` (no Dropbox app key). Share + direct URL persist with the post when scheduling (Postgres or sessionStorage). Card detail shows the link under Source file.
+
+**Team tip:** use “anyone with the link” shares so a future publish worker can fetch media.
+
 > **Domain note:** `omnipresence.vercel.app` is a *different* product (not this repo).  
 > Use **omnipresence-torcc.vercel.app**, or in Vercel → Project → Settings → Domains assign a custom domain / rename the production alias to this project.
 

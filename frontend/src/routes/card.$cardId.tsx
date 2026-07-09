@@ -264,14 +264,26 @@ function CardDetailView({
                 {metaRows.map((row) => (
                   <div
                     key={row.key}
-                    className="flex items-center justify-between bg-card px-3 py-2.5"
+                    className="flex items-center justify-between gap-3 bg-card px-3 py-2.5"
                   >
-                    <span className="font-mono text-[0.6875rem] font-semibold text-muted-foreground">
+                    <span className="shrink-0 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                       {row.key}
                     </span>
-                    <span className="font-mono text-xs font-semibold text-foreground">
-                      {row.value}
-                    </span>
+                    {row.key === "DROPBOX" ? (
+                      <a
+                        href={row.value}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="min-w-0 truncate text-xs font-medium text-foreground underline decoration-line underline-offset-2 hover:text-muted-foreground"
+                        title={row.value}
+                      >
+                        {row.value.replace(/^https?:\/\/(www\.)?/, "")}
+                      </a>
+                    ) : (
+                      <span className="font-data text-xs font-semibold text-foreground">
+                        {row.value}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

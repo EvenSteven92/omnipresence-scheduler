@@ -19,6 +19,12 @@ export interface CardFileMeta {
   durationSec?: number;
   sizeMB?: number;
   createdAt?: string;
+  /** Dropbox share link as pasted by the editor. */
+  dropboxUrl?: string;
+  /** Direct/download-style URL for preview or future publish worker. */
+  dropboxDirectUrl?: string;
+  /** Local blob or Dropbox direct preview. */
+  previewUrl?: string;
 }
 
 export interface ScheduledPost extends CardFileMeta {

@@ -36,6 +36,10 @@ export interface DraftPost {
   eventId?: string;
   /** Object URL for the uploaded file — set in scheduler addFiles. */
   previewUrl?: string;
+  /** Dropbox share link (public). */
+  dropboxUrl?: string;
+  /** Normalized dl=1 / direct URL for workers + preview. */
+  dropboxDirectUrl?: string;
 }
 
 export type DraftFileInput = File | { name: string; sizeBytes: number };
@@ -180,6 +184,33 @@ export function draftToPreviewPost(draft: DraftPost): ScheduledPost {
     date: earliest ?? new Date().toISOString(),
     status: "draft",
     eventId: draft.eventId,
+    caption: draft.caption || undefined,
+    hashtags: draft.hashtags || undefined,
+    dropboxUrl: draft.dropboxUrl,
+    dropboxDirectUrl: draft.dropboxDirectUrl,
+    previewUrl: draft.previewUrl ?? draft.dropboxDirectUrl,
+  };
+}
+
+/** Create a draft card from a Dropbox share link (no local file required). */
+export function defaultDraftFromDropbox(
+  result: {
+    shareUrl: string;
+    directUrl: string;
+    filename?: string;
+    mediaKind: "image" | "video" | "unknown";
+  },
+  allowed: Platform[],
+): DraftPost {
+  const filename = result.filename ?? "dropbox-media";
+  const mediaKind = result.mediaKind === "image" ? "image" : "video";
+  const base = defaultDraftFromFile({ name: filename, sizeBytes: 0 }, allowed);
+  return {
+    ...base,
+    mediaKind,
+    dropboxUrl: result.shareUrl,
+    dropboxDirectUrl: result.directUrl,
+    previewUrl: result.directUrl,
   };
 }
 

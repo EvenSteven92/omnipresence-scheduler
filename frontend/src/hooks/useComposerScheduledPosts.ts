@@ -54,6 +54,11 @@ export function draftToScheduledPost(draft: DraftPost): ScheduledPost | null {
     platformTimes: times,
     status: "scheduled",
     eventId: draft.eventId,
+    caption: draft.caption || undefined,
+    hashtags: draft.hashtags || undefined,
+    dropboxUrl: draft.dropboxUrl,
+    dropboxDirectUrl: draft.dropboxDirectUrl,
+    previewUrl: draft.previewUrl ?? draft.dropboxDirectUrl,
   };
 }
 
