@@ -279,14 +279,14 @@ function CardDetailView({
           </div>
 
           <aside className="flex flex-col gap-4">
-            <section className="overflow-hidden rounded-lg border border-foreground bg-foreground p-[18px] text-background">
-              <div className="mb-3.5 flex items-center justify-between">
-                <span className="font-mono text-[0.625rem] font-bold tracking-[0.1em] opacity-70">
-                  CARD PERFORMANCE
+            <section className="overflow-hidden rounded-lg border border-foreground bg-foreground p-[18px]">
+              <div className="mb-3.5 flex items-center justify-between gap-2">
+                <span className="text-[0.625rem] font-medium uppercase tracking-[0.1em] text-white/70">
+                  Card performance
                 </span>
                 <span
-                  className={`font-mono text-[0.5625rem] font-bold uppercase ${
-                    perf.published ? "text-success" : "text-background/60"
+                  className={`text-[0.5625rem] font-medium uppercase tracking-[0.06em] ${
+                    perf.published ? "text-success" : "text-white/55"
                   }`}
                 >
                   {perf.published ? "Live" : "Not published yet"}
@@ -296,20 +296,16 @@ function CardDetailView({
                 {(
                   [
                     ["Views", perf.views],
-                    ["Engagement", perf.engagement, true],
+                    ["Engagement", perf.engagement],
                     ["Likes", perf.likes],
                     ["Shares", perf.shares],
                   ] as const
-                ).map(([label, value, accent]) => (
+                ).map(([label, value]) => (
                   <div key={label}>
-                    <div
-                      className={`font-display text-[1.875rem] font-bold leading-none ${
-                        accent ? "text-accent" : ""
-                      }`}
-                    >
+                    <div className="font-display text-[1.875rem] font-semibold leading-none tracking-tight text-white">
                       {value}
                     </div>
-                    <div className="mt-1 font-mono text-[0.5625rem] font-semibold uppercase opacity-60">
+                    <div className="mt-1 text-[0.5625rem] font-medium uppercase tracking-[0.06em] text-white/65">
                       {label}
                     </div>
                   </div>
