@@ -32,7 +32,7 @@ export function AddPlatformCard({
     >
       <span
         className={cn(
-          "inline-flex items-center justify-center rounded-md border border-foreground bg-accent text-foreground",
+          "inline-flex items-center justify-center rounded-md border border-foreground bg-foreground text-white",
           variant === "strip" ? "h-8 w-8" : "h-10 w-10",
         )}
       >

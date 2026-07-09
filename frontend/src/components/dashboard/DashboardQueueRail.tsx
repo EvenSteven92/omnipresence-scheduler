@@ -62,14 +62,18 @@ export function DashboardQueueRail() {
             <div
               key={key}
               data-testid={`queue-stat-${key}`}
-              className={`px-3 py-3 ${accent ? "bg-accent" : "bg-card"}`}
+              className={`px-3 py-3 ${accent ? "bg-foreground" : "bg-card"}`}
             >
-              <div className="font-display text-[1.75rem] font-bold leading-none text-foreground">
+              <div
+                className={`font-display text-[1.75rem] font-semibold leading-none ${
+                  accent ? "text-white" : "text-foreground"
+                }`}
+              >
                 {stats[key]}
               </div>
               <div
-                className={`mt-0.5 font-mono text-[0.5625rem] font-semibold uppercase tracking-[0.06em] ${
-                  accent ? "text-foreground/80" : "text-muted-foreground"
+                className={`mt-0.5 text-[0.5625rem] font-medium uppercase tracking-[0.06em] ${
+                  accent ? "text-white/70" : "text-muted-foreground"
                 }`}
               >
                 {label}

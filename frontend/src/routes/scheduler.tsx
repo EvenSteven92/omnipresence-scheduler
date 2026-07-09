@@ -410,7 +410,9 @@ function ComposePage() {
                   onClick={() => setActiveIndex(i)}
                   className={cn(
                     "shrink-0 rounded-md border border-foreground px-3 py-1.5 text-caption font-semibold",
-                    i === activeIndex ? "bg-accent" : "bg-card",
+                    i === activeIndex
+                      ? "bg-foreground text-white"
+                      : "bg-card text-foreground",
                   )}
                 >
                   {i + 1}. {d.title?.slice(0, 16) || d.filename.slice(0, 16)}
@@ -621,7 +623,7 @@ function ComposePage() {
                           className={cn(
                             "inline-flex items-center gap-2 rounded-md border border-foreground px-3 py-2.5 text-body-sm font-semibold transition-colors",
                             active
-                              ? "bg-accent text-foreground"
+                              ? "bg-foreground text-white"
                               : "bg-card text-foreground hover:bg-secondary",
                           )}
                         >
@@ -671,7 +673,7 @@ function ComposePage() {
                           className={cn(
                             "rounded-md border border-foreground px-3 py-2 text-body-sm font-semibold transition-colors",
                             active
-                              ? "bg-accent text-foreground"
+                              ? "bg-foreground text-white"
                               : "bg-card text-foreground hover:bg-secondary",
                           )}
                         >

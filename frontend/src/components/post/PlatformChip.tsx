@@ -23,7 +23,7 @@ function chipBorderClass(variant: PlatformChipVariant): string {
   if (variant === "warning") return "border-warning/60 bg-warning/10";
   if (variant === "muted") return "border-border/50 bg-background/40 opacity-70";
   if (variant === "scheduled") return "border border-foreground/40 bg-paper-2 text-muted-foreground";
-  if (variant === "active") return "border border-foreground bg-accent text-foreground";
+  if (variant === "active") return "border border-foreground bg-foreground text-white";
   return "border border-foreground bg-card";
 }
 

@@ -164,7 +164,7 @@ export function OnboardingStepper() {
                     step.done
                       ? "bg-success text-background"
                       : isNext
-                        ? "bg-accent text-foreground"
+                        ? "bg-foreground text-white"
                         : "bg-card text-muted-foreground",
                   )}
                 >
