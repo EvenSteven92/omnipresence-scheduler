@@ -71,8 +71,8 @@ export function StreamContentCard({
             <span className="font-display text-[1.375rem] font-bold leading-none text-foreground">
               {publishCount}
             </span>{" "}
-            <span className="font-mono text-[0.5625rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              PUB
+            <span className="font-mono text-caption font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              {publishCount === 1 ? "where" : "where"}
             </span>
           </div>
         </>

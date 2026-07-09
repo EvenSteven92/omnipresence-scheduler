@@ -3,12 +3,16 @@ import { CalendarPlus, Layers, Link2, Plus, X } from "lucide-react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { formatEventMeta, groupDayPostsByEvent } from "@/lib/events/display";
-import { contentCardPublishSpread } from "@/lib/scheduled-post-display";
+import {
+  contentCardPublishSpread,
+  scheduledPostPlatformEntries,
+} from "@/lib/scheduled-post-display";
 import { demoPreviewForPost } from "@/lib/demo-media";
 import { PlatformChip } from "@/components/post/PlatformChip";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
+import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 
 /**
  * Clean day detail panel — events (albums) + cards for the selected day.
@@ -204,49 +208,67 @@ function DayPanelCardRow({
   onOpen: () => void;
   onAssociate: () => void;
 }) {
+  const entries = scheduledPostPlatformEntries(post);
+
   return (
     <div
       data-testid={`day-panel-card-${post.id}`}
-      className="flex gap-3 rounded-md border-[1.5px] border-foreground bg-card p-2.5"
+      className="rounded-md border-[1.5px] border-foreground bg-card p-2.5"
     >
-      <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 gap-3 text-left">
-        <span className="h-14 w-14 shrink-0 overflow-hidden rounded-md border-[1.5px] border-foreground bg-paper-2">
-          <img
-            src={demoPreviewForPost({ id: post.id, title: post.title })}
-            alt=""
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-display text-sm font-bold text-foreground">
-            {post.title}
+      <div className="flex gap-3">
+        <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 gap-3 text-left">
+          <span className="h-14 w-14 shrink-0 overflow-hidden rounded-md border-[1.5px] border-foreground bg-paper-2">
+            <img
+              src={demoPreviewForPost({ id: post.id, title: post.title })}
+              alt=""
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
           </span>
-          <span className="mt-0.5 block text-caption text-muted-foreground">
-            {contentCardPublishSpread(post)}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-display text-sm font-bold text-foreground">
+              {post.title}
+            </span>
+            <span className="mt-0.5 block text-caption text-muted-foreground">
+              {contentCardPublishSpread(post)}
+            </span>
           </span>
-          <span className="mt-1.5 flex flex-wrap gap-1">
-            {post.platforms.slice(0, 4).map((p) => (
-              <PlatformChip key={p} platform={p} size="xs" />
-            ))}
-          </span>
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onAssociate();
-        }}
-        title={linked ? "Change album" : "Link to album"}
-        className={cn(
-          "flex shrink-0 flex-col items-center justify-center gap-1 rounded-md border-[1.5px] border-foreground px-2 py-1.5 text-caption font-semibold transition-colors hover:bg-secondary",
-          linked ? "bg-paper-2 text-foreground" : "bg-warning/15 text-foreground",
-        )}
-      >
-        <Link2 className="h-3.5 w-3.5" />
-        {linked ? "Album" : "Link"}
-      </button>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAssociate();
+          }}
+          title={linked ? "Change album" : "Link to album"}
+          className={cn(
+            "flex shrink-0 flex-col items-center justify-center gap-1 rounded-md border-[1.5px] border-foreground px-2 py-1.5 text-caption font-semibold transition-colors hover:bg-secondary",
+            linked ? "bg-paper-2 text-foreground" : "bg-warning/15 text-foreground",
+          )}
+        >
+          <Link2 className="h-3.5 w-3.5" />
+          {linked ? "Album" : "Link"}
+        </button>
+      </div>
+      {/* Atomic when & where — one row per platform publish */}
+      <ul className="mt-2 space-y-1 border-t border-foreground/15 pt-2">
+        {entries.map((e) => (
+          <li
+            key={e.platform}
+            className="flex items-center justify-between gap-2 text-caption text-foreground"
+          >
+            <span className="flex min-w-0 items-center gap-1.5">
+              <PlatformChip platform={e.platform} size="xs" />
+              <span className="truncate font-medium">
+                {PLATFORMS_BY_SHORT[e.platform]?.full ?? e.platform}
+              </span>
+            </span>
+            <span className="shrink-0 font-data text-muted-foreground">
+              {e.at ?? "—"}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

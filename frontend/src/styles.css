@@ -243,15 +243,22 @@
     }
   }
 
-  /* Composer: queue · editor · preview */
+  /* Composer: queue · editor · publish plan */
   .composer-shell {
     display: flex;
     height: 100%;
+    min-height: 0;
     overflow: hidden;
   }
   .composer-queue-pane {
-    width: 280px;
+    width: 17.5rem;
     flex-shrink: 0;
+    display: none;
+  }
+  @media (min-width: 1024px) {
+    .composer-queue-pane {
+      display: flex;
+    }
   }
   .composer-editor-pane {
     min-width: 0;
@@ -261,11 +268,17 @@
     overflow: hidden;
   }
   .composer-preview-pane {
-    width: 420px;
+    width: 22rem;
     flex-shrink: 0;
     border-left: 1.5px solid var(--color-foreground);
     overflow-y: auto;
     background: var(--color-background);
+    display: none;
+  }
+  @media (min-width: 1280px) {
+    .composer-preview-pane {
+      display: block;
+    }
   }
 
   .btn-action {

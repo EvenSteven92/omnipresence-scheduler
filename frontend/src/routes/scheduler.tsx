@@ -1,14 +1,15 @@
 import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, Loader2, Sparkles } from "lucide-react";
+import { ChevronDown, Loader2, Sparkles, Wand2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ScheduleEventModal } from "@/components/calendar/ScheduleEventModal";
 import { ComposerPreviewRail } from "@/components/composer/ComposerPreviewRail";
+import { ComposerPublishPlan } from "@/components/composer/ComposerPublishPlan";
+import { ComposerQueueRail } from "@/components/composer/ComposerQueueRail";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useEventAssociations } from "@/hooks/useEventAssociations";
 import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
-import { aiGenerate } from "@/lib/ai-client";
-
+import { prepareBatchWithAi, prepareCardWithAi } from "@/lib/ai-schedule";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import {
   applyProposedTimes,
@@ -30,13 +31,10 @@ import {
 import { platformDotColor } from "@/lib/card-display";
 import { getEventById } from "@/lib/events/display";
 import type { Platform } from "@/lib/mock-data";
-import { PLATFORMS, PLATFORMS_BY_SHORT } from "@/lib/platforms";
+import { PLATFORMS } from "@/lib/platforms";
 import {
   combineDateAndTime,
-  displayedSlotForPlatform,
   pendingSlotsFromQueue,
-  toDateInputValue,
-  toTimeInputValue,
 } from "@/lib/schedule-engine";
 import {
   dismissRepublishDraft,
@@ -54,7 +52,8 @@ export const Route = createFileRoute("/scheduler")({
       { title: "Compose a card — TORCC OmniSocial" },
       {
         name: "description",
-        content: "Upload media, compose copy, and schedule across every channel.",
+        content:
+          "Upload media into atomic cards, AI-prepare captions and best times, schedule across every channel.",
       },
     ],
   }),
@@ -64,32 +63,6 @@ export const Route = createFileRoute("/scheduler")({
 type RepublishLocationState = {
   republishDraft?: DraftPost;
 };
-
-function SectionLabel({ n, title, action }: { n: string; title: string; action?: React.ReactNode }) {
-  return (
-    <div className="mb-3.5 flex items-center justify-between gap-3">
-      <div className="font-mono text-[0.625rem] font-bold tracking-[0.1em] text-muted-foreground">
-        {n} · {title}
-      </div>
-      {action}
-    </div>
-  );
-}
-
-function formatChipDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatChipTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 function ComposePage() {
   const navigate = useNavigate();
@@ -113,9 +86,13 @@ function ComposePage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiAllBusy, setAiAllBusy] = useState(false);
-  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<string | null>(null);
+  const [transcriptOpen, setTranscriptOpen] = useState(true);
   const [createAlbumOpen, setCreateAlbumOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [scheduleReasons, setScheduleReasons] = useState<
+    Partial<Record<string, Partial<Record<string, string>>>>
+  >({});
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
@@ -130,16 +107,19 @@ function ComposePage() {
     [workspace.platforms],
   );
 
-  const updateActive = useCallback((updater: (draft: DraftPost) => DraftPost) => {
-    setQueue((cur) => {
-      const idx = activeIndex;
-      const draft = cur[idx];
-      if (!draft) return cur;
-      const next = cur.slice();
-      next[idx] = updater(draft);
-      return next;
-    });
-  }, [activeIndex]);
+  const updateActive = useCallback(
+    (updater: (draft: DraftPost) => DraftPost) => {
+      setQueue((cur) => {
+        const idx = activeIndex;
+        const draft = cur[idx];
+        if (!draft) return cur;
+        const next = cur.slice();
+        next[idx] = updater(draft);
+        return next;
+      });
+    },
+    [activeIndex],
+  );
 
   useEffect(() => {
     const raw = republishFromNavigation ?? peekRepublishDraft(workspaceId);
@@ -166,7 +146,6 @@ function ComposePage() {
 
   useEffect(() => {
     if (peekRepublishDraft(workspaceId)) return;
-    const activeId = queue[activeIndex]?.id ?? null;
     writePersistedDrafts(workspaceId, queue, []);
   }, [workspaceId, queue, activeIndex]);
 
@@ -243,73 +222,58 @@ function ComposePage() {
     }));
   }
 
-  async function generateCaption() {
+  async function prepareActiveWithAi() {
     if (!activeDraft || aiBusy) return;
     setAiBusy(true);
     try {
-      const event = activeDraft.eventId
-        ? getEventById(workspaceEvents, activeDraft.eventId)
-        : undefined;
-      const eventContext = event ? `Album: "${event.title}". ` : "";
-      const brief = `${eventContext}${activeDraft.transcript?.trim() || activeDraft.caption?.trim() || activeDraft.filename}`;
-      const [caption, hashtags] = await Promise.all([
-        aiGenerate({
-          kind: "caption",
-          brief,
-          title: activeDraft.title ?? activeDraft.filename,
-          platforms: activeDraft.platforms,
-          tone: workspace.voice,
-        }),
-        aiGenerate({
-          kind: "hashtags",
-          brief,
-          title: activeDraft.title ?? activeDraft.filename,
-          platforms: activeDraft.platforms,
-          tone: workspace.voice,
-        }),
-      ]);
-      updateActive((d) => ({ ...d, caption, hashtags }));
+      const { draft, scheduleReasons: reasons } = await prepareCardWithAi(activeDraft, {
+        scheduledPosts: workspace.scheduledPosts,
+        queue,
+        postingTimes: workspace.postingTimes,
+        voice: workspace.voice,
+        events: workspaceEvents,
+      });
+      setQueue((cur) => cur.map((d) => (d.id === draft.id ? draft : d)));
+      setScheduleReasons((prev) => ({ ...prev, [draft.id]: reasons }));
     } finally {
       setAiBusy(false);
     }
   }
 
-  async function generateAll() {
+  async function prepareAllWithAi() {
     if (aiAllBusy || queue.length === 0) return;
     setAiAllBusy(true);
+    setBatchProgress(`0 / ${queue.length}`);
     try {
-      for (let i = 0; i < queue.length; i++) {
-        const d = queue[i]!;
-        const event = d.eventId ? getEventById(workspaceEvents, d.eventId) : undefined;
-        const eventContext = event ? `Album: "${event.title}". ` : "";
-        const brief = `${eventContext}${d.transcript?.trim() || d.caption?.trim() || d.filename}`;
-        try {
-          const [caption, hashtags] = await Promise.all([
-            aiGenerate({
-              kind: "caption",
-              brief,
-              title: d.title ?? d.filename,
-              platforms: d.platforms,
-              tone: workspace.voice,
-            }),
-            aiGenerate({
-              kind: "hashtags",
-              brief,
-              title: d.title ?? d.filename,
-              platforms: d.platforms,
-              tone: workspace.voice,
-            }),
-          ]);
-          setQueue((cur) =>
-            cur.map((item) => (item.id === d.id ? { ...item, caption, hashtags } : item)),
-          );
-        } catch {
-          /* skip failed item */
-        }
-      }
+      const prepared = await prepareBatchWithAi(queue, {
+        scheduledPosts: workspace.scheduledPosts,
+        postingTimes: workspace.postingTimes,
+        voice: workspace.voice,
+        events: workspaceEvents,
+        onProgress: (done, total) => setBatchProgress(`${done} / ${total}`),
+      });
+      setQueue(prepared);
     } finally {
       setAiAllBusy(false);
+      setBatchProgress(null);
     }
+  }
+
+  function suggestTimesOnly() {
+    if (!activeDraft) return;
+    const assigned = pendingSlotsFromQueue(queue.filter((d) => d.id !== activeDraft.id));
+    const times = suggestTimesForDraft(
+      activeDraft,
+      workspace.scheduledPosts,
+      assigned,
+      workspace.postingTimes,
+    );
+    updateActive((d) => applyProposedTimes(d, times));
+    const reasons: Partial<Record<string, string>> = {};
+    for (const p of activeDraft.platforms) {
+      if (times[p]) reasons[p] = `Audience peak for this network`;
+    }
+    setScheduleReasons((prev) => ({ ...prev, [activeDraft.id]: reasons }));
   }
 
   function scheduleCurrent() {
@@ -324,7 +288,7 @@ function ComposePage() {
     if (remaining.length === 0) {
       setQueue([]);
       clearPersistedDrafts(workspaceId);
-      navigate({ to: "/" });
+      navigate({ to: "/calendar" });
       return;
     }
 
@@ -332,68 +296,93 @@ function ComposePage() {
     setActiveIndex((i) => Math.min(i, remaining.length - 1));
   }
 
-  function goPrev() {
-    setActiveIndex((i) => Math.max(0, i - 1));
-  }
+  function scheduleAllReady() {
+    const ready = queue
+      .map((d) => draftToScheduledPost(d))
+      .filter((p): p is NonNullable<typeof p> => p != null);
+    if (ready.length === 0) return;
 
-  function goNext() {
-    setActiveIndex((i) => Math.min(queue.length - 1, i + 1));
+    addScheduledPosts(ready);
+    queue.forEach(revokePreviewUrl);
+
+    const readyIds = new Set(ready.map((p) => p.id));
+    const remaining = queue.filter((d) => !readyIds.has(d.id));
+    if (remaining.length === 0) {
+      setQueue([]);
+      clearPersistedDrafts(workspaceId);
+      navigate({ to: "/calendar" });
+      return;
+    }
+    setQueue(remaining);
+    setActiveIndex(0);
   }
 
   const canSchedule = activeDraft != null && draftToScheduledPost(activeDraft) != null;
+  const readyCount = queue.filter((d) => draftToScheduledPost(d) != null).length;
+
+  function selectQueueId(id: string) {
+    const idx = queue.findIndex((d) => d.id === id);
+    if (idx >= 0) setActiveIndex(idx);
+  }
 
   return (
     <div className="composer-shell min-h-0 flex-1" data-testid="compose-page">
+      <ComposerQueueRail
+        queue={queue}
+        activeId={activeDraft?.id ?? null}
+        onSelect={selectQueueId}
+        onAddClick={() => fileInputRef.current?.click()}
+        isDragging={isDragging}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+      />
+
       <div className="composer-editor-pane overflow-y-auto">
-        <div className="page-content mx-auto max-w-[720px] px-4 py-6 md:px-6">
-          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div className="page-content mx-auto max-w-[720px] px-4 py-5 md:px-6">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
               <Link
-                to="/"
-                className="font-mono text-[0.625rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground"
+                to="/calendar"
+                className="text-caption font-semibold text-muted-foreground transition-colors hover:text-foreground"
               >
-                ← Queue
+                ← Calendar
               </Link>
-              <h1 className="page-title mt-2">Compose a card</h1>
+              <h1 className="page-title mt-2">Compose cards</h1>
               <p className="mt-1.5 text-body-sm text-muted-foreground">
-                One upload becomes one card — then schedule it across every channel.
+                Atomic design: each upload is one card with its own where & when.
               </p>
             </div>
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-stretch gap-2 sm:items-end">
               {queue.length > 1 ? (
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  <span className="font-mono text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                    Card {activeIndex + 1} of {queue.length}
-                  </span>
+                <div className="flex flex-wrap justify-end gap-2">
                   <button
                     type="button"
-                    onClick={goPrev}
-                    disabled={activeIndex === 0}
-                    className="btn-action disabled:opacity-40"
-                  >
-                    Prev
-                  </button>
-                  <button
-                    type="button"
-                    onClick={goNext}
-                    disabled={activeIndex >= queue.length - 1}
-                    className="btn-action disabled:opacity-40"
-                  >
-                    Next
-                  </button>
-                  <button
-                    type="button"
-                    onClick={generateAll}
+                    onClick={prepareAllWithAi}
                     disabled={aiAllBusy}
-                    className="btn-action"
                     data-testid="generate-all-btn"
+                    className="btn-action btn-action-secondary disabled:opacity-50"
                   >
                     {aiAllBusy ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
+                      <Wand2 className="h-3.5 w-3.5" />
                     )}
-                    Generate all
+                    {aiAllBusy && batchProgress
+                      ? `AI batch ${batchProgress}`
+                      : `AI prepare all (${queue.length})`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={scheduleAllReady}
+                    disabled={readyCount === 0}
+                    data-testid="schedule-all-btn"
+                    className="btn-action-primary btn-action disabled:opacity-50"
+                  >
+                    Schedule all ready ({readyCount})
                   </button>
                 </div>
               ) : null}
@@ -404,17 +393,39 @@ function ComposePage() {
                 data-testid="schedule-publishes-btn"
                 className="btn-action-primary btn-action disabled:opacity-50"
               >
-                Schedule {publishCount} publish{publishCount === 1 ? "" : "es"}
+                Schedule this card
+                {publishCount > 0 ? ` · ${publishCount} publish${publishCount === 1 ? "" : "es"}` : ""}
               </button>
             </div>
           </div>
 
+          {/* Mobile queue hint */}
+          {queue.length > 0 ? (
+            <div className="mb-4 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+              {queue.map((d, i) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setActiveIndex(i)}
+                  className={cn(
+                    "shrink-0 rounded-md border-[1.5px] border-foreground px-3 py-1.5 text-caption font-semibold",
+                    i === activeIndex ? "bg-accent" : "bg-card",
+                  )}
+                >
+                  {i + 1}. {d.title?.slice(0, 16) || d.filename.slice(0, 16)}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
           <div className="flex flex-col gap-4">
-            {/* 01 · MEDIA */}
-            <section className="panel p-[18px]">
-              <SectionLabel n="01" title="MEDIA" />
+            {/* MEDIA */}
+            <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
+              <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                01 · Media
+              </div>
               {activeDraft ? (
-                <div className="flex items-center gap-4 rounded-md border-[1.5px] border-foreground bg-paper-2 px-5 py-5">
+                <div className="flex items-center gap-4 rounded-md border-[1.5px] border-foreground bg-paper-2 px-4 py-4">
                   <CardThumbnail
                     src={activeDraft.previewUrl}
                     post={{
@@ -431,14 +442,14 @@ function ComposePage() {
                     <div className="truncate font-display text-[0.9375rem] font-semibold text-foreground">
                       {activeDraft.filename}
                     </div>
-                    <div className="mt-1 font-mono text-[0.6875rem] font-medium text-muted-foreground">
+                    <div className="mt-1 text-caption font-medium text-muted-foreground">
                       {formatMediaMeta(activeDraft)}
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => replaceInputRef.current?.click()}
-                    className="shrink-0 rounded-md border-[1.5px] border-foreground bg-card px-3 py-2 font-mono text-[0.6875rem] font-semibold uppercase transition-colors hover:bg-secondary"
+                    className="btn-action btn-action-secondary min-h-9 shrink-0"
                   >
                     Replace
                   </button>
@@ -472,15 +483,16 @@ function ComposePage() {
                   }}
                   data-testid="media-dropzone"
                   className={cn(
-                    "flex min-h-[140px] cursor-pointer flex-col items-center justify-center rounded-md border-[1.5px] border-foreground bg-paper-2 px-5 py-8 text-center transition-colors hover:bg-secondary",
+                    "flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-md border-[1.5px] border-foreground bg-paper-2 px-5 py-10 text-center transition-colors hover:bg-secondary",
                     isDragging && "bg-accent/15",
                   )}
                 >
-                  <p className="font-display text-sm font-semibold text-foreground">
-                    Drop files or click to browse
+                  <p className="font-display text-lg font-bold text-foreground">
+                    Drop reels, clips, or images
                   </p>
-                  <p className="mt-1 font-mono text-[0.6875rem] text-muted-foreground">
-                    Images and video · multiple files become multiple cards
+                  <p className="mt-2 max-w-sm text-body-sm text-muted-foreground">
+                    Batch upload (e.g. 14 sermon reels) — each file becomes its own card with
+                    independent platforms and times.
                   </p>
                 </div>
               )}
@@ -499,35 +511,46 @@ function ComposePage() {
 
             {activeDraft ? (
               <>
-                {/* 02 · CAPTION */}
-                <section className="panel p-[18px]">
-                  <SectionLabel
-                    n="02"
-                    title="CAPTION"
-                    action={
-                      <button
-                        type="button"
-                        onClick={generateCaption}
-                        disabled={aiBusy}
-                        data-testid="generate-caption-btn"
-                        className="btn-action gap-1.5 py-1.5 text-[0.6875rem] disabled:opacity-50"
-                      >
-                        {aiBusy ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Sparkles className="h-3 w-3" />
-                        )}
-                        Generate
-                      </button>
-                    }
-                  />
+                {/* AI STRIP */}
+                <section className="rounded-md border-[1.5px] border-foreground bg-accent/10 p-4 shadow-[var(--shadow-card)]">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-display text-sm font-bold text-foreground">
+                        AI prepare this card
+                      </p>
+                      <p className="mt-0.5 text-caption text-muted-foreground">
+                        Caption + hashtags from transcript · best time per platform
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={prepareActiveWithAi}
+                      disabled={aiBusy}
+                      data-testid="generate-caption-btn"
+                      className="btn-action-primary btn-action disabled:opacity-50"
+                    >
+                      {aiBusy ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      {aiBusy ? "Preparing…" : "Run AI prepare"}
+                    </button>
+                  </div>
+                </section>
+
+                {/* COPY */}
+                <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
+                  <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                    02 · Caption & context
+                  </div>
                   <input
                     type="text"
                     value={activeDraft.title ?? ""}
                     onChange={(e) => updateActive((d) => ({ ...d, title: e.target.value }))}
                     placeholder="Card title"
                     data-testid="card-title-input"
-                    className="mb-3 w-full border-0 border-b-[1.5px] border-foreground/20 bg-transparent px-0 py-1 font-display text-lg font-semibold text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none"
+                    className="mb-3 w-full border-0 border-b-[1.5px] border-foreground/25 bg-transparent px-0 py-1 font-display text-lg font-semibold text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none"
                   />
                   <textarea
                     value={activeDraft.caption}
@@ -535,22 +558,35 @@ function ComposePage() {
                     placeholder="Write your caption…"
                     rows={5}
                     data-testid="caption-input"
-                    className="w-full resize-y rounded-md border-[1.5px] border-foreground bg-paper-2 px-3.5 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    className="w-full resize-y rounded-md border-[1.5px] border-foreground bg-paper-2 px-3.5 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
                   />
-                  <div className="mt-2 flex justify-between font-mono text-[0.6875rem] font-medium text-muted-foreground">
-                    <span>HASHTAGS · {countHashtagsInText(activeDraft.caption)}</span>
+                  <div className="mt-2 flex justify-between text-caption font-medium text-muted-foreground">
+                    <span>
+                      Hashtags ·{" "}
+                      {countHashtagsInText(activeDraft.hashtags) ||
+                        countHashtagsInText(activeDraft.caption)}
+                    </span>
                     <span>
                       {activeDraft.caption.length} / {captionLimit}
                     </span>
                   </div>
+                  {activeDraft.hashtags ? (
+                    <p className="mt-2 rounded-md border border-foreground/20 bg-paper-2 px-3 py-2 text-body-sm text-accent">
+                      {activeDraft.hashtags}
+                    </p>
+                  ) : null}
+
                   <button
                     type="button"
                     onClick={() => setTranscriptOpen((o) => !o)}
-                    className="mt-4 flex w-full items-center gap-1.5 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+                    className="mt-4 flex w-full items-center gap-1.5 text-caption font-semibold uppercase tracking-[0.06em] text-muted-foreground"
                   >
-                    Transcript
+                    Transcript / AI context
                     <ChevronDown
-                      className={cn("h-3.5 w-3.5 transition-transform", transcriptOpen && "rotate-180")}
+                      className={cn(
+                        "h-3.5 w-3.5 transition-transform",
+                        transcriptOpen && "rotate-180",
+                      )}
                     />
                   </button>
                   {transcriptOpen ? (
@@ -559,17 +595,19 @@ function ComposePage() {
                       onChange={(e) =>
                         updateActive((d) => ({ ...d, transcript: e.target.value }))
                       }
-                      placeholder="Paste source transcript for AI context…"
+                      placeholder="Paste sermon notes or reel transcript — AI uses this for caption, hashtags, and timing context…"
                       rows={4}
                       data-testid="transcript-input"
-                      className="mt-2 w-full resize-y rounded-md border-[1.5px] border-foreground bg-background px-3.5 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                      className="mt-2 w-full resize-y rounded-md border-[1.5px] border-foreground bg-background px-3.5 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   ) : null}
                 </section>
 
-                {/* 03 · PLATFORMS */}
-                <section className="panel p-[18px]">
-                  <SectionLabel n="03" title="PLATFORMS" />
+                {/* PLATFORMS */}
+                <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
+                  <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                    03 · Where it posts
+                  </div>
                   <div className="flex flex-wrap gap-2.5">
                     {availablePlatforms.map((meta) => {
                       const active = activeDraft.platforms.includes(meta.short);
@@ -580,14 +618,14 @@ function ComposePage() {
                           onClick={() => togglePlatform(meta.short)}
                           data-testid={`platform-${meta.short.replace(/\s+/g, "-")}`}
                           className={cn(
-                            "inline-flex items-center gap-2 rounded-md border-[1.5px] border-foreground px-3 py-2.5 text-[0.8125rem] font-semibold transition-colors",
+                            "inline-flex items-center gap-2 rounded-md border-[1.5px] border-foreground px-3 py-2.5 text-body-sm font-semibold transition-colors",
                             active
                               ? "bg-accent text-foreground"
                               : "bg-card text-foreground hover:bg-secondary",
                           )}
                         >
                           <span
-                            className="h-2 w-2 rounded-full"
+                            className="h-2 w-2 rounded-full border border-foreground"
                             style={{ background: platformDotColor(meta.short) }}
                           />
                           {meta.full}
@@ -597,82 +635,24 @@ function ComposePage() {
                   </div>
                 </section>
 
-                {/* 04 · SCHEDULE */}
-                <section className="panel p-[18px]">
-                  <SectionLabel n="04" title="SCHEDULE" />
-                  {activeDraft.platforms.length === 0 ? (
-                    <p className="text-body-sm text-muted-foreground">
-                      Select at least one platform above.
-                    </p>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      {activeDraft.platforms.map((platform) => {
-                        const meta = PLATFORMS_BY_SHORT[platform];
-                        const committed = activeDraft.proposedTimes?.[platform];
-                        const displayed = displayedSlotForPlatform(platform, today(), undefined);
-                        const slot = committed
-                          ? {
-                              dateValue: toDateInputValue(new Date(committed)),
-                              timeValue: toTimeInputValue(committed),
-                              iso: committed,
-                            }
-                          : displayed;
-
-                        return (
-                          <div
-                            key={platform}
-                            className="flex flex-wrap items-center justify-between gap-3 rounded-md border-[1.5px] border-foreground px-3 py-2.5"
-                            data-testid={`schedule-row-${platform.replace(/\s+/g, "-")}`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="h-2.5 w-2.5 rounded-full"
-                                style={{ background: platformDotColor(platform) }}
-                              />
-                              <span className="text-[0.8125rem] font-semibold text-foreground">
-                                {meta?.full ?? platform}
-                              </span>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <label className="relative cursor-pointer">
-                                <span className="rounded-md border-[1.5px] border-foreground bg-card px-2.5 py-1 font-mono text-[0.6875rem] font-semibold">
-                                  {formatChipDate(slot.iso)}
-                                </span>
-                                <input
-                                  type="date"
-                                  value={slot.dateValue}
-                                  onChange={(e) => {
-                                    if (!e.target.value) return;
-                                    updatePlatformSchedule(platform, e.target.value, slot.timeValue);
-                                  }}
-                                  className="absolute inset-0 cursor-pointer opacity-0"
-                                />
-                              </label>
-                              <label className="relative cursor-pointer">
-                                <span className="rounded-md border-[1.5px] border-foreground bg-card px-2.5 py-1 font-mono text-[0.6875rem] font-semibold">
-                                  {formatChipTime(slot.iso)}
-                                </span>
-                                <input
-                                  type="time"
-                                  value={slot.timeValue}
-                                  onChange={(e) => {
-                                    if (!e.target.value) return;
-                                    updatePlatformSchedule(platform, slot.dateValue, e.target.value);
-                                  }}
-                                  className="absolute inset-0 cursor-pointer opacity-0"
-                                />
-                              </label>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                {/* Mobile publish plan (hidden on xl where rail shows) */}
+                <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)] xl:hidden">
+                  <ComposerPublishPlan
+                    draft={activeDraft}
+                    scheduleReasons={scheduleReasons[activeDraft.id]}
+                    onUpdateTime={updatePlatformSchedule}
+                    onSuggestTimes={suggestTimesOnly}
+                  />
                 </section>
 
-                {/* 05 · ADD TO ALBUM */}
-                <section className="panel p-[18px]">
-                  <SectionLabel n="05" title="ADD TO ALBUM" />
+                {/* ALBUM */}
+                <section className="rounded-md border-[1.5px] border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
+                  <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                    04 · Event album
+                  </div>
+                  <p className="mb-3 text-body-sm text-muted-foreground">
+                    Link this card to a ministry moment so the calendar groups related media.
+                  </p>
                   <div className="flex flex-wrap gap-2.5">
                     {workspaceEvents.map((event) => {
                       const active = activeDraft.eventId === event.id;
@@ -688,7 +668,7 @@ function ComposePage() {
                           }
                           data-testid={`album-${event.id}`}
                           className={cn(
-                            "rounded-md border-[1.5px] border-foreground px-3 py-2 text-[0.8125rem] font-semibold transition-colors",
+                            "rounded-md border-[1.5px] border-foreground px-3 py-2 text-body-sm font-semibold transition-colors",
                             active
                               ? "bg-accent text-foreground"
                               : "bg-card text-foreground hover:bg-secondary",
@@ -701,11 +681,19 @@ function ComposePage() {
                     <button
                       type="button"
                       onClick={() => setCreateAlbumOpen(true)}
-                      className="rounded-md border-[1.5px] border-foreground bg-card px-3 py-2 font-mono text-[0.6875rem] font-semibold uppercase text-foreground transition-colors hover:bg-secondary"
+                      className="btn-action btn-action-secondary min-h-9"
                     >
                       + New album
                     </button>
                   </div>
+                  {activeDraft.eventId ? (
+                    <p className="mt-3 text-caption text-muted-foreground">
+                      Linked to{" "}
+                      <span className="font-semibold text-foreground">
+                        {getEventById(workspaceEvents, activeDraft.eventId)?.title ?? "album"}
+                      </span>
+                    </p>
+                  ) : null}
                 </section>
               </>
             ) : null}
@@ -714,11 +702,21 @@ function ComposePage() {
       </div>
 
       {activeDraft ? (
-        <ComposerPreviewRail
-          draft={activeDraft}
-          workspaceSlug={workspace.slug}
-          workspaceInitials={workspace.initials}
-        />
+        <aside className="composer-preview-pane p-5">
+          <div className="sticky top-0 flex flex-col gap-6">
+            <ComposerPublishPlan
+              draft={activeDraft}
+              scheduleReasons={scheduleReasons[activeDraft.id]}
+              onUpdateTime={updatePlatformSchedule}
+              onSuggestTimes={suggestTimesOnly}
+            />
+            <ComposerPreviewRail
+              draft={activeDraft}
+              workspaceSlug={workspace.slug}
+              workspaceInitials={workspace.initials}
+            />
+          </div>
+        </aside>
       ) : null}
 
       {createAlbumOpen ? (
