@@ -38,7 +38,12 @@ function QueuePage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Content queue" title="Up next" actions={headerActions} />
+      <PageHeader
+        eyebrow="Queue"
+        title="Up next"
+        description="Your scheduled reels — open Calendar to plan the week."
+        actions={headerActions}
+      />
 
       <div className="page-content mx-auto max-w-[1320px]">
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_296px]">

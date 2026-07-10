@@ -352,6 +352,76 @@ export function defaultBulkRange(): { start: Date; end: Date } {
   return { start, end };
 }
 
+/** Product cadence presets — Buffer/Opus-style one-tap schedule fills. */
+export type CadencePresetId = "peak" | "daily" | "triple" | "spread7";
+
+export const CADENCE_PRESETS: Array<{
+  id: CadencePresetId;
+  label: string;
+  hint: string;
+}> = [
+  { id: "peak", label: "Peak times", hint: "Best hour per network" },
+  { id: "daily", label: "1× / day", hint: "One reel each morning" },
+  { id: "triple", label: "3× / day", hint: "Morning · afternoon · night" },
+  { id: "spread7", label: "Spread 7 days", hint: "Fill the week evenly" },
+];
+
+/**
+ * Apply a cadence preset across a draft batch.
+ * Returns per-file platform times + human reasons.
+ */
+export function applyCadencePreset(
+  files: DraftPost[],
+  preset: CadencePresetId,
+  scheduledPosts: ScheduledPost[],
+  postingTimes?: PostingTimes,
+): BulkScheduleResult {
+  if (files.length === 0) return { byFile: {}, slots: [] };
+
+  if (preset === "daily") {
+    return fixedCadenceBulk(
+      files,
+      {
+        startIso: atLocalTime(todayStart(), "09:00").toISOString(),
+        interval: 1,
+        unit: "days",
+      },
+      scheduledPosts,
+      postingTimes,
+    );
+  }
+
+  if (preset === "triple") {
+    return fixedCadenceBulk(
+      files,
+      {
+        startIso: atLocalTime(todayStart(), "09:00").toISOString(),
+        interval: 8,
+        unit: "hours",
+      },
+      scheduledPosts,
+      postingTimes,
+    );
+  }
+
+  // peak + spread7 → smart distribute across the next 7 days
+  const range = defaultBulkRange();
+  const result = smartDistributeBulk(
+    files,
+    range.start,
+    range.end,
+    scheduledPosts,
+    undefined,
+    postingTimes,
+  );
+
+  // Relabel reasons for product clarity
+  const label =
+    preset === "spread7" ? "Spread across 7 days" : "Audience peak window";
+  result.slots = result.slots.map((s) => ({ ...s, reason: label }));
+  return result;
+}
+
 export function calendarDayKey(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }

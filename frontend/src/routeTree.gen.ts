@@ -24,8 +24,8 @@ import { Route as ApiYoutubeMetricsRouteImport } from './routes/api/youtube/metr
 import { Route as ApiPostsPostIdRouteImport } from './routes/api/posts.$postId'
 import { Route as ApiMetaSyncRouteImport } from './routes/api/meta/sync'
 import { Route as ApiMetaMetricsRouteImport } from './routes/api/meta/metrics'
-import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
 import { Route as ApiDropboxResolveRouteImport } from './routes/api/dropbox/resolve'
+import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
 import { Route as ApiAccountsStatusRouteImport } from './routes/api/accounts/status'
 import { Route as ApiAccountsYoutubeConnectRouteImport } from './routes/api/accounts/youtube/connect'
 import { Route as ApiAccountsYoutubeCallbackRouteImport } from './routes/api/accounts/youtube/callback'
@@ -107,14 +107,14 @@ const ApiMetaMetricsRoute = ApiMetaMetricsRouteImport.update({
   path: '/api/meta/metrics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAiGenerateRoute = ApiAiGenerateRouteImport.update({
-  id: '/api/ai/generate',
-  path: '/api/ai/generate',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiDropboxResolveRoute = ApiDropboxResolveRouteImport.update({
   id: '/api/dropbox/resolve',
   path: '/api/dropbox/resolve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiGenerateRoute = ApiAiGenerateRouteImport.update({
+  id: '/api/ai/generate',
+  path: '/api/ai/generate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAccountsStatusRoute = ApiAccountsStatusRouteImport.update({
@@ -421,18 +421,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMetaMetricsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/ai/generate': {
-      id: '/api/ai/generate'
-      path: '/api/ai/generate'
-      fullPath: '/api/ai/generate'
-      preLoaderRoute: typeof ApiAiGenerateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/dropbox/resolve': {
       id: '/api/dropbox/resolve'
       path: '/api/dropbox/resolve'
       fullPath: '/api/dropbox/resolve'
       preLoaderRoute: typeof ApiDropboxResolveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/generate': {
+      id: '/api/ai/generate'
+      path: '/api/ai/generate'
+      fullPath: '/api/ai/generate'
+      preLoaderRoute: typeof ApiAiGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/accounts/status': {

@@ -1,4 +1,4 @@
-import { CalendarDays, Clock, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import type { DraftPost } from "@/lib/composer-draft";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import type { Platform } from "@/lib/mock-data";
@@ -9,7 +9,8 @@ import {
   toTimeInputValue,
 } from "@/lib/schedule-engine";
 import { today } from "@/lib/demo-clock";
-import { cn } from "@/lib/utils";
+import { ComposerCadenceBar } from "@/components/composer/ComposerCadenceBar";
+import type { CadencePresetId } from "@/lib/schedule-engine";
 
 function formatWhen(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -22,40 +23,57 @@ function formatWhen(iso: string): string {
 }
 
 /**
- * Right rail — where & when this atomic card will publish.
- * Per-platform schedule is the source of truth for the card.
+ * Sticky when & where — cadence first, fine-tune second.
  */
 export function ComposerPublishPlan({
   draft,
   scheduleReasons,
   onUpdateTime,
   onSuggestTimes,
+  onCadence,
+  cadenceActive,
   suggestBusy,
 }: {
   draft: DraftPost;
   scheduleReasons?: Partial<Record<string, string>>;
   onUpdateTime: (platform: Platform, dateStr: string, timeStr: string) => void;
   onSuggestTimes: () => void;
+  onCadence?: (id: CadencePresetId) => void;
+  cadenceActive?: CadencePresetId | null;
   suggestBusy?: boolean;
 }) {
   return (
-    <div data-testid="composer-publish-plan" className="space-y-3">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="page-kicker">Publish plan</p>
-          <h3 className="mt-1 font-display text-base font-bold text-foreground">
-            When & where
-          </h3>
-          <p className="mt-0.5 text-caption text-muted-foreground">
-            One card · one publish time per platform
-          </p>
-        </div>
+    <div data-testid="composer-publish-plan" className="space-y-5">
+      <div>
+        <p className="text-caption font-medium uppercase tracking-[0.1em] text-muted-foreground">
+          When & where
+        </p>
+        <h3 className="mt-1 font-display text-lg font-semibold tracking-tight text-foreground">
+          Publish plan
+        </h3>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Pick cadence, then tweak any platform
+        </p>
+      </div>
+
+      {onCadence ? (
+        <ComposerCadenceBar
+          active={cadenceActive}
+          onSelect={onCadence}
+          disabled={draft.platforms.length === 0}
+        />
+      ) : null}
+
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-caption font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          Times
+        </p>
         <button
           type="button"
           onClick={onSuggestTimes}
           disabled={suggestBusy || draft.platforms.length === 0}
           data-testid="suggest-times-btn"
-          className="btn-action btn-action-secondary min-h-9 gap-1.5 px-2.5 py-1.5 text-caption disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card px-2.5 py-1.5 text-caption font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
         >
           <Sparkles className="h-3.5 w-3.5" />
           Best times
@@ -63,8 +81,8 @@ export function ComposerPublishPlan({
       </div>
 
       {draft.platforms.length === 0 ? (
-        <p className="rounded-md border border-foreground/40 bg-paper-2 px-3 py-4 text-body-sm text-muted-foreground">
-          Select platforms in the editor to plan publishes.
+        <p className="rounded-md border border-line bg-paper-2 px-3 py-4 text-body-sm text-muted-foreground">
+          Select where this reel posts to plan times.
         </p>
       ) : (
         <ul className="space-y-2">
@@ -79,77 +97,66 @@ export function ComposerPublishPlan({
                   iso: committed,
                 }
               : displayed;
-            const reason = scheduleReasons?.[platform];
 
             return (
               <li
                 key={platform}
-                data-testid={`publish-plan-${platform.replace(/\s+/g, "-")}`}
-                className="rounded-md border border-foreground bg-card p-3"
+                className="rounded-md border border-line bg-card px-3 py-2.5"
+                data-testid={`plan-slot-${platform.replace(/\s+/g, "-")}`}
               >
-                <div className="flex items-center gap-2">
+                <div className="mb-2 flex items-center gap-2">
                   <span
-                    className="h-2.5 w-2.5 rounded-full border border-foreground"
+                    className="h-2 w-2 rounded-full"
                     style={{ background: platformDotColor(platform) }}
                   />
-                  <span className="font-display text-sm font-bold text-foreground">
+                  <span className="text-body-sm font-semibold text-foreground">
                     {meta?.full ?? platform}
                   </span>
                 </div>
-
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <label className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-foreground bg-paper-2 px-2.5 py-1.5 text-caption font-semibold text-foreground">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    {formatWhen(slot.iso).split(",").slice(0, 2).join(",")}
-                    <input
-                      type="date"
-                      value={slot.dateValue}
-                      onChange={(e) => {
-                        if (!e.target.value) return;
-                        onUpdateTime(platform, e.target.value, slot.timeValue);
-                      }}
-                      className="absolute inset-0 cursor-pointer opacity-0"
-                    />
-                  </label>
-                  <label className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-foreground bg-paper-2 px-2.5 py-1.5 text-caption font-semibold text-foreground">
-                    <Clock className="h-3.5 w-3.5" />
-                    {new Date(slot.iso).toLocaleTimeString(undefined, {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                    <input
-                      type="time"
-                      value={slot.timeValue}
-                      onChange={(e) => {
-                        if (!e.target.value) return;
-                        onUpdateTime(platform, slot.dateValue, e.target.value);
-                      }}
-                      className="absolute inset-0 cursor-pointer opacity-0"
-                    />
-                  </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={slot?.dateValue ?? ""}
+                    onChange={(e) =>
+                      onUpdateTime(
+                        platform,
+                        e.target.value,
+                        slot?.timeValue ?? "12:00",
+                      )
+                    }
+                    className="rounded-md border border-line bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <input
+                    type="time"
+                    value={slot?.timeValue ?? ""}
+                    onChange={(e) =>
+                      onUpdateTime(
+                        platform,
+                        slot?.dateValue ?? toDateInputValue(today()),
+                        e.target.value,
+                      )
+                    }
+                    className="rounded-md border border-line bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
                 </div>
-
-                {reason ? (
-                  <p className="mt-2 text-caption leading-snug text-muted-foreground">{reason}</p>
-                ) : committed ? (
-                  <p className="mt-2 text-caption text-muted-foreground">
-                    Scheduled · {formatWhen(committed)}
+                {committed ? (
+                  <p className="mt-1.5 text-[0.65rem] text-muted-foreground">
+                    {formatWhen(committed)}
+                    {scheduleReasons?.[platform] ? (
+                      <span className="text-muted-foreground/80">
+                        {" "}
+                        · {scheduleReasons[platform]}
+                      </span>
+                    ) : null}
                   </p>
                 ) : (
-                  <p className={cn("mt-2 text-caption text-warning")}>
-                    Pick a time or run Best times
-                  </p>
+                  <p className="mt-1.5 text-[0.65rem] text-warning">Needs a time</p>
                 )}
               </li>
             );
           })}
         </ul>
       )}
-
-      <p className="text-caption leading-relaxed text-muted-foreground">
-        After schedule, this card appears on the calendar on each platform&apos;s date — open the day
-        panel to see where it posts.
-      </p>
     </div>
   );
 }

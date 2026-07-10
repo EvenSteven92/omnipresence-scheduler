@@ -24,7 +24,13 @@ import {
   suggestTimesForDraft,
   type DraftPost,
 } from "@/lib/composer-draft";
-import { suggestTimesForDay } from "@/lib/schedule-engine";
+import {
+  applyCadencePreset,
+  combineDateAndTime,
+  pendingSlotsFromQueue,
+  suggestTimesForDay,
+  type CadencePresetId,
+} from "@/lib/schedule-engine";
 import {
   clearPersistedDrafts,
   readPersistedDrafts,
@@ -34,10 +40,6 @@ import { platformDotColor } from "@/lib/card-display";
 import { getEventById } from "@/lib/events/display";
 import type { Platform } from "@/lib/mock-data";
 import { PLATFORMS } from "@/lib/platforms";
-import {
-  combineDateAndTime,
-  pendingSlotsFromQueue,
-} from "@/lib/schedule-engine";
 import {
   dismissRepublishDraft,
   normalizeRepublishDraft,
@@ -52,11 +54,11 @@ import { CREATE } from "@/lib/create-actions";
 export const Route = createFileRoute("/scheduler")({
   head: () => ({
     meta: [
-      { title: "Compose a card — TORCC OmniSocial" },
+      { title: "Reel studio — TORCC OmniSocial" },
       {
         name: "description",
         content:
-          "Upload media into atomic cards, AI-prepare captions and best times, schedule across every channel.",
+          "Drop reels, AI captions and cadence, schedule across every channel in minutes.",
       },
     ],
   }),
@@ -93,6 +95,7 @@ function ComposePage() {
   const [transcriptOpen, setTranscriptOpen] = useState(true);
   const [createAlbumOpen, setCreateAlbumOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [cadenceActive, setCadenceActive] = useState<CadencePresetId | null>(null);
   const [scheduleReasons, setScheduleReasons] = useState<
     Partial<Record<string, Partial<Record<string, string>>>>
   >({});
@@ -277,6 +280,31 @@ function ComposePage() {
       if (times[p]) reasons[p] = `Audience peak for this network`;
     }
     setScheduleReasons((prev) => ({ ...prev, [activeDraft.id]: reasons }));
+    setCadenceActive("peak");
+  }
+
+  function applyCadence(preset: CadencePresetId) {
+    if (queue.length === 0) return;
+    setCadenceActive(preset);
+    const { byFile, slots } = applyCadencePreset(
+      queue,
+      preset,
+      workspace.scheduledPosts,
+      workspace.postingTimes,
+    );
+    setQueue((cur) =>
+      cur.map((d) => {
+        const times = byFile[d.id];
+        return times ? applyProposedTimes(d, times) : d;
+      }),
+    );
+    const reasonsByFile: Partial<Record<string, Partial<Record<string, string>>>> = {};
+    slots.forEach((s) => {
+      const file = reasonsByFile[s.fileId] ?? {};
+      file[s.platform] = s.reason;
+      reasonsByFile[s.fileId] = file;
+    });
+    setScheduleReasons((prev) => ({ ...prev, ...reasonsByFile }));
   }
 
   function scheduleCurrent() {
@@ -345,23 +373,26 @@ function ComposePage() {
       />
 
       <div className="composer-editor-pane">
-        <div className="mx-auto w-full max-w-[720px] px-4 py-5 pb-24 md:px-6 md:pb-10">
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div className="mx-auto w-full max-w-[760px] px-4 py-5 pb-28 md:px-6 md:pb-10">
+          {/* Studio header — Buffer clarity + Opus batch power */}
+          <header className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5">
             <div className="min-w-0">
-              <Link
-                to="/calendar"
-                className="text-caption font-semibold text-muted-foreground transition-colors hover:text-foreground"
-              >
-                ← Calendar
-              </Link>
-              <h1 className="page-title mt-2">Compose cards</h1>
-              <p className="mt-1.5 text-body-sm text-muted-foreground">
-                Atomic design: each upload is one card with its own where & when.
+              <p className="text-caption font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                Reel studio
+              </p>
+              <h1 className="mt-1 font-display text-[1.75rem] font-semibold tracking-tight text-foreground md:text-[2rem]">
+                {queue.length === 0
+                  ? "Drop reels. Schedule the week."
+                  : `Finish ${queue.length} reel${queue.length === 1 ? "" : "s"}`}
+              </h1>
+              <p className="mt-1.5 max-w-lg text-body-sm text-muted-foreground">
+                Drop files or paste Dropbox · AI captions · cadence · schedule. Built for Sunday
+                media teams.
               </p>
             </div>
-            <div className="flex flex-col items-stretch gap-2 sm:items-end">
-              {queue.length > 1 ? (
-                <div className="flex flex-wrap justify-end gap-2">
+            <div className="flex flex-col items-stretch gap-2 sm:min-w-[12rem] sm:items-end">
+              {queue.length > 0 ? (
+                <>
                   <button
                     type="button"
                     onClick={prepareAllWithAi}
@@ -375,32 +406,34 @@ function ComposePage() {
                       <Wand2 className="h-3.5 w-3.5" />
                     )}
                     {aiAllBusy && batchProgress
-                      ? `AI batch ${batchProgress}`
-                      : `AI prepare all (${queue.length})`}
+                      ? `AI ${batchProgress}`
+                      : `AI prepare all${queue.length > 1 ? ` (${queue.length})` : ""}`}
                   </button>
                   <button
                     type="button"
-                    onClick={scheduleAllReady}
-                    disabled={readyCount === 0}
+                    onClick={readyCount > 1 ? scheduleAllReady : scheduleCurrent}
+                    disabled={readyCount === 0 && !canSchedule}
                     data-testid="schedule-all-btn"
-                    className="btn-action-primary btn-action disabled:opacity-50"
+                    className="btn-action btn-action-primary !text-white disabled:opacity-50"
                   >
-                    Schedule all ready ({readyCount})
+                    {readyCount > 1
+                      ? `Schedule ${readyCount} reels`
+                      : canSchedule
+                        ? "Schedule this reel"
+                        : "Set times to schedule"}
                   </button>
-                </div>
-              ) : null}
-              <button
-                type="button"
-                onClick={scheduleCurrent}
-                disabled={!canSchedule}
-                data-testid="schedule-publishes-btn"
-                className="btn-action-primary btn-action disabled:opacity-50"
-              >
-                Schedule this card
-                {publishCount > 0 ? ` · ${publishCount} publish${publishCount === 1 ? "" : "es"}` : ""}
-              </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="btn-action btn-action-primary !text-white"
+                >
+                  Add reels
+                </button>
+              )}
             </div>
-          </div>
+          </header>
 
           {/* Mobile queue hint */}
           {queue.length > 0 ? (
@@ -425,9 +458,9 @@ function ComposePage() {
 
           <div className="flex flex-col gap-4">
             {/* MEDIA */}
-            <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
-              <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                01 · Media
+            <section className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-card)]">
+              <div className="mb-3 text-caption font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                Media
               </div>
               {activeDraft ? (
                 <div className="flex items-center gap-4 rounded-md border border-foreground bg-paper-2 px-4 py-4">
@@ -492,11 +525,12 @@ function ComposePage() {
                     isDragging && "bg-secondary",
                   )}
                 >
-                  <p className="font-display text-lg font-semibold text-foreground">
-                    Drop reels, clips, or images
+                  <p className="font-display text-xl font-semibold tracking-tight text-foreground">
+                    Drop Sunday’s reels here
                   </p>
-                  <p className="mt-2 max-w-sm text-body-sm text-muted-foreground">
-                    Batch upload, or start a card and paste a Dropbox share link below.
+                  <p className="mt-2 max-w-md text-body-sm text-muted-foreground">
+                    Multi-select 14 clips at once — or paste a Dropbox link below. Each file becomes
+                    its own scheduled card.
                   </p>
                 </div>
               )}
@@ -570,15 +604,15 @@ function ComposePage() {
 
             {activeDraft ? (
               <>
-                {/* AI STRIP */}
-                <section className="rounded-md border border-foreground bg-accent/10 p-4 shadow-[var(--shadow-card)]">
+                {/* AI STRIP — first-class, black panel white copy */}
+                <section className="rounded-md border border-foreground bg-foreground p-4 text-white shadow-[var(--shadow-card)]">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="font-display text-sm font-bold text-foreground">
-                        AI prepare this card
+                      <p className="font-display text-sm font-semibold text-white">
+                        AI prepare this reel
                       </p>
-                      <p className="mt-0.5 text-caption text-muted-foreground">
-                        Caption + hashtags from transcript · best time per platform
+                      <p className="mt-0.5 text-caption text-white/65">
+                        Caption + hashtags + best times — one click
                       </p>
                     </div>
                     <button
@@ -586,22 +620,22 @@ function ComposePage() {
                       onClick={prepareActiveWithAi}
                       disabled={aiBusy}
                       data-testid="generate-caption-btn"
-                      className="btn-action-primary btn-action disabled:opacity-50"
+                      className="inline-flex min-h-10 items-center gap-2 rounded-md border border-white/30 bg-white px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-paper-2 disabled:opacity-50"
                     >
                       {aiBusy ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <Sparkles className="h-3.5 w-3.5" />
                       )}
-                      {aiBusy ? "Preparing…" : "Run AI prepare"}
+                      {aiBusy ? "Preparing…" : "AI prepare"}
                     </button>
                   </div>
                 </section>
 
                 {/* COPY */}
-                <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
-                  <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                    02 · Caption & context
+                <section className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-card)]">
+                  <div className="mb-3 text-caption font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    Caption
                   </div>
                   <input
                     type="text"
@@ -665,7 +699,7 @@ function ComposePage() {
                 {/* PLATFORMS */}
                 <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
                   <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                    03 · Where it posts
+                    Where it posts
                   </div>
                   <div className="flex flex-wrap gap-2.5">
                     {availablePlatforms.map((meta) => {
@@ -695,22 +729,24 @@ function ComposePage() {
                 </section>
 
                 {/* Mobile publish plan (hidden on xl where rail shows) */}
-                <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)] xl:hidden">
+                <section className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-card)] xl:hidden">
                   <ComposerPublishPlan
                     draft={activeDraft}
                     scheduleReasons={scheduleReasons[activeDraft.id]}
                     onUpdateTime={updatePlatformSchedule}
                     onSuggestTimes={suggestTimesOnly}
+                    onCadence={applyCadence}
+                    cadenceActive={cadenceActive}
                   />
                 </section>
 
                 {/* EVENT */}
-                <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
-                  <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                    04 · Event
+                <section className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-card)]">
+                  <div className="mb-3 text-caption font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    Event (optional)
                   </div>
                   <p className="mb-3 text-body-sm text-muted-foreground">
-                    Link this card to a ministry moment so the calendar groups related media.
+                    Link to a ministry moment so the calendar groups related reels.
                   </p>
                   <div className="flex flex-wrap gap-2.5">
                     {workspaceEvents.map((event) => {
@@ -768,7 +804,20 @@ function ComposePage() {
               scheduleReasons={scheduleReasons[activeDraft.id]}
               onUpdateTime={updatePlatformSchedule}
               onSuggestTimes={suggestTimesOnly}
+              onCadence={applyCadence}
+              cadenceActive={cadenceActive}
             />
+            <button
+              type="button"
+              onClick={scheduleCurrent}
+              disabled={!canSchedule}
+              data-testid="schedule-publishes-btn"
+              className="btn-action btn-action-primary w-full justify-center !text-white disabled:opacity-50"
+            >
+              {canSchedule
+                ? `Schedule this reel${publishCount > 0 ? ` · ${publishCount} platforms` : ""}`
+                : "Pick platforms + times"}
+            </button>
             <ComposerPreviewRail
               draft={activeDraft}
               workspaceSlug={workspace.slug}
@@ -776,6 +825,24 @@ function ComposePage() {
             />
           </div>
         </aside>
+      ) : null}
+
+      {/* Mobile sticky schedule bar */}
+      {activeDraft ? (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-background/95 p-3 backdrop-blur md:hidden">
+          <button
+            type="button"
+            onClick={readyCount > 1 ? scheduleAllReady : scheduleCurrent}
+            disabled={readyCount === 0 && !canSchedule}
+            className="btn-action btn-action-primary w-full justify-center !text-white disabled:opacity-50"
+          >
+            {readyCount > 1
+              ? `Schedule ${readyCount} reels`
+              : canSchedule
+                ? "Schedule this reel"
+                : "Set times to schedule"}
+          </button>
+        </div>
       ) : null}
 
       {createAlbumOpen ? (

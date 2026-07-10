@@ -1,11 +1,14 @@
-import { Check, Layers, Upload } from "lucide-react";
+import { Check, Plus, Upload } from "lucide-react";
 import type { DraftPost } from "@/lib/composer-draft";
-import { draftDisplayTitle, formatMediaMeta } from "@/lib/composer-draft";
+import { draftDisplayTitle } from "@/lib/composer-draft";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import { cn } from "@/lib/utils";
 import { demoPreviewForPost } from "@/lib/demo-media";
 
-/** Left rail — atomic cards in the batch queue. */
+/**
+ * Batch filmstrip — Opus/Later style card rail.
+ * One upload = one atomic reel card.
+ */
 export function ComposerQueueRail({
   queue,
   activeId,
@@ -28,22 +31,26 @@ export function ComposerQueueRail({
   return (
     <aside
       data-testid="composer-queue-rail"
-      className="composer-queue-pane flex flex-col border-r border-foreground bg-paper-2"
+      className="composer-queue-pane flex flex-col border-r border-line bg-paper-2"
     >
-      <div className="border-b border-foreground px-4 py-3">
-        <p className="page-kicker">Batch queue</p>
-        <h2 className="mt-1 font-display text-base font-bold text-foreground">
-          {queue.length === 0 ? "No cards yet" : `${queue.length} card${queue.length === 1 ? "" : "s"}`}
+      <div className="border-b border-line px-4 py-4">
+        <p className="text-caption font-medium uppercase tracking-[0.1em] text-muted-foreground">
+          Your reels
+        </p>
+        <h2 className="mt-1 font-display text-lg font-semibold tracking-tight text-foreground">
+          {queue.length === 0
+            ? "Drop to start"
+            : `${queue.length} reel${queue.length === 1 ? "" : "s"}`}
         </h2>
-        <p className="mt-0.5 text-caption text-muted-foreground">
-          One upload = one atomic card
+        <p className="mt-1 text-xs text-muted-foreground">
+          Each file is its own card — caption, platforms, times
         </p>
       </div>
 
       <div
         className={cn(
           "min-h-0 flex-1 space-y-2 overflow-y-auto p-3",
-          isDragging && "bg-accent/10",
+          isDragging && "bg-secondary",
         )}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
@@ -52,8 +59,7 @@ export function ComposerQueueRail({
         {queue.map((draft, i) => {
           const ready =
             draft.platforms.length > 0 &&
-            draft.platforms.every((p) => Boolean(draft.proposedTimes?.[p])) &&
-            Boolean(draft.caption.trim());
+            draft.platforms.every((p) => Boolean(draft.proposedTimes?.[p]));
           const active = draft.id === activeId;
           return (
             <button
@@ -62,13 +68,18 @@ export function ComposerQueueRail({
               data-testid={`queue-card-${draft.id}`}
               onClick={() => onSelect(draft.id)}
               className={cn(
-                "flex w-full gap-2.5 rounded-md border border-foreground p-2 text-left transition-colors",
+                "flex w-full gap-3 rounded-md border p-2 text-left transition-colors",
                 active
-                  ? "bg-accent/20 "
-                  : "bg-card hover:bg-secondary",
+                  ? "border-foreground bg-foreground text-white"
+                  : "border-line bg-card text-foreground hover:bg-secondary",
               )}
             >
-              <span className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-foreground bg-background">
+              <span
+                className={cn(
+                  "h-14 w-14 shrink-0 overflow-hidden rounded-md border bg-background",
+                  active ? "border-white/30" : "border-line",
+                )}
+              >
                 {draft.previewUrl ? (
                   <CardThumbnail
                     src={draft.previewUrl}
@@ -76,7 +87,7 @@ export function ComposerQueueRail({
                     alt=""
                     kind={draft.mediaKind}
                     layout="square"
-                    className="!h-12 !w-12"
+                    className="!h-14 !w-14"
                   />
                 ) : (
                   <img
@@ -88,30 +99,42 @@ export function ComposerQueueRail({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-start justify-between gap-1">
-                  <span className="truncate font-display text-sm font-bold text-foreground">
+                  <span
+                    className={cn(
+                      "line-clamp-2 font-display text-sm font-semibold leading-snug",
+                      active ? "text-white" : "text-foreground",
+                    )}
+                  >
                     {draftDisplayTitle(draft)}
                   </span>
                   {ready ? (
-                    <Check className="h-3.5 w-3.5 shrink-0 text-success" strokeWidth={2.5} />
+                    <Check
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0",
+                        active ? "text-success" : "text-success",
+                      )}
+                      strokeWidth={2.5}
+                    />
                   ) : (
-                    <span className="font-data text-caption text-muted-foreground">{i + 1}</span>
+                    <span
+                      className={cn(
+                        "font-data text-caption",
+                        active ? "text-white/60" : "text-muted-foreground",
+                      )}
+                    >
+                      {i + 1}
+                    </span>
                   )}
                 </span>
-                <span className="mt-0.5 block truncate text-caption text-muted-foreground">
-                  {formatMediaMeta(draft)}
-                </span>
-                <span className="mt-1 flex flex-wrap gap-1">
-                  {draft.platforms.slice(0, 3).map((p) => (
-                    <span
-                      key={p}
-                      className="rounded-sm border border-foreground/30 bg-paper-2 px-1 font-mono text-[0.6rem] font-semibold text-foreground"
-                    >
-                      {p}
-                    </span>
-                  ))}
-                  {draft.eventId ? (
-                    <Layers className="h-3 w-3 text-accent" strokeWidth={2} />
-                  ) : null}
+                <span
+                  className={cn(
+                    "mt-1 block truncate text-caption",
+                    active ? "text-white/65" : "text-muted-foreground",
+                  )}
+                >
+                  {draft.platforms.length} platforms
+                  {draft.dropboxUrl ? " · Dropbox" : ""}
+                  {draft.caption.trim() ? " · captioned" : ""}
                 </span>
               </span>
             </button>
@@ -122,15 +145,26 @@ export function ComposerQueueRail({
           type="button"
           onClick={onAddClick}
           data-testid="queue-add-files"
-          className="flex w-full flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-foreground/50 bg-card px-3 py-6 text-body-sm font-semibold text-foreground transition-colors hover:border-foreground hover:bg-secondary"
+          className="flex w-full flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-line bg-card px-3 py-5 text-body-sm font-medium text-foreground transition-colors hover:border-foreground hover:bg-secondary"
         >
-          <Upload className="h-5 w-5 text-accent" />
-          Add files
+          <Plus className="h-5 w-5" strokeWidth={2} />
+          Add reels
           <span className="text-caption font-normal text-muted-foreground">
-            Multi-select for batch
+            Multi-select or Dropbox
           </span>
         </button>
       </div>
+
+      {queue.length === 0 ? (
+        <div className="border-t border-line p-4">
+          <div className="flex items-start gap-2 rounded-md border border-line bg-card p-3">
+            <Upload className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Drop Sunday’s reels here. AI captions + peak times in one pass.
+            </p>
+          </div>
+        </div>
+      ) : null}
     </aside>
   );
 }
