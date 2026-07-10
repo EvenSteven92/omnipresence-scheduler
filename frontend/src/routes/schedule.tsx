@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, Loader2, Pencil, Sparkles } from "lucide-react";
+import { Check, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ComposerPublishPlan } from "@/components/composer/ComposerPublishPlan";
@@ -23,6 +23,7 @@ import {
 import {
   readComposerShelf,
   removeFromReady,
+  revokeDraftMediaUrls,
   unstageReadyToDrafting,
   writeComposerShelf,
 } from "@/lib/draft-storage";
@@ -138,6 +139,23 @@ function SchedulePage() {
   function selectAll() {
     setSelectedIds(new Set(ready.map((d) => d.id)));
     if (ready[0]) setFocusId(ready[0].id);
+  }
+
+  function discardCards(ids: string[]) {
+    if (ids.length === 0) return;
+    const victims = ready.filter((d) => ids.includes(d.id));
+    revokeDraftMediaUrls(victims);
+    const nextReady = removeFromReady(workspaceId, ids);
+    setReady(nextReady);
+    setSelectedIds((prev) => {
+      const next = new Set([...prev].filter((id) => !ids.includes(id)));
+      if (next.size === 0 && nextReady[0]) next.add(nextReady[0].id);
+      return next;
+    });
+    setFocusId((fid) => {
+      if (fid && !ids.includes(fid)) return fid;
+      return nextReady[0]?.id ?? null;
+    });
   }
 
   function clearSelection() {
@@ -280,9 +298,19 @@ function SchedulePage() {
                 Clear
               </button>
               {selected.length > 0 ? (
-                <span className="rounded-md bg-primary px-2 py-1 text-[0.65rem] font-semibold text-white">
-                  {selected.length} selected
-                </span>
+                <>
+                  <span className="rounded-md bg-primary px-2 py-1 text-[0.65rem] font-semibold text-white">
+                    {selected.length} selected
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => discardCards([...selectedIds])}
+                    data-testid="ready-remove-selected"
+                    className="rounded-md border border-line bg-card px-2 py-1 text-[0.65rem] font-medium text-destructive hover:border-destructive hover:bg-destructive/10"
+                  >
+                    Remove selected
+                  </button>
+                </>
               ) : null}
             </div>
           ) : null}
@@ -334,12 +362,7 @@ function SchedulePage() {
                     });
                   }}
                 >
-                  <span
-                    className={cn(
-                      "h-12 w-12 shrink-0 overflow-hidden rounded-md border",
-                      focused ? "border-white/30" : "border-line",
-                    )}
-                  >
+                  <span className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-line">
                     {draft.previewUrl ? (
                       <CardThumbnail
                         src={draft.previewUrl}
@@ -362,23 +385,26 @@ function SchedulePage() {
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span
-                      className={cn(
-                        "line-clamp-2 font-display text-sm font-semibold leading-snug",
-                        "text-foreground",
-                      )}
-                    >
+                    <span className="line-clamp-2 font-display text-sm font-semibold leading-snug text-foreground">
                       {draftDisplayTitle(draft)}
                     </span>
-                    <span
-                      className={cn(
-                        "mt-0.5 block text-caption",
-                        "text-muted-foreground",
-                      )}
-                    >
+                    <span className="mt-0.5 block text-caption text-muted-foreground">
                       {ok ? "Times set" : "Needs times"} · {draft.platforms.length} platforms
                     </span>
                   </span>
+                </button>
+                <button
+                  type="button"
+                  data-testid={`ready-remove-${draft.id}`}
+                  aria-label={`Remove ${draftDisplayTitle(draft)}`}
+                  title="Remove from ready shelf"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    discardCards([draft.id]);
+                  }}
+                  className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
                 </button>
               </div>
             );
@@ -463,14 +489,25 @@ function SchedulePage() {
                         : `Schedule ${selectedComplete.length} reels`}
                   </button>
                   {focusDraft ? (
-                    <button
-                      type="button"
-                      onClick={editInCompose}
-                      className="btn-action btn-action-secondary"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit in Compose
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={editInCompose}
+                        className="btn-action btn-action-secondary"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit in Compose
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => discardCards([focusDraft.id])}
+                        data-testid="discard-focus-card"
+                        className="btn-action btn-action-secondary text-destructive hover:border-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remove
+                      </button>
+                    </>
                   ) : null}
                 </div>
                 {selected.length > 0 && !allSelectedComplete ? (

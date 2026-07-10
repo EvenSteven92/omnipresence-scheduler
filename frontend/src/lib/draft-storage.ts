@@ -180,11 +180,36 @@ export function unstageReadyToDrafting(
   return { drafting, ready };
 }
 
-/** Remove from ready after successful schedule commit. */
+/** Remove from ready after successful schedule commit (or discard from shelf). */
 export function removeFromReady(workspaceId: WorkspaceId, draftIds: string[]) {
   const shelf = readComposerShelf(workspaceId);
   const idSet = new Set(draftIds);
   const ready = shelf.ready.filter((d) => !idSet.has(d.id));
   writeComposerShelf(workspaceId, shelf.drafting, ready, shelf.savedDrafts);
   return ready;
+}
+
+/** Discard drafting cards the user no longer wants (Compose remove). */
+export function removeFromDrafting(
+  workspaceId: WorkspaceId,
+  draftIds: string[],
+): { drafting: DraftPost[]; ready: DraftPost[] } {
+  const shelf = readComposerShelf(workspaceId);
+  const idSet = new Set(draftIds);
+  const drafting = shelf.drafting.filter((d) => !idSet.has(d.id));
+  writeComposerShelf(workspaceId, drafting, shelf.ready, shelf.savedDrafts);
+  return { drafting, ready: shelf.ready };
+}
+
+/** Revoke blob: preview URLs so removed cards free memory. */
+export function revokeDraftMediaUrls(drafts: DraftPost[]) {
+  for (const d of drafts) {
+    if (d.previewUrl?.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(d.previewUrl);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
 }

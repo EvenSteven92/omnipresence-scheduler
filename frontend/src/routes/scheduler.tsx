@@ -22,6 +22,7 @@ import { humanAspectDescription, measureMediaFile } from "@/lib/media-aspect";
 import {
   isDraftReadyToStage,
   readComposerShelf,
+  revokeDraftMediaUrls,
   stageDraftsAsReady,
   writeComposerShelf,
 } from "@/lib/draft-storage";
@@ -238,6 +239,27 @@ function ComposePage() {
     if (idx >= 0) setActiveIndex(idx);
   }
 
+  function removeDraft(id: string) {
+    const removedIdx = queue.findIndex((d) => d.id === id);
+    const victim = removedIdx >= 0 ? queue[removedIdx] : undefined;
+    if (victim) revokeDraftMediaUrls([victim]);
+    setQueue((cur) => {
+      const next = cur.filter((d) => d.id !== id);
+      const shelf = readComposerShelf(workspaceId);
+      writeComposerShelf(workspaceId, next, shelf.ready, shelf.savedDrafts);
+      return next;
+    });
+    setActiveIndex((i) => {
+      const nextLen = Math.max(0, queue.length - 1);
+      if (nextLen === 0) return 0;
+      if (removedIdx < 0) return Math.min(i, nextLen - 1);
+      if (i > removedIdx) return i - 1;
+      if (i === removedIdx) return Math.min(i, nextLen - 1);
+      return i;
+    });
+    setStageError(null);
+  }
+
   return (
     <div className="composer-shell" data-testid="compose-page">
       <ComposerQueueRail
@@ -245,6 +267,7 @@ function ComposePage() {
         activeId={activeDraft?.id ?? null}
         onSelect={selectQueueId}
         onAddClick={() => fileInputRef.current?.click()}
+        onRemove={removeDraft}
         isDragging={isDragging}
         onDragOver={(e) => {
           e.preventDefault();
@@ -257,8 +280,8 @@ function ComposePage() {
       <div className="composer-editor-pane">
         <div className="mx-auto w-full max-w-[760px] px-4 py-5 pb-28 md:px-6 md:pb-10">
           {/* Studio header — Buffer clarity + Opus batch power */}
-          <header className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5">
-            <div className="min-w-0">
+          <header className="mb-6 flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+            <div className="min-w-0 flex-1">
               <p className="text-caption font-medium uppercase tracking-[0.1em] text-muted-foreground">
                 Reel studio
               </p>
@@ -274,11 +297,11 @@ function ComposePage() {
                 <p className="mt-2 text-sm font-medium text-destructive">{stageError}</p>
               ) : null}
             </div>
-            <div className="flex flex-col items-stretch gap-2 sm:min-w-[13rem] sm:items-end">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
               {readyCount > 0 ? (
                 <Link
                   to="/schedule"
-                  className="btn-action btn-action-secondary justify-center"
+                  className="btn-action btn-action-secondary"
                   data-testid="go-schedule-ready"
                 >
                   Schedule ready ({readyCount}) →
@@ -315,6 +338,17 @@ function ComposePage() {
                         ? "Mark ready"
                         : "Finish card to continue"}
                   </button>
+                  {activeDraft ? (
+                    <button
+                      type="button"
+                      onClick={() => removeDraft(activeDraft.id)}
+                      data-testid="remove-active-card"
+                      className="btn-action btn-action-secondary text-destructive hover:border-destructive hover:bg-destructive/10"
+                      title="Remove this card"
+                    >
+                      Remove
+                    </button>
+                  ) : null}
                 </>
               ) : (
                 <button
