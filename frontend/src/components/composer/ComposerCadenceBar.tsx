@@ -29,7 +29,7 @@ export function ComposerCadenceBar({
               className={cn(
                 "rounded-md border px-2.5 py-2 text-left transition-colors disabled:opacity-40",
                 selected
-                  ? "border-foreground bg-foreground text-white"
+                  ? "border-primary bg-primary text-white"
                   : "border-line bg-card text-foreground hover:bg-secondary",
               )}
             >

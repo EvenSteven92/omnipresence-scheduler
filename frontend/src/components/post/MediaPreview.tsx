@@ -66,7 +66,7 @@ export function CardMediaBanner({
       />
       {mediaKind === "video" ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/20">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/30 bg-background/70 shadow-lg backdrop-blur-sm">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-background/70 shadow-lg backdrop-blur-sm">
             <Play className="h-3 w-3 fill-foreground text-foreground" strokeWidth={0} />
           </span>
         </div>
@@ -125,7 +125,7 @@ export function CardMediaThumb({
       />
       {mediaKind === "video" ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/20">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/30 bg-background/70 shadow-lg backdrop-blur-sm">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-background/70 shadow-lg backdrop-blur-sm">
             <Play className="h-3 w-3 fill-foreground text-foreground" strokeWidth={0} />
           </span>
         </div>
@@ -169,7 +169,7 @@ export function MediaPreview({
       />
       {mediaKind === "video" ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/20">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-foreground/30 bg-background/70 shadow-lg backdrop-blur-sm">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-background/70 shadow-lg backdrop-blur-sm">
             <Play className="h-4 w-4 fill-foreground text-foreground" strokeWidth={0} />
           </span>
         </div>

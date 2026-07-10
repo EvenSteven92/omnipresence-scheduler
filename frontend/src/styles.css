@@ -128,8 +128,8 @@
     outline-offset: 2px;
   }
   ::selection {
-    background-color: var(--color-foreground);
-    color: var(--color-background);
+    background-color: color-mix(in oklab, var(--color-brand) 28%, transparent);
+    color: var(--color-foreground);
   }
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -478,6 +478,18 @@
     border: 1px solid var(--color-line);
     background: var(--color-surface-elevated);
     border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+  }
+  /* Selected / focused surface — TORCC brand wash */
+  .is-selected {
+    border-color: color-mix(in oklab, var(--color-brand) 45%, transparent);
+    background: var(--color-brand-soft);
+    color: var(--color-foreground);
+  }
+  .is-emphasis {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #ffffff;
   }
   /* Calm card hover — color only, no slide/pop */
   .card-pop {

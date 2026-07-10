@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export function Card({
   className,
   children,
-  elevated = false,
+  elevated = true,
 }: {
   className?: string;
   children: ReactNode;
@@ -13,7 +13,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-md border border-foreground bg-card",
+        "overflow-hidden rounded-lg border border-line bg-card",
         elevated && "shadow-[var(--shadow-card)]",
         className,
       )}
@@ -37,7 +37,7 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-start justify-between gap-3 border-b border-foreground px-5 py-4",
+        "flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4",
         className,
       )}
     >

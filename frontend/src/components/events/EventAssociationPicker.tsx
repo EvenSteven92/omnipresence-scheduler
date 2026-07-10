@@ -58,7 +58,7 @@ export function EventAssociationPicker({
             onClick={() => onChange(undefined)}
             data-testid="event-association-clear"
             aria-label="Remove event association"
-            className="shrink-0 rounded-sm border border-foreground bg-surface p-1 text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 rounded-md border border-line bg-surface p-1 text-muted-foreground transition-colors hover:text-foreground"
           >
             <X className="h-3 w-3" />
           </button>

@@ -113,7 +113,7 @@ export function ProposedScheduleCalendar({
                 className={cn(
                   "rounded px-2.5 py-1 text-caption font-medium capitalize transition-colors",
                   mode === m
-                    ? "bg-foreground text-white"
+                    ? "bg-primary text-white"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -308,7 +308,7 @@ function DayCell({
               className={cn(
                 "flex w-full items-center gap-1.5 rounded border px-1 py-0.5 text-left transition-colors",
                 focused
-                  ? "border-foreground bg-foreground text-white"
+                  ? "border-brand bg-brand-soft text-foreground"
                   : hi
                     ? "border-foreground/40 bg-secondary"
                     : "border-line bg-paper-2 hover:border-foreground/30",
@@ -330,7 +330,7 @@ function DayCell({
                 <span
                   className={cn(
                     "block truncate text-[0.65rem] font-semibold leading-tight",
-                    focused ? "text-white" : "text-foreground",
+                    focused ? "text-foreground" : "text-foreground",
                   )}
                 >
                   {draftDisplayTitle(draft)}
@@ -339,7 +339,7 @@ function DayCell({
                   <span
                     className={cn(
                       "block text-[0.55rem]",
-                      focused ? "text-white/70" : "text-muted-foreground",
+                      focused ? "text-muted-foreground" : "text-muted-foreground",
                     )}
                   >
                     from {formatTimeShort(earliest)}
@@ -431,7 +431,7 @@ function DayCardsPanel({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[min(90vh,640px)] w-full max-w-md flex-col overflow-hidden rounded-lg border border-foreground bg-background shadow-[var(--shadow-card)]"
+        className="flex max-h-[min(90vh,640px)] w-full max-w-md flex-col overflow-hidden rounded-lg border border-line bg-background shadow-[var(--shadow-card)]"
       >
         <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div>
@@ -475,7 +475,7 @@ function DayCardsPanel({
                       className={cn(
                         "flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors",
                         focused
-                          ? "bg-foreground text-white"
+                          ? "bg-brand-soft text-foreground"
                           : hi
                             ? "bg-secondary hover:bg-secondary/80"
                             : "hover:bg-paper-2",
@@ -485,7 +485,7 @@ function DayCardsPanel({
                         className={cn(
                           "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-semibold tabular-nums",
                           focused
-                            ? "bg-white/15 text-white"
+                            ? "bg-brand/15 text-brand"
                             : "bg-paper-2 text-muted-foreground",
                         )}
                       >
@@ -508,7 +508,7 @@ function DayCardsPanel({
                         <span
                           className={cn(
                             "block truncate text-sm font-semibold",
-                            focused ? "text-white" : "text-foreground",
+                            focused ? "text-foreground" : "text-foreground",
                           )}
                         >
                           {draftDisplayTitle(draft)}
@@ -516,7 +516,7 @@ function DayCardsPanel({
                         <span
                           className={cn(
                             "mt-0.5 block text-xs",
-                            focused ? "text-white/70" : "text-muted-foreground",
+                            focused ? "text-muted-foreground" : "text-muted-foreground",
                           )}
                         >
                           {earliest

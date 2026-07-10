@@ -68,16 +68,16 @@ export function ComposerQueueRail({
               data-testid={`queue-card-${draft.id}`}
               onClick={() => onSelect(draft.id)}
               className={cn(
-                "flex w-full gap-3 rounded-md border p-2 text-left transition-colors",
+                "flex w-full gap-3 rounded-lg border p-2 text-left transition-colors",
                 active
-                  ? "border-foreground bg-foreground text-white"
+                  ? "border-brand bg-brand-soft text-foreground shadow-[var(--shadow-card)]"
                   : "border-line bg-card text-foreground hover:bg-secondary",
               )}
             >
               <span
                 className={cn(
-                  "h-14 w-14 shrink-0 overflow-hidden rounded-md border bg-background",
-                  active ? "border-white/30" : "border-line",
+                  "h-14 w-14 shrink-0 overflow-hidden rounded-lg border bg-background",
+                  active ? "border-brand/30" : "border-line",
                 )}
               >
                 {draft.previewUrl ? (
@@ -99,39 +99,21 @@ export function ComposerQueueRail({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-start justify-between gap-1">
-                  <span
-                    className={cn(
-                      "line-clamp-2 font-display text-sm font-semibold leading-snug",
-                      active ? "text-white" : "text-foreground",
-                    )}
-                  >
+                  <span className="line-clamp-2 font-display text-sm font-semibold leading-snug text-foreground">
                     {draftDisplayTitle(draft)}
                   </span>
                   {ready ? (
                     <Check
-                      className={cn(
-                        "h-3.5 w-3.5 shrink-0",
-                        active ? "text-success" : "text-success",
-                      )}
+                      className="h-3.5 w-3.5 shrink-0 text-success"
                       strokeWidth={2.5}
                     />
                   ) : (
-                    <span
-                      className={cn(
-                        "font-data text-caption",
-                        active ? "text-white/60" : "text-muted-foreground",
-                      )}
-                    >
+                    <span className="font-data text-caption text-muted-foreground">
                       {i + 1}
                     </span>
                   )}
                 </span>
-                <span
-                  className={cn(
-                    "mt-1 block truncate text-caption",
-                    active ? "text-white/65" : "text-muted-foreground",
-                  )}
-                >
+                <span className="mt-1 block truncate text-caption text-muted-foreground">
                   {draft.aspectLabel ? `${draft.aspectLabel} · ` : ""}
                   {draft.caption.trim() ? "captioned" : "needs caption"}
                   {draft.dropboxUrl ? " · Dropbox" : ""}

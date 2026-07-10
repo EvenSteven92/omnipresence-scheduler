@@ -13,13 +13,13 @@ function Legend({
 }) {
   if (!active) return null;
   return (
-    <span className="flex items-center gap-1.5 rounded-md border border-foreground bg-card px-2 py-1 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+    <span className="flex items-center gap-1.5 rounded-lg border border-line bg-card px-2 py-1 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
       {icon ? (
-        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-foreground bg-secondary">
+        <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-md border border-line bg-secondary">
           <Layers className="h-2 w-2" strokeWidth={2} />
         </span>
       ) : (
-        <span className={`inline-block h-2 w-2 rounded-sm border border-foreground ${swatch}`} />
+        <span className={`inline-block h-2 w-2 rounded-md border border-line ${swatch}`} />
       )}
       {label}
     </span>
@@ -45,11 +45,11 @@ export function CalendarLegendBar({
         className={`flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] transition-colors ${
           highlightUnassociated
             ? "border-warning bg-warning/15 text-warning"
-            : "border-foreground bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
+            : "border-line bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
         }`}
       >
         <span
-          className={`inline-block h-2 w-2 rounded-sm border border-foreground ${
+          className={`inline-block h-2 w-2 rounded-md border border-line ${
             highlightUnassociated ? "bg-warning" : "bg-transparent"
           }`}
         />

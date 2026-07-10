@@ -60,10 +60,10 @@ export function CalendarDayDrawer({
   return (
     <aside
       data-testid="calendar-day-drawer"
-      className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-foreground bg-card md:top-0"
+      className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-line bg-card shadow-[var(--shadow-card)] md:top-0"
       style={{ top: "var(--sync-bar-height, 0px)" }}
     >
-      <header className="flex items-start justify-between gap-3 border-b border-foreground px-5 py-4">
+      <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
         <div>
           <div className="page-kicker">
             {date.toLocaleDateString(undefined, { weekday: "long" }).toUpperCase()} ·{" "}
@@ -83,13 +83,13 @@ export function CalendarDayDrawer({
           type="button"
           onClick={onClose}
           aria-label="Close day panel"
-          className="rounded-md border border-foreground bg-card p-1.5 text-muted-foreground hover:text-foreground"
+          className="rounded-lg border border-line bg-card p-1.5 text-muted-foreground hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </button>
       </header>
 
-      <div className="flex border-b border-foreground">
+      <div className="flex border-b border-line">
         <button
           type="button"
           data-testid="day-drawer-tab-posts"
@@ -169,7 +169,7 @@ export function CalendarDayDrawer({
                   type="button"
                   onClick={() => onSelectEvent(event)}
                   data-testid={`drawer-event-${event.id}`}
-                  className="flex w-full items-center gap-3 rounded-md border border-foreground bg-card px-4 py-3 text-left transition-colors hover:bg-secondary"
+                  className="flex w-full items-center gap-3 rounded-lg border border-line bg-card px-4 py-3 text-left transition-colors hover:bg-secondary"
                 >
                   <Layers className="h-4 w-4 shrink-0 text-accent" />
                   <span className="min-w-0 flex-1">

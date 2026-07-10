@@ -29,7 +29,7 @@ function EventCountsTrailing({
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-foreground bg-foreground">
+    <div className="grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-line bg-foreground">
       {cells.map(({ label, value, accent }) => (
         <div key={label} className="bg-card px-3 py-2.5 text-center">
           <div
@@ -88,7 +88,7 @@ export function EventAlbumCard({
           aspect="video"
           variant="media"
           badge={
-            <span className="rounded-[5px] border border-foreground bg-background px-2 py-0.5 font-mono text-[0.5625rem] font-bold uppercase tracking-[0.06em] text-foreground">
+            <span className="rounded-[5px] border border-line bg-background px-2 py-0.5 font-mono text-[0.5625rem] font-bold uppercase tracking-[0.06em] text-foreground">
               {eventKindLabel(event.kind)}
             </span>
           }

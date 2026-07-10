@@ -11,7 +11,7 @@ export function EmptyDayNewPostAffordance() {
         onClick={(e) => e.stopPropagation()}
         data-testid="empty-day-new-post"
         aria-label={CREATE.card}
-        className="pointer-events-auto inline-flex items-center gap-1.5 rounded-md border border-foreground bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+        className="pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
       >
         <FilePlus className="h-3.5 w-3.5" strokeWidth={2} />
         {CREATE.card}

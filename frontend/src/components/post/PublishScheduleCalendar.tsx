@@ -59,7 +59,7 @@ function Legend({
 }) {
   return (
     <span className="flex items-center gap-1.5 font-mono text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-      <span className={`inline-block h-2 w-2 rounded-sm border border-foreground ${swatch}`} />
+      <span className={`inline-block h-2 w-2 rounded-md border border-line ${swatch}`} />
       {label}
     </span>
   );

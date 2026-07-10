@@ -63,9 +63,9 @@ export function TimeframeSelector({
 
   const chip = (active: boolean) =>
     cn(
-      "rounded-md border border-foreground px-3.5 py-2 font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] transition-colors",
+      "rounded-lg border border-line px-3.5 py-2 font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] transition-colors",
       active
-        ? "bg-foreground text-background"
+        ? "bg-primary text-background"
         : "bg-card text-foreground hover:bg-secondary",
     );
 
@@ -126,7 +126,7 @@ export function TimeframeSelector({
           }}
           data-testid="tf-custom-count"
           aria-label="custom count"
-          className="w-14 rounded-md border border-foreground bg-paper-2 px-2 py-2 text-center font-data text-[0.7rem] text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed"
+          className="w-14 rounded-lg border border-line bg-paper-2 px-2 py-2 text-center font-data text-[0.7rem] text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed"
         />
         <div ref={unitRef} className="relative">
           <button
@@ -134,13 +134,13 @@ export function TimeframeSelector({
             disabled={!isCustom}
             onClick={() => setUnitOpen((o) => !o)}
             data-testid="tf-custom-unit"
-            className="flex items-center gap-1.5 rounded-md border border-foreground bg-card px-3 py-2 font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-2 font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed"
           >
             {UNITS.find((u) => u.id === customUnit)?.label}
             <ChevronDown className="h-3 w-3" />
           </button>
           {unitOpen && isCustom && (
-            <div className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-md border border-foreground bg-card ">
+            <div className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-lg border border-line bg-card ">
               {UNITS.map((u) => (
                 <button
                   key={u.id}
@@ -154,7 +154,7 @@ export function TimeframeSelector({
                   className={cn(
                     "block w-full px-4 py-2.5 text-left font-mono text-[0.65rem] font-bold uppercase tracking-[0.08em] transition-colors",
                     customUnit === u.id
-                      ? "bg-foreground text-background"
+                      ? "bg-primary text-background"
                       : "text-foreground hover:bg-secondary",
                   )}
                 >

@@ -22,9 +22,9 @@ function chipBorderClass(variant: PlatformChipVariant): string {
   if (variant === "danger") return "border-danger/60 bg-danger/10";
   if (variant === "warning") return "border-warning/60 bg-warning/10";
   if (variant === "muted") return "border-border/50 bg-background/40 opacity-70";
-  if (variant === "scheduled") return "border border-foreground/40 bg-paper-2 text-muted-foreground";
-  if (variant === "active") return "border border-foreground bg-foreground text-white";
-  return "border border-foreground bg-card";
+  if (variant === "scheduled") return "border border-line bg-paper-2 text-muted-foreground";
+  if (variant === "active") return "border border-primary bg-primary text-white";
+  return "border border-line bg-card";
 }
 
 /**
@@ -108,7 +108,7 @@ export function PlatformSelectChip({
           ? "cursor-not-allowed border-border/40 bg-background/30 text-muted-foreground/40"
           : active
             ? chipBorderClass("active")
-            : "border border-foreground bg-card text-foreground hover:bg-secondary"
+            : "border border-line bg-card text-foreground hover:bg-secondary"
       } ${className}`}
     >
       <PlatformIcon

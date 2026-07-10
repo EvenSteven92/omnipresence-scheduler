@@ -198,7 +198,7 @@ export function Sidebar() {
         ))}
         <Link
           to="/scheduler"
-          className="flex flex-col items-center gap-0.5 rounded-md border border-foreground bg-primary px-3 py-1.5 font-display text-[0.65rem] font-medium text-white"
+          className="flex flex-col items-center gap-0.5 rounded-lg border border-line bg-primary px-3 py-1.5 font-display text-[0.65rem] font-medium text-white"
         >
           <span className="text-lg leading-none text-white">+</span>
           <span className="text-white">{CREATE.card}</span>

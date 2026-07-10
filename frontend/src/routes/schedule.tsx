@@ -280,7 +280,7 @@ function SchedulePage() {
                 Clear
               </button>
               {selected.length > 0 ? (
-                <span className="rounded-md bg-foreground px-2 py-1 text-[0.65rem] font-medium text-white">
+                <span className="rounded-md bg-primary px-2 py-1 text-[0.65rem] font-semibold text-white">
                   {selected.length} selected
                 </span>
               ) : null}
@@ -298,11 +298,11 @@ function SchedulePage() {
                 key={draft.id}
                 data-testid={`ready-card-${draft.id}`}
                 className={cn(
-                  "flex w-full gap-2 rounded-md border p-2 transition-colors",
+                  "flex w-full gap-2 rounded-lg border p-2 transition-colors",
                   focused
-                    ? "border-foreground bg-foreground text-white"
+                    ? "border-brand bg-brand-soft text-foreground shadow-[var(--shadow-card)]"
                     : checked
-                      ? "border-foreground bg-secondary"
+                      ? "border-foreground/40 bg-secondary text-foreground"
                       : "border-line bg-card text-foreground hover:bg-secondary/80",
                 )}
               >
@@ -315,11 +315,9 @@ function SchedulePage() {
                   }}
                   className={cn(
                     "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border",
-                    focused
-                      ? "border-white/50 bg-white text-foreground"
-                      : checked
-                        ? "border-foreground bg-foreground text-white"
-                        : "border-line bg-background",
+                    checked
+                      ? "border-primary bg-primary text-white"
+                      : "border-line bg-background",
                   )}
                 >
                   {checked ? <Check className="h-3 w-3" strokeWidth={3} /> : null}
@@ -367,7 +365,7 @@ function SchedulePage() {
                     <span
                       className={cn(
                         "line-clamp-2 font-display text-sm font-semibold leading-snug",
-                        focused ? "text-white" : "text-foreground",
+                        "text-foreground",
                       )}
                     >
                       {draftDisplayTitle(draft)}
@@ -375,7 +373,7 @@ function SchedulePage() {
                     <span
                       className={cn(
                         "mt-0.5 block text-caption",
-                        focused ? "text-white/65" : "text-muted-foreground",
+                        "text-muted-foreground",
                       )}
                     >
                       {ok ? "Times set" : "Needs times"} · {draft.platforms.length} platforms
@@ -555,18 +553,13 @@ function SchedulePage() {
                               className={cn(
                                 "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors",
                                 focused
-                                  ? "bg-foreground text-white"
+                                  ? "bg-brand-soft text-foreground"
                                   : selectedRow
                                     ? "bg-secondary"
                                     : "bg-card hover:bg-paper-2",
                               )}
                             >
-                              <span
-                                className={cn(
-                                  "h-10 w-10 shrink-0 overflow-hidden rounded-md border",
-                                  focused ? "border-white/30" : "border-line",
-                                )}
-                              >
+                              <span className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-line">
                                 <img
                                   src={
                                     row.draft.previewUrl ||
@@ -580,20 +573,10 @@ function SchedulePage() {
                                 />
                               </span>
                               <span className="min-w-0 flex-1">
-                                <span
-                                  className={cn(
-                                    "block truncate font-display text-sm font-semibold",
-                                    focused ? "text-white" : "text-foreground",
-                                  )}
-                                >
+                                <span className="block truncate font-display text-sm font-semibold text-foreground">
                                   {row.title}
                                 </span>
-                                <span
-                                  className={cn(
-                                    "mt-0.5 block text-xs",
-                                    focused ? "text-white/70" : "text-muted-foreground",
-                                  )}
-                                >
+                                <span className="mt-0.5 block text-xs text-muted-foreground">
                                   {row.daysLabel}
                                   {row.dayCount > 1
                                     ? ` · ${row.dayCount} days`
@@ -606,7 +589,7 @@ function SchedulePage() {
                                 <span
                                   className={cn(
                                     "shrink-0 text-[0.65rem] font-medium",
-                                    focused ? "text-white/80" : "text-warning",
+                                    "text-warning",
                                   )}
                                 >
                                   Needs times

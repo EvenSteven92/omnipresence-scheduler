@@ -64,7 +64,7 @@ export function DashboardUpNextQueue() {
               Create a card
             </Link>
           }
-          className="border border-foreground bg-card py-10"
+          className="border border-line bg-card py-10"
         />
       ) : (
         <div className="space-y-7">

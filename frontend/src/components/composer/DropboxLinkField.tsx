@@ -4,7 +4,7 @@ import { isDropboxUrl, resolveDropboxUrl, type DropboxResolveResult } from "@/li
 import { cn } from "@/lib/utils";
 
 const fieldClass =
-  "w-full rounded-md border border-foreground bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/55 focus:outline-none focus:ring-2 focus:ring-ring";
+  "w-full rounded-lg border border-line bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/55 focus:outline-none focus:ring-2 focus:ring-ring";
 
 export function DropboxLinkField({
   value,

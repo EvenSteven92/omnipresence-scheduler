@@ -84,7 +84,7 @@ export function TopEventPerformersSection({
 
   return (
     <section className={className} data-testid="top-event-performers">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-foreground pb-3">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3">
         <div>
           <p className="page-kicker">Events</p>
           <h2 className="mt-1 font-display text-xl font-bold text-foreground">
@@ -100,7 +100,7 @@ export function TopEventPerformersSection({
       </div>
 
       {topEvents.length === 0 ? (
-        <div className="rounded-md border border-foreground bg-card px-5 py-10 text-center text-sm text-muted-foreground">
+        <div className="rounded-lg border border-line bg-card px-5 py-10 text-center text-sm text-muted-foreground">
           {emptyLabel}
         </div>
       ) : (

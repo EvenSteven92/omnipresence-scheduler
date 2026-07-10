@@ -52,7 +52,7 @@ export function RepublishModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md modal-shell overflow-hidden"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-foreground px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div className="min-w-0">
             <div className="text-title">Republish</div>
             <h2 className="mt-2 text-base font-semibold text-foreground">
@@ -64,7 +64,7 @@ export function RepublishModal({
             onClick={onClose}
             data-testid="republish-close"
             aria-label="close"
-            className="shrink-0 rounded-sm border border-foreground bg-background p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 rounded-md border border-line bg-background p-1.5 text-muted-foreground transition-colors hover:text-foreground"
           >
             <XIcon className="h-3 w-3" />
           </button>
@@ -77,7 +77,7 @@ export function RepublishModal({
               : "We'll copy this scheduled card into the composer as a new draft. Set new publish times before saving — your existing queue entry stays unchanged until you replace it."}
           </p>
 
-          <ul className="space-y-2 border border-foreground bg-paper-2 px-4 py-3 text-xs text-muted-foreground">
+          <ul className="space-y-2 border border-line bg-paper-2 px-4 py-3 text-xs text-muted-foreground">
             <li className="flex items-start gap-2">
               <Repeat2 className="mt-0.5 h-3 w-3 shrink-0 text-accent" strokeWidth={1.75} />
               <span>Same file, caption, and event link</span>
@@ -94,7 +94,7 @@ export function RepublishModal({
           </p>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-foreground px-5 py-4">
+        <div className="flex justify-end gap-2 border-t border-line px-5 py-4">
           <button
             type="button"
             onClick={onClose}

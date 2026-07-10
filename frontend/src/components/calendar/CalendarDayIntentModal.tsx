@@ -37,7 +37,7 @@ export function CalendarDayIntentModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md modal-shell overflow-hidden"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-foreground px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div>
             <div className="page-kicker">Plan this day</div>
             <p className="mt-2 text-sm font-semibold text-foreground">{dateLabel}</p>
@@ -49,7 +49,7 @@ export function CalendarDayIntentModal({
             type="button"
             onClick={onClose}
             aria-label="close"
-            className="shrink-0 rounded-sm border border-foreground bg-background p-1.5 text-muted-foreground hover:text-foreground"
+            className="shrink-0 rounded-md border border-line bg-background p-1.5 text-muted-foreground hover:text-foreground"
           >
             <XIcon className="h-3 w-3" />
           </button>
@@ -80,9 +80,9 @@ export function CalendarDayIntentModal({
               onCreateEvent();
             }}
             data-testid="day-intent-new-event"
-            className="flex w-full items-center gap-3 rounded-sm border border-foreground bg-paper-2 px-4 py-3 text-left transition-colors hover:bg-secondary"
+            className="flex w-full items-center gap-3 rounded-md border border-line bg-paper-2 px-4 py-3 text-left transition-colors hover:bg-secondary"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-foreground bg-surface">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-surface">
               <CalendarPlus className="h-4 w-4 text-foreground" strokeWidth={1.75} />
             </span>
             <span className="min-w-0">

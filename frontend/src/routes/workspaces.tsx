@@ -97,7 +97,7 @@ function WorkspacesPage() {
       <div className="page-content mx-auto max-w-[1320px] space-y-6">
         <div
           className={cn(
-            "rounded-md border border-foreground px-4 py-3 text-body-sm",
+            "rounded-lg border border-line px-4 py-3 text-body-sm",
             postsDbMode ? "bg-success/10 text-foreground" : "bg-paper-2 text-muted-foreground",
           )}
           data-testid="posts-storage-mode"
@@ -120,7 +120,7 @@ function WorkspacesPage() {
           <div
             role="status"
             className={cn(
-              "rounded-md border border-foreground px-4 py-3 text-body-sm font-medium text-foreground",
+              "rounded-lg border border-line px-4 py-3 text-body-sm font-medium text-foreground",
               bannerTone === "success" && "bg-success/10",
               bannerTone === "warning" && "bg-warning/10",
               bannerTone === "error" && "bg-destructive/10",
@@ -141,11 +141,11 @@ function WorkspacesPage() {
             {/* Active workspace spotlight */}
             <section
               data-testid="active-workspace-card"
-              className="rounded-md border border-foreground bg-card p-5 shadow-[var(--shadow-card)]"
+              className="rounded-lg border border-line bg-card p-5 shadow-[var(--shadow-card)]"
             >
               <p className="text-eyebrow">Active workspace</p>
               <div className="mt-3 flex items-center gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-foreground bg-foreground font-display text-lg font-semibold text-background">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-line bg-foreground font-display text-lg font-semibold text-background">
                   {workspace.initials}
                 </span>
                 <div className="min-w-0">
@@ -162,7 +162,7 @@ function WorkspacesPage() {
             </section>
 
             {/* Workspace switcher list */}
-            <section className="rounded-md border border-foreground bg-card p-4">
+            <section className="rounded-lg border border-line bg-card p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h2 className="font-display text-sm font-bold text-foreground">Your workspaces</h2>
                 <span className="font-data text-body-sm text-muted-foreground">
@@ -177,11 +177,11 @@ function WorkspacesPage() {
                       key={ws.id}
                       data-testid={`workspace-card-${ws.slug}`}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-md border border-foreground px-3 py-2.5",
+                        "flex items-center gap-2.5 rounded-lg border border-line px-3 py-2.5",
                         active ? "bg-accent/15 " : "bg-card",
                       )}
                     >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-foreground bg-foreground font-data text-xs font-bold text-background">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-foreground font-data text-xs font-bold text-background">
                         {ws.initials}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -217,7 +217,7 @@ function WorkspacesPage() {
             </section>
 
             {/* How it works */}
-            <section className="rounded-md border border-foreground bg-paper-2 p-5">
+            <section className="rounded-lg border border-line bg-paper-2 p-5">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-accent" strokeWidth={2} />
                 <h2 className="font-display text-sm font-bold text-foreground">How it works</h2>

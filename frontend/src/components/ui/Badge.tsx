@@ -7,7 +7,7 @@ const tones: Record<Tone, string> = {
   default: "border-foreground bg-card text-foreground",
   success: "border-success/40 bg-success/10 text-success",
   warning: "border-warning/40 bg-warning/10 text-warning",
-  accent: "border-foreground bg-foreground text-background",
+  accent: "border-primary bg-primary text-background",
   muted: "border-line bg-paper-2 text-muted-foreground",
 };
 

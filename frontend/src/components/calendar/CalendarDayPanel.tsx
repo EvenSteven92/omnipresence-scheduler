@@ -56,7 +56,7 @@ export function CalendarDayPanel({
     return (
       <aside
         data-testid="calendar-day-panel-empty"
-        className="flex h-full min-h-[28rem] flex-col items-center justify-center rounded-md border border-foreground bg-card p-8 text-center shadow-[var(--shadow-card)]"
+        className="flex h-full min-h-[28rem] flex-col items-center justify-center rounded-lg border border-line bg-card p-8 text-center shadow-[var(--shadow-card)]"
       >
         <p className="page-kicker">Day detail</p>
         <h2 className="mt-2 font-display text-xl font-bold text-foreground">Select a day</h2>
@@ -77,9 +77,9 @@ export function CalendarDayPanel({
   return (
     <aside
       data-testid="calendar-day-panel"
-      className="flex h-full min-h-[28rem] flex-col overflow-hidden rounded-md border border-foreground bg-card shadow-[var(--shadow-card)]"
+      className="flex h-full min-h-[28rem] flex-col overflow-hidden rounded-lg border border-line bg-card shadow-[var(--shadow-card)]"
     >
-      <header className="flex items-start justify-between gap-3 border-b border-foreground px-5 py-4">
+      <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
         <div className="min-w-0">
           <p className="page-kicker">Selected day</p>
           <h2 className="mt-1 font-display text-xl font-bold leading-tight text-foreground">
@@ -94,13 +94,13 @@ export function CalendarDayPanel({
           type="button"
           onClick={onClose}
           aria-label="Close day panel"
-          className="rounded-md border border-foreground bg-paper-2 p-2 text-foreground hover:bg-secondary"
+          className="rounded-lg border border-line bg-paper-2 p-2 text-foreground hover:bg-secondary"
         >
           <X className="h-4 w-4" />
         </button>
       </header>
 
-      <div className="flex gap-2 border-b border-foreground px-4 py-3">
+      <div className="flex gap-2 border-b border-line px-4 py-3">
         <Link
           to="/scheduler"
           className="btn-action-primary btn-action min-h-9 flex-1 justify-center text-body-sm"
@@ -119,7 +119,7 @@ export function CalendarDayPanel({
         <section>
           <h3 className="mb-2 font-display text-sm font-bold text-foreground">Events</h3>
           {events.length === 0 ? (
-            <p className="rounded-md border border-foreground/30 bg-paper-2 px-3 py-4 text-body-sm text-muted-foreground">
+            <p className="rounded-lg border border-line/30 bg-paper-2 px-3 py-4 text-body-sm text-muted-foreground">
               No events on this day. Create one to group related cards (sermon, worship night,
               campaign…).
             </p>
@@ -133,9 +133,9 @@ export function CalendarDayPanel({
                       type="button"
                       data-testid={`day-panel-event-${event.id}`}
                       onClick={() => onOpenEvent(event)}
-                      className="flex w-full items-center gap-3 rounded-md border border-foreground bg-paper-2 px-3 py-3 text-left transition-colors hover:bg-secondary"
+                      className="flex w-full items-center gap-3 rounded-lg border border-line bg-paper-2 px-3 py-3 text-left transition-colors hover:bg-secondary"
                     >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-foreground bg-foreground text-white">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-line bg-foreground text-white">
                         <Layers className="h-4 w-4 text-white" strokeWidth={2} />
                       </span>
                       <span className="min-w-0 flex-1">
@@ -159,7 +159,7 @@ export function CalendarDayPanel({
         <section>
           <h3 className="mb-2 font-display text-sm font-bold text-foreground">Cards</h3>
           {filteredPosts.length === 0 ? (
-            <p className="rounded-md border border-foreground/30 bg-paper-2 px-3 py-4 text-body-sm text-muted-foreground">
+            <p className="rounded-lg border border-line/30 bg-paper-2 px-3 py-4 text-body-sm text-muted-foreground">
               {showUnlinkedOnly
                 ? "All cards on this day are linked to an event."
                 : "No cards scheduled this day."}
@@ -214,11 +214,11 @@ function DayPanelCardRow({
   return (
     <div
       data-testid={`day-panel-card-${post.id}`}
-      className="rounded-md border border-foreground bg-card p-2.5"
+      className="rounded-lg border border-line bg-card p-2.5"
     >
       <div className="flex gap-3">
         <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 gap-3 text-left">
-          <span className="h-14 w-14 shrink-0 overflow-hidden rounded-md border border-foreground bg-paper-2">
+          <span className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-line bg-paper-2">
             <img
               src={demoPreviewForPost({ id: post.id, title: post.title })}
               alt=""
@@ -243,7 +243,7 @@ function DayPanelCardRow({
           }}
           title={linked ? "Change event" : "Link to event"}
           className={cn(
-            "flex shrink-0 flex-col items-center justify-center gap-1 rounded-md border border-foreground px-2 py-1.5 text-caption font-semibold transition-colors hover:bg-secondary",
+            "flex shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-line px-2 py-1.5 text-caption font-semibold transition-colors hover:bg-secondary",
             linked ? "bg-paper-2 text-foreground" : "bg-warning/15 text-foreground",
           )}
         >
@@ -252,7 +252,7 @@ function DayPanelCardRow({
         </button>
       </div>
       {/* Atomic when & where — one row per platform publish */}
-      <ul className="mt-2 space-y-1 border-t border-foreground/15 pt-2">
+      <ul className="mt-2 space-y-1 border-t border-line pt-2">
         {entries.map((e) => (
           <li
             key={e.platform}

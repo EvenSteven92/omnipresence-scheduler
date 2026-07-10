@@ -52,7 +52,7 @@ export function CreateMenu({
         {open ? (
           <div
             role="menu"
-            className="absolute bottom-full left-0 z-50 mb-2 w-full min-w-[12rem] overflow-hidden rounded-sm border border-foreground bg-popover shadow-xl"
+            className="absolute bottom-full left-0 z-50 mb-2 w-full min-w-[12rem] overflow-hidden rounded-md border border-line bg-popover shadow-xl"
           >
             <Link
               to="/scheduler"
@@ -72,7 +72,7 @@ export function CreateMenu({
                 setOpen(false);
                 openCreateEvent();
               }}
-              className="flex w-full items-center gap-2.5 border-t border-foreground px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-secondary"
+              className="flex w-full items-center gap-2.5 border-t border-line px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-secondary"
             >
               <CalendarPlus className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
               {CREATE.event}

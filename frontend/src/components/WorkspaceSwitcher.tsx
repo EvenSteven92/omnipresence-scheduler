@@ -26,14 +26,14 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
         data-testid="workspace-switcher"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-md border border-foreground bg-card text-left transition-colors hover:bg-paper-2/60",
+          "flex w-full items-center gap-2.5 rounded-lg border border-line bg-card text-left transition-colors hover:bg-paper-2/60",
           collapsed ? "justify-center px-2 py-2" : "px-2.5 py-2.5",
         )}
         aria-expanded={open}
         aria-haspopup="listbox"
         title={workspace.name}
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-foreground font-data text-[0.65rem] font-bold text-background">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground font-data text-[0.65rem] font-bold text-background">
           {workspace.initials}
         </span>
         {!collapsed ? (
@@ -62,11 +62,11 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
           role="listbox"
           aria-label="Select workspace"
           className={cn(
-            "absolute z-50 overflow-hidden rounded-md border border-foreground bg-card shadow-[var(--shadow-card)]",
+            "absolute z-50 overflow-hidden rounded-lg border border-line bg-card shadow-[var(--shadow-card)]",
             collapsed ? "left-full top-0 ml-2 w-64" : "left-2 right-2 top-full mt-1",
           )}
         >
-          <div className="border-b border-foreground px-3 py-2.5">
+          <div className="border-b border-line px-3 py-2.5">
             <p className="text-sm font-semibold text-foreground">Workspaces</p>
             <p className="mt-0.5 text-body-sm text-muted-foreground">
               Each company has its own platforms and content.
@@ -88,10 +88,10 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
                     }}
                     className={cn(
                       "flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors",
-                      active ? "bg-secondary" : "hover:bg-secondary/60",
+                      active ? "bg-brand-soft" : "hover:bg-secondary/60",
                     )}
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-foreground bg-paper-2 font-data text-[0.7rem] font-semibold">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-paper-2 font-data text-[0.7rem] font-semibold">
                       {ws.initials}
                     </span>
                     <span className="min-w-0 flex-1">
@@ -122,11 +122,11 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
               );
             })}
           </ul>
-          <div className="border-t border-foreground p-2">
+          <div className="border-t border-line p-2">
             <Link
               to="/workspaces"
               onClick={() => setOpen(false)}
-              className="flex w-full items-center justify-center gap-2 rounded-md border border-foreground bg-card px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-line bg-card px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
             >
               <Plus className="h-3.5 w-3.5" />
               Manage workspaces

@@ -96,14 +96,14 @@ export function PlatformDestinationPicker({
                   "cursor-not-allowed border-line bg-paper-2 text-muted-foreground/50 opacity-60",
                 ok &&
                   active &&
-                  "border-foreground bg-foreground text-white",
+                  "border-primary bg-primary text-white",
                 ok &&
                   !active &&
                   "border-line bg-card text-foreground hover:bg-secondary",
               )}
             >
               <span
-                className="h-2 w-2 rounded-full border border-foreground/20"
+                className="h-2 w-2 rounded-full border border-line"
                 style={{ background: ok ? platformDotColor(meta.short) : "#ccc" }}
               />
               <span className="flex flex-col items-start leading-tight">

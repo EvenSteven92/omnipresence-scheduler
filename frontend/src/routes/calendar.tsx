@@ -201,7 +201,7 @@ function CalendarPage() {
               onClick={() => shiftMonth(-1)}
               data-testid="prev-month-btn"
               aria-label="Previous month"
-              className="rounded-md border border-foreground bg-card p-2 hover:bg-secondary"
+              className="rounded-lg border border-line bg-card p-2 hover:bg-secondary"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -213,7 +213,7 @@ function CalendarPage() {
               onClick={() => shiftMonth(1)}
               data-testid="next-month-btn"
               aria-label="Next month"
-              className="rounded-md border border-foreground bg-card p-2 hover:bg-secondary"
+              className="rounded-lg border border-line bg-card p-2 hover:bg-secondary"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -225,7 +225,7 @@ function CalendarPage() {
               data-testid="filter-unlinked-toggle"
               onClick={() => setShowUnlinkedOnly((v) => !v)}
               className={cn(
-                "rounded-md border border-foreground px-3 py-2 text-body-sm font-semibold transition-colors",
+                "rounded-lg border border-line px-3 py-2 text-body-sm font-semibold transition-colors",
                 showUnlinkedOnly
                   ? "bg-warning/20 text-foreground "
                   : "bg-card text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -250,7 +250,7 @@ function CalendarPage() {
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div
             data-testid="calendar-month-grid"
-            className="min-w-0 overflow-hidden rounded-md border border-foreground bg-foreground shadow-[var(--shadow-card)]"
+            className="min-w-0 overflow-hidden rounded-lg border border-line bg-foreground shadow-[var(--shadow-card)]"
             onDragEnd={() => setDraggingPostId(null)}
           >
             {/* minmax(0,1fr) — default minmax(auto) lets thumb content blow out the grid */}

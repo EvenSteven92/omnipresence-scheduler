@@ -42,7 +42,7 @@ export function UnassignedMediaPicker({
     return (
       <div
         data-testid="unassigned-media-empty"
-        className="rounded-md border border-dashed border-foreground/50 bg-background px-3 py-4 text-center"
+        className="rounded-md border border-dashed border-line bg-background px-3 py-4 text-center"
       >
         <p className="text-body-sm text-muted-foreground">No free posts to link</p>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -73,8 +73,8 @@ export function UnassignedMediaPicker({
               data-testid={`unassigned-media-${post.id}`}
               className={`group relative overflow-hidden rounded-md border text-left transition-colors ${
                 selected
-                  ? "border-foreground bg-accent/15"
-                  : "border-foreground bg-card hover:bg-secondary"
+                  ? "border-brand bg-brand-soft"
+                  : "border-line bg-card hover:bg-secondary"
               }`}
             >
               <div className="relative aspect-video overflow-hidden bg-background">

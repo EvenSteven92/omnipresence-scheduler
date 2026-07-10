@@ -44,11 +44,11 @@ export function ComposerPreviewRail({
           Feed preview
         </div>
         <div
-          className="mt-3 overflow-hidden rounded-lg border border-foreground bg-card"
+          className="mt-3 overflow-hidden rounded-lg border border-line bg-card"
           data-testid="composer-feed-preview"
         >
-          <div className="flex items-center gap-2.5 border-b border-foreground/15 px-3 py-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-foreground bg-accent font-display text-xs font-bold text-foreground">
+          <div className="flex items-center gap-2.5 border-b border-line px-3 py-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line bg-accent font-display text-xs font-bold text-foreground">
               {workspaceInitials.slice(0, 2).toUpperCase()}
             </span>
             <div className="min-w-0 flex-1">

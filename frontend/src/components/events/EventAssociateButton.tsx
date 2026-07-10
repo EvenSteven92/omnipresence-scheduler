@@ -18,7 +18,7 @@ export function EventAssociateButton({
         onClick(e);
       }}
       className={cn(
-        "inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-foreground bg-card font-semibold text-foreground transition-colors hover:bg-secondary",
+        "inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-card font-semibold text-foreground transition-colors hover:bg-secondary",
         dense ? "px-2 py-1 text-[0.6rem]" : "px-2.5 py-1.5 text-body-sm",
       )}
     >

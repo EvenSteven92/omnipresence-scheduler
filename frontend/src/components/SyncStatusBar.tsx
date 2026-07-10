@@ -77,7 +77,7 @@ export function SyncStatusBar() {
   return (
     <div
       data-testid="sync-status-bar"
-      className="flex min-h-10 w-full shrink-0 items-center justify-between gap-3 border-b border-foreground bg-card px-4 py-2 text-body-sm"
+      className="flex min-h-10 w-full shrink-0 items-center justify-between gap-3 border-b border-line bg-card px-4 py-2 text-body-sm"
     >
       <div className="flex min-w-0 items-center gap-2 text-foreground">
         {tone === "ok" ? (

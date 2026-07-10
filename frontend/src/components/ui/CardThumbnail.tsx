@@ -25,11 +25,11 @@ const RAIL_HEIGHT: Record<CardThumbnailHeight, string> = {
 };
 
 const LAYOUT_CLASS: Record<CardThumbnailLayout, string> = {
-  rail: "shrink-0 border-r border-foreground",
-  banner: "h-24 w-full shrink-0 border-b border-foreground",
-  block: "w-full shrink-0 border-b border-foreground",
+  rail: "shrink-0 border-r border-line",
+  banner: "h-24 w-full shrink-0 border-b border-line",
+  block: "w-full shrink-0 border-b border-line",
   fixed: "h-full w-full",
-  square: "h-[86px] w-[86px] shrink-0 overflow-hidden rounded-md border border-foreground",
+  square: "h-[86px] w-[86px] shrink-0 overflow-hidden rounded-lg border border-line",
 };
 
 function resolveAspectRatio(
@@ -135,7 +135,7 @@ export function CardThumbnail({
       )}
       {mediaKind === "video" && (useGradient || imageSrc) ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground bg-white/85 shadow-sm">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/85 shadow-sm">
             <Play className="h-3 w-3 fill-foreground text-foreground" strokeWidth={0} />
           </span>
         </div>

@@ -68,9 +68,9 @@ export function CalendarDayCell({
         muted
           ? "cursor-default bg-paper-2/60 text-muted-foreground/40"
           : "cursor-pointer bg-card hover:bg-paper-2/50",
-        isSelected && !muted && "bg-accent/15 ring-2 ring-inset ring-foreground",
-        isToday && !muted && !isSelected && "ring-1 ring-inset ring-accent",
-        dropActive && !muted && "bg-accent/20 ring-2 ring-inset ring-accent",
+        isSelected && !muted && "bg-brand-soft ring-2 ring-inset ring-brand",
+        isToday && !muted && !isSelected && "ring-1 ring-inset ring-foreground/30",
+        dropActive && !muted && "bg-brand-soft ring-2 ring-inset ring-brand",
       )}
     >
       <div className="flex min-w-0 shrink-0 items-center justify-between gap-1">
@@ -85,7 +85,7 @@ export function CalendarDayCell({
           {day}
         </span>
         {postCount > 0 && !muted ? (
-          <span className="max-w-[3rem] truncate rounded-md border border-foreground/20 bg-paper-2 px-1 py-0.5 font-data text-[0.65rem] font-semibold tabular-nums text-foreground">
+          <span className="max-w-[3rem] truncate rounded-lg border border-line/20 bg-paper-2 px-1 py-0.5 font-data text-[0.65rem] font-semibold tabular-nums text-foreground">
             {postCount}
           </span>
         ) : null}
@@ -94,7 +94,7 @@ export function CalendarDayCell({
       {primaryEvent && !muted ? (
         <div className="mt-1 min-w-0 shrink-0">
           <span
-            className="block w-full truncate rounded-sm border border-foreground bg-foreground px-1 py-0.5 font-mono text-[0.55rem] font-bold uppercase leading-tight tracking-wide text-background"
+            className="block w-full truncate rounded-md border border-line bg-foreground px-1 py-0.5 font-mono text-[0.55rem] font-bold uppercase leading-tight tracking-wide text-background"
             title={
               eventCount > 1
                 ? `${primaryEvent.title} (+${eventCount - 1} more)`
@@ -111,7 +111,7 @@ export function CalendarDayCell({
           {thumbs.map((post) => (
             <span
               key={post.id}
-              className="h-6 w-6 shrink-0 overflow-hidden rounded-sm border border-foreground bg-paper-2 sm:h-7 sm:w-7"
+              className="h-6 w-6 shrink-0 overflow-hidden rounded-md border border-line bg-paper-2 sm:h-7 sm:w-7"
               title={post.title}
             >
               <img
@@ -123,7 +123,7 @@ export function CalendarDayCell({
             </span>
           ))}
           {overflow > 0 ? (
-            <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-sm border border-foreground bg-paper-2 px-0.5 font-data text-[0.6rem] font-bold text-foreground sm:h-7 sm:min-w-7">
+            <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md border border-line bg-paper-2 px-0.5 font-data text-[0.6rem] font-bold text-foreground sm:h-7 sm:min-w-7">
               +{overflow}
             </span>
           ) : null}

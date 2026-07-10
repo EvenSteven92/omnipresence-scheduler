@@ -208,7 +208,7 @@ function AnalyticsPage() {
             {/* Sticky filter toolbar */}
             <div
               data-testid="analytics-toolbar"
-              className="sticky top-0 z-20 -mx-1 rounded-md border border-foreground bg-card px-4 py-3 shadow-[var(--shadow-card)]"
+              className="sticky top-0 z-20 -mx-1 rounded-lg border border-line bg-card px-4 py-3 shadow-[var(--shadow-card)]"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <TimeframeSelector value={timeframe} onChange={setTimeframe} className="flex-1" />
@@ -480,10 +480,10 @@ function AnalyticsPage() {
                       {breakdown.map((b, i) => (
                         <div
                           key={b.platform}
-                          className="flex items-center gap-2 rounded-md border border-foreground/20 bg-paper-2 px-2.5 py-1.5"
+                          className="flex items-center gap-2 rounded-lg border border-line/20 bg-paper-2 px-2.5 py-1.5"
                         >
                           <span
-                            className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm border border-foreground"
+                            className="inline-block h-2.5 w-2.5 shrink-0 rounded-md border border-line"
                             style={{ background: PALETTE[i % PALETTE.length] }}
                           />
                           <span className="min-w-0 flex-1 truncate text-body-sm text-foreground">
@@ -501,7 +501,7 @@ function AnalyticsPage() {
 
               {/* Insight rail */}
               <aside className="page-grid-rail space-y-4 lg:sticky lg:top-28 lg:self-start">
-                <section className="rounded-md border border-foreground bg-card p-5 shadow-[var(--shadow-card)]">
+                <section className="rounded-lg border border-line bg-card p-5 shadow-[var(--shadow-card)]">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="page-kicker">Insights</p>
@@ -532,7 +532,7 @@ function AnalyticsPage() {
                     <p className="mt-3 text-body-sm text-destructive">{summaryError}</p>
                   ) : null}
                   {summary ? (
-                    <p className="mt-4 whitespace-pre-line rounded-md border border-foreground bg-paper-2 p-3 text-body-sm leading-relaxed text-foreground">
+                    <p className="mt-4 whitespace-pre-line rounded-lg border border-line bg-paper-2 p-3 text-body-sm leading-relaxed text-foreground">
                       {summary}
                     </p>
                   ) : (
@@ -543,7 +543,7 @@ function AnalyticsPage() {
                 </section>
 
                 {topPlatform ? (
-                  <section className="rounded-md border border-foreground bg-accent/15 p-5">
+                  <section className="rounded-lg border border-line bg-accent/15 p-5">
                     <p className="text-eyebrow">Top channel</p>
                     <div className="mt-2 flex items-center gap-2">
                       <PlatformChip platform={topPlatform.platform} size="md" />
@@ -563,7 +563,7 @@ function AnalyticsPage() {
                   </section>
                 ) : null}
 
-                <section className="rounded-md border border-foreground bg-card p-5">
+                <section className="rounded-lg border border-line bg-card p-5">
                   <p className="text-eyebrow">Actions</p>
                   <div className="mt-3 flex flex-col gap-2">
                     <button
@@ -624,7 +624,7 @@ function AnalyticsPage() {
 
             {/* Top content */}
             <section>
-              <div className="mb-3 flex flex-wrap items-end justify-between gap-3 border-b border-foreground pb-3">
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3">
                 <div>
                   <p className="page-kicker">Content</p>
                   <h2 className="mt-1 font-display text-xl font-bold text-foreground">
@@ -644,7 +644,7 @@ function AnalyticsPage() {
                 </button>
               </div>
               {topPublished.length === 0 ? (
-                <div className="rounded-md border border-foreground bg-card px-5 py-10 text-center text-sm text-muted-foreground">
+                <div className="rounded-lg border border-line bg-card px-5 py-10 text-center text-sm text-muted-foreground">
                   No published posts in this range
                 </div>
               ) : (
@@ -712,7 +712,7 @@ function KpiCard({
     <div
       data-testid={testId}
       className={cn(
-        "rounded-md border border-foreground bg-card",
+        "rounded-lg border border-line bg-card",
         size === "lg" ? "p-5" : "p-4",
         featured && "bg-accent/10 ",
       )}
@@ -723,7 +723,7 @@ function KpiCard({
         </span>
         <span
           className={cn(
-            "flex items-center justify-center rounded-md border border-foreground",
+            "flex items-center justify-center rounded-lg border border-line",
             size === "lg" ? "h-8 w-8 bg-paper-2" : "h-7 w-7 bg-paper-2",
           )}
         >
@@ -776,11 +776,11 @@ function ChartPanel({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-md border border-foreground bg-card shadow-[var(--shadow-card)]",
+        "overflow-hidden rounded-lg border border-line bg-card shadow-[var(--shadow-card)]",
         className,
       )}
     >
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-foreground px-5 py-4">
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-display text-base font-bold text-foreground">{title}</h3>
@@ -806,7 +806,7 @@ function ChartLegend({ items }: { items: { label: string; color: string }[] }) {
           className="inline-flex items-center gap-1.5 font-mono text-[0.625rem] font-bold uppercase tracking-[0.06em] text-muted-foreground"
         >
           <span
-            className="inline-block h-2.5 w-2.5 rounded-sm border border-foreground"
+            className="inline-block h-2.5 w-2.5 rounded-md border border-line"
             style={{ background: i.color }}
           />
           {i.label}
@@ -858,7 +858,7 @@ function FollowerSummary({ points }: { points: { label: string; followers: numbe
   const diff = last - first;
   const pct = first === 0 ? 0 : (diff / first) * 100;
   return (
-    <div className="mt-3 flex items-baseline justify-between border-t border-foreground/20 pt-3">
+    <div className="mt-3 flex items-baseline justify-between border-t border-line pt-3">
       <div className="text-body-sm text-muted-foreground">Net growth</div>
       <div className="flex items-baseline gap-2">
         <span
@@ -890,7 +890,7 @@ function ChartTooltip({
 }) {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="rounded-md border border-foreground bg-card px-3 py-2 font-data text-[0.7rem] text-foreground ">
+    <div className="rounded-lg border border-line bg-card px-3 py-2 font-data text-[0.7rem] text-foreground ">
       {label ? (
         <div className="mb-1.5 font-mono text-[0.6rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
           {label}
@@ -899,7 +899,7 @@ function ChartTooltip({
       {payload.map((p) => (
         <div key={p.name} className="flex items-center gap-2 py-0.5">
           <span
-            className="inline-block h-2 w-2 rounded-sm border border-foreground"
+            className="inline-block h-2 w-2 rounded-md border border-line"
             style={{ background: p.color }}
           />
           <span className="capitalize text-muted-foreground">{p.name}</span>
@@ -939,7 +939,7 @@ function Heatmap({ grid }: { grid: number[][] }) {
                   <div
                     key={h}
                     title={`${days[d]} · ${h.toString().padStart(2, "0")}:00 · score ${(v * 100).toFixed(0)}`}
-                    className="aspect-square rounded-[2px] border border-foreground/10"
+                    className="aspect-square rounded-[2px] border border-line"
                     style={{
                       background: `color-mix(in oklab, var(--color-accent) ${Math.round(v * 100)}%, var(--color-paper-2))`,
                     }}
@@ -951,7 +951,7 @@ function Heatmap({ grid }: { grid: number[][] }) {
         </div>
         <div className="mt-4 flex items-center justify-end gap-2 font-mono text-[0.6rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
           Low
-          <div className="flex overflow-hidden rounded-sm border border-foreground">
+          <div className="flex overflow-hidden rounded-md border border-line">
             {[0.1, 0.3, 0.5, 0.7, 0.9].map((v) => (
               <div
                 key={v}
@@ -975,7 +975,7 @@ function PlatformTable({ rows }: { rows: ReturnType<typeof getPlatformBreakdown>
     <div data-testid="platform-table" className="overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-foreground font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+          <tr className="border-b border-line font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
             <th className="px-3 py-3 text-left">Platform</th>
             <th className="px-3 py-3 text-right">Posts</th>
             <th className="px-3 py-3 text-right">Views</th>
@@ -994,7 +994,7 @@ function PlatformTable({ rows }: { rows: ReturnType<typeof getPlatformBreakdown>
             return (
               <tr
                 key={r.platform}
-                className="border-b border-foreground/15 last:border-b-0"
+                className="border-b border-line last:border-b-0"
                 style={{
                   boxShadow: meta ? `inset 3px 0 0 0 ${meta.brandColor}` : undefined,
                 }}
@@ -1022,7 +1022,7 @@ function PlatformTable({ rows }: { rows: ReturnType<typeof getPlatformBreakdown>
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2">
-                    <div className="h-2.5 flex-1 overflow-hidden rounded-sm border border-foreground bg-paper-2">
+                    <div className="h-2.5 flex-1 overflow-hidden rounded-md border border-line bg-paper-2">
                       <div
                         className="h-full"
                         style={{

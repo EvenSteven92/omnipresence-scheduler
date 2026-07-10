@@ -22,7 +22,7 @@ export function CardStats({
   return (
     <div
       className={cn(
-        "grid grid-cols-3 gap-px overflow-hidden rounded-md border border-foreground bg-foreground",
+        "grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-line bg-foreground",
         className,
       )}
     >

@@ -125,7 +125,7 @@ function EventsIndexPage() {
                 className={cn(
                   "rounded-md border px-3 py-1.5 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.06em] transition-colors",
                   active
-                    ? "border-foreground bg-foreground text-background"
+                    ? "border-primary bg-primary text-background"
                     : "border-line bg-card text-muted-foreground hover:bg-secondary",
                 )}
               >
