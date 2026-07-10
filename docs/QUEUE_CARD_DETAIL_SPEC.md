@@ -1,6 +1,6 @@
 # Spec — Match Queue UI, file-card detail page, and hover behavior to Claude Design
 
-> **For Grok.** Match the build to the Claude Design "OmniSocial — Cards" source. The palette, fonts
+> **For Grok.** Match the build to the Claude Design "OmniPresence — Cards" source. The palette, fonts
 > (Hanken Grotesk / Bricolage Grotesque / JetBrains Mono), 1.5px ink borders, and the `ui/*` card
 > primitives (`ContentCard`, `StreamContentCard`, `CardThumbnail`, `CardPublishChip`,
 > `CardStatusBadge`, `lib/card-display.ts`) already exist and are correct — **reuse them, don't

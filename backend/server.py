@@ -1,5 +1,5 @@
 """
-TORCC OmniSocial backend.
+TORCC OmniPresence backend.
 
 Endpoints
 - GET  /api/health                  health probe
@@ -29,7 +29,7 @@ load_dotenv()
 
 EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
 
-app = FastAPI(title="TORCC OmniSocial API")
+app = FastAPI(title="TORCC OmniPresence API")
 
 app.add_middleware(
     CORSMiddleware,

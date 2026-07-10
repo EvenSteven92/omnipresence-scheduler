@@ -1,4 +1,4 @@
-# OmniSocial — Unified Card System + Media-Led Composer Card (build spec)
+# OmniPresence — Unified Card System + Media-Led Composer Card (build spec)
 
 > **Goal:** Make every "piece of content" in the app render through ONE card primitive, so
 > top performers, event albums, scheduled posts, drafts, and calendar chips stop drifting into

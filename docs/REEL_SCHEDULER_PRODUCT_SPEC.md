@@ -1,4 +1,4 @@
-# OmniSocial — Reel Scheduler Product Spec
+# OmniPresence — Reel Scheduler Product Spec
 
 **Goal:** Make scheduling ministry reels the easiest thing in the world.  
 **Status:** Implementation target for compose / queue / cadence / AI.  
@@ -67,7 +67,7 @@ Sticky **Editing: {title}** bar tracks the focus card. Cadence/AI times use `sch
 ## 1. Competitive research (what the best tools do)
 
 ### 1.1 Later
-| Strength | UX pattern | Steal for OmniSocial |
+| Strength | UX pattern | Steal for OmniPresence |
 |----------|------------|----------------------|
 | Visual-first | Drag-drop **calendar + grid** feel | Reel **filmstrip** of cards; calendar is secondary planning |
 | Instagram/TikTok native | Aspect-aware previews | Big **portrait preview** default for reels |
@@ -116,7 +116,7 @@ Sticky **Editing: {title}** bar tracks the focus card. Cadence/AI times use `sch
 
 ---
 
-## 2. OmniSocial today vs target
+## 2. OmniPresence today vs target
 
 | Area | Today | Target (this build) |
 |------|--------|---------------------|

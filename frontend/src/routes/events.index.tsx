@@ -32,7 +32,7 @@ type EventsSearch = {
 export const Route = createFileRoute("/events/")({
   head: () => ({
     meta: [
-      { title: "Events — TORCC OmniSocial" },
+      { title: "Events — TORCC OmniPresence" },
       {
         name: "description",
         content:

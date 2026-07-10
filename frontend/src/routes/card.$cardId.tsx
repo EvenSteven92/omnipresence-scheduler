@@ -52,7 +52,7 @@ export const Route = createFileRoute("/card/$cardId")({
         : undefined,
   }),
   head: ({ params }) => ({
-    meta: [{ title: `Card — ${params.cardId} — TORCC OmniSocial` }],
+    meta: [{ title: `Card — ${params.cardId} — TORCC OmniPresence` }],
   }),
   component: CardDetailPage,
 });

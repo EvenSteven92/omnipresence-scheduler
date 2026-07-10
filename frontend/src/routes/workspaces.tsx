@@ -13,7 +13,7 @@ import { CREATE } from "@/lib/create-actions";
 export const Route = createFileRoute("/workspaces")({
   head: () => ({
     meta: [
-      { title: "Admin — TORCC OmniSocial" },
+      { title: "Admin — TORCC OmniPresence" },
       {
         name: "description",
         content: "Set up workspaces and connect social accounts for metrics and publishing.",

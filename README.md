@@ -1,4 +1,4 @@
-# TORCC OmniSocial Scheduler (glance-schedule-go)
+# TORCC OmniPresence Scheduler (glance-schedule-go)
 
 TanStack Start frontend + FastAPI backend for scheduling and composing social posts.
 

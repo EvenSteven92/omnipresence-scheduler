@@ -1,4 +1,4 @@
-# OmniSocial — Layout Redesign Spec (for implementation)
+# OmniPresence — Layout Redesign Spec (for implementation)
 
 > **Purpose:** Restructure the app's layout so it's easy to use, **without removing any
 > functionality**. This is a re-layout, not a feature cut. Every existing feature must keep a

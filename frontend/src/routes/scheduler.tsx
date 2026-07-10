@@ -40,7 +40,7 @@ import { CREATE } from "@/lib/create-actions";
 export const Route = createFileRoute("/scheduler")({
   head: () => ({
     meta: [
-      { title: "Reel studio — TORCC OmniSocial" },
+      { title: "Reel studio — TORCC OmniPresence" },
       {
         name: "description",
         content:

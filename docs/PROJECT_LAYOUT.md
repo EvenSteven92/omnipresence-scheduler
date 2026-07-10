@@ -1,7 +1,7 @@
-# TORCC OmniSocial Scheduler — Complete Project Layout
+# TORCC OmniPresence Scheduler — Complete Project Layout
 
 **Repo:** [glance-schedule-go](https://github.com/EvenSteven92/glance-schedule-go)  
-**Product name (UI):** TORCC OmniSocial Scheduler  
+**Product name (UI):** TORCC OmniPresence Scheduler  
 **Audience:** Small team (TORCC / ministry social workflow)  
 **Media strategy:** Dropbox share links (no app-owned video storage in v1)
 

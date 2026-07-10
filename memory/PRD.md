@@ -1,4 +1,4 @@
-# PRD — TORCC OmniSocial Scheduler (glance-schedule-go)
+# PRD — TORCC OmniPresence Scheduler (glance-schedule-go)
 
 ## Problem Statement
 User asked to build/run the repo `glance-schedule-go-main.zip` (originally https://github.com/EvenSteven92/glance-schedule-go) — a TanStack Start + React 19 + Vite + Tailwind CSS v4 + shadcn-style UI app from Lovable. Goal: install dependencies and run.

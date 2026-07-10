@@ -255,7 +255,7 @@ function XMock({ caption, tags }: { caption: string; tags: string }) {
         <Avatar />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1 text-xs">
-            <span className="font-semibold text-foreground">TORCC OmniSocial</span>
+            <span className="font-semibold text-foreground">TORCC OmniPresence</span>
             <span className="text-muted-foreground">@torcc · now</span>
           </div>
           <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">
@@ -306,7 +306,7 @@ function FBMock({
         <div className="flex items-center gap-2">
           <Avatar />
           <div className="text-xs">
-            <div className="font-semibold text-foreground">TORCC OmniSocial</div>
+            <div className="font-semibold text-foreground">TORCC OmniPresence</div>
             <div className="text-body-sm text-muted-foreground">Just now · Public</div>
           </div>
         </div>

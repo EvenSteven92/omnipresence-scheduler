@@ -38,7 +38,7 @@ export const Route = createFileRoute("/calendar")({
   }),
   head: () => ({
     meta: [
-      { title: "Calendar — TORCC OmniSocial" },
+      { title: "Calendar — TORCC OmniPresence" },
       {
         name: "description",
         content:

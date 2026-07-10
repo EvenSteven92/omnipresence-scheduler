@@ -66,7 +66,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/analytics")({
   head: () => ({
     meta: [
-      { title: "Analytics — TORCC OmniSocial" },
+      { title: "Analytics — TORCC OmniPresence" },
       {
         name: "description",
         content:

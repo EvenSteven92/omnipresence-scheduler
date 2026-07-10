@@ -110,7 +110,7 @@ export function Sidebar() {
               </span>
               <span className="min-w-0 leading-none">
                 <span className="block font-display text-base font-semibold text-foreground">
-                  OmniSocial
+                  OmniPresence
                 </span>
                 <span className="mt-1 block text-caption font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   By TORCC
@@ -121,7 +121,7 @@ export function Sidebar() {
             <Link
               to="/"
               className="mx-auto flex h-9 w-9 items-center justify-center rounded-md border border-foreground bg-foreground font-display text-lg font-semibold text-background"
-              title="OmniSocial"
+              title="OmniPresence"
             >
               O
             </Link>

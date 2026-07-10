@@ -1,4 +1,4 @@
-# OmniSocial — UI/UX Audit System & Report
+# OmniPresence — UI/UX Audit System & Report
 
 > Lightweight, reusable audit for continuous design quality.  
 > Standards base: WCAG 2.1 AA, 2025–26 readability guidance, modern SaaS dashboard patterns.

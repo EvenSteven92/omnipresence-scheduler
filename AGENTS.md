@@ -1,4 +1,4 @@
-# AGENTS.md — TORCC OmniSocial
+# AGENTS.md — TORCC OmniPresence
 
 Guidance for AI coding agents working in this repository.
 
@@ -15,7 +15,7 @@ The folder name (`glance-schedule-go`) and GitHub repo name (`omnipresence-sched
 
 ## What this is
 
-**TORCC OmniSocial** is a multi-platform social scheduling and analytics app for ministry/content teams. Users compose content cards, schedule per-platform publish times, group media into event albums, and view cross-platform performance.
+**TORCC OmniPresence** is a multi-platform social scheduling and analytics app for ministry/content teams. Users compose content cards, schedule per-platform publish times, group media into event albums, and view cross-platform performance.
 
 **Stack (active path):**
 

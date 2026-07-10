@@ -11,7 +11,7 @@ import { FilePlus } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Queue — TORCC OmniSocial" },
+      { title: "Queue — TORCC OmniPresence" },
       {
         name: "description",
         content:

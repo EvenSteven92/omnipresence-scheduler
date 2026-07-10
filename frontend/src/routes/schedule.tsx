@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/schedule")({
   head: () => ({
     meta: [
-      { title: "Schedule — TORCC OmniSocial" },
+      { title: "Schedule — TORCC OmniPresence" },
       {
         name: "description",
         content:
