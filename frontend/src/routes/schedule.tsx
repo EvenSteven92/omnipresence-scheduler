@@ -3,6 +3,7 @@ import { Check, Loader2, Pencil, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ComposerPublishPlan } from "@/components/composer/ComposerPublishPlan";
+import { PlatformDestinationPicker } from "@/components/composer/PlatformDestinationPicker";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
 import {
@@ -11,6 +12,12 @@ import {
   suggestTimesForDraft,
   type DraftPost,
 } from "@/lib/composer-draft";
+import {
+  aspectLabel as aspectLabelOf,
+  recommendedPlatforms,
+  sanitizePlatformsForAspect,
+  bucketFromPostFormat,
+} from "@/lib/media-aspect";
 import {
   readComposerShelf,
   removeFromReady,
@@ -90,6 +97,27 @@ function SchedulePage() {
   const updateDraft = useCallback((id: string, updater: (d: DraftPost) => DraftPost) => {
     setReady((cur) => cur.map((d) => (d.id === id ? updater(d) : d)));
   }, []);
+
+  // Ensure focused card has aspect + seed recommended platforms once
+  useEffect(() => {
+    if (!focusDraft) return;
+    const bucket = focusDraft.aspectBucket ?? bucketFromPostFormat(focusDraft.format);
+    if (!focusDraft.aspectBucket || focusDraft.platforms.length === 0) {
+      const rec = recommendedPlatforms(bucket).filter((p) =>
+        workspace.platforms.includes(p),
+      );
+      updateDraft(focusDraft.id, (d) => ({
+        ...d,
+        aspectBucket: d.aspectBucket ?? bucket,
+        aspectLabel: d.aspectLabel ?? aspectLabelOf(bucket),
+        platforms:
+          d.platforms.length > 0
+            ? sanitizePlatformsForAspect(d.platforms, bucket)
+            : rec,
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed once when focus changes
+  }, [focusDraft?.id]);
 
   function toggleSelect(id: string, opts?: { exclusive?: boolean }) {
     setSelectedIds((prev) => {
@@ -454,24 +482,77 @@ function SchedulePage() {
                 ) : null}
               </header>
 
-              <div className="rounded-md border border-line bg-card p-5 md:p-6">
-                {selected.length > 1 ? (
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    Editing times for{" "}
-                    <span className="font-semibold text-foreground">
-                      {draftDisplayTitle(focusDraft)}
-                    </span>
-                    . Cadence buttons apply to all {selected.length} selected.
-                  </p>
-                ) : null}
-                <ComposerPublishPlan
-                  draft={focusDraft}
-                  scheduleReasons={scheduleReasons[focusDraft.id]}
-                  onUpdateTime={updatePlatformSchedule}
-                  onSuggestTimes={suggestTimesForFocus}
-                  onCadence={applyCadence}
-                  cadenceActive={cadenceActive}
-                />
+              <div className="space-y-5">
+                <div className="rounded-md border border-line bg-card p-5 md:p-6">
+                  <PlatformDestinationPicker
+                    draft={focusDraft}
+                    workspacePlatforms={workspace.platforms}
+                    onChange={(platforms) => {
+                      const bucket =
+                        focusDraft.aspectBucket ??
+                        bucketFromPostFormat(focusDraft.format);
+                      const clean = sanitizePlatformsForAspect(platforms, bucket);
+                      updateDraft(focusDraft.id, (d) => {
+                        const nextTimes = { ...(d.proposedTimes ?? {}) };
+                        Object.keys(nextTimes).forEach((k) => {
+                          if (!clean.includes(k as Platform)) {
+                            delete nextTimes[k as Platform];
+                          }
+                        });
+                        return { ...d, platforms: clean, proposedTimes: nextTimes };
+                      });
+                      // Mirror destination set onto other selected cards when bulk
+                      if (selected.length > 1) {
+                        setReady((cur) =>
+                          cur.map((d) => {
+                            if (!selectedIds.has(d.id) || d.id === focusDraft.id) return d;
+                            const b = d.aspectBucket ?? bucketFromPostFormat(d.format);
+                            const allowed = sanitizePlatformsForAspect(clean, b);
+                            if (allowed.length === 0) {
+                              const rec = recommendedPlatforms(b).filter((p) =>
+                                workspace.platforms.includes(p),
+                              );
+                              return { ...d, platforms: rec };
+                            }
+                            const nextTimes = { ...(d.proposedTimes ?? {}) };
+                            Object.keys(nextTimes).forEach((k) => {
+                              if (!allowed.includes(k as Platform)) {
+                                delete nextTimes[k as Platform];
+                              }
+                            });
+                            return { ...d, platforms: allowed, proposedTimes: nextTimes };
+                          }),
+                        );
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="rounded-md border border-line bg-card p-5 md:p-6">
+                  {selected.length > 1 ? (
+                    <p className="mb-4 text-sm text-muted-foreground">
+                      Editing times for{" "}
+                      <span className="font-semibold text-foreground">
+                        {draftDisplayTitle(focusDraft)}
+                      </span>
+                      . Cadence applies to all {selected.length} selected.
+                    </p>
+                  ) : null}
+                  {focusDraft.platforms.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Choose destinations above, then set cadence and times.
+                    </p>
+                  ) : (
+                    <ComposerPublishPlan
+                      draft={focusDraft}
+                      scheduleReasons={scheduleReasons[focusDraft.id]}
+                      onUpdateTime={updatePlatformSchedule}
+                      onSuggestTimes={suggestTimesForFocus}
+                      onCadence={applyCadence}
+                      cadenceActive={cadenceActive}
+                    />
+                  )}
+                </div>
               </div>
             </>
           )}

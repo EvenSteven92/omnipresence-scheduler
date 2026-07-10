@@ -10,6 +10,7 @@ import { useEventAssociations } from "@/hooks/useEventAssociations";
 import { prepareBatchWithAi, prepareCardWithAi } from "@/lib/ai-schedule";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import {
+  applyMeasuredDimensions,
   countHashtagsInText,
   defaultDraftFromDropbox,
   defaultDraftFromFile,
@@ -17,16 +18,14 @@ import {
   replaceDraftMedia,
   type DraftPost,
 } from "@/lib/composer-draft";
+import { humanAspectDescription, measureMediaFile } from "@/lib/media-aspect";
 import {
   isDraftReadyToStage,
   readComposerShelf,
   stageDraftsAsReady,
   writeComposerShelf,
 } from "@/lib/draft-storage";
-import { platformDotColor } from "@/lib/card-display";
 import { getEventById } from "@/lib/events/display";
-import type { Platform } from "@/lib/mock-data";
-import { PLATFORMS } from "@/lib/platforms";
 import {
   dismissRepublishDraft,
   normalizeRepublishDraft,
@@ -92,11 +91,6 @@ function ComposePage() {
   const activeDraft = queue[activeIndex] ?? null;
   const captionLimit = 2200;
 
-  const availablePlatforms = useMemo(
-    () => PLATFORMS.filter((p) => workspace.platforms.includes(p.short)),
-    [workspace.platforms],
-  );
-
   const updateActive = useCallback(
     (updater: (draft: DraftPost) => DraftPost) => {
       setQueue((cur) => {
@@ -145,11 +139,25 @@ function ComposePage() {
     (files: FileList | File[]) => {
       const arr = Array.from(files);
       if (arr.length === 0) return;
-      // Compose only — no times; Schedule page owns clocks
+      // Compose only — platforms + times chosen on Schedule
       const created = arr.map((f) => defaultDraftFromFile(f, workspace.platforms));
       const startLen = queue.length;
       setQueue((cur) => [...cur, ...created]);
       setActiveIndex(startLen);
+      // Measure real aspect ratios async
+      void Promise.all(
+        arr.map(async (file, i) => {
+          const dims = await measureMediaFile(file);
+          if (!dims) return;
+          const draftId = created[i]?.id;
+          if (!draftId) return;
+          setQueue((cur) =>
+            cur.map((d) =>
+              d.id === draftId ? applyMeasuredDimensions(d, dims.width, dims.height) : d,
+            ),
+          );
+        }),
+      );
     },
     [queue, workspace.platforms],
   );
@@ -158,15 +166,6 @@ function ComposePage() {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
-  }
-
-  function togglePlatform(platform: Platform) {
-    if (!activeDraft) return;
-    const has = activeDraft.platforms.includes(platform);
-    const platforms = has
-      ? activeDraft.platforms.filter((p) => p !== platform)
-      : [...activeDraft.platforms, platform];
-    updateActive((draft) => ({ ...draft, platforms }));
   }
 
   async function prepareActiveWithAi() {
@@ -212,7 +211,7 @@ function ComposePage() {
     const incomplete = targets.filter((d) => !isDraftReadyToStage(d));
     if (incomplete.length > 0) {
       setStageError(
-        "Add media (or Dropbox), at least one platform, and a caption before marking ready.",
+        "Add media (or Dropbox) and a caption before marking ready.",
       );
       return;
     }
@@ -377,6 +376,14 @@ function ComposePage() {
                     <div className="mt-1 text-caption font-medium text-muted-foreground">
                       {formatMediaMeta(activeDraft)}
                     </div>
+                    {activeDraft.aspectLabel ? (
+                      <p className="mt-1.5 inline-flex rounded-md border border-line bg-background px-2 py-0.5 text-[0.65rem] font-medium text-foreground">
+                        Detected {activeDraft.aspectLabel}
+                        {activeDraft.aspectBucket
+                          ? ` · ${humanAspectDescription(activeDraft.aspectBucket).split("—")[0]?.trim()}`
+                          : ""}
+                      </p>
+                    ) : null}
                   </div>
                   <button
                     type="button"
@@ -580,38 +587,6 @@ function ComposePage() {
                       className="mt-2 w-full resize-y rounded-md border border-foreground bg-background px-3.5 py-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   ) : null}
-                </section>
-
-                {/* PLATFORMS */}
-                <section className="rounded-md border border-foreground bg-card p-[18px] shadow-[var(--shadow-card)]">
-                  <div className="mb-3 font-mono text-caption font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                    Where it posts
-                  </div>
-                  <div className="flex flex-wrap gap-2.5">
-                    {availablePlatforms.map((meta) => {
-                      const active = activeDraft.platforms.includes(meta.short);
-                      return (
-                        <button
-                          key={meta.short}
-                          type="button"
-                          onClick={() => togglePlatform(meta.short)}
-                          data-testid={`platform-${meta.short.replace(/\s+/g, "-")}`}
-                          className={cn(
-                            "inline-flex items-center gap-2 rounded-md border border-foreground px-3 py-2.5 text-body-sm font-semibold transition-colors",
-                            active
-                              ? "bg-foreground text-white"
-                              : "bg-card text-foreground hover:bg-secondary",
-                          )}
-                        >
-                          <span
-                            className="h-2 w-2 rounded-full border border-foreground"
-                            style={{ background: platformDotColor(meta.short) }}
-                          />
-                          {meta.full}
-                        </button>
-                      );
-                    })}
-                  </div>
                 </section>
 
                 {/* EVENT */}

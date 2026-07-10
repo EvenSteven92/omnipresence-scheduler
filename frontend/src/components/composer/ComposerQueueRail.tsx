@@ -132,9 +132,9 @@ export function ComposerQueueRail({
                     active ? "text-white/65" : "text-muted-foreground",
                   )}
                 >
-                  {draft.platforms.length} platforms
+                  {draft.aspectLabel ? `${draft.aspectLabel} · ` : ""}
+                  {draft.caption.trim() ? "captioned" : "needs caption"}
                   {draft.dropboxUrl ? " · Dropbox" : ""}
-                  {draft.caption.trim() ? " · captioned" : ""}
                 </span>
               </span>
             </button>

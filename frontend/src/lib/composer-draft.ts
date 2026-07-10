@@ -8,6 +8,15 @@ import {
   type BulkScheduleSlot,
 } from "@/lib/schedule-engine";
 import type { WorkspaceProfile } from "@/lib/workspaces/types";
+import {
+  aspectLabel,
+  bucketFromPostFormat,
+  classifyAspect,
+  postFormatFromBucket,
+  sanitizePlatformsForAspect,
+  type AspectBucket,
+  type AspectLabel,
+} from "@/lib/media-aspect";
 
 export interface DraftPost {
   id: string;
@@ -22,13 +31,17 @@ export interface DraftPost {
   format: PostFormat;
   /** Format auto-detected from media — used to badge AUTO·{format} */
   autoFormat: PostFormat;
+  /** Detected aspect bucket for platform gating on Schedule. */
+  aspectBucket?: AspectBucket;
+  aspectLabel?: AspectLabel;
+  /** Destinations — chosen on Schedule page (not Compose). */
   platforms: Platform[];
   caption: string;
   /** Per-platform caption overrides — falls back to `caption` when unset. */
   platformCaptions?: Partial<Record<Platform, string>>;
   hashtags: string;
   transcript: string;
-  /** Per-platform proposed times (ISO). Populated by suggest / bulk distribute. */
+  /** Per-platform proposed times (ISO). Populated on Schedule page. */
   proposedTimes?: Partial<Record<Platform, string>>;
   /** Unix ms when the user saved this card to the draft dropzone. */
   savedAt?: number;
@@ -122,13 +135,9 @@ export function defaultDraftFromFile(file: DraftFileInput, allowed: Platform[]):
   const fmt = detectFormat(name);
   const mediaKind = detectMediaKind(name);
   const dims = defaultDimensions(fmt, mediaKind);
-  const platforms: Platform[] =
-    fmt === "story"
-      ? (["IG STORY", "FB STORY"] as Platform[]).filter((p) => allowed.includes(p))
-      : fmt === "portrait"
-        ? (["IG", "TIKTOK", "YT SHORTS"] as Platform[]).filter((p) => allowed.includes(p))
-        : (["YT", "RUMBLE", "FB", "X"] as Platform[]).filter((p) => allowed.includes(p));
-  if (platforms.length === 0 && allowed.length > 0) platforms.push(allowed[0]!);
+  const bucket = bucketFromPostFormat(fmt);
+  // Platforms chosen on Schedule — leave empty at compose
+  void allowed;
   return {
     id: composerUid(),
     filename: name,
@@ -140,11 +149,33 @@ export function defaultDraftFromFile(file: DraftFileInput, allowed: Platform[]):
     mediaKind,
     format: fmt,
     autoFormat: fmt,
-    platforms,
+    aspectBucket: bucket,
+    aspectLabel: aspectLabel(bucket),
+    platforms: [],
     caption: "",
     hashtags: "",
     transcript: "",
     previewUrl: file instanceof File ? URL.createObjectURL(file) : undefined,
+  };
+}
+
+/** Apply measured pixel size and refresh aspect + format. */
+export function applyMeasuredDimensions(
+  draft: DraftPost,
+  width: number,
+  height: number,
+): DraftPost {
+  const bucket = classifyAspect(width, height);
+  const format = postFormatFromBucket(bucket);
+  return {
+    ...draft,
+    width,
+    height,
+    aspectBucket: bucket,
+    aspectLabel: aspectLabel(bucket),
+    format,
+    autoFormat: format,
+    platforms: sanitizePlatformsForAspect(draft.platforms, bucket),
   };
 }
 
@@ -211,6 +242,7 @@ export function defaultDraftFromDropbox(
     dropboxUrl: result.shareUrl,
     dropboxDirectUrl: result.directUrl,
     previewUrl: result.directUrl,
+    platforms: [],
   };
 }
 

@@ -54,15 +54,14 @@ function writeJsonArray(key: string, items: DraftPost[]) {
   }
 }
 
-/** Card is complete enough to leave compose for scheduling. */
+/** Card is complete enough to leave compose for scheduling (platforms chosen on Schedule). */
 export function isDraftReadyToStage(draft: DraftPost): boolean {
   const hasMedia =
     Boolean(draft.previewUrl) ||
     Boolean(draft.dropboxUrl) ||
     Boolean(draft.filename && draft.filename !== "untitled");
-  const hasPlatforms = draft.platforms.length > 0;
   const hasCaption = draft.caption.trim().length > 0;
-  return hasMedia && hasPlatforms && hasCaption;
+  return hasMedia && hasCaption;
 }
 
 export function readComposerShelf(workspaceId: WorkspaceId): ComposerShelf {
