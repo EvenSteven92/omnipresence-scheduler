@@ -80,46 +80,61 @@
 ## 3. North-star user journey (10 minutes for 14 reels)
 
 ```
-1. Open Compose (or “New card”)
-2. Drop 14 sermon reels OR paste Dropbox links
-3. Click “AI prepare all”  → captions + hashtags + peak times
-4. (Optional) Pick cadence “Spread over 7 days”
-5. (Optional) Link all to “Sunday Service — Week 19”
-6. Click “Schedule 14 reels”
-7. Land on Queue / Calendar — done
+1. Compose: drop 14 sermon reels OR paste Dropbox links
+2. Compose: AI prepare all → captions + hashtags (no clocks)
+3. Compose: pick platforms + optional event
+4. Compose: Mark all ready → ready shelf
+5. Schedule: open ready shelf, cadence “Spread 7 days”
+6. Schedule: Schedule 14 reels
+7. Queue / Calendar — done
 ```
 
-No section numbers. No hunting. No orange. No black-on-black.
+**Compose never asks when. Schedule never asks for captions.**
 
 ---
 
 ## 4. Information architecture
 
-### Primary nav (unchanged labels, clearer intent)
+### Primary nav
 | Route | Role |
 |-------|------|
-| **Queue** | What’s next (list of scheduled cards) |
+| **Queue** | What’s next (already scheduled) |
 | **Calendar** | Month plan, drag reschedule |
 | **Events** | Ministry moments that group cards |
-| **Compose** | **Reel studio** — create + schedule |
+| **Compose** | Prepare cards only (`/scheduler`) |
+| **Schedule** | When & where for ready cards (`/schedule`) |
 | **Analytics** | Performance (secondary) |
 | **Admin** | Connect accounts |
 
-### Compose IA (new)
+### Ready shelf
+- localStorage `omni.drafts.ready.{workspaceId}`
+- Compose moves drafting → ready via **Mark ready**
+- Schedule commits ready → scheduled posts, clears ready
+
+### Compose IA (no when/where rail)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ Header: Compose · N reels in draft · [AI all] [Schedule all]│
-├──────────┬──────────────────────────────┬───────────────────┤
-│ Filmstrip│ Hero media + Dropbox         │ When & where      │
-│ of cards │ Caption + hashtags + AI      │ Platforms         │
-│ + Add    │ Transcript (collapsed)       │ Cadence presets   │
-│          │ Event link (optional)        │ Per-platform times│
-│          │                              │ [Schedule this]   │
-└──────────┴──────────────────────────────┴───────────────────┘
+┌──────────────────────────────────────────────┐
+│ Header: Prepare · [AI all] [Mark ready]      │
+│         [Schedule ready (N) →]               │
+├──────────┬───────────────────────────────────┤
+│ Filmstrip│ Media + Dropbox                   │
+│ drafting │ Caption + AI                      │
+│          │ Platforms (targets only)          │
+│          │ Event (optional)                  │
+└──────────┴───────────────────────────────────┘
 ```
 
-Mobile: filmstrip horizontal top → hero → sticky schedule bar.
+### Schedule IA (when/where only)
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ Header: When & where · [Best times] [Schedule N]         │
+├────────────────┬─────────────────────────────────────────┤
+│ Ready inbox    │ Cadence + per-platform times            │
+│                │ [Schedule this] · Edit in Compose       │
+└────────────────┴─────────────────────────────────────────┘
+```
 
 ---
 

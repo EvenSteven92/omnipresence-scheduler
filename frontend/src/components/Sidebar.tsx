@@ -3,17 +3,20 @@ import { useEffect, useMemo, useState } from "react";
 import {
   LayoutList,
   CalendarDays,
+  CalendarClock,
   LayoutGrid,
   BarChart3,
   Settings2,
   PanelLeftClose,
   PanelLeft,
+  Clapperboard,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { SidebarSyncFooter } from "@/components/SidebarSyncFooter";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { computeSidebarNavCounts, type SidebarNavCountKey } from "@/lib/sidebar-nav-counts";
+import { countReadyCards } from "@/lib/draft-storage";
 import { useWorkspace } from "@/lib/workspace-context";
 import { CREATE } from "@/lib/create-actions";
 import { cn } from "@/lib/utils";
@@ -29,12 +32,15 @@ const nav: {
   { to: "/", label: "Queue", icon: LayoutList, countKey: "queue" },
   { to: "/calendar", label: "Calendar", icon: CalendarDays, countKey: "calendar" },
   { to: "/events", label: "Events", icon: LayoutGrid, countKey: "events" },
+  { to: "/scheduler", label: "Compose", icon: Clapperboard },
+  { to: "/schedule", label: "Schedule", icon: CalendarClock, countKey: "ready" },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/workspaces", label: "Admin", icon: Settings2 },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [readyTick, setReadyTick] = useState(0);
   const { workspace, workspaceId } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
 
@@ -43,9 +49,28 @@ export function Sidebar() {
     [workspace.events, customEvents],
   );
 
+  // Re-read ready shelf when workspace changes or window focuses
+  useEffect(() => {
+    const bump = () => setReadyTick((n) => n + 1);
+    window.addEventListener("focus", bump);
+    const id = window.setInterval(bump, 2000);
+    return () => {
+      window.removeEventListener("focus", bump);
+      window.clearInterval(id);
+    };
+  }, []);
+
+  const readyCount = useMemo(() => {
+    void readyTick;
+    return countReadyCards(workspaceId);
+  }, [workspaceId, readyTick]);
+
   const navCounts = useMemo(
-    () => computeSidebarNavCounts(workspace.scheduledPosts, events),
-    [workspace.scheduledPosts, events],
+    () => ({
+      ...computeSidebarNavCounts(workspace.scheduledPosts, events),
+      ready: readyCount,
+    }),
+    [workspace.scheduledPosts, events, readyCount],
   );
 
   useEffect(() => {
@@ -159,7 +184,7 @@ export function Sidebar() {
         className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-line bg-background px-2 py-2 md:hidden"
         aria-label="Mobile"
       >
-        {nav.slice(0, 4).map(({ to, label, icon: Icon }) => (
+        {nav.slice(0, 5).map(({ to, label, icon: Icon }) => (
           <Link
             key={to}
             to={to}

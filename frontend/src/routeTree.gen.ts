@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkspacesRouteImport } from './routes/workspaces'
 import { Route as SchedulerRouteImport } from './routes/scheduler'
+import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
@@ -40,6 +41,11 @@ const WorkspacesRoute = WorkspacesRouteImport.update({
 const SchedulerRoute = SchedulerRouteImport.update({
   id: '/scheduler',
   path: '/scheduler',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScheduleRoute = ScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsRoute = EventsRouteImport.update({
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
   '/events': typeof EventsRouteWithChildren
+  '/schedule': typeof ScheduleRoute
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
   '/api/events': typeof ApiEventsRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
+  '/schedule': typeof ScheduleRoute
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
   '/api/events': typeof ApiEventsRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
   '/events': typeof EventsRouteWithChildren
+  '/schedule': typeof ScheduleRoute
   '/scheduler': typeof SchedulerRoute
   '/workspaces': typeof WorkspacesRoute
   '/api/events': typeof ApiEventsRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/calendar'
     | '/events'
+    | '/schedule'
     | '/scheduler'
     | '/workspaces'
     | '/api/events'
@@ -247,6 +257,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/calendar'
+    | '/schedule'
     | '/scheduler'
     | '/workspaces'
     | '/api/events'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/calendar'
     | '/events'
+    | '/schedule'
     | '/scheduler'
     | '/workspaces'
     | '/api/events'
@@ -296,6 +308,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   CalendarRoute: typeof CalendarRoute
   EventsRoute: typeof EventsRouteWithChildren
+  ScheduleRoute: typeof ScheduleRoute
   SchedulerRoute: typeof SchedulerRoute
   WorkspacesRoute: typeof WorkspacesRoute
   ApiEventsRoute: typeof ApiEventsRoute
@@ -328,6 +341,13 @@ declare module '@tanstack/react-router' {
       path: '/scheduler'
       fullPath: '/scheduler'
       preLoaderRoute: typeof SchedulerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/schedule': {
+      id: '/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof ScheduleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events': {
@@ -501,6 +521,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   CalendarRoute: CalendarRoute,
   EventsRoute: EventsRouteWithChildren,
+  ScheduleRoute: ScheduleRoute,
   SchedulerRoute: SchedulerRoute,
   WorkspacesRoute: WorkspacesRoute,
   ApiEventsRoute: ApiEventsRoute,

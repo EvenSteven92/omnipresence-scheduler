@@ -4,37 +4,24 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ScheduleEventModal } from "@/components/calendar/ScheduleEventModal";
 import { DropboxLinkField } from "@/components/composer/DropboxLinkField";
-import { ComposerPreviewRail } from "@/components/composer/ComposerPreviewRail";
-import { ComposerPublishPlan } from "@/components/composer/ComposerPublishPlan";
 import { ComposerQueueRail } from "@/components/composer/ComposerQueueRail";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useEventAssociations } from "@/hooks/useEventAssociations";
-import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
 import { prepareBatchWithAi, prepareCardWithAi } from "@/lib/ai-schedule";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import {
-  applyProposedTimes,
   countHashtagsInText,
   defaultDraftFromDropbox,
   defaultDraftFromFile,
-  distributeBulkDraftTimes,
   formatMediaMeta,
   replaceDraftMedia,
-  revokePreviewUrl,
-  suggestTimesForDraft,
   type DraftPost,
 } from "@/lib/composer-draft";
 import {
-  applyCadencePreset,
-  combineDateAndTime,
-  pendingSlotsFromQueue,
-  suggestTimesForDay,
-  type CadencePresetId,
-} from "@/lib/schedule-engine";
-import {
-  clearPersistedDrafts,
-  readPersistedDrafts,
-  writePersistedDrafts,
+  isDraftReadyToStage,
+  readComposerShelf,
+  stageDraftsAsReady,
+  writeComposerShelf,
 } from "@/lib/draft-storage";
 import { platformDotColor } from "@/lib/card-display";
 import { getEventById } from "@/lib/events/display";
@@ -58,7 +45,7 @@ export const Route = createFileRoute("/scheduler")({
       {
         name: "description",
         content:
-          "Drop reels, AI captions and cadence, schedule across every channel in minutes.",
+          "Prepare reels — media, captions, platforms. Mark ready, then schedule on the Schedule page.",
       },
     ],
   }),
@@ -71,7 +58,7 @@ type RepublishLocationState = {
 
 function ComposePage() {
   const navigate = useNavigate();
-  const { workspace, workspaceId, addScheduledPosts } = useWorkspace();
+  const { workspace, workspaceId } = useWorkspace();
   const { customEvents, addEvent } = useCustomEvents(workspaceId);
   const { isAssociated } = useEventAssociations(workspaceId);
 
@@ -88,6 +75,7 @@ function ComposePage() {
   });
 
   const [queue, setQueue] = useState<DraftPost[]>([]);
+  const [readyCount, setReadyCount] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiAllBusy, setAiAllBusy] = useState(false);
@@ -95,17 +83,13 @@ function ComposePage() {
   const [transcriptOpen, setTranscriptOpen] = useState(true);
   const [createAlbumOpen, setCreateAlbumOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [cadenceActive, setCadenceActive] = useState<CadencePresetId | null>(null);
-  const [scheduleReasons, setScheduleReasons] = useState<
-    Partial<Record<string, Partial<Record<string, string>>>>
-  >({});
+  const [stageError, setStageError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
   const prevWorkspaceIdRef = useRef<WorkspaceId | null>(null);
 
   const activeDraft = queue[activeIndex] ?? null;
-  const publishCount = activeDraft?.platforms.length ?? 0;
   const captionLimit = 2200;
 
   const availablePlatforms = useMemo(
@@ -131,60 +115,43 @@ function ComposePage() {
     const raw = republishFromNavigation ?? peekRepublishDraft(workspaceId);
     if (!raw) return;
     const draft = normalizeRepublishDraft(raw);
-    const times = suggestTimesForDraft(draft, workspace.scheduledPosts, [], workspace.postingTimes);
-    setQueue([applyProposedTimes(draft, times)]);
+    setQueue([draft]);
     setActiveIndex(0);
     const dismissId = window.setTimeout(() => dismissRepublishDraft(workspaceId), 0);
     return () => window.clearTimeout(dismissId);
-  }, [workspaceId, republishFromNavigation, workspace.scheduledPosts, workspace.postingTimes]);
+  }, [workspaceId, republishFromNavigation]);
 
   useEffect(() => {
     if (prevWorkspaceIdRef.current === workspaceId) return;
     prevWorkspaceIdRef.current = workspaceId;
     if (peekRepublishDraft(workspaceId)) return;
-    const persisted = readPersistedDrafts(workspaceId);
-    setQueue(persisted.queue);
-    const idx = persisted.activeId
-      ? Math.max(0, persisted.queue.findIndex((d) => d.id === persisted.activeId))
+    const shelf = readComposerShelf(workspaceId);
+    setQueue(shelf.drafting);
+    setReadyCount(shelf.ready.length);
+    const idx = shelf.activeId
+      ? Math.max(0, shelf.drafting.findIndex((d) => d.id === shelf.activeId))
       : 0;
     setActiveIndex(idx >= 0 ? idx : 0);
   }, [workspaceId]);
 
   useEffect(() => {
     if (peekRepublishDraft(workspaceId)) return;
-    writePersistedDrafts(workspaceId, queue, []);
+    const shelf = readComposerShelf(workspaceId);
+    writeComposerShelf(workspaceId, queue, shelf.ready, shelf.savedDrafts);
+    setReadyCount(shelf.ready.length);
   }, [workspaceId, queue, activeIndex]);
 
   const addFiles = useCallback(
     (files: FileList | File[]) => {
       const arr = Array.from(files);
       if (arr.length === 0) return;
-
+      // Compose only — no times; Schedule page owns clocks
       const created = arr.map((f) => defaultDraftFromFile(f, workspace.platforms));
-      const byFile =
-        created.length > 1
-          ? distributeBulkDraftTimes(created, workspace.scheduledPosts, workspace.postingTimes)
-          : null;
-
-      const withTimes = created.map((draft) => {
-        if (byFile?.[draft.id]) {
-          return applyProposedTimes(draft, byFile[draft.id]!);
-        }
-        const assigned = pendingSlotsFromQueue(queue);
-        const times = suggestTimesForDraft(
-          draft,
-          workspace.scheduledPosts,
-          assigned,
-          workspace.postingTimes,
-        );
-        return applyProposedTimes(draft, times);
-      });
-
       const startLen = queue.length;
-      setQueue((cur) => [...cur, ...withTimes]);
+      setQueue((cur) => [...cur, ...created]);
       setActiveIndex(startLen);
     },
-    [queue, workspace.platforms, workspace.scheduledPosts, workspace.postingTimes],
+    [queue, workspace.platforms],
   );
 
   function handleDrop(e: React.DragEvent) {
@@ -199,48 +166,22 @@ function ComposePage() {
     const platforms = has
       ? activeDraft.platforms.filter((p) => p !== platform)
       : [...activeDraft.platforms, platform];
-
-    updateActive((draft) => {
-      let proposedTimes = { ...(draft.proposedTimes ?? {}) };
-      if (has) {
-        delete proposedTimes[platform];
-      } else {
-        const assigned = pendingSlotsFromQueue(queue.filter((d) => d.id !== draft.id));
-        const times = suggestTimesForDay(
-          { id: draft.id, platforms: [platform] },
-          today(),
-          workspace.scheduledPosts,
-          assigned,
-          workspace.postingTimes,
-        );
-        if (times[platform]) proposedTimes[platform] = times[platform];
-      }
-      return { ...draft, platforms, proposedTimes };
-    });
-  }
-
-  function updatePlatformSchedule(platform: Platform, dateStr: string, timeStr: string) {
-    if (!activeDraft) return;
-    const iso = combineDateAndTime(dateStr, timeStr);
-    updateActive((draft) => ({
-      ...draft,
-      proposedTimes: { ...(draft.proposedTimes ?? {}), [platform]: iso },
-    }));
+    updateActive((draft) => ({ ...draft, platforms }));
   }
 
   async function prepareActiveWithAi() {
     if (!activeDraft || aiBusy) return;
     setAiBusy(true);
     try {
-      const { draft, scheduleReasons: reasons } = await prepareCardWithAi(activeDraft, {
+      const { draft } = await prepareCardWithAi(activeDraft, {
         scheduledPosts: workspace.scheduledPosts,
         queue,
         postingTimes: workspace.postingTimes,
         voice: workspace.voice,
         events: workspaceEvents,
+        fillTimes: false,
       });
       setQueue((cur) => cur.map((d) => (d.id === draft.id ? draft : d)));
-      setScheduleReasons((prev) => ({ ...prev, [draft.id]: reasons }));
     } finally {
       setAiBusy(false);
     }
@@ -265,91 +206,33 @@ function ComposePage() {
     }
   }
 
-  function suggestTimesOnly() {
-    if (!activeDraft) return;
-    const assigned = pendingSlotsFromQueue(queue.filter((d) => d.id !== activeDraft.id));
-    const times = suggestTimesForDraft(
-      activeDraft,
-      workspace.scheduledPosts,
-      assigned,
-      workspace.postingTimes,
-    );
-    updateActive((d) => applyProposedTimes(d, times));
-    const reasons: Partial<Record<string, string>> = {};
-    for (const p of activeDraft.platforms) {
-      if (times[p]) reasons[p] = `Audience peak for this network`;
-    }
-    setScheduleReasons((prev) => ({ ...prev, [activeDraft.id]: reasons }));
-    setCadenceActive("peak");
-  }
-
-  function applyCadence(preset: CadencePresetId) {
-    if (queue.length === 0) return;
-    setCadenceActive(preset);
-    const { byFile, slots } = applyCadencePreset(
-      queue,
-      preset,
-      workspace.scheduledPosts,
-      workspace.postingTimes,
-    );
-    setQueue((cur) =>
-      cur.map((d) => {
-        const times = byFile[d.id];
-        return times ? applyProposedTimes(d, times) : d;
-      }),
-    );
-    const reasonsByFile: Partial<Record<string, Partial<Record<string, string>>>> = {};
-    slots.forEach((s) => {
-      const file = reasonsByFile[s.fileId] ?? {};
-      file[s.platform] = s.reason;
-      reasonsByFile[s.fileId] = file;
-    });
-    setScheduleReasons((prev) => ({ ...prev, ...reasonsByFile }));
-  }
-
-  function scheduleCurrent() {
-    if (!activeDraft) return;
-    const scheduled = draftToScheduledPost(activeDraft);
-    if (!scheduled) return;
-
-    addScheduledPosts([scheduled]);
-    revokePreviewUrl(activeDraft);
-
-    const remaining = queue.filter((d) => d.id !== activeDraft.id);
-    if (remaining.length === 0) {
-      setQueue([]);
-      clearPersistedDrafts(workspaceId);
-      navigate({ to: "/calendar" });
+  function markReady(ids: string[]) {
+    setStageError(null);
+    const targets = queue.filter((d) => ids.includes(d.id));
+    const incomplete = targets.filter((d) => !isDraftReadyToStage(d));
+    if (incomplete.length > 0) {
+      setStageError(
+        "Add media (or Dropbox), at least one platform, and a caption before marking ready.",
+      );
       return;
     }
-
-    setQueue(remaining);
-    setActiveIndex((i) => Math.min(i, remaining.length - 1));
+    const { drafting, ready } = stageDraftsAsReady(workspaceId, ids);
+    setQueue(drafting);
+    setReadyCount(ready.length);
+    setActiveIndex((i) => Math.min(i, Math.max(0, drafting.length - 1)));
   }
 
-  function scheduleAllReady() {
-    const ready = queue
-      .map((d) => draftToScheduledPost(d))
-      .filter((p): p is NonNullable<typeof p> => p != null);
-    if (ready.length === 0) return;
-
-    addScheduledPosts(ready);
-    queue.forEach(revokePreviewUrl);
-
-    const readyIds = new Set(ready.map((p) => p.id));
-    const remaining = queue.filter((d) => !readyIds.has(d.id));
-    if (remaining.length === 0) {
-      setQueue([]);
-      clearPersistedDrafts(workspaceId);
-      navigate({ to: "/calendar" });
-      return;
-    }
-    setQueue(remaining);
-    setActiveIndex(0);
+  function markCurrentReady() {
+    if (!activeDraft) return;
+    markReady([activeDraft.id]);
   }
 
-  const canSchedule = activeDraft != null && draftToScheduledPost(activeDraft) != null;
-  const readyCount = queue.filter((d) => draftToScheduledPost(d) != null).length;
+  function markAllReady() {
+    markReady(queue.map((d) => d.id));
+  }
+
+  const canStageCurrent = activeDraft != null && isDraftReadyToStage(activeDraft);
+  const stageableCount = queue.filter(isDraftReadyToStage).length;
 
   function selectQueueId(id: string) {
     const idx = queue.findIndex((d) => d.id === id);
@@ -382,15 +265,26 @@ function ComposePage() {
               </p>
               <h1 className="mt-1 font-display text-[1.75rem] font-semibold tracking-tight text-foreground md:text-[2rem]">
                 {queue.length === 0
-                  ? "Drop reels. Schedule the week."
-                  : `Finish ${queue.length} reel${queue.length === 1 ? "" : "s"}`}
+                  ? "Drop reels. Get them ready."
+                  : `Prepare ${queue.length} reel${queue.length === 1 ? "" : "s"}`}
               </h1>
               <p className="mt-1.5 max-w-lg text-body-sm text-muted-foreground">
-                Drop files or paste Dropbox · AI captions · cadence · schedule. Built for Sunday
-                media teams.
+                Media, captions, platforms, events — then mark ready. Scheduling is a separate step.
               </p>
+              {stageError ? (
+                <p className="mt-2 text-sm font-medium text-destructive">{stageError}</p>
+              ) : null}
             </div>
-            <div className="flex flex-col items-stretch gap-2 sm:min-w-[12rem] sm:items-end">
+            <div className="flex flex-col items-stretch gap-2 sm:min-w-[13rem] sm:items-end">
+              {readyCount > 0 ? (
+                <Link
+                  to="/schedule"
+                  className="btn-action btn-action-secondary justify-center"
+                  data-testid="go-schedule-ready"
+                >
+                  Schedule ready ({readyCount}) →
+                </Link>
+              ) : null}
               {queue.length > 0 ? (
                 <>
                   <button
@@ -411,16 +305,16 @@ function ComposePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={readyCount > 1 ? scheduleAllReady : scheduleCurrent}
-                    disabled={readyCount === 0 && !canSchedule}
-                    data-testid="schedule-all-btn"
+                    onClick={stageableCount > 1 ? markAllReady : markCurrentReady}
+                    disabled={stageableCount === 0 && !canStageCurrent}
+                    data-testid="mark-ready-btn"
                     className="btn-action btn-action-primary !text-white disabled:opacity-50"
                   >
-                    {readyCount > 1
-                      ? `Schedule ${readyCount} reels`
-                      : canSchedule
-                        ? "Schedule this reel"
-                        : "Set times to schedule"}
+                    {stageableCount > 1
+                      ? `Mark ${stageableCount} ready`
+                      : canStageCurrent
+                        ? "Mark ready"
+                        : "Finish card to continue"}
                   </button>
                 </>
               ) : (
@@ -583,15 +477,7 @@ function ComposePage() {
                 <div className="mt-4 border-t border-line pt-4">
                   <DropboxLinkField
                     onResolved={(result) => {
-                      const base = defaultDraftFromDropbox(result, workspace.platforms);
-                      const assigned = pendingSlotsFromQueue(queue);
-                      const times = suggestTimesForDraft(
-                        base,
-                        workspace.scheduledPosts,
-                        assigned,
-                        workspace.postingTimes,
-                      );
-                      const draft = applyProposedTimes(base, times);
+                      const draft = defaultDraftFromDropbox(result, workspace.platforms);
                       const startLen = queue.length;
                       setQueue((cur) => [...cur, draft]);
                       setActiveIndex(startLen);
@@ -728,18 +614,6 @@ function ComposePage() {
                   </div>
                 </section>
 
-                {/* Mobile publish plan (hidden on xl where rail shows) */}
-                <section className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-card)] xl:hidden">
-                  <ComposerPublishPlan
-                    draft={activeDraft}
-                    scheduleReasons={scheduleReasons[activeDraft.id]}
-                    onUpdateTime={updatePlatformSchedule}
-                    onSuggestTimes={suggestTimesOnly}
-                    onCadence={applyCadence}
-                    cadenceActive={cadenceActive}
-                  />
-                </section>
-
                 {/* EVENT */}
                 <section className="rounded-md border border-line bg-card p-5 shadow-[var(--shadow-card)]">
                   <div className="mb-3 text-caption font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -795,55 +669,6 @@ function ComposePage() {
           </div>
         </div>
       </div>
-
-      {activeDraft ? (
-        <aside className="composer-preview-pane p-5 pb-16">
-          <div className="flex flex-col gap-6">
-            <ComposerPublishPlan
-              draft={activeDraft}
-              scheduleReasons={scheduleReasons[activeDraft.id]}
-              onUpdateTime={updatePlatformSchedule}
-              onSuggestTimes={suggestTimesOnly}
-              onCadence={applyCadence}
-              cadenceActive={cadenceActive}
-            />
-            <button
-              type="button"
-              onClick={scheduleCurrent}
-              disabled={!canSchedule}
-              data-testid="schedule-publishes-btn"
-              className="btn-action btn-action-primary w-full justify-center !text-white disabled:opacity-50"
-            >
-              {canSchedule
-                ? `Schedule this reel${publishCount > 0 ? ` · ${publishCount} platforms` : ""}`
-                : "Pick platforms + times"}
-            </button>
-            <ComposerPreviewRail
-              draft={activeDraft}
-              workspaceSlug={workspace.slug}
-              workspaceInitials={workspace.initials}
-            />
-          </div>
-        </aside>
-      ) : null}
-
-      {/* Mobile sticky schedule bar */}
-      {activeDraft ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-background/95 p-3 backdrop-blur md:hidden">
-          <button
-            type="button"
-            onClick={readyCount > 1 ? scheduleAllReady : scheduleCurrent}
-            disabled={readyCount === 0 && !canSchedule}
-            className="btn-action btn-action-primary w-full justify-center !text-white disabled:opacity-50"
-          >
-            {readyCount > 1
-              ? `Schedule ${readyCount} reels`
-              : canSchedule
-                ? "Schedule this reel"
-                : "Set times to schedule"}
-          </button>
-        </div>
-      ) : null}
 
       {createAlbumOpen ? (
         <ScheduleEventModal

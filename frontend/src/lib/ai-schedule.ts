@@ -25,7 +25,10 @@ function buildBrief(draft: DraftPost, events: ContentEvent[]): string {
   return `${eventContext}${core}`;
 }
 
-/** AI caption + hashtags, then peak-time schedule per selected platform. */
+/**
+ * AI caption + hashtags.
+ * Times only when `fillTimes: true` (Schedule page). Compose uses copy-only.
+ */
 export async function prepareCardWithAi(
   draft: DraftPost,
   opts: {
@@ -34,10 +37,13 @@ export async function prepareCardWithAi(
     postingTimes?: WorkspaceProfile["postingTimes"];
     voice?: string;
     events: ContentEvent[];
+    /** When false (default), only caption/hashtags — no clocks. */
+    fillTimes?: boolean;
   },
 ): Promise<AiPrepareResult> {
   const brief = buildBrief(draft, opts.events);
   const title = draft.title ?? draft.filename;
+  const fillTimes = opts.fillTimes === true;
 
   const [caption, hashtags] = await Promise.all([
     aiGenerate({
@@ -56,9 +62,19 @@ export async function prepareCardWithAi(
     }),
   ]);
 
+  const withCopy: DraftPost = {
+    ...draft,
+    caption: caption.trim(),
+    hashtags: hashtags.trim(),
+  };
+
+  if (!fillTimes) {
+    return { draft: withCopy, scheduleReasons: {} };
+  }
+
   const assigned = pendingSlotsFromQueue(opts.queue.filter((d) => d.id !== draft.id));
   const times = suggestTimesForDraft(
-    { ...draft, platforms: draft.platforms },
+    withCopy,
     opts.scheduledPosts,
     assigned,
     opts.postingTimes,
@@ -74,14 +90,7 @@ export async function prepareCardWithAi(
   }
 
   return {
-    draft: applyProposedTimes(
-      {
-        ...draft,
-        caption: caption.trim(),
-        hashtags: hashtags.trim(),
-      },
-      times,
-    ),
+    draft: applyProposedTimes(withCopy, times),
     scheduleReasons,
   };
 }
