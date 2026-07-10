@@ -2,8 +2,47 @@
 
 **Goal:** Make scheduling ministry reels the easiest thing in the world.  
 **Status:** Implementation target for compose / queue / cadence / AI.  
-**Last updated:** 2026-07-09  
+**Last updated:** 2026-07-10  
 **Visual system:** Editorial Mono (black/white/grey) — not orange neobrutal.
+
+---
+
+## 10. Proposed schedule calendar + multi-card Schedule UX
+
+### 10.1 Why
+Users need to **see** bulk timing before commit. When reel 1 lands Monday and reel 2 should land Tuesday, that relationship must be visible — not hidden in per-platform time fields for one “focused” card.
+
+### 10.2 Day placement (no platform clutter)
+```
+For each draft with proposedTimes:
+  unique local calendar days = set of YYYY-MM-DD from each platform ISO
+  place card once per day
+```
+- Same card Mon IG + Wed YT → **two day cells**, one chip each day  
+- Never show IG/YT chips on the grid  
+
+### 10.3 Week vs month
+| View | Density |
+|------|---------|
+| **Week** | 7 columns; up to 3 thumbs+titles per day; `+N` overflow |
+| **Month** | Compact pills; 1–2 titles then `+N`; day click lists cards |
+
+Toggle Week | Month; prev/next; updates live when cadence/times change.
+
+### 10.4 Multi-card selection UX
+| Selection | Main panel |
+|-----------|------------|
+| 0 | Empty state |
+| 1 | Destinations + full time editor for that card + calendar |
+| 2+ | **Batch mode**: calendar first (all selected highlighted); **agenda list** “Card → days”; destinations for **focus** card; cadence applies to **all selected** with conflict avoidance |
+
+Cadence/AI times use `schedule-engine` assigned slots so reel N considers reels 1…N-1 (min gap / day caps). UI copy: *“Times avoid stacking the same network too close.”*
+
+### 10.5 Components
+- `lib/proposed-schedule-calendar.ts`
+- `components/schedule/ProposedScheduleCalendar.tsx`
+- Schedule page layout: shelf | (calendar + batch agenda + destinations + times)
+
 
 ---
 

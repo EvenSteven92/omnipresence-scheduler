@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ComposerPublishPlan } from "@/components/composer/ComposerPublishPlan";
 import { PlatformDestinationPicker } from "@/components/composer/PlatformDestinationPicker";
+import { ProposedScheduleCalendar } from "@/components/schedule/ProposedScheduleCalendar";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
+import { cardAgendaRows } from "@/lib/proposed-schedule-calendar";
 import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
 import {
   applyProposedTimes,
@@ -231,6 +233,17 @@ function SchedulePage() {
   const allSelectedComplete =
     selected.length > 0 && selectedComplete.length === selected.length;
 
+  /** Calendar shows all ready cards that have times (full proposed plan). */
+  const calendarDrafts = useMemo(
+    () => ready.filter((d) => d.platforms.length > 0 && Object.keys(d.proposedTimes ?? {}).length > 0),
+    [ready],
+  );
+
+  const batchAgenda = useMemo(
+    () => cardAgendaRows(selected.length > 0 ? selected : ready),
+    [selected, ready],
+  );
+
   return (
     <div className="composer-shell" data-testid="schedule-page">
       {/* ── Ready shelf (multi-select) ── */}
@@ -387,54 +400,42 @@ function SchedulePage() {
         </div>
       </aside>
 
-      {/* ── Full-page Publish plan (only main column) ── */}
+      {/* ── Main: calendar + batch agenda + destinations/times ── */}
       <div className="composer-editor-pane min-w-0 flex-1">
-        <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-28 md:px-8 md:py-8">
-          {selected.length === 0 || !focusDraft ? (
+        <div className="mx-auto w-full max-w-5xl px-4 py-6 pb-28 md:px-8 md:py-8">
+          {ready.length === 0 ? (
             <div className="rounded-md border border-line bg-paper-2 px-6 py-20 text-center">
               <p className="font-display text-xl font-semibold text-foreground">
-                Select reels from the shelf
+                Nothing on the ready shelf
               </p>
               <p className="mx-auto mt-2 max-w-md text-body-sm text-muted-foreground">
-                Multi-select cards on the left. Cadence and times apply to everything selected.
+                Prepare reels in Compose, mark them ready, then set when they go out here.
               </p>
+              <Link
+                to="/scheduler"
+                className="btn-action btn-action-primary mt-6 inline-flex !text-white"
+              >
+                Go to Compose
+              </Link>
             </div>
           ) : (
             <>
-              <header className="mb-6 border-b border-line pb-5">
+              <header className="mb-5 border-b border-line pb-5">
                 <p className="text-caption font-medium uppercase tracking-[0.1em] text-muted-foreground">
-                  Publish plan
+                  Schedule
                 </p>
                 <h1 className="mt-1 font-display text-[1.75rem] font-semibold tracking-tight text-foreground md:text-[2rem]">
                   When & where
                 </h1>
-                <p className="mt-1.5 text-body-sm text-muted-foreground">
-                  {selected.length === 1
-                    ? "One reel selected — set cadence and platform times."
-                    : `${selected.length} reels selected — cadence applies to all; fine-tune the focused card.`}
+                <p className="mt-1.5 max-w-2xl text-body-sm text-muted-foreground">
+                  {selected.length <= 1
+                    ? "Set destinations and times. The calendar shows each card once per day it posts (not per platform)."
+                    : `${selected.length} reels selected. Best times / cadence stagger them across days so they don’t collide on the same network.`}
                 </p>
-
-                {/* Selected chips */}
-                {selected.length > 1 ? (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {selected.map((d) => (
-                      <button
-                        key={d.id}
-                        type="button"
-                        onClick={() => setFocusId(d.id)}
-                        className={cn(
-                          "rounded-md border px-2 py-1 text-caption font-medium transition-colors",
-                          focusId === d.id
-                            ? "border-foreground bg-foreground text-white"
-                            : "border-line bg-card text-foreground hover:bg-secondary",
-                        )}
-                      >
-                        {draftDisplayTitle(d).slice(0, 28)}
-                        {draftDisplayTitle(d).length > 28 ? "…" : ""}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Cadence fills times in order and skips slots that are too close for the same
+                  platform — reel 2 considers reel 1.
+                </p>
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <button
@@ -448,7 +449,7 @@ function SchedulePage() {
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
                     )}
-                    Best times ({selected.length})
+                    Best times ({selected.length || ready.length})
                   </button>
                   <button
                     type="button"
@@ -476,83 +477,226 @@ function SchedulePage() {
                 </div>
                 {selected.length > 0 && !allSelectedComplete ? (
                   <p className="mt-2 text-xs text-warning">
-                    {selectedComplete.length} of {selected.length} have full times — schedule will
-                    commit those that are ready.
+                    {selectedComplete.length} of {selected.length} have full times — only those
+                    commit.
                   </p>
                 ) : null}
               </header>
 
               <div className="space-y-5">
-                <div className="rounded-md border border-line bg-card p-5 md:p-6">
-                  <PlatformDestinationPicker
-                    draft={focusDraft}
-                    workspacePlatforms={workspace.platforms}
-                    onChange={(platforms) => {
-                      const bucket =
-                        focusDraft.aspectBucket ??
-                        bucketFromPostFormat(focusDraft.format);
-                      const clean = sanitizePlatformsForAspect(platforms, bucket);
-                      updateDraft(focusDraft.id, (d) => {
-                        const nextTimes = { ...(d.proposedTimes ?? {}) };
-                        Object.keys(nextTimes).forEach((k) => {
-                          if (!clean.includes(k as Platform)) {
-                            delete nextTimes[k as Platform];
-                          }
-                        });
-                        return { ...d, platforms: clean, proposedTimes: nextTimes };
-                      });
-                      // Mirror destination set onto other selected cards when bulk
-                      if (selected.length > 1) {
-                        setReady((cur) =>
-                          cur.map((d) => {
-                            if (!selectedIds.has(d.id) || d.id === focusDraft.id) return d;
-                            const b = d.aspectBucket ?? bucketFromPostFormat(d.format);
-                            const allowed = sanitizePlatformsForAspect(clean, b);
-                            if (allowed.length === 0) {
-                              const rec = recommendedPlatforms(b).filter((p) =>
-                                workspace.platforms.includes(p),
-                              );
-                              return { ...d, platforms: rec };
-                            }
+                {/* Proposed calendar — all ready with times */}
+                <ProposedScheduleCalendar
+                  drafts={calendarDrafts.length > 0 ? calendarDrafts : ready}
+                  highlightedIds={selectedIds}
+                  focusId={focusId}
+                  onFocusCard={(id) => {
+                    setFocusId(id);
+                    setSelectedIds((prev) => {
+                      if (prev.has(id)) return prev;
+                      return new Set([...prev, id]);
+                    });
+                  }}
+                />
+
+                {/* Batch agenda — which card lands which days */}
+                {(selected.length > 1 || ready.length > 1) && batchAgenda.length > 0 ? (
+                  <section
+                    data-testid="batch-agenda"
+                    className="rounded-md border border-line bg-card p-4 md:p-5"
+                  >
+                    <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+                      <div>
+                        <p className="text-caption font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                          Batch plan
+                        </p>
+                        <h2 className="mt-0.5 font-display text-base font-semibold text-foreground">
+                          Which reel posts when
+                        </h2>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        One row per card · days only (platforms hidden)
+                      </p>
+                    </div>
+                    <ul className="divide-y divide-line rounded-md border border-line">
+                      {batchAgenda.map((row) => {
+                        const focused = focusId === row.draft.id;
+                        const selectedRow = selectedIds.has(row.draft.id);
+                        return (
+                          <li key={row.draft.id}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFocusId(row.draft.id);
+                                setSelectedIds((prev) => {
+                                  if (prev.has(row.draft.id)) return prev;
+                                  return new Set([...prev, row.draft.id]);
+                                });
+                              }}
+                              className={cn(
+                                "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors",
+                                focused
+                                  ? "bg-foreground text-white"
+                                  : selectedRow
+                                    ? "bg-secondary"
+                                    : "bg-card hover:bg-paper-2",
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  "h-10 w-10 shrink-0 overflow-hidden rounded-md border",
+                                  focused ? "border-white/30" : "border-line",
+                                )}
+                              >
+                                <img
+                                  src={
+                                    row.draft.previewUrl ||
+                                    demoPreviewForPost({
+                                      id: row.draft.id,
+                                      title: row.draft.filename,
+                                    })
+                                  }
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span
+                                  className={cn(
+                                    "block truncate font-display text-sm font-semibold",
+                                    focused ? "text-white" : "text-foreground",
+                                  )}
+                                >
+                                  {row.title}
+                                </span>
+                                <span
+                                  className={cn(
+                                    "mt-0.5 block text-xs",
+                                    focused ? "text-white/70" : "text-muted-foreground",
+                                  )}
+                                >
+                                  {row.daysLabel}
+                                  {row.dayCount > 1
+                                    ? ` · ${row.dayCount} days`
+                                    : ""}
+                                  {" · "}
+                                  {row.draft.platforms.length} platforms
+                                </span>
+                              </span>
+                              {!row.ready ? (
+                                <span
+                                  className={cn(
+                                    "shrink-0 text-[0.65rem] font-medium",
+                                    focused ? "text-white/80" : "text-warning",
+                                  )}
+                                >
+                                  Needs times
+                                </span>
+                              ) : (
+                                <Check
+                                  className={cn(
+                                    "h-4 w-4 shrink-0",
+                                    focused ? "text-success" : "text-success",
+                                  )}
+                                />
+                              )}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ) : null}
+
+                {focusDraft ? (
+                  <>
+                    <div className="rounded-md border border-line bg-card p-5 md:p-6">
+                      {selected.length > 1 ? (
+                        <p className="mb-4 text-sm text-muted-foreground">
+                          Destinations for{" "}
+                          <span className="font-semibold text-foreground">
+                            {draftDisplayTitle(focusDraft)}
+                          </span>
+                          . Click another row above to switch.
+                        </p>
+                      ) : null}
+                      <PlatformDestinationPicker
+                        draft={focusDraft}
+                        workspacePlatforms={workspace.platforms}
+                        onChange={(platforms) => {
+                          const bucket =
+                            focusDraft.aspectBucket ??
+                            bucketFromPostFormat(focusDraft.format);
+                          const clean = sanitizePlatformsForAspect(platforms, bucket);
+                          updateDraft(focusDraft.id, (d) => {
                             const nextTimes = { ...(d.proposedTimes ?? {}) };
                             Object.keys(nextTimes).forEach((k) => {
-                              if (!allowed.includes(k as Platform)) {
+                              if (!clean.includes(k as Platform)) {
                                 delete nextTimes[k as Platform];
                               }
                             });
-                            return { ...d, platforms: allowed, proposedTimes: nextTimes };
-                          }),
-                        );
-                      }
-                    }}
-                  />
-                </div>
+                            return { ...d, platforms: clean, proposedTimes: nextTimes };
+                          });
+                          if (selected.length > 1) {
+                            setReady((cur) =>
+                              cur.map((d) => {
+                                if (!selectedIds.has(d.id) || d.id === focusDraft.id) return d;
+                                const b = d.aspectBucket ?? bucketFromPostFormat(d.format);
+                                const allowed = sanitizePlatformsForAspect(clean, b);
+                                if (allowed.length === 0) {
+                                  const rec = recommendedPlatforms(b).filter((p) =>
+                                    workspace.platforms.includes(p),
+                                  );
+                                  return { ...d, platforms: rec };
+                                }
+                                const nextTimes = { ...(d.proposedTimes ?? {}) };
+                                Object.keys(nextTimes).forEach((k) => {
+                                  if (!allowed.includes(k as Platform)) {
+                                    delete nextTimes[k as Platform];
+                                  }
+                                });
+                                return {
+                                  ...d,
+                                  platforms: allowed,
+                                  proposedTimes: nextTimes,
+                                };
+                              }),
+                            );
+                          }
+                        }}
+                      />
+                    </div>
 
-                <div className="rounded-md border border-line bg-card p-5 md:p-6">
-                  {selected.length > 1 ? (
-                    <p className="mb-4 text-sm text-muted-foreground">
-                      Editing times for{" "}
-                      <span className="font-semibold text-foreground">
-                        {draftDisplayTitle(focusDraft)}
-                      </span>
-                      . Cadence applies to all {selected.length} selected.
-                    </p>
-                  ) : null}
-                  {focusDraft.platforms.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      Choose destinations above, then set cadence and times.
-                    </p>
-                  ) : (
-                    <ComposerPublishPlan
-                      draft={focusDraft}
-                      scheduleReasons={scheduleReasons[focusDraft.id]}
-                      onUpdateTime={updatePlatformSchedule}
-                      onSuggestTimes={suggestTimesForFocus}
-                      onCadence={applyCadence}
-                      cadenceActive={cadenceActive}
-                    />
-                  )}
-                </div>
+                    <div className="rounded-md border border-line bg-card p-5 md:p-6">
+                      {selected.length > 1 ? (
+                        <p className="mb-4 text-sm text-muted-foreground">
+                          Fine-tune times for{" "}
+                          <span className="font-semibold text-foreground">
+                            {draftDisplayTitle(focusDraft)}
+                          </span>
+                          . Use cadence / best times to stagger the whole selection.
+                        </p>
+                      ) : null}
+                      {focusDraft.platforms.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          Choose destinations above, then set cadence and times.
+                        </p>
+                      ) : (
+                        <ComposerPublishPlan
+                          draft={focusDraft}
+                          scheduleReasons={scheduleReasons[focusDraft.id]}
+                          onUpdateTime={updatePlatformSchedule}
+                          onSuggestTimes={suggestTimesForFocus}
+                          onCadence={applyCadence}
+                          cadenceActive={cadenceActive}
+                        />
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Select one or more reels on the shelf to set destinations and times.
+                  </p>
+                )}
               </div>
             </>
           )}
