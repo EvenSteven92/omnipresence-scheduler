@@ -131,14 +131,16 @@ Set in Vercel project settings (and locally in `frontend/.env` if needed). Never
 
 ## UI / UX conventions
 
-Follow these when editing UI copy or layout:
+**Brand design system:** `docs/TORCC_OMNIPRESENCE_DESIGN_SYSTEM.md`  
+Tokens live in `frontend/src/styles.css` (Satoshi + Instrument Serif; black primary CTAs; `--brand` purple for focus/selection).
 
 1. **Use sentence case** for labels, section titles, buttons, and empty states — not `snake_case` or `SCREAMING_UNDERSCORES`.
 2. **Dashboard vs Analytics:** Dashboard is action-first (upcoming schedule, gaps, 3 KPIs, growth matrix). Analytics holds the full 7-KPI grid, timeframe picker, and deep charts.
-3. **CTA hierarchy:** “New Post” is primary; “New Event” is secondary (text link in header, dashed icon in sidebar).
-4. **Nav:** Sidebar items should show a clear active state (`Sidebar.tsx`).
+3. **CTA hierarchy:** Primary actions are **black fill** (Schedule, Mark ready, New post). Purple is for focus/active nav only — not every button.
+4. **Nav:** Sidebar active state uses brand-soft wash (`Sidebar.tsx`).
 5. **Platform identity:** Use brand colors from `platforms.ts` (left borders on growth matrix cards, analytics table rows).
 6. **Sync status:** Top bar is `SyncStatusBar.tsx` (meaningful sync info), not the old opaque news ticker.
+7. **Serif accents:** `font-serif-accent` only on empty-state headlines / brand moments — never calendar cells or form labels.
 
 ### Preserve unless explicitly asked to change
 

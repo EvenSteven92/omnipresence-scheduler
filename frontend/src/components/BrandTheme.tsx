@@ -2,23 +2,31 @@ import { useEffect } from "react";
 import { useWorkspace } from "@/lib/workspace-context";
 
 /**
- * Tints the UI to the active brand by overriding the accent CSS variables on
- * the document root. The light base palette stays; only the accent changes
- * when you switch workspaces (TORCC / Open Eyes / KEKA / First Love).
+ * Applies workspace brand accent without hijacking primary CTAs.
+ * TORCC house rule (design system): primary buttons stay black;
+ * purple (or workspace accent) is for focus, selection, and rare brand moments.
+ *
+ * @see docs/TORCC_OMNIPRESENCE_DESIGN_SYSTEM.md
  */
 export function BrandTheme() {
   const { workspace } = useWorkspace();
-  const accent = workspace.accent;
-  const accentForeground = workspace.accentForeground ?? "#17130f";
+  const brand = workspace.accent || "#812bf5";
 
   useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty("--accent", accent);
-    root.style.setProperty("--primary", accent);
-    root.style.setProperty("--ring", accent);
-    root.style.setProperty("--accent-foreground", accentForeground);
-    root.style.setProperty("--primary-foreground", accentForeground);
-  }, [accent, accentForeground]);
+    // Keep product CTAs black regardless of workspace
+    root.style.setProperty("--primary", "#0a0a0a");
+    root.style.setProperty("--primary-foreground", "#ffffff");
+    root.style.setProperty("--accent", "#0a0a0a");
+    root.style.setProperty("--accent-foreground", "#ffffff");
+
+    root.style.setProperty("--brand", brand);
+    root.style.setProperty(
+      "--brand-soft",
+      `color-mix(in oklab, ${brand} 12%, transparent)`,
+    );
+    root.style.setProperty("--ring", brand);
+  }, [brand]);
 
   return null;
 }

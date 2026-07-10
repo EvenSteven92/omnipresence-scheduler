@@ -3,7 +3,7 @@
 **Goal:** Make scheduling ministry reels the easiest thing in the world.  
 **Status:** Implementation target for compose / queue / cadence / AI.  
 **Last updated:** 2026-07-10  
-**Visual system:** Editorial Mono (black/white/grey) — not orange neobrutal.
+**Visual system:** TORCC × OmniPresence (Satoshi + Instrument Serif; black CTAs; brand purple sparingly). See `docs/TORCC_OMNIPRESENCE_DESIGN_SYSTEM.md`.
 
 ---
 

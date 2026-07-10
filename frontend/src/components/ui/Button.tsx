@@ -1,18 +1,20 @@
 import { cn } from "@/lib/utils";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "brand";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const VARIANT: Record<ButtonVariant, string> = {
   primary:
-    "border-foreground bg-primary !text-white font-medium hover:bg-[#262626] hover:!text-white",
+    "border-primary bg-primary !text-white font-semibold hover:bg-[#262626] hover:!text-white",
   secondary:
-    "border-foreground bg-surface text-foreground font-medium hover:bg-secondary",
+    "border-line bg-surface text-foreground font-semibold hover:border-foreground hover:bg-secondary",
   ghost:
-    "border-transparent bg-transparent text-muted-foreground font-medium hover:bg-secondary hover:text-foreground",
+    "border-transparent bg-transparent text-muted-foreground font-semibold hover:bg-secondary hover:text-foreground",
   danger:
-    "border-destructive bg-destructive text-destructive-foreground font-medium hover:opacity-90",
+    "border-destructive bg-destructive text-destructive-foreground font-semibold hover:opacity-90",
+  brand:
+    "border-brand bg-brand !text-white font-semibold hover:bg-brand-deep hover:!text-white",
 };
 
 const SIZE: Record<ButtonSize, string> = {
@@ -37,7 +39,7 @@ export function Button({
     <button
       type={type}
       className={cn(
-        "inline-flex items-center justify-center rounded-md border transition-[background-color,color,border-color,opacity] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center rounded-lg border transition-[background-color,color,border-color,opacity] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50",
         VARIANT[variant],
         SIZE[size],
         className,

@@ -404,11 +404,11 @@ function SchedulePage() {
       <div className="composer-editor-pane min-w-0 flex-1">
         <div className="mx-auto w-full max-w-5xl px-4 py-6 pb-28 md:px-8 md:py-8">
           {ready.length === 0 ? (
-            <div className="rounded-md border border-line bg-paper-2 px-6 py-20 text-center">
-              <p className="font-display text-xl font-semibold text-foreground">
+            <div className="rounded-lg border border-line bg-paper-2 px-6 py-20 text-center shadow-[var(--shadow-card)]">
+              <p className="font-serif-accent text-2xl text-foreground md:text-3xl">
                 Nothing on the ready shelf
               </p>
-              <p className="mx-auto mt-2 max-w-md text-body-sm text-muted-foreground">
+              <p className="mx-auto mt-3 max-w-md text-body-sm text-muted-foreground">
                 Prepare reels in Compose, mark them ready, then set when they go out here.
               </p>
               <Link

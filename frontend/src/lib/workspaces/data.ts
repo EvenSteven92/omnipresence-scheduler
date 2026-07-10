@@ -9,7 +9,8 @@ export const WORKSPACES: WorkspaceProfile[] = [
     initials: "T",
     tagline: "Church · multi-platform ministry",
     onboardingStatus: "needs_accounts",
-    accent: "#000000",
+    /** Brand purple from torcc.org (--base-brand--brand-01). Primary CTAs stay black. */
+    accent: "#812bf5",
     voice:
       "Warm, pastoral, and encouraging. Christ-centered and Scripture-aware. Invite reflection and hope; avoid hype, clickbait, and salesy language. Speak to the heart.",
     postingTimes: {

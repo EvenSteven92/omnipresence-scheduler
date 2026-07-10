@@ -100,19 +100,19 @@ export function Sidebar() {
         data-testid="app-sidebar"
         data-collapsed={collapsed ? "true" : "false"}
         style={{ width: collapsed ? "var(--sidebar-width-collapsed)" : "var(--sidebar-width)" }}
-        className="relative hidden h-full min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-line bg-background px-4 py-5 transition-[width] duration-200 md:flex"
+        className="relative hidden h-full min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-line bg-paper-2 px-4 py-5 transition-[width] duration-200 md:flex"
       >
         <div className="flex items-center justify-between gap-2 px-1">
           {!collapsed ? (
             <Link to="/" className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-md border border-foreground bg-foreground font-display text-lg font-semibold text-background">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground font-display text-lg font-bold text-background">
                 O
               </span>
               <span className="min-w-0 leading-none">
-                <span className="block font-display text-base font-semibold text-foreground">
+                <span className="block font-display text-base font-bold tracking-tight text-foreground">
                   OmniPresence
                 </span>
-                <span className="mt-1 block text-caption font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <span className="mt-1 block text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                   By TORCC
                 </span>
               </span>
@@ -120,7 +120,7 @@ export function Sidebar() {
           ) : (
             <Link
               to="/"
-              className="mx-auto flex h-9 w-9 items-center justify-center rounded-md border border-foreground bg-foreground font-display text-lg font-semibold text-background"
+              className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-foreground font-display text-lg font-bold text-background"
               title="OmniPresence"
             >
               O
@@ -168,7 +168,7 @@ export function Sidebar() {
           <Link
             to="/scheduler"
             className={cn(
-              "flex items-center justify-center gap-2 rounded-md border border-foreground bg-primary px-4 py-3.5 font-display text-sm font-medium text-white transition-colors duration-150 hover:bg-[#262626] hover:text-white",
+              "flex items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-4 py-3.5 font-display text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#262626] hover:text-white",
               collapsed && "px-2",
             )}
           >
@@ -232,12 +232,14 @@ function SidebarItem({
       data-testid={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
       title={collapsed ? label : undefined}
       className={cn(
-        "group flex items-center gap-3 rounded-md border border-transparent px-3 py-2.5 font-display text-sm font-medium text-muted-foreground transition-colors",
-        "hover:bg-paper-2 hover:text-foreground",
+        "group flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 font-display text-sm font-medium text-muted-foreground transition-colors",
+        "hover:bg-background hover:text-foreground",
         collapsed && "justify-center px-2",
       )}
       activeProps={{
-        className: cn("!border-foreground !bg-foreground !text-background"),
+        className: cn(
+          "!border-brand/30 !bg-brand-soft !text-foreground !font-semibold",
+        ),
       }}
     >
       <Icon className="h-[1.125rem] w-[1.125rem] shrink-0" strokeWidth={1.8} />
