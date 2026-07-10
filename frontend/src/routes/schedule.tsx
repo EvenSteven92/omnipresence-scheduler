@@ -483,10 +483,30 @@ function SchedulePage() {
                 ) : null}
               </header>
 
+              {focusDraft ? (
+                <div
+                  data-testid="editing-context-bar"
+                  className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-md border border-line bg-card/95 px-3 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-card/90"
+                >
+                  <span className="text-caption font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    Editing
+                  </span>
+                  <span className="min-w-0 truncate font-display text-sm font-semibold text-foreground">
+                    {draftDisplayTitle(focusDraft)}
+                  </span>
+                  {selected.length > 1 ? (
+                    <span className="text-xs text-muted-foreground">
+                      · {selected.length} selected (cadence applies to all)
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+
               <div className="space-y-5">
-                {/* Proposed calendar — all ready with times */}
+                {/* Proposed calendar — multi-card days stack; existing schedule muted */}
                 <ProposedScheduleCalendar
                   drafts={calendarDrafts.length > 0 ? calendarDrafts : ready}
+                  committedPosts={workspace.scheduledPosts}
                   highlightedIds={selectedIds}
                   focusId={focusId}
                   onFocusCard={(id) => {

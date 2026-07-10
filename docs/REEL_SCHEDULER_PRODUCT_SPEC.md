@@ -21,27 +21,45 @@ For each draft with proposedTimes:
 - Same card Mon IG + Wed YT → **two day cells**, one chip each day  
 - Never show IG/YT chips on the grid  
 
-### 10.3 Week vs month
+### 10.3 Multi-card same day
+When **two or more cards** land on the same local day:
+1. **Sort** by earliest proposed time that day (stable by id)
+2. Week shows up to **3** chips; month up to **2**
+3. **`+N more` is clickable** — opens a day panel listing every card in time order
+4. Day number / count badge also open the same panel
+5. Selecting a proposed card in the panel focuses it for destinations/times
+
+### 10.4 Two layers (proposed + existing)
+| Layer | Style | Source |
+|-------|-------|--------|
+| **Proposed** | Solid chips, selectable | Ready-shelf drafts with `proposedTimes` |
+| **Existing** | Muted dashed chips | `workspace.scheduledPosts` (not published) |
+
+- Toggle **Show existing** defaults **ON**
+- Existing posts are context only (not editable from this calendar)
+- Cadence already avoids conflicts with committed slots; the layer makes that visible
+
+### 10.5 Week vs month
 | View | Density |
 |------|---------|
-| **Week** | 7 columns; up to 3 thumbs+titles per day; `+N` overflow |
+| **Week** | 7 columns; up to 3 thumbs+titles per day; `+N` → day panel |
 | **Month** | Compact pills; 1–2 titles then `+N`; day click lists cards |
 
 Toggle Week | Month; prev/next; updates live when cadence/times change.
 
-### 10.4 Multi-card selection UX
+### 10.6 Multi-card selection UX
 | Selection | Main panel |
 |-----------|------------|
 | 0 | Empty state |
 | 1 | Destinations + full time editor for that card + calendar |
 | 2+ | **Batch mode**: calendar first (all selected highlighted); **agenda list** “Card → days”; destinations for **focus** card; cadence applies to **all selected** with conflict avoidance |
 
-Cadence/AI times use `schedule-engine` assigned slots so reel N considers reels 1…N-1 (min gap / day caps). UI copy: *“Times avoid stacking the same network too close.”*
+Sticky **Editing: {title}** bar tracks the focus card. Cadence/AI times use `schedule-engine` assigned slots so reel N considers reels 1…N-1 (min gap / day caps). UI copy: *“Times avoid stacking the same network too close.”*
 
-### 10.5 Components
-- `lib/proposed-schedule-calendar.ts`
-- `components/schedule/ProposedScheduleCalendar.tsx`
-- Schedule page layout: shelf | (calendar + batch agenda + destinations + times)
+### 10.7 Components
+- `lib/proposed-schedule-calendar.ts` — day keys, sort-by-earliest, draft + committed grouping
+- `components/schedule/ProposedScheduleCalendar.tsx` — week/month, layers, day panel
+- Schedule page layout: shelf | (sticky edit · calendar · batch agenda · destinations · times)
 
 
 ---
