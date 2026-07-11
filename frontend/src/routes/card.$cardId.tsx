@@ -10,6 +10,7 @@ import {
   Loader2,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StudioBoardCard } from "@/components/studio/StudioBoardCard";
@@ -37,7 +38,11 @@ import {
 } from "@/lib/card-display";
 import type { DraftPost } from "@/lib/composer-draft";
 import { applyProposedTimes } from "@/lib/composer-draft";
-import { getEventById } from "@/lib/events/display";
+import {
+  eventKindLabel,
+  formatEventDateTime,
+  getEventById,
+} from "@/lib/events/display";
 import type { Platform, PublishedPost, ScheduledPost } from "@/lib/mock-data";
 import { isPublishedPost, type PostDetailSource } from "@/lib/post-detail";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
@@ -229,6 +234,7 @@ function CardDetailView({
   const [toast, setToast] = useState<string | null>(null);
   const [openTranscript, setOpenTranscript] = useState(false);
   const [openCta, setOpenCta] = useState(false);
+  const [eventPreviewOpen, setEventPreviewOpen] = useState(false);
 
   const boardsUsed = useMemo(
     () => boardsContainingCardId(workspaceId, post.id),
@@ -1238,30 +1244,123 @@ function CardDetailView({
             </section>
 
             {linkedEvent ? (
-              <div className="panel space-y-2 p-4">
-                <Link
-                  to="/events"
-                  search={{ event: linkedEvent.id }}
-                  className="flex items-center gap-3 transition-colors hover:opacity-90"
-                >
-                  <span className="flex h-[34px] w-[34px] items-center justify-center rounded-lg border border-line bg-paper-2">
-                    <Layers className="h-4 w-4" strokeWidth={1.75} />
+              <button
+                type="button"
+                onClick={() => setEventPreviewOpen(true)}
+                className="panel flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-paper-2/40"
+                data-testid="card-part-of-event"
+              >
+                <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg border border-line bg-paper-2">
+                  <Layers className="h-4 w-4" strokeWidth={1.75} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-mono text-[0.5625rem] font-semibold uppercase text-muted-foreground">
+                    Part of event
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-mono text-[0.5625rem] font-semibold uppercase text-muted-foreground">
-                      Part of event
-                    </span>
-                    <span className="mt-1 block truncate font-display text-[0.9375rem] font-bold text-foreground">
-                      {linkedEvent.title}
-                    </span>
+                  <span className="mt-1 block truncate font-display text-[0.9375rem] font-bold text-foreground">
+                    {linkedEvent.title}
                   </span>
-                  <span className="font-mono text-muted-foreground">→</span>
-                </Link>
-              </div>
+                </span>
+                <span className="font-mono text-muted-foreground">→</span>
+              </button>
             ) : null}
           </aside>
         </div>
       </div>
+
+      {/* Event overview — confirm before leaving this card */}
+      {eventPreviewOpen && linkedEvent ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/25 p-4 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="event-preview-title"
+          data-testid="card-event-preview-modal"
+          onClick={() => setEventPreviewOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-lg border border-line bg-card p-5 shadow-[var(--shadow-card)] animate-slide-in-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                  Part of event
+                </p>
+                <h2
+                  id="event-preview-title"
+                  className="mt-1 font-display text-xl font-bold text-foreground"
+                >
+                  {linkedEvent.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEventPreviewOpen(false)}
+                className="rounded-md border border-line p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <dl className="mt-4 space-y-2.5 rounded-lg border border-line bg-paper-2/60 px-3 py-3 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">When</dt>
+                <dd className="text-right font-medium text-foreground">
+                  {formatEventDateTime(linkedEvent.date, "long")}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Type</dt>
+                <dd className="text-right font-medium text-foreground">
+                  {eventKindLabel(linkedEvent.kind)}
+                </dd>
+              </div>
+              {linkedEvent.description?.trim() ? (
+                <div className="border-t border-line pt-2.5">
+                  <dt className="text-caption font-semibold text-muted-foreground">
+                    Notes
+                  </dt>
+                  <dd className="mt-1 text-sm leading-relaxed text-foreground">
+                    {linkedEvent.description.trim()}
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              This card is linked to the event above. You can open the full event
+              page or stay on this card.
+            </p>
+
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setEventPreviewOpen(false)}
+                className="btn-action btn-action-secondary"
+                data-testid="event-preview-stay"
+              >
+                Stay on this card
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEventPreviewOpen(false);
+                  void navigate({
+                    to: "/events",
+                    search: { event: linkedEvent.id },
+                  });
+                }}
+                className="btn-action btn-action-primary !text-white"
+                data-testid="event-preview-go"
+              >
+                Go to event
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Reuse footer */}
       {reuseDraft ? (
