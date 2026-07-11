@@ -1,4 +1,12 @@
-import { Hand, MousePointer2, Minus, Plus, Scan } from "lucide-react";
+import {
+  CalendarClock,
+  Hand,
+  MousePointer2,
+  Minus,
+  Plus,
+  Scan,
+  Sparkles,
+} from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -47,6 +55,10 @@ export function StudioCanvas({
   onMarqueeMove,
   onMarqueeEnd,
   emptyOverlay,
+  shelfWidth = 0,
+  onOpenSchedule,
+  onNewEvent,
+  scheduleDisabled,
   className,
 }: {
   children: ReactNode;
@@ -62,6 +74,11 @@ export function StudioCanvas({
   onMarqueeEnd?: () => void;
   /** Screen-space empty state (not affected by pan/zoom). */
   emptyOverlay?: ReactNode;
+  /** Right shelf width when open — shifts bottom HUD left */
+  shelfWidth?: number;
+  onOpenSchedule?: () => void;
+  onNewEvent?: () => void;
+  scheduleDisabled?: boolean;
   className?: string;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -328,7 +345,16 @@ export function StudioCanvas({
         ) : null}
       </div>
 
-      <div className="pointer-events-none absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 flex-wrap items-center justify-center gap-2">
+      <div
+        className="pointer-events-none absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 flex-wrap items-center justify-center gap-2 transition-transform duration-200 ease-out"
+        style={{
+          // Keep tools clear of the schedule shelf
+          transform:
+            shelfWidth > 0
+              ? `translateX(calc(-50% - ${shelfWidth / 2}px))`
+              : "translateX(-50%)",
+        }}
+      >
         <div className="pointer-events-auto flex items-center gap-0.5 rounded-lg border border-line bg-card p-1 shadow-[var(--shadow-card)]">
           <button
             type="button"
@@ -357,6 +383,32 @@ export function StudioCanvas({
             )}
           >
             <Hand className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            title={
+              scheduleDisabled
+                ? "Select caption-ready reels to schedule"
+                : "Open schedule shelf"
+            }
+            data-testid="canvas-open-schedule"
+            disabled={scheduleDisabled}
+            onClick={onOpenSchedule}
+            className={cn(
+              "rounded-md p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+              "text-muted-foreground hover:bg-secondary hover:text-foreground",
+            )}
+          >
+            <CalendarClock className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            title="New event card on board"
+            data-testid="canvas-new-event"
+            onClick={onNewEvent}
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <Sparkles className="h-4 w-4" />
           </button>
         </div>
         <div className="pointer-events-auto flex items-center gap-0.5 rounded-lg border border-line bg-card p-1 shadow-[var(--shadow-card)]">
@@ -394,10 +446,6 @@ export function StudioCanvas({
           </button>
         </div>
       </div>
-
-      <p className="pointer-events-none absolute bottom-4 right-4 hidden rounded-md border border-line bg-card/90 px-2 py-1 text-[0.65rem] text-muted-foreground shadow-sm md:block">
-        Drag empty to marquee · H pan · Space pan · Scroll pan
-      </p>
     </div>
   );
 }

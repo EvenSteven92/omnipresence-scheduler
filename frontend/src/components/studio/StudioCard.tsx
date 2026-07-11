@@ -1,14 +1,12 @@
+import { Link2 } from "lucide-react";
 import type { DraftPost } from "@/lib/composer-draft";
 import { draftDisplayTitle } from "@/lib/composer-draft";
-import type { Platform } from "@/lib/mock-data";
-import { combineDateAndTime } from "@/lib/schedule-engine";
 import { STUDIO_CARD_WIDTH, studioStage } from "@/lib/studio-layout";
 import { cn } from "@/lib/utils";
 import { StudioCaptionSection } from "./StudioCaptionSection";
 import { StudioCardMedia } from "./StudioCardMedia";
 import { StudioCardToolbar, type StudioTool } from "./StudioCardToolbar";
 import { StudioCtaSection } from "./StudioCtaSection";
-import { StudioScheduleSection } from "./StudioScheduleSection";
 import { StudioTitleSection } from "./StudioTitleSection";
 import { StudioTranscriptSection } from "./StudioTranscriptSection";
 
@@ -26,15 +24,12 @@ export function StudioCard({
   busy,
   canDrag,
   liveOffset,
-  workspacePlatforms,
-  canCommit,
+  eventTitle,
   onSelect,
   onChange,
   onTool,
   onGenerateTranscript,
   onGenerateCaption,
-  onBestTimes,
-  onCommit,
   onDragStart,
 }: {
   draft: DraftPost;
@@ -43,15 +38,12 @@ export function StudioCard({
   busy?: StudioTool | null;
   canDrag: boolean;
   liveOffset?: { x: number; y: number } | null;
-  workspacePlatforms: Platform[];
-  canCommit: boolean;
+  eventTitle?: string;
   onSelect: (e: React.MouseEvent | React.PointerEvent) => void;
   onChange: (updater: (d: DraftPost) => DraftPost) => void;
   onTool: (tool: StudioTool) => void;
   onGenerateTranscript: () => void;
   onGenerateCaption: () => void;
-  onBestTimes: () => void;
-  onCommit: () => void;
   onDragStart: (e: React.PointerEvent) => void;
 }) {
   const stage = studioStage(draft);
@@ -126,11 +118,17 @@ export function StudioCard({
           </p>
           <p className="mt-0.5 text-caption text-muted-foreground">
             {stage === "caption"
-              ? "Caption ready — schedule when set"
+              ? "Caption ready — open Schedule"
               : stage === "script"
                 ? "Script started — generate caption"
                 : "New reel — transcript & CTA"}
           </p>
+          {eventTitle ? (
+            <p className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded border border-line bg-paper-2 px-1.5 py-0.5 text-[0.65rem] font-medium text-foreground">
+              <Link2 className="h-3 w-3 shrink-0" />
+              <span className="truncate">{eventTitle}</span>
+            </p>
+          ) : null}
         </div>
 
         {selected || open.transcript ? (
@@ -157,9 +155,7 @@ export function StudioCard({
           <StudioTitleSection
             open={Boolean(open.title ?? open.caption)}
             value={draft.title ?? ""}
-            onToggle={() =>
-              patchOpen("title", !(open.title ?? open.caption))
-            }
+            onToggle={() => patchOpen("title", !(open.title ?? open.caption))}
             onChange={(title) => onChange((d) => ({ ...d, title }))}
           />
         ) : null}
@@ -174,27 +170,6 @@ export function StudioCard({
             onCaption={(caption) => onChange((d) => ({ ...d, caption }))}
             onHashtags={(hashtags) => onChange((d) => ({ ...d, hashtags }))}
             onGenerate={onGenerateCaption}
-          />
-        ) : null}
-
-        {selected || open.schedule ? (
-          <StudioScheduleSection
-            open={Boolean(open.schedule)}
-            draft={draft}
-            workspacePlatforms={workspacePlatforms}
-            busy={busy === "schedule"}
-            canCommit={canCommit}
-            onToggle={() => patchOpen("schedule", !open.schedule)}
-            onPlatforms={(platforms) => onChange((d) => ({ ...d, platforms }))}
-            onTime={(platform, dateStr, timeStr) => {
-              const iso = combineDateAndTime(dateStr, timeStr);
-              onChange((d) => ({
-                ...d,
-                proposedTimes: { ...(d.proposedTimes ?? {}), [platform]: iso },
-              }));
-            }}
-            onBestTimes={onBestTimes}
-            onCommit={onCommit}
           />
         ) : null}
       </article>

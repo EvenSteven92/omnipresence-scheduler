@@ -73,7 +73,7 @@ uvicorn server:app --host 127.0.0.1 --port 8001
 
 ### Routing
 
-- **Pages:** `frontend/src/routes/*.tsx` — e.g. `/`, `/calendar`, `/studio` (whiteboard compose+schedule), `/analytics`, `/events`, `/workspaces`. Legacy `/scheduler` and `/schedule` redirect to `/studio`.
+- **Pages:** `frontend/src/routes/*.tsx` — **Studio** (`/studio`) is primary (whiteboard). Queue/Calendar/Events are linear views. Legacy `/scheduler` and `/schedule` redirect to `/studio`. Design: `docs/STUDIO_SCHEDULING_FLOW.md`.
 - **API:** `frontend/src/routes/api/**/*.ts` — OAuth callbacks, metrics, sync, team session, AI generate
 - **Shell:** `frontend/src/routes/__root.tsx` — sidebar, sync status bar, workspace provider
 
