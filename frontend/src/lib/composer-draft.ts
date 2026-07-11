@@ -62,6 +62,7 @@ export interface DraftPost {
   studioOpen?: {
     transcript?: boolean;
     cta?: boolean;
+    title?: boolean;
     caption?: boolean;
     schedule?: boolean;
   };

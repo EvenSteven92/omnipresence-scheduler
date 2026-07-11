@@ -80,7 +80,7 @@ export function StudioScheduleSection({
                         type="date"
                         value={dateStr}
                         onChange={(e) => onTime(p, e.target.value, timeStr || "12:00")}
-                        className="min-w-0 flex-1 rounded border border-line bg-card px-1.5 py-1 text-xs"
+                        className="min-w-0 flex-1 rounded border border-line bg-card px-1.5 py-1 text-xs focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
                       />
                       <input
                         type="time"
@@ -88,7 +88,7 @@ export function StudioScheduleSection({
                         onChange={(e) =>
                           onTime(p, dateStr || toDateInputValue(new Date()), e.target.value)
                         }
-                        className="w-[5.5rem] rounded border border-line bg-card px-1.5 py-1 text-xs"
+                        className="w-[5.5rem] rounded border border-line bg-card px-1.5 py-1 text-xs focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
                       />
                     </li>
                   );

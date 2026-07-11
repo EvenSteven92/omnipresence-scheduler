@@ -46,6 +46,7 @@ export function StudioCanvas({
   onMarqueeStart,
   onMarqueeMove,
   onMarqueeEnd,
+  emptyOverlay,
   className,
 }: {
   children: ReactNode;
@@ -59,11 +60,14 @@ export function StudioCanvas({
   onMarqueeStart?: (world: { x: number; y: number }, e: React.PointerEvent) => void;
   onMarqueeMove?: (world: { x: number; y: number }) => void;
   onMarqueeEnd?: () => void;
+  /** Screen-space empty state (not affected by pan/zoom). */
+  emptyOverlay?: ReactNode;
   className?: string;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const [pan, setPan] = useState({ x: 40, y: 40 });
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const didFit = useRef(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [panning, setPanning] = useState(false);
   const panRef = useRef<{
@@ -216,7 +220,7 @@ export function StudioCanvas({
     const box = cardsBoundingBox(drafts);
     const el = rootRef.current;
     if (!box || !el) {
-      setPan({ x: 40, y: 40 });
+      setPan({ x: 0, y: 0 });
       setZoom(1);
       return;
     }
@@ -232,6 +236,22 @@ export function StudioCanvas({
       y: (vh - (box.minY + box.maxY) * z) / 2,
     });
   }
+
+  // Fit cards once when board loads with existing drafts
+  useEffect(() => {
+    if (didFit.current) return;
+    if (drafts.length === 0) {
+      setPan({ x: 0, y: 0 });
+      setZoom(1);
+      return;
+    }
+    const t = window.setTimeout(() => {
+      fitToCards();
+      didFit.current = true;
+    }, 50);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drafts.length]);
 
   const marqueeBox =
     marquee != null
@@ -299,6 +319,13 @@ export function StudioCanvas({
             />
           ) : null}
         </div>
+
+        {/* Screen-space empty welcome — always centered in the viewport */}
+        {emptyOverlay ? (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
+            <div className="pointer-events-auto">{emptyOverlay}</div>
+          </div>
+        ) : null}
       </div>
 
       <div className="pointer-events-none absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 flex-wrap items-center justify-center gap-2">

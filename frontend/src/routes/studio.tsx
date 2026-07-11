@@ -9,26 +9,32 @@ import {
 } from "@/components/studio/StudioCanvas";
 import { StudioCard } from "@/components/studio/StudioCard";
 import type { StudioTool } from "@/components/studio/StudioCardToolbar";
+import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
 import {
   applyMeasuredDimensions,
+  applyProposedTimes,
   defaultDraftFromFile,
+  suggestTimesForDraft,
   type DraftPost,
 } from "@/lib/composer-draft";
 import {
   readComposerShelf,
   removeFromReady,
   revokeDraftMediaUrls,
+  stageDraftsAsReady,
   writeComposerShelf,
 } from "@/lib/draft-storage";
 import { measureMediaFile } from "@/lib/media-aspect";
+import { pendingSlotsFromQueue } from "@/lib/schedule-engine";
 import { generateCaptionWithHashtags, generateTranscript } from "@/lib/studio-ai";
 import {
   cardBounds,
   cascadePosition,
   ensureCanvasPositions,
   hasScriptSource,
-  rectsIntersect,
+  isCaptionReady,
   normalizeRect,
+  rectsIntersect,
   type Viewport,
 } from "@/lib/studio-layout";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
@@ -41,7 +47,7 @@ export const Route = createFileRoute("/studio")({
       {
         name: "description",
         content:
-          "Whiteboard for preparing reels — transcript, CTA, then caption with hashtags.",
+          "Whiteboard for preparing reels — transcript, CTA, title, caption, then schedule.",
       },
     ],
   }),
@@ -51,7 +57,7 @@ export const Route = createFileRoute("/studio")({
 const DRAG_THRESHOLD = 3;
 
 function StudioPage() {
-  const { workspace, workspaceId } = useWorkspace();
+  const { workspace, workspaceId, addScheduledPosts } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
   const events = useMemo(
     () => mergeWorkspaceEvents(workspace.events, customEvents),
@@ -72,7 +78,7 @@ function StudioPage() {
   } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const viewportRef = useRef<Viewport>({ panX: 40, panY: 40, zoom: 1 });
+  const viewportRef = useRef<Viewport>({ panX: 0, panY: 0, zoom: 1 });
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -83,10 +89,9 @@ function StudioPage() {
     const shelf = readComposerShelf(workspaceId);
     const merged = ensureCanvasPositions([...shelf.drafting, ...shelf.ready]);
     setDrafts(merged);
-    if (merged[0]) {
-      setSelectedIds(new Set([merged[0].id]));
-      setFocusId(merged[0].id);
-    }
+    // No auto-select — show board / welcome cleanly
+    setSelectedIds(new Set());
+    setFocusId(null);
   }, [workspaceId]);
 
   useEffect(() => {
@@ -203,7 +208,7 @@ function StudioPage() {
         ...d,
         caption: next.caption,
         hashtags: next.hashtags,
-        studioOpen: { ...d.studioOpen, caption: true },
+        studioOpen: { ...d.studioOpen, caption: true, title: true },
       }));
       showToast("Caption generated from transcript & CTA");
     } catch (e) {
@@ -211,6 +216,55 @@ function StudioPage() {
     } finally {
       setBusy(null);
     }
+  }
+
+  function runBestTimes(id: string) {
+    const draft = drafts.find((d) => d.id === id);
+    if (!draft || draft.platforms.length === 0) return;
+    setBusy("schedule");
+    try {
+      const assigned = pendingSlotsFromQueue(drafts.filter((d) => d.id !== id));
+      const times = suggestTimesForDraft(
+        draft,
+        workspace.scheduledPosts,
+        assigned,
+        workspace.postingTimes,
+      );
+      updateDraft(id, (d) =>
+        applyProposedTimes(
+          { ...d, studioOpen: { ...d.studioOpen, schedule: true } },
+          times,
+        ),
+      );
+      showToast("Peak times applied");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function commitDraft(id: string) {
+    const draft = drafts.find((d) => d.id === id);
+    if (!draft) return;
+    if (!isCaptionReady(draft)) {
+      showToast("Add caption and hashtags first");
+      return;
+    }
+    const post = draftToScheduledPost(draft);
+    if (!post) {
+      showToast("Set platforms and times first");
+      return;
+    }
+    stageDraftsAsReady(workspaceId, [id]);
+    await addScheduledPosts([post]);
+    removeFromReady(workspaceId, [id]);
+    setDrafts((cur) => cur.filter((d) => d.id !== id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setFocusId((fid) => (fid === id ? null : fid));
+    showToast("Scheduled — see Queue / Calendar");
   }
 
   function handleTool(id: string, tool: StudioTool) {
@@ -238,25 +292,28 @@ function StudioPage() {
     if (tool === "caption") {
       updateDraft(id, (d) => ({
         ...d,
-        studioOpen: { ...d.studioOpen, caption: true },
+        studioOpen: { ...d.studioOpen, caption: true, title: true },
       }));
       void runCaption(id);
+      return;
+    }
+    if (tool === "schedule") {
+      const draft = drafts.find((d) => d.id === id);
+      if (!draft || !isCaptionReady(draft)) {
+        showToast("Add caption and hashtags first");
+        return;
+      }
+      updateDraft(id, (d) => ({
+        ...d,
+        studioOpen: { ...d.studioOpen, schedule: true },
+      }));
     }
   }
 
-  function selectCard(id: string, e: { shiftKey?: boolean }) {
-    if (e.shiftKey) {
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-      setFocusId(id);
-    } else {
-      setSelectedIds(new Set([id]));
-      setFocusId(id);
-    }
+  /** Single-select only — multi-select is marquee drag. */
+  function selectCard(id: string) {
+    setSelectedIds(new Set([id]));
+    setFocusId(id);
   }
 
   function onCardDragStartFixed(id: string, e: React.PointerEvent) {
@@ -294,7 +351,10 @@ function StudioPage() {
       const z = viewportRef.current.zoom || 1;
       const dx = (ev.clientX - startClientX) / z;
       const dy = (ev.clientY - startClientY) / z;
-      if (!moved && Math.hypot(ev.clientX - startClientX, ev.clientY - startClientY) < DRAG_THRESHOLD) {
+      if (
+        !moved &&
+        Math.hypot(ev.clientX - startClientX, ev.clientY - startClientY) < DRAG_THRESHOLD
+      ) {
         return;
       }
       moved = true;
@@ -340,7 +400,6 @@ function StudioPage() {
     setMarquee((m) => {
       if (!m) return null;
       const box = normalizeRect(m.start, m.current);
-      // Click without drag — clear selection
       if (box.w < 4 && box.h < 4) {
         setSelectedIds(new Set());
         setFocusId(null);
@@ -348,8 +407,7 @@ function StudioPage() {
       }
       const hit = new Set<string>();
       for (const d of drafts) {
-        const b = cardBounds(d);
-        if (rectsIntersect(box, b)) hit.add(d.id);
+        if (rectsIntersect(box, cardBounds(d))) hit.add(d.id);
       }
       setSelectedIds(hit);
       setFocusId(hit.size > 0 ? [...hit][0]! : null);
@@ -364,6 +422,26 @@ function StudioPage() {
         ? [...selectedIds][0]!
         : null;
 
+  const emptyOverlay =
+    drafts.length === 0 ? (
+      <div className="w-[min(90vw,22rem)] text-center">
+        <p className="font-serif-accent text-2xl text-foreground md:text-3xl">
+          Drop reels onto the board
+        </p>
+        <p className="mt-3 text-body-sm text-muted-foreground">
+          Transcript + CTA → title → caption, then schedule when ready.
+        </p>
+        <button
+          type="button"
+          className="btn-action btn-action-primary mt-5 !text-white"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload className="h-4 w-4" />
+          Add reels
+        </button>
+      </div>
+    ) : null;
+
   return (
     <div className="relative flex h-full min-h-0 flex-col" data-testid="studio-page">
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-card px-4 py-3">
@@ -375,7 +453,7 @@ function StudioPage() {
             Reel board
           </h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Transcript + CTA → caption. Drag to move · marquee to multi-select.
+            Drag empty to multi-select · Schedule unlocks after caption + hashtags
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -406,11 +484,9 @@ function StudioPage() {
         drafts={drafts}
         mode={mode}
         onModeChange={setMode}
-        onBackgroundClick={(e) => {
-          if (!e.shiftKey) {
-            setSelectedIds(new Set());
-            setFocusId(null);
-          }
+        onBackgroundClick={() => {
+          setSelectedIds(new Set());
+          setFocusId(null);
         }}
         onDropFiles={addFiles}
         onViewportChange={(vp) => {
@@ -420,32 +496,15 @@ function StudioPage() {
         onMarqueeStart={onMarqueeStart}
         onMarqueeMove={onMarqueeMove}
         onMarqueeEnd={onMarqueeEnd}
+        emptyOverlay={emptyOverlay}
       >
-        {drafts.length === 0 ? (
-          <div className="pointer-events-none absolute left-1/2 top-1/2 w-[min(90vw,22rem)] -translate-x-1/2 -translate-y-1/2 text-center">
-            <p className="font-serif-accent text-2xl text-foreground md:text-3xl">
-              Drop reels onto the board
-            </p>
-            <p className="mt-3 text-body-sm text-muted-foreground">
-              Build transcript and CTA, then generate caption with hashtags.
-            </p>
-            <button
-              type="button"
-              className="btn-action btn-action-primary pointer-events-auto mt-5 !text-white"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="h-4 w-4" />
-              Add reels
-            </button>
-          </div>
-        ) : null}
-
         {drafts.map((draft) => {
           const isSel = selectedIds.has(draft.id);
           const live =
             liveDrag && liveDrag.ids.includes(draft.id)
               ? { x: liveDrag.dx, y: liveDrag.dy }
               : null;
+          const canCommit = draftToScheduledPost(draft) != null;
           return (
             <StudioCard
               key={draft.id}
@@ -455,11 +514,15 @@ function StudioPage() {
               busy={primaryId === draft.id ? busy : null}
               canDrag={mode === "select"}
               liveOffset={live}
-              onSelect={(e) => selectCard(draft.id, e)}
+              workspacePlatforms={workspace.platforms}
+              canCommit={canCommit}
+              onSelect={() => selectCard(draft.id)}
               onChange={(updater) => updateDraft(draft.id, updater)}
               onTool={(tool) => handleTool(draft.id, tool)}
               onGenerateTranscript={() => void runTranscript(draft.id)}
               onGenerateCaption={() => void runCaption(draft.id)}
+              onBestTimes={() => runBestTimes(draft.id)}
+              onCommit={() => void commitDraft(draft.id)}
               onDragStart={(e) => onCardDragStartFixed(draft.id, e)}
             />
           );

@@ -1,7 +1,10 @@
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function StudioCtaSection({
+const fieldClass =
+  "w-full rounded-md border border-line bg-paper-2 px-2.5 py-2 text-sm text-foreground focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20";
+
+export function StudioTitleSection({
   open,
   value,
   onToggle,
@@ -13,14 +16,14 @@ export function StudioCtaSection({
   onChange: (v: string) => void;
 }) {
   return (
-    <section className="border-t border-line" data-testid="studio-cta-section">
+    <section className="border-t border-line" data-testid="studio-title-section">
       <button
         type="button"
         onClick={onToggle}
         className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
       >
         <span className="text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          Preferred call to action
+          Title
         </span>
         <ChevronDown
           className={cn(
@@ -36,7 +39,10 @@ export function StudioCtaSection({
         )}
       >
         <div className="min-h-0 overflow-hidden">
-          <div className="px-3 pb-3">
+          <div className="space-y-1.5 px-3 pb-3">
+            <p className="text-[0.7rem] text-muted-foreground">
+              Required for YouTube Shorts and Rumble — keep it clear and searchable.
+            </p>
             <input
               type="text"
               value={value}
@@ -44,8 +50,9 @@ export function StudioCtaSection({
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              className="w-full rounded-md border border-line bg-paper-2 px-2.5 py-2 text-sm text-foreground focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
-              placeholder="e.g. Join us Sunday · Link in bio · Pray with us"
+              className={fieldClass}
+              placeholder="Short title for Shorts / Rumble…"
+              maxLength={100}
             />
           </div>
         </div>

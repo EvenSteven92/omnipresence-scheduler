@@ -52,7 +52,7 @@ export function StudioCaptionSection({
               onKeyDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
               rows={4}
-              className="w-full resize-y rounded-md border border-line bg-paper-2 px-2.5 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
+              className="w-full resize-y rounded-md border border-line bg-paper-2 px-2.5 py-2 text-sm text-foreground focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
               placeholder="Caption…"
             />
             <input
@@ -62,7 +62,7 @@ export function StudioCaptionSection({
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              className="w-full rounded-md border border-line bg-paper-2 px-2.5 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
+              className="w-full rounded-md border border-line bg-paper-2 px-2.5 py-2 text-sm text-foreground focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
               placeholder="#hashtags"
             />
             <button

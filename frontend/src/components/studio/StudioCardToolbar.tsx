@@ -1,9 +1,22 @@
-import { FileText, Loader2, Megaphone, Sparkles, Trash2, Type } from "lucide-react";
+import {
+  CalendarClock,
+  FileText,
+  Loader2,
+  Megaphone,
+  Sparkles,
+  Trash2,
+  Type,
+} from "lucide-react";
 import type { DraftPost } from "@/lib/composer-draft";
-import { hasScriptSource, studioStage } from "@/lib/studio-layout";
+import { hasScriptSource, isCaptionReady, studioStage } from "@/lib/studio-layout";
 import { cn } from "@/lib/utils";
 
-export type StudioTool = "transcript" | "cta" | "caption" | "remove";
+export type StudioTool =
+  | "transcript"
+  | "cta"
+  | "caption"
+  | "schedule"
+  | "remove";
 
 export function StudioCardToolbar({
   draft,
@@ -16,6 +29,7 @@ export function StudioCardToolbar({
 }) {
   const stage = studioStage(draft);
   const canCaption = hasScriptSource(draft);
+  const canSchedule = isCaptionReady(draft);
 
   const items: Array<{
     id: StudioTool;
@@ -39,13 +53,23 @@ export function StudioCardToolbar({
     },
     {
       id: "caption",
-      label: canCaption ? "Caption" : "Caption",
+      label: "Caption",
       icon: Type,
-      primary: canCaption,
-      disabled: !canCaption && busy !== "caption",
+      primary: canCaption && !canSchedule,
+      disabled: !canCaption,
       title: canCaption
         ? "Generate caption + hashtags from transcript & CTA"
         : "Add a transcript or call to action first",
+    },
+    {
+      id: "schedule",
+      label: "Schedule",
+      icon: CalendarClock,
+      primary: canSchedule,
+      disabled: !canSchedule,
+      title: canSchedule
+        ? "Set destinations and times"
+        : "Add caption and hashtags first",
     },
     {
       id: "remove",
@@ -67,14 +91,15 @@ export function StudioCardToolbar({
         const open =
           (item.id === "transcript" && draft.studioOpen?.transcript) ||
           (item.id === "cta" && draft.studioOpen?.cta) ||
-          (item.id === "caption" && draft.studioOpen?.caption);
+          (item.id === "caption" && draft.studioOpen?.caption) ||
+          (item.id === "schedule" && draft.studioOpen?.schedule);
 
         return (
           <button
             key={item.id}
             type="button"
             data-testid={`studio-tool-${item.id}`}
-            disabled={isBusy || (item.id === "caption" && !canCaption && !isBusy)}
+            disabled={Boolean(item.disabled) || isBusy}
             onClick={() => onTool(item.id)}
             title={item.title ?? item.label}
             className={cn(

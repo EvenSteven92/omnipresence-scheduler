@@ -45,6 +45,11 @@ export function hasScriptSource(draft: DraftPost): boolean {
   return Boolean(draft.transcript?.trim()) || Boolean(draft.callToAction?.trim());
 }
 
+/** Caption + hashtags ready → Schedule tool unlocks. */
+export function isCaptionReady(draft: DraftPost): boolean {
+  return Boolean(draft.caption?.trim()) && Boolean(draft.hashtags?.trim());
+}
+
 /** CSS aspect-ratio string from measured pixels or format heuristics. */
 export function mediaAspectRatioCss(draft: DraftPost): string {
   if (draft.width && draft.height && draft.width > 0 && draft.height > 0) {
