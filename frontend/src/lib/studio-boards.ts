@@ -22,6 +22,10 @@ export type StudioBoardSummary = {
   readyCount: number;
   scheduledCount: number;
   liveCount: number;
+  /** Up to 4 preview URLs for 16:9 collage on the picker. */
+  previewUrls?: string[];
+  /** Event titles referenced on this board (for collapsible list). */
+  eventTitles?: string[];
 };
 
 export type StudioBoardMeta = {
@@ -92,6 +96,7 @@ export function emptySnapshot(): StudioBoardSnapshot {
 export function summarizeSnapshot(
   snap: StudioBoardSnapshot,
   scheduledPosts: ScheduledPost[] = [],
+  opts?: { eventTitles?: string[]; previewUrls?: string[] },
 ): StudioBoardSummary {
   const byId = new Map(scheduledPosts.map((p) => [p.id, p]));
   let scheduledCount = 0;
@@ -101,12 +106,23 @@ export function summarizeSnapshot(
     if (p?.status === "published") liveCount += 1;
     else if (p?.status === "scheduled") scheduledCount += 1;
   }
+  const previewUrls =
+    opts?.previewUrls ??
+    snap.drafts
+      .map((d) => d.previewUrl || d.dropboxDirectUrl || "")
+      .filter(Boolean)
+      .slice(0, 4);
   return {
     reelCount: snap.drafts.length,
     eventCount: snap.boardEventIds.length,
     readyCount: snap.drafts.filter((d) => isCaptionReady(d)).length,
     scheduledCount,
     liveCount,
+    previewUrls: previewUrls.length > 0 ? previewUrls : undefined,
+    eventTitles:
+      opts?.eventTitles && opts.eventTitles.length > 0
+        ? opts.eventTitles
+        : undefined,
   };
 }
 
@@ -154,10 +170,13 @@ export function writeBoard(
   boardId: StudioBoardId,
   snapshot: StudioBoardSnapshot,
   scheduledPosts: ScheduledPost[] = [],
+  opts?: { eventTitles?: string[] },
 ) {
   const now = new Date().toISOString();
   writeJson(dataKey(workspaceId, boardId), snapshot);
-  const summary = summarizeSnapshot(snapshot, scheduledPosts);
+  const summary = summarizeSnapshot(snapshot, scheduledPosts, {
+    eventTitles: opts?.eventTitles,
+  });
   const list = listBoards(workspaceId);
   const next = list.map((b) =>
     b.id === boardId ? { ...b, updatedAt: now, summary } : b,
@@ -206,7 +225,8 @@ export function renameBoard(workspaceId: WorkspaceId, boardId: StudioBoardId, na
   writeIndex(workspaceId, list);
 }
 
-export function archiveBoard(workspaceId: WorkspaceId, boardId: StudioBoardId) {
+/** Persist board into the Saved library (keeps snapshot; unsets as active). */
+export function saveBoard(workspaceId: WorkspaceId, boardId: StudioBoardId) {
   const list = listBoards(workspaceId).map((b) =>
     b.id === boardId
       ? { ...b, archived: true, updatedAt: new Date().toISOString() }
@@ -219,6 +239,10 @@ export function archiveBoard(workspaceId: WorkspaceId, boardId: StudioBoardId) {
   }
 }
 
+/** @deprecated use saveBoard — archived flag means “saved for later” */
+export const archiveBoard = saveBoard;
+
+/** Move a saved board back into Recent. */
 export function restoreBoard(workspaceId: WorkspaceId, boardId: StudioBoardId) {
   const list = listBoards(workspaceId).map((b) =>
     b.id === boardId
@@ -300,4 +324,20 @@ export function relativeBoardTime(iso: string): string {
   const days = Math.round(hours / 24);
   if (days < 14) return `${days}d ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+export function formatBoardDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(+d)) return "";
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+/** Whether a board has work worth offering “save first?” before leaving. */
+export function boardHasContent(snap: StudioBoardSnapshot | null | undefined): boolean {
+  if (!snap) return false;
+  return snap.drafts.length > 0 || snap.boardEventIds.length > 0;
 }

@@ -28,7 +28,7 @@ const nav: {
   icon: LucideIcon;
   countKey?: SidebarNavCountKey;
 }[] = [
-  { to: "/studio", label: "Studio", icon: Clapperboard, countKey: "ready" },
+  { to: "/studio", label: "Boards", icon: Clapperboard, countKey: "ready" },
   { to: "/", label: "Queue", icon: LayoutList, countKey: "queue" },
   { to: "/calendar", label: "Calendar", icon: CalendarDays, countKey: "calendar" },
   { to: "/events", label: "Events", icon: LayoutGrid, countKey: "events" },

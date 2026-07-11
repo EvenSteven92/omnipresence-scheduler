@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Archive, FolderOpen, Plus, Upload } from "lucide-react";
+import { FolderOpen, Plus, Save, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -8,6 +8,7 @@ import {
   type MarqueeWorld,
 } from "@/components/studio/StudioCanvas";
 import { StudioBoardPicker } from "@/components/studio/StudioBoardPicker";
+import { StudioSaveBoardDialog } from "@/components/studio/StudioSaveBoardDialog";
 import { StudioCard } from "@/components/studio/StudioCard";
 import type { StudioTool } from "@/components/studio/StudioCardToolbar";
 import { StudioConnectionLayer } from "@/components/studio/StudioConnectionLayer";
@@ -33,7 +34,7 @@ import {
   prepareStudioCardWithAi,
 } from "@/lib/studio-ai";
 import {
-  archiveBoard,
+  boardHasContent,
   createBoard,
   deleteBoard,
   emptySnapshot,
@@ -43,6 +44,7 @@ import {
   readBoard,
   renameBoard,
   restoreBoard,
+  saveBoard,
   setActiveBoardId,
   writeBoard,
   type StudioBoardId,
@@ -124,6 +126,8 @@ function StudioPage() {
   );
   const [pickerOpen, setPickerOpen] = useState(true);
   const [boardName, setBoardName] = useState("Board");
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [pendingNewName, setPendingNewName] = useState<string | null>(null);
   const skipSaveRef = useRef(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -192,6 +196,9 @@ function StudioPage() {
 
   const saveActiveBoard = useCallback(() => {
     if (!activeBoardId || skipSaveRef.current) return;
+    const eventTitles = boardEventIds
+      .map((id) => events.find((e) => e.id === id)?.title)
+      .filter((t): t is string => Boolean(t));
     writeBoard(
       workspaceId,
       activeBoardId,
@@ -202,6 +209,7 @@ function StudioPage() {
         hiddenIds: [...hiddenIds],
       },
       workspace.scheduledPosts,
+      { eventTitles },
     );
     refreshBoardList();
   }, [
@@ -212,6 +220,7 @@ function StudioPage() {
     eventLayout,
     hiddenIds,
     workspace.scheduledPosts,
+    events,
     refreshBoardList,
   ]);
 
@@ -457,11 +466,29 @@ function StudioPage() {
     window.setTimeout(() => saveActiveBoard(), 0);
   }
 
-  function handleNewBoard(name: string) {
-    if (activeBoardId) saveActiveBoard();
-    const meta = createBoard(workspaceId, { name });
+  function startNewBoardNow(name: string) {
+    const meta = createBoard(workspaceId, {
+      name: name.trim() || undefined,
+    });
     loadBoard(meta.id);
     showToast(`Started “${meta.name}”`);
+  }
+
+  function handleNewBoard(name: string) {
+    const hasWork =
+      activeBoardId &&
+      boardHasContent({
+        drafts,
+        boardEventIds,
+        eventLayout,
+      });
+    if (hasWork) {
+      setPendingNewName(name.trim() || "");
+      setSaveDialogOpen(true);
+      return;
+    }
+    if (activeBoardId) saveActiveBoard();
+    startNewBoardNow(name);
   }
 
   function handleOpenPicker() {
@@ -470,10 +497,11 @@ function StudioPage() {
     setPickerOpen(true);
   }
 
-  function handleArchiveCurrent() {
+  /** Save board = shelve into Saved library (was “archive”). */
+  function handleSaveCurrent() {
     if (!activeBoardId) return;
     saveActiveBoard();
-    archiveBoard(workspaceId, activeBoardId);
+    saveBoard(workspaceId, activeBoardId);
     refreshBoardList();
     const next = getActiveBoardId(workspaceId);
     if (next) loadBoard(next);
@@ -482,7 +510,7 @@ function StudioPage() {
       setPickerOpen(true);
       setDrafts([]);
     }
-    showToast("Board archived");
+    showToast("Board saved — find it under Saved boards");
   }
 
   function handleTool(id: string, tool: StudioTool) {
@@ -967,7 +995,7 @@ function StudioPage() {
   if (pickerOpen || !activeBoardId) {
     return (
       <div
-        className="relative flex h-full min-h-0 flex-col overflow-y-auto bg-background"
+        className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background"
         data-testid="studio-page"
       >
         <StudioBoardPicker
@@ -978,20 +1006,23 @@ function StudioPage() {
             showToast("Board opened");
           }}
           onNew={handleNewBoard}
-          onArchive={(id) => {
-            archiveBoard(workspaceId, id);
+          onSave={(id) => {
+            if (id === activeBoardId) saveActiveBoard();
+            saveBoard(workspaceId, id);
             refreshBoardList();
             if (activeBoardId === id) {
               const next = getActiveBoardId(workspaceId);
               if (next) loadBoard(next);
-              else setActiveBoardIdState(null);
+              else {
+                setActiveBoardIdState(null);
+              }
             }
-            showToast("Board archived");
+            showToast("Board saved");
           }}
-          onRestore={(id) => {
+          onMoveToRecent={(id) => {
             restoreBoard(workspaceId, id);
             refreshBoardList();
-            showToast("Board restored");
+            showToast("Moved to recent");
           }}
           onDelete={(id) => {
             deleteBoard(workspaceId, id);
@@ -1005,6 +1036,32 @@ function StudioPage() {
               }
             }
             showToast("Board deleted");
+          }}
+        />
+        <StudioSaveBoardDialog
+          open={saveDialogOpen}
+          boardName={boardName}
+          onCancel={() => {
+            setSaveDialogOpen(false);
+            setPendingNewName(null);
+          }}
+          onSaveAndContinue={() => {
+            if (activeBoardId) {
+              saveActiveBoard();
+              saveBoard(workspaceId, activeBoardId);
+              refreshBoardList();
+            }
+            setSaveDialogOpen(false);
+            const n = pendingNewName;
+            setPendingNewName(null);
+            startNewBoardNow(n ?? "");
+          }}
+          onSkip={() => {
+            if (activeBoardId) saveActiveBoard();
+            setSaveDialogOpen(false);
+            const n = pendingNewName;
+            setPendingNewName(null);
+            startNewBoardNow(n ?? "");
           }}
         />
         {toast ? (
@@ -1065,13 +1122,13 @@ function StudioPage() {
           </button>
           <button
             type="button"
-            onClick={handleArchiveCurrent}
+            onClick={handleSaveCurrent}
             className="btn-action btn-action-secondary"
-            title="Archive this board"
-            data-testid="studio-archive-board"
+            title="Save this board to your library"
+            data-testid="studio-save-board"
           >
-            <Archive className="h-4 w-4" />
-            Archive
+            <Save className="h-4 w-4" />
+            Save board
           </button>
           <button
             type="button"
@@ -1095,6 +1152,33 @@ function StudioPage() {
           }}
         />
       </header>
+
+      <StudioSaveBoardDialog
+        open={saveDialogOpen}
+        boardName={boardName}
+        onCancel={() => {
+          setSaveDialogOpen(false);
+          setPendingNewName(null);
+        }}
+        onSaveAndContinue={() => {
+          if (activeBoardId) {
+            saveActiveBoard();
+            saveBoard(workspaceId, activeBoardId);
+            refreshBoardList();
+          }
+          setSaveDialogOpen(false);
+          const n = pendingNewName;
+          setPendingNewName(null);
+          startNewBoardNow(n ?? "");
+        }}
+        onSkip={() => {
+          if (activeBoardId) saveActiveBoard();
+          setSaveDialogOpen(false);
+          const n = pendingNewName;
+          setPendingNewName(null);
+          startNewBoardNow(n ?? "");
+        }}
+      />
 
       {/* Board body: layers dock inside this frame only (not over app nav) */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
