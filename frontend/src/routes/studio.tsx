@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { FolderOpen, Plus, Save, Upload } from "lucide-react";
+import { Check, FolderOpen, Loader2, Plus, Save, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { ScheduleEventModal } from "@/components/calendar/ScheduleEventModal";
 import {
   StudioCanvas,
   type CanvasMode,
@@ -43,8 +44,6 @@ import {
   migrateLegacyStudioBoard,
   readBoard,
   renameBoard,
-  restoreBoard,
-  saveBoard,
   setActiveBoardId,
   writeBoard,
   type StudioBoardId,
@@ -128,6 +127,12 @@ function StudioPage() {
   const [boardName, setBoardName] = useState("Board");
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [pendingNewName, setPendingNewName] = useState<string | null>(null);
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  /** Autosave status for header — Docs/Notion-style affirmation */
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "unsaved"
+  >("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const skipSaveRef = useRef(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -194,53 +199,64 @@ function StudioPage() {
     [workspaceId, refreshBoardList],
   );
 
-  const saveActiveBoard = useCallback(() => {
-    if (!activeBoardId || skipSaveRef.current) return;
-    const eventTitles = boardEventIds
-      .map((id) => events.find((e) => e.id === id)?.title)
-      .filter((t): t is string => Boolean(t));
-    writeBoard(
-      workspaceId,
+  const saveActiveBoard = useCallback(
+    (opts?: { manual?: boolean }) => {
+      if (!activeBoardId || skipSaveRef.current) return;
+      setSaveStatus("saving");
+      const eventTitles = boardEventIds
+        .map((id) => events.find((e) => e.id === id)?.title)
+        .filter((t): t is string => Boolean(t));
+      writeBoard(
+        workspaceId,
+        activeBoardId,
+        {
+          drafts,
+          boardEventIds,
+          eventLayout,
+          hiddenIds: [...hiddenIds],
+        },
+        workspace.scheduledPosts,
+        { eventTitles },
+      );
+      refreshBoardList();
+      const now = Date.now();
+      setLastSavedAt(now);
+      setSaveStatus("saved");
+      if (opts?.manual) {
+        showToast("Board saved — your work is safe");
+      }
+      window.setTimeout(() => {
+        setSaveStatus((s) => (s === "saved" ? "idle" : s));
+      }, 2500);
+    },
+    [
       activeBoardId,
-      {
-        drafts,
-        boardEventIds,
-        eventLayout,
-        hiddenIds: [...hiddenIds],
-      },
+      workspaceId,
+      drafts,
+      boardEventIds,
+      eventLayout,
+      hiddenIds,
       workspace.scheduledPosts,
-      { eventTitles },
-    );
-    refreshBoardList();
-  }, [
-    activeBoardId,
-    workspaceId,
-    drafts,
-    boardEventIds,
-    eventLayout,
-    hiddenIds,
-    workspace.scheduledPosts,
-    events,
-    refreshBoardList,
-  ]);
+      events,
+      refreshBoardList,
+      showToast,
+    ],
+  );
 
+  // Boards nav → always land on library (picker), never auto-open a canvas
   useEffect(() => {
     migrateLegacyStudioBoard(workspaceId);
     refreshBoardList();
-    const active = getActiveBoardId(workspaceId);
-    if (active) {
-      loadBoard(active);
-    } else {
-      setActiveBoardIdState(null);
-      setPickerOpen(true);
-      setDrafts([]);
-      setEventLayout({});
-      setBoardEventIds([]);
-      setHiddenIds(new Set());
-    }
+    setActiveBoardIdState(getActiveBoardId(workspaceId));
+    setPickerOpen(true);
+    setDrafts([]);
+    setEventLayout({});
+    setBoardEventIds([]);
+    setHiddenIds(new Set());
+    setSaveStatus("idle");
   }, [workspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-save active board snapshot
+  // Auto-save active board snapshot while on canvas
   useEffect(() => {
     if (pickerOpen || !activeBoardId) return;
     saveActiveBoard();
@@ -497,21 +513,23 @@ function StudioPage() {
     setPickerOpen(true);
   }
 
-  /** Save board = shelve into Saved library (was “archive”). */
+  /** Force-flush autosave — does not move the board into another list. */
   function handleSaveCurrent() {
     if (!activeBoardId) return;
-    saveActiveBoard();
-    saveBoard(workspaceId, activeBoardId);
-    refreshBoardList();
-    const next = getActiveBoardId(workspaceId);
-    if (next) loadBoard(next);
-    else {
-      setActiveBoardIdState(null);
-      setPickerOpen(true);
-      setDrafts([]);
-    }
-    showToast("Board saved — find it under Saved boards");
+    saveActiveBoard({ manual: true });
   }
+
+  const saveStatusLabel = useMemo(() => {
+    if (saveStatus === "saving") return "Saving…";
+    if (saveStatus === "saved") return "Saved just now";
+    if (lastSavedAt) {
+      const mins = Math.max(0, Math.round((Date.now() - lastSavedAt) / 60_000));
+      if (mins < 1) return "All changes saved";
+      if (mins < 60) return `All changes saved · ${mins}m ago`;
+      return "All changes saved";
+    }
+    return "Autosaves as you work";
+  }, [saveStatus, lastSavedAt]);
 
   function handleTool(id: string, tool: StudioTool) {
     if (tool === "remove") {
@@ -815,27 +833,23 @@ function StudioPage() {
     });
   }
 
-  async function createEventOnBoard() {
-    const title = window.prompt("Event title", "Sunday Service");
-    if (!title?.trim()) return;
-    const id = `evt-${Math.random().toString(36).slice(2, 10)}`;
-    const event: ContentEvent = {
-      id,
-      title: title.trim(),
-      date: new Date().toISOString(),
-      kind: "sunday_sermon",
-    };
+  function openEventModal() {
+    setEventModalOpen(true);
+  }
+
+  async function placeCreatedEventOnBoard(event: ContentEvent) {
     await addEvent(event);
     setBoardEventIds((ids) => {
-      const next = [...new Set([...ids, id])];
+      const next = [...new Set([...ids, event.id])];
       const n = next.length - 1;
       const pos = { x: 100 + (n % 3) * 40, y: 100 + (n % 4) * 40 };
-      setEventLayout((prev) => ({ ...prev, [id]: pos }));
+      setEventLayout((prev) => ({ ...prev, [event.id]: pos }));
       return next;
     });
-    setSelectedEventId(id);
+    setSelectedEventId(event.id);
     setSelectedIds(new Set());
     setLayersOpen(true);
+    setEventModalOpen(false);
     showToast("Event on board — attach reels, or post later anytime");
   }
 
@@ -970,7 +984,7 @@ function StudioPage() {
         </p>
         <p className="mt-3 text-body-sm text-muted-foreground">
           Events appear only when you add them. Prepare reels, string to events,
-          schedule from the shelf.
+          schedule from the shelf. Your board autosaves.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <button
@@ -984,7 +998,7 @@ function StudioPage() {
           <button
             type="button"
             className="btn-action btn-action-secondary"
-            onClick={() => void createEventOnBoard()}
+            onClick={openEventModal}
           >
             New event
           </button>
@@ -1007,33 +1021,25 @@ function StudioPage() {
           }}
           onNew={handleNewBoard}
           onSave={(id) => {
-            if (id === activeBoardId) saveActiveBoard();
-            saveBoard(workspaceId, id);
-            refreshBoardList();
-            if (activeBoardId === id) {
-              const next = getActiveBoardId(workspaceId);
-              if (next) loadBoard(next);
-              else {
-                setActiveBoardIdState(null);
+            if (id === activeBoardId) {
+              saveActiveBoard({ manual: true });
+            } else {
+              // Force touch updatedAt by re-writing existing snapshot
+              const snap = readBoard(workspaceId, id);
+              if (snap) {
+                writeBoard(workspaceId, id, snap, workspace.scheduledPosts);
+                refreshBoardList();
               }
+              showToast("Board saved — your work is safe");
             }
-            showToast("Board saved");
-          }}
-          onMoveToRecent={(id) => {
-            restoreBoard(workspaceId, id);
-            refreshBoardList();
-            showToast("Moved to recent");
           }}
           onDelete={(id) => {
             deleteBoard(workspaceId, id);
             refreshBoardList();
             if (activeBoardId === id) {
-              const next = getActiveBoardId(workspaceId);
-              if (next) loadBoard(next);
-              else {
-                setActiveBoardIdState(null);
-                setDrafts([]);
-              }
+              setActiveBoardIdState(null);
+              setPickerOpen(true);
+              setDrafts([]);
             }
             showToast("Board deleted");
           }}
@@ -1046,11 +1052,7 @@ function StudioPage() {
             setPendingNewName(null);
           }}
           onSaveAndContinue={() => {
-            if (activeBoardId) {
-              saveActiveBoard();
-              saveBoard(workspaceId, activeBoardId);
-              refreshBoardList();
-            }
+            if (activeBoardId) saveActiveBoard({ manual: true });
             setSaveDialogOpen(false);
             const n = pendingNewName;
             setPendingNewName(null);
@@ -1097,8 +1099,21 @@ function StudioPage() {
             data-testid="studio-board-name"
             aria-label="Board name"
           />
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Scheduled reels stay here with yellow borders · live turns green
+          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <span
+              className="inline-flex items-center gap-1"
+              data-testid="board-save-status"
+              title="Boards autosave continuously — Save is optional"
+            >
+              {saveStatus === "saving" ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3 text-success" />
+              )}
+              {saveStatusLabel}
+            </span>
+            <span className="text-muted-foreground/50">·</span>
+            <span>Yellow border = scheduled · green = live</span>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1124,11 +1139,11 @@ function StudioPage() {
             type="button"
             onClick={handleSaveCurrent}
             className="btn-action btn-action-secondary"
-            title="Save this board to your library"
+            title="Force save now (boards also autosave)"
             data-testid="studio-save-board"
           >
             <Save className="h-4 w-4" />
-            Save board
+            Save
           </button>
           <button
             type="button"
@@ -1161,11 +1176,7 @@ function StudioPage() {
           setPendingNewName(null);
         }}
         onSaveAndContinue={() => {
-          if (activeBoardId) {
-            saveActiveBoard();
-            saveBoard(workspaceId, activeBoardId);
-            refreshBoardList();
-          }
+          if (activeBoardId) saveActiveBoard({ manual: true });
           setSaveDialogOpen(false);
           const n = pendingNewName;
           setPendingNewName(null);
@@ -1179,6 +1190,19 @@ function StudioPage() {
           startNewBoardNow(n ?? "");
         }}
       />
+
+      {eventModalOpen ? (
+        <ScheduleEventModal
+          date={new Date()}
+          scheduledPosts={workspace.scheduledPosts}
+          publishedPosts={workspace.publishedPosts ?? []}
+          isAssociated={() => false}
+          onClose={() => setEventModalOpen(false)}
+          onCreate={(event) => {
+            void placeCreatedEventOnBoard(event);
+          }}
+        />
+      ) : null}
 
       {/* Board body: layers dock inside this frame only (not over app nav) */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
@@ -1212,7 +1236,7 @@ function StudioPage() {
           }}
           onToggleHidden={toggleHidden}
           onRemoveEventFromBoard={removeEventFromBoard}
-          onNewEvent={() => void createEventOnBoard()}
+          onNewEvent={openEventModal}
           onPlaceEvent={placeEventOnBoard}
         />
 
@@ -1243,7 +1267,7 @@ function StudioPage() {
             onToggleLayers={() => setLayersOpen((o) => !o)}
             scheduleDisabled={captionReadySelection.length === 0 && !shelfOpen}
             onOpenSchedule={() => openScheduleShelf()}
-            onNewEvent={() => void createEventOnBoard()}
+            onNewEvent={openEventModal}
           >
             <StudioConnectionLayer
               drafts={drafts.filter((d) => !hiddenIds.has(d.id))}

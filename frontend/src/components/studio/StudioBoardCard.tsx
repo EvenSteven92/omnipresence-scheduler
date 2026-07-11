@@ -12,22 +12,18 @@ export function StudioBoardCard({
   board,
   isActive,
   selected,
-  saved,
   onOpen,
   onSelect,
   onSave,
-  onMoveToRecent,
   onDelete,
 }: {
   board: StudioBoardMeta;
   isActive?: boolean;
-  /** Focus ring like Resolve’s red selection outline */
+  /** Focus ring like Resolve’s selection outline */
   selected?: boolean;
-  saved?: boolean;
   onOpen: () => void;
   onSelect?: () => void;
   onSave?: () => void;
-  onMoveToRecent?: () => void;
   onDelete?: () => void;
 }) {
   const [eventsOpen, setEventsOpen] = useState(false);
@@ -61,11 +57,6 @@ export function StudioBoardCard({
           fallbackId={board.id}
           name={board.name}
         />
-        {saved ? (
-          <span className="absolute right-1.5 top-1.5 rounded bg-card/90 px-1.5 py-0.5 font-mono text-[0.55rem] font-bold uppercase tracking-wide text-muted-foreground shadow-sm">
-            Saved
-          </span>
-        ) : null}
       </button>
 
       <div className="mt-2 flex items-start gap-1 px-0.5">
@@ -91,7 +82,7 @@ export function StudioBoardCard({
             {s && s.reelCount > 0 ? ` · ${s.reelCount} reels` : ""}
           </p>
         </button>
-        {(onSave || onMoveToRecent || onDelete) && (
+        {(onSave || onDelete) && (
           <div className="relative shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
             <button
               type="button"
@@ -106,7 +97,7 @@ export function StudioBoardCard({
             </button>
             {menuOpen ? (
               <div className="absolute right-0 z-20 mt-1 min-w-[9rem] rounded-md border border-line bg-card py-1 shadow-[var(--shadow-card)]">
-                {onSave && !saved ? (
+                {onSave ? (
                   <button
                     type="button"
                     className="block w-full px-3 py-1.5 text-left text-xs font-semibold hover:bg-secondary"
@@ -115,19 +106,7 @@ export function StudioBoardCard({
                       onSave();
                     }}
                   >
-                    Save board
-                  </button>
-                ) : null}
-                {onMoveToRecent && saved ? (
-                  <button
-                    type="button"
-                    className="block w-full px-3 py-1.5 text-left text-xs font-semibold hover:bg-secondary"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onMoveToRecent();
-                    }}
-                  >
-                    Move to recent
+                    Save now
                   </button>
                 ) : null}
                 <p className="border-t border-line px-3 py-1.5 text-[0.6rem] text-muted-foreground">

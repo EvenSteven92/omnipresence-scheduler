@@ -8,19 +8,18 @@ import { defaultBoardName } from "@/lib/studio-boards";
 import { cn } from "@/lib/utils";
 
 /**
- * DaVinci Resolve Project Manager–style library:
- * full-width 16:9 grid, New board as first tile, title under thumb.
+ * DaVinci-style library — one grid of all boards (no separate “Saved” section).
+ * Autosave keeps every board; Save on canvas is a force-flush only.
  */
 export function StudioBoardPicker({
   boards,
   activeId,
   title = "Boards",
-  subtitle = "Open a batch or start a new one — same idea as a project library.",
+  subtitle = "Open a board to continue. Everything autosaves — nothing is lost when you leave.",
   showNew = true,
   onOpen,
   onNew,
   onSave,
-  onMoveToRecent,
   onDelete,
 }: {
   boards: StudioBoardMeta[];
@@ -31,22 +30,14 @@ export function StudioBoardPicker({
   onOpen: (id: string) => void;
   onNew?: (name: string) => void;
   onSave?: (id: string) => void;
-  onMoveToRecent?: (id: string) => void;
   onDelete?: (id: string) => void;
 }) {
-  const [showSaved, setShowSaved] = useState(false);
   const [selectedId, setSelectedId] = useState<string | "new" | null>(
     activeId,
   );
 
-  const recent = useMemo(
-    () => boards.filter((b) => !b.archived),
-    [boards],
-  );
-  const saved = useMemo(
-    () => boards.filter((b) => b.archived),
-    [boards],
-  );
+  // Single list: all boards by updatedAt (listBoards already sorts)
+  const allBoards = useMemo(() => boards, [boards]);
 
   const selectedBoard =
     selectedId && selectedId !== "new"
@@ -64,7 +55,6 @@ export function StudioBoardPicker({
       data-testid="studio-board-picker"
       className="flex w-full min-h-0 flex-1 flex-col animate-fade-in bg-background"
     >
-      {/* Top bar — light chrome, Resolve-like project strip */}
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-card px-5 py-3 md:px-8">
         <div className="min-w-0">
           <p className="text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
@@ -73,13 +63,12 @@ export function StudioBoardPicker({
           <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
             {title}
           </h1>
+          <p className="mt-1 max-w-xl text-xs text-muted-foreground">
+            {subtitle}
+          </p>
         </div>
-        <p className="hidden max-w-md text-right text-xs text-muted-foreground sm:block">
-          {subtitle}
-        </p>
       </header>
 
-      {/* Main grid — fills width like Resolve */}
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 md:px-8 md:py-8">
         <StudioBoardGrid>
           {showNew && onNew ? (
@@ -92,7 +81,7 @@ export function StudioBoardPicker({
             />
           ) : null}
 
-          {recent.map((b) => (
+          {allBoards.map((b) => (
             <StudioBoardCard
               key={b.id}
               board={b}
@@ -106,54 +95,20 @@ export function StudioBoardPicker({
           ))}
         </StudioBoardGrid>
 
-        {recent.length === 0 && !showNew ? (
+        {allBoards.length === 0 ? (
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            No boards yet.
+            No boards yet — click <strong>New board</strong> to start.
           </p>
-        ) : null}
-
-        {saved.length > 0 ? (
-          <section className="mt-10">
-            <button
-              type="button"
-              onClick={() => setShowSaved((v) => !v)}
-              className="mb-4 text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
-            >
-              Saved boards · {saved.length}{" "}
-              <span className="font-normal normal-case tracking-normal">
-                {showSaved ? "(hide)" : "(show)"}
-              </span>
-            </button>
-            {showSaved ? (
-              <StudioBoardGrid>
-                {saved.map((b) => (
-                  <StudioBoardCard
-                    key={b.id}
-                    board={b}
-                    saved
-                    selected={selectedId === b.id}
-                    onSelect={() => setSelectedId(b.id)}
-                    onOpen={() => onOpen(b.id)}
-                    onMoveToRecent={
-                      onMoveToRecent ? () => onMoveToRecent(b.id) : undefined
-                    }
-                    onDelete={onDelete ? () => confirmDelete(b) : undefined}
-                  />
-                ))}
-              </StudioBoardGrid>
-            ) : null}
-          </section>
         ) : null}
       </div>
 
-      {/* Bottom bar — Resolve Export/Import + New/Open */}
       <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-line bg-card px-5 py-3 md:px-8">
         <p className="text-xs text-muted-foreground">
           {selectedBoard
             ? `Selected: ${selectedBoard.name}`
             : selectedId === "new"
               ? "New board"
-              : "Select a board"}
+              : "Select a board to open"}
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {showNew && onNew ? (
@@ -181,7 +136,6 @@ export function StudioBoardPicker({
   );
 }
 
-/** Full-width multi-column grid (≈5 across on large screens, like Resolve). */
 export function StudioBoardGrid({
   children,
   className,

@@ -1,12 +1,12 @@
 import {
   CalendarClock,
+  CalendarPlus,
   Hand,
   Layers,
   MousePointer2,
   Minus,
   Plus,
   Scan,
-  Sparkles,
 } from "lucide-react";
 import {
   useCallback,
@@ -426,7 +426,7 @@ export function StudioCanvas({
             onClick={onNewEvent}
             className="rounded-md p-2 text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-foreground"
           >
-            <Sparkles className="h-4 w-4" />
+            <CalendarPlus className="h-4 w-4" />
           </button>
         </div>
         <div className="pointer-events-auto flex items-center gap-0.5 rounded-lg border border-line bg-card p-1 shadow-[var(--shadow-card)]">

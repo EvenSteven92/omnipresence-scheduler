@@ -36,11 +36,12 @@ export function StudioSaveBoardDialog({
               Save this board first?
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              You’re starting a new board. Save{" "}
+              You’re starting a new board. We’ll make sure{" "}
               <span className="font-semibold text-foreground">
                 “{boardName || "this board"}”
               </span>{" "}
-              so you can open it again later with all its reels and events.
+              is written out so you can open it again with every reel and event
+              still on it. (Boards also autosave as you work.)
             </p>
           </div>
           <button
