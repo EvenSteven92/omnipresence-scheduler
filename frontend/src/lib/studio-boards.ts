@@ -131,6 +131,20 @@ export function listBoards(workspaceId: WorkspaceId): StudioBoardMeta[] {
   return [...list].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
 }
 
+/** Boards that contain this card id (or a draft cloned from it). Library provenance — not board edit. */
+export function boardsContainingCardId(
+  workspaceId: WorkspaceId,
+  cardId: string,
+): StudioBoardMeta[] {
+  return listBoards(workspaceId).filter((meta) => {
+    const snap = readBoard(workspaceId, meta.id);
+    if (!snap) return false;
+    return snap.drafts.some(
+      (d) => d.id === cardId || d.sourceCardId === cardId,
+    );
+  });
+}
+
 function writeIndex(workspaceId: WorkspaceId, list: StudioBoardMeta[]) {
   writeJson(indexKey(workspaceId), list);
 }

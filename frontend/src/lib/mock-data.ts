@@ -39,6 +39,18 @@ export interface ScheduledPost extends CardFileMeta {
   status: "scheduled" | "draft" | "published" | "failed";
   /** Associated ministry event — not a tag/label. */
   eventId?: string;
+  /** Script / spoken outline (library + Studio). */
+  transcript?: string;
+  /** CTA when stringed to an event. */
+  callToAction?: string;
+  /** Per-platform title overrides (fall back to `title`). */
+  platformTitles?: Partial<Record<Platform, string>>;
+  /** Per-platform caption overrides (fall back to `caption`). */
+  platformCaptions?: Partial<Record<Platform, string>>;
+  /** Per-platform hashtag overrides (fall back to `hashtags`). */
+  platformHashtags?: Partial<Record<Platform, string>>;
+  /** If this post was duplicated from another card. */
+  sourceCardId?: string;
 }
 
 export interface PublishedPost extends CardFileMeta {
@@ -50,6 +62,12 @@ export interface PublishedPost extends CardFileMeta {
   platformTimes?: Partial<Record<Platform, string>>;
   /** Associated ministry event — not a tag/label. */
   eventId?: string;
+  transcript?: string;
+  callToAction?: string;
+  platformTitles?: Partial<Record<Platform, string>>;
+  platformCaptions?: Partial<Record<Platform, string>>;
+  platformHashtags?: Partial<Record<Platform, string>>;
+  sourceCardId?: string;
   views: number;
   likes: number;
   shares: number;

@@ -55,6 +55,10 @@ export interface DraftPost {
   dropboxDirectUrl?: string;
   /** Preferred call-to-action line (Studio whiteboard). */
   callToAction?: string;
+  /** Library card this draft was duplicated from. */
+  sourceCardId?: string;
+  platformTitles?: Partial<Record<Platform, string>>;
+  platformHashtags?: Partial<Record<Platform, string>>;
   /** Studio canvas position (px in board space). */
   canvasX?: number;
   canvasY?: number;

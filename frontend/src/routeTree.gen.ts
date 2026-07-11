@@ -13,6 +13,7 @@ import { Route as WorkspacesRouteImport } from './routes/workspaces'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SchedulerRouteImport } from './routes/scheduler'
 import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as LibraryRouteImport } from './routes/library'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
@@ -52,6 +53,11 @@ const SchedulerRoute = SchedulerRouteImport.update({
 const ScheduleRoute = ScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsRoute = EventsRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
   '/events': typeof EventsRouteWithChildren
+  '/library': typeof LibraryRoute
   '/schedule': typeof ScheduleRoute
   '/scheduler': typeof SchedulerRoute
   '/studio': typeof StudioRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
+  '/library': typeof LibraryRoute
   '/schedule': typeof ScheduleRoute
   '/scheduler': typeof SchedulerRoute
   '/studio': typeof StudioRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
   '/events': typeof EventsRouteWithChildren
+  '/library': typeof LibraryRoute
   '/schedule': typeof ScheduleRoute
   '/scheduler': typeof SchedulerRoute
   '/studio': typeof StudioRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/calendar'
     | '/events'
+    | '/library'
     | '/schedule'
     | '/scheduler'
     | '/studio'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/calendar'
+    | '/library'
     | '/schedule'
     | '/scheduler'
     | '/studio'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/calendar'
     | '/events'
+    | '/library'
     | '/schedule'
     | '/scheduler'
     | '/studio'
@@ -320,6 +332,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   CalendarRoute: typeof CalendarRoute
   EventsRoute: typeof EventsRouteWithChildren
+  LibraryRoute: typeof LibraryRoute
   ScheduleRoute: typeof ScheduleRoute
   SchedulerRoute: typeof SchedulerRoute
   StudioRoute: typeof StudioRoute
@@ -368,6 +381,13 @@ declare module '@tanstack/react-router' {
       path: '/schedule'
       fullPath: '/schedule'
       preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events': {
@@ -541,6 +561,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   CalendarRoute: CalendarRoute,
   EventsRoute: EventsRouteWithChildren,
+  LibraryRoute: LibraryRoute,
   ScheduleRoute: ScheduleRoute,
   SchedulerRoute: SchedulerRoute,
   StudioRoute: StudioRoute,

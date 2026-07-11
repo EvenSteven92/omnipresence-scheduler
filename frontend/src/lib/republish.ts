@@ -66,6 +66,17 @@ export function draftFromPostDetail(
   const platforms = post.platforms.filter((p) => options.allowedPlatforms.includes(p));
   const resolvedPlatforms = platforms.length > 0 ? platforms : options.allowedPlatforms.slice(0, 1);
 
+  const p = post as PostDetailSource & {
+    transcript?: string;
+    callToAction?: string;
+    platformTitles?: Partial<Record<Platform, string>>;
+    platformCaptions?: Partial<Record<Platform, string>>;
+    platformHashtags?: Partial<Record<Platform, string>>;
+    previewUrl?: string;
+    dropboxUrl?: string;
+    dropboxDirectUrl?: string;
+  };
+
   const draft: DraftPost = {
     id: uid(),
     filename: filenameFromTitle(post.title, mediaKind),
@@ -76,8 +87,17 @@ export function draftFromPostDetail(
     title: post.title,
     caption: ("caption" in post && post.caption?.trim()) || post.title,
     hashtags: ("hashtags" in post && post.hashtags) || "",
-    transcript: "",
+    transcript: p.transcript?.trim() || "",
+    callToAction: p.callToAction,
+    platformTitles: p.platformTitles,
+    platformCaptions: p.platformCaptions,
+    platformHashtags: p.platformHashtags,
     eventId: options.eventId ?? post.eventId,
+    sourceCardId: post.id,
+    previewUrl: p.previewUrl,
+    dropboxUrl: p.dropboxUrl,
+    dropboxDirectUrl: p.dropboxDirectUrl,
+    proposedTimes: {},
   };
   return normalizeRepublishDraft(draft);
 }

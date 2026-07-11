@@ -1,8 +1,38 @@
-import type { PublishedPost } from "@/lib/mock-data";
+import type { Platform, PublishedPost } from "@/lib/mock-data";
 import type { PostDetailSource } from "@/lib/post-detail";
 import { isPublishedPost } from "@/lib/post-detail";
 import { inferMediaKind } from "@/lib/scheduled-post-display";
 import type { WorkspaceProfile } from "@/lib/workspaces/types";
+
+export function platformTitle(post: PostDetailSource, platform: Platform): string {
+  const o =
+    "platformTitles" in post
+      ? (post as { platformTitles?: Partial<Record<Platform, string>> }).platformTitles?.[
+          platform
+        ]
+      : undefined;
+  return o?.trim() || post.title;
+}
+
+export function platformCaption(post: PostDetailSource, platform: Platform): string {
+  const o =
+    "platformCaptions" in post
+      ? (post as { platformCaptions?: Partial<Record<Platform, string>> }).platformCaptions?.[
+          platform
+        ]
+      : undefined;
+  return o?.trim() || cardCaption(post);
+}
+
+export function platformHashtags(post: PostDetailSource, platform: Platform): string {
+  const o =
+    "platformHashtags" in post
+      ? (post as { platformHashtags?: Partial<Record<Platform, string>> }).platformHashtags?.[
+          platform
+        ]
+      : undefined;
+  return o?.trim() || post.hashtags?.trim() || "";
+}
 
 export function findWorkspaceCard(
   workspace: WorkspaceProfile,
