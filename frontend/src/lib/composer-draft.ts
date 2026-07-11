@@ -53,6 +53,18 @@ export interface DraftPost {
   dropboxUrl?: string;
   /** Normalized dl=1 / direct URL for workers + preview. */
   dropboxDirectUrl?: string;
+  /** Preferred call-to-action line (Studio whiteboard). */
+  callToAction?: string;
+  /** Studio canvas position (px in board space). */
+  canvasX?: number;
+  canvasY?: number;
+  /** Which Studio sections are expanded. */
+  studioOpen?: {
+    transcript?: boolean;
+    cta?: boolean;
+    caption?: boolean;
+    schedule?: boolean;
+  };
 }
 
 export type DraftFileInput = File | { name: string; sizeBytes: number };

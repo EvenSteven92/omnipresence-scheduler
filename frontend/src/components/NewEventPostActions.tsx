@@ -22,7 +22,7 @@ export function NewEventPostActions({
     <>
       {showCardLink ? (
         <Link
-          to="/scheduler"
+          to="/studio"
           data-testid="new-post-btn"
           className="btn-action btn-action-primary !text-white"
         >

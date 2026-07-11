@@ -138,7 +138,7 @@ function CardDetailView({
       eventId: eventId,
     });
     stashRepublishDraft(workspaceId, draft);
-    navigate({ to: "/scheduler" });
+    navigate({ to: "/studio" });
   }
 
   function duplicateCard() {
@@ -147,7 +147,7 @@ function CardDetailView({
       eventId: eventId,
     });
     stashRepublishDraft(workspaceId, { ...draft, id: `${draft.id}-copy` });
-    navigate({ to: "/scheduler" });
+    navigate({ to: "/studio" });
   }
 
   function deleteCard() {

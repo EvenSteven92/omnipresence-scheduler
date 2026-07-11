@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export function SchedulePostAffordance({ dense = false }: { dense?: boolean }) {
   return (
     <Link
-      to="/scheduler"
+      to="/studio"
       onClick={(e) => e.stopPropagation()}
       data-testid="schedule-post-affordance"
       aria-label={CREATE.card}

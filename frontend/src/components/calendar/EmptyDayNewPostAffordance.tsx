@@ -7,7 +7,7 @@ export function EmptyDayNewPostAffordance() {
   return (
     <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity group-hover/cell:opacity-100 group-focus-within/cell:opacity-100">
       <Link
-        to="/scheduler"
+        to="/studio"
         onClick={(e) => e.stopPropagation()}
         data-testid="empty-day-new-post"
         aria-label={CREATE.card}

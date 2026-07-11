@@ -121,7 +121,7 @@ export function CalendarDayDrawer({
           posts.length === 0 ? (
             <div className="space-y-4">
               <p className="text-body-sm text-muted-foreground">No posts scheduled for this day.</p>
-              <Link to="/scheduler" className="btn-action-primary btn-action w-full justify-center">
+              <Link to="/studio" className="btn-action-primary btn-action w-full justify-center">
                 <Plus className="h-3.5 w-3.5" />
                 Create a post
               </Link>

@@ -156,7 +156,7 @@ function AnalyticsPage() {
     if (!top) return;
     const draft = draftFromPostDetail(top, { allowedPlatforms: workspace.platforms });
     stashRepublishDraft(workspaceId, draft);
-    navigate({ to: "/scheduler" });
+    navigate({ to: "/studio" });
   }
 
   const dataHonestyBadge = hasLiveMetrics(liveBundle) ? <LiveDataBadge /> : <SampleDataBadge />;

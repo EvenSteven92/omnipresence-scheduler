@@ -57,7 +57,7 @@ export function CalendarDayIntentModal({
 
         <div className="space-y-2 p-5">
           <Link
-            to="/scheduler"
+            to="/studio"
             onClick={onClose}
             data-testid="day-intent-new-post"
             className="flex w-full items-center gap-3 rounded-sm border border-accent/50 bg-accent/10 px-4 py-3 text-left transition-colors hover:bg-accent/20"

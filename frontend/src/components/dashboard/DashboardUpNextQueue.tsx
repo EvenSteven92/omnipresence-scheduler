@@ -60,7 +60,7 @@ export function DashboardUpNextQueue() {
           title="Nothing scheduled yet"
           description="Posts you schedule in the composer appear here in chronological order."
           action={
-            <Link to="/scheduler" className="btn-action-primary btn-action">
+            <Link to="/studio" className="btn-action-primary btn-action">
               Create a card
             </Link>
           }

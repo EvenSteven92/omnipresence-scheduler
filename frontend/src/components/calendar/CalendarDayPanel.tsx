@@ -102,7 +102,7 @@ export function CalendarDayPanel({
 
       <div className="flex gap-2 border-b border-line px-4 py-3">
         <Link
-          to="/scheduler"
+          to="/studio"
           className="btn-action-primary btn-action min-h-9 flex-1 justify-center text-body-sm"
         >
           <FilePlus className="h-3.5 w-3.5" strokeWidth={2} />

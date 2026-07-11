@@ -37,7 +37,7 @@ export function CalendarQueueView({
         title="Nothing scheduled yet"
         description="Posts you schedule in the composer will show up here in chronological order."
         action={
-          <Link to="/scheduler" className="btn-action-primary btn-action">
+          <Link to="/studio" className="btn-action-primary btn-action">
             Create a card
           </Link>
         }

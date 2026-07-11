@@ -55,7 +55,7 @@ export function CreateMenu({
             className="absolute bottom-full left-0 z-50 mb-2 w-full min-w-[12rem] overflow-hidden rounded-md border border-line bg-popover shadow-xl"
           >
             <Link
-              to="/scheduler"
+              to="/studio"
               role="menuitem"
               onClick={() => setOpen(false)}
               data-testid="create-new-post"

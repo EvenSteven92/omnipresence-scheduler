@@ -46,7 +46,7 @@ export function OnboardingStepper() {
       title: "Schedule a card",
       description: "Upload media, pick platforms, and set publish times.",
       cta: "Create a post",
-      href: "/scheduler",
+      href: "/studio",
     },
     {
       id: "analyze",

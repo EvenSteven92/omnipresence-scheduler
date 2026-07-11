@@ -94,7 +94,7 @@ export function DashboardQueueRail() {
           {gapSentence}
         </p>
         <Link
-          to="/scheduler"
+          to="/studio"
           className="btn-action-primary btn-action mt-3.5 w-full justify-center"
         >
           Fill the gaps →

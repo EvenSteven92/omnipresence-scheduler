@@ -27,7 +27,7 @@ function QueuePage() {
     () => (
       <>
         <QueueCalendarToggle active="queue" />
-        <Link to="/scheduler" className="btn-action-primary btn-action">
+        <Link to="/studio" className="btn-action-primary btn-action">
           <FilePlus className="h-3.5 w-3.5" strokeWidth={2} />
           {CREATE.card}
         </Link>

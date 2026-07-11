@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   LayoutList,
   CalendarDays,
-  CalendarClock,
   LayoutGrid,
   BarChart3,
   Settings2,
@@ -32,8 +31,7 @@ const nav: {
   { to: "/", label: "Queue", icon: LayoutList, countKey: "queue" },
   { to: "/calendar", label: "Calendar", icon: CalendarDays, countKey: "calendar" },
   { to: "/events", label: "Events", icon: LayoutGrid, countKey: "events" },
-  { to: "/scheduler", label: "Compose", icon: Clapperboard },
-  { to: "/schedule", label: "Schedule", icon: CalendarClock, countKey: "ready" },
+  { to: "/studio", label: "Studio", icon: Clapperboard, countKey: "ready" },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/workspaces", label: "Admin", icon: Settings2 },
 ];
@@ -166,7 +164,7 @@ export function Sidebar() {
 
         <div className="mt-auto space-y-3 border-t border-line pt-4">
           <Link
-            to="/scheduler"
+            to="/studio"
             className={cn(
               "flex items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-4 py-3.5 font-display text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#262626] hover:text-white",
               collapsed && "px-2",
@@ -197,7 +195,7 @@ export function Sidebar() {
           </Link>
         ))}
         <Link
-          to="/scheduler"
+          to="/studio"
           className="flex flex-col items-center gap-0.5 rounded-lg border border-line bg-primary px-3 py-1.5 font-display text-[0.65rem] font-medium text-white"
         >
           <span className="text-lg leading-none text-white">+</span>
