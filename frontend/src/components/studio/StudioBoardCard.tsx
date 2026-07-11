@@ -6,22 +6,26 @@ import { demoPreviewForPost } from "@/lib/demo-media";
 import { cn } from "@/lib/utils";
 
 /**
- * DaVinci-style project card — 16:9 snapshot + meta below.
- * Reusable for full library or filtered “boards containing this file”.
+ * DaVinci Resolve–style project cell: 16:9 frame, title under, light meta.
  */
 export function StudioBoardCard({
   board,
   isActive,
+  selected,
   saved,
   onOpen,
+  onSelect,
   onSave,
   onMoveToRecent,
   onDelete,
 }: {
   board: StudioBoardMeta;
   isActive?: boolean;
+  /** Focus ring like Resolve’s red selection outline */
+  selected?: boolean;
   saved?: boolean;
   onOpen: () => void;
+  onSelect?: () => void;
   onSave?: () => void;
   onMoveToRecent?: () => void;
   onDelete?: () => void;
@@ -35,17 +39,21 @@ export function StudioBoardCard({
   return (
     <article
       data-testid={`studio-board-card-${board.id}`}
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] transition-[border-color,box-shadow,transform] duration-150",
-        isActive
-          ? "border-foreground/40 ring-1 ring-foreground/10"
-          : "border-line hover:border-foreground/25",
-      )}
+      className="group flex flex-col"
     >
       <button
         type="button"
-        onClick={onOpen}
-        className="relative aspect-video w-full overflow-hidden bg-paper-2 text-left"
+        onClick={() => {
+          onSelect?.();
+          onOpen();
+        }}
+        onFocus={onSelect}
+        className={cn(
+          "relative aspect-video w-full overflow-hidden rounded-md border-2 bg-paper-2 text-left transition-[border-color,box-shadow,transform] duration-150",
+          selected || isActive
+            ? "border-brand shadow-[0_0_0_1px_color-mix(in_oklab,var(--brand)_40%,transparent)]"
+            : "border-transparent ring-1 ring-line hover:ring-foreground/25",
+        )}
         aria-label={`Open ${board.name}`}
       >
         <BoardPreviewCollage
@@ -53,153 +61,156 @@ export function StudioBoardCard({
           fallbackId={board.id}
           name={board.name}
         />
-        {isActive ? (
-          <span className="absolute left-2 top-2 rounded bg-foreground px-1.5 py-0.5 font-mono text-[0.6rem] font-bold uppercase tracking-wide text-background">
-            Open
-          </span>
-        ) : null}
         {saved ? (
-          <span className="absolute right-2 top-2 rounded border border-line bg-card/90 px-1.5 py-0.5 font-mono text-[0.6rem] font-bold uppercase tracking-wide text-muted-foreground">
+          <span className="absolute right-1.5 top-1.5 rounded bg-card/90 px-1.5 py-0.5 font-mono text-[0.55rem] font-bold uppercase tracking-wide text-muted-foreground shadow-sm">
             Saved
           </span>
         ) : null}
       </button>
 
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <div className="flex items-start justify-between gap-2">
-          <button
-            type="button"
-            onClick={onOpen}
-            className="min-w-0 flex-1 text-left"
+      <div className="mt-2 flex items-start gap-1 px-0.5">
+        <button
+          type="button"
+          onClick={() => {
+            onSelect?.();
+            onOpen();
+          }}
+          className="min-w-0 flex-1 text-center"
+        >
+          <h3
+            className={cn(
+              "truncate text-sm font-medium leading-snug",
+              selected || isActive ? "text-foreground" : "text-muted-foreground",
+              "group-hover:text-foreground",
+            )}
           >
-            <h3 className="truncate font-display text-base font-bold leading-snug text-foreground">
-              {board.name}
-            </h3>
-          </button>
-          {(onSave || onMoveToRecent || onDelete) && (
-            <div className="relative shrink-0">
-              <button
-                type="button"
-                onClick={() => setMenuOpen((o) => !o)}
-                className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                aria-label="Board actions"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </button>
-              {menuOpen ? (
-                <div className="absolute right-0 z-20 mt-1 min-w-[9rem] rounded-md border border-line bg-card py-1 shadow-[var(--shadow-card)]">
-                  {onSave && !saved ? (
-                    <button
-                      type="button"
-                      className="block w-full px-3 py-1.5 text-left text-xs font-semibold hover:bg-secondary"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onSave();
-                      }}
-                    >
-                      Save board
-                    </button>
-                  ) : null}
-                  {onMoveToRecent && saved ? (
-                    <button
-                      type="button"
-                      className="block w-full px-3 py-1.5 text-left text-xs font-semibold hover:bg-secondary"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onMoveToRecent();
-                      }}
-                    >
-                      Move to recent
-                    </button>
-                  ) : null}
-                  {onDelete ? (
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-xs font-semibold text-destructive hover:bg-destructive/10"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onDelete();
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      Delete
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          )}
-        </div>
-
-        <dl className="space-y-0.5 text-xs text-muted-foreground">
-          <div className="flex flex-wrap gap-x-2">
-            <dt className="sr-only">Created</dt>
-            <dd>Created {formatBoardDate(board.createdAt)}</dd>
-          </div>
-          <div className="flex flex-wrap gap-x-2">
-            <dt className="sr-only">Last edited</dt>
-            <dd>
-              Edited {relativeBoardTime(board.updatedAt)}
-              <span className="text-muted-foreground/70">
-                {" "}
-                · {formatBoardDate(board.updatedAt)}
-              </span>
-            </dd>
-          </div>
-        </dl>
-
-        {s ? (
-          <p className="text-xs text-muted-foreground">
-            {s.reelCount} reel{s.reelCount === 1 ? "" : "s"}
-            {s.scheduledCount > 0 ? (
-              <span className="text-warning">
-                {" "}
-                · {s.scheduledCount} scheduled
-              </span>
-            ) : null}
-            {s.liveCount > 0 ? (
-              <span className="text-success"> · {s.liveCount} live</span>
-            ) : null}
-            {s.eventCount > 0 ? (
-              <span>
-                {" "}
-                · {s.eventCount} event{s.eventCount === 1 ? "" : "s"}
-              </span>
-            ) : null}
+            {board.name}
+          </h3>
+          <p className="mt-0.5 truncate text-[0.65rem] text-muted-foreground">
+            {relativeBoardTime(board.updatedAt)}
+            {s && s.reelCount > 0 ? ` · ${s.reelCount} reels` : ""}
           </p>
-        ) : null}
-
-        {eventTitles.length > 0 ? (
-          <div className="mt-1 border-t border-line pt-1.5">
+        </button>
+        {(onSave || onMoveToRecent || onDelete) && (
+          <div className="relative shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
             <button
               type="button"
-              onClick={() => setEventsOpen((o) => !o)}
-              className="flex w-full items-center justify-between gap-1 text-left text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground hover:text-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((o) => !o);
+              }}
+              className="rounded p-0.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              aria-label="Board actions"
             >
-              Events on this board ({eventTitles.length})
-              <ChevronDown
-                className={cn(
-                  "h-3.5 w-3.5 transition-transform duration-150",
-                  eventsOpen && "rotate-180",
-                )}
-              />
+              <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
-            {eventsOpen ? (
-              <ul className="mt-1.5 space-y-1 animate-fade-in">
-                {eventTitles.map((t) => (
-                  <li
-                    key={t}
-                    className="truncate rounded border border-line bg-paper-2 px-2 py-1 text-xs text-foreground"
+            {menuOpen ? (
+              <div className="absolute right-0 z-20 mt-1 min-w-[9rem] rounded-md border border-line bg-card py-1 shadow-[var(--shadow-card)]">
+                {onSave && !saved ? (
+                  <button
+                    type="button"
+                    className="block w-full px-3 py-1.5 text-left text-xs font-semibold hover:bg-secondary"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onSave();
+                    }}
                   >
-                    {t}
-                  </li>
-                ))}
-              </ul>
+                    Save board
+                  </button>
+                ) : null}
+                {onMoveToRecent && saved ? (
+                  <button
+                    type="button"
+                    className="block w-full px-3 py-1.5 text-left text-xs font-semibold hover:bg-secondary"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onMoveToRecent();
+                    }}
+                  >
+                    Move to recent
+                  </button>
+                ) : null}
+                <p className="border-t border-line px-3 py-1.5 text-[0.6rem] text-muted-foreground">
+                  Created {formatBoardDate(board.createdAt)}
+                </p>
+                {eventTitles.length > 0 ? (
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs font-semibold hover:bg-secondary"
+                    onClick={() => setEventsOpen((o) => !o)}
+                  >
+                    Events ({eventTitles.length})
+                    <ChevronDown
+                      className={cn(
+                        "h-3 w-3 transition-transform",
+                        eventsOpen && "rotate-180",
+                      )}
+                    />
+                  </button>
+                ) : null}
+                {eventsOpen
+                  ? eventTitles.map((t) => (
+                      <p
+                        key={t}
+                        className="truncate px-3 py-0.5 text-[0.65rem] text-muted-foreground"
+                      >
+                        {t}
+                      </p>
+                    ))
+                  : null}
+                {onDelete ? (
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-1.5 border-t border-line px-3 py-1.5 text-left text-xs font-semibold text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDelete();
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Delete
+                  </button>
+                ) : null}
+              </div>
             ) : null}
           </div>
-        ) : null}
+        )}
       </div>
     </article>
+  );
+}
+
+/** First grid cell — Resolve “New Project” tile */
+export function StudioNewBoardTile({
+  selected,
+  onClick,
+}: {
+  selected?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div className="flex flex-col" data-testid="board-new-tile">
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md border-2 bg-paper-2 transition-[border-color,box-shadow] duration-150",
+          selected
+            ? "border-brand shadow-[0_0_0_1px_color-mix(in_oklab,var(--brand)_40%,transparent)]"
+            : "border-transparent ring-1 ring-line hover:ring-foreground/30",
+        )}
+        aria-label="New board"
+      >
+        <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+          <span className="font-display text-3xl font-light leading-none text-foreground/70">
+            +
+          </span>
+        </span>
+      </button>
+      <p className="mt-2 text-center text-sm font-medium text-foreground">
+        New board
+      </p>
+    </div>
   );
 }
 
@@ -214,13 +225,11 @@ function BoardPreviewCollage({
 }) {
   if (previews.length === 0) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-[radial-gradient(circle,_#d6d6d6_1px,_transparent_1px)] bg-[size:16px_16px]">
-        <span className="rounded-md border border-line bg-card/90 px-2 py-1 text-caption font-semibold text-muted-foreground">
-          Empty board
+      <div className="flex h-full w-full items-center justify-center bg-secondary/40">
+        <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+          <span className="font-display text-lg font-bold tracking-tight">O</span>
         </span>
-        <span className="max-w-[80%] truncate text-[0.65rem] text-muted-foreground/80">
-          {name}
-        </span>
+        <span className="sr-only">{name}</span>
       </div>
     );
   }
@@ -236,7 +245,7 @@ function BoardPreviewCollage({
   }
 
   const cells = previews.slice(0, 4);
-  while (cells.length < 4 && cells.length > 1) {
+  while (cells.length < 4 && cells.length >= 2) {
     cells.push(
       demoPreviewForPost({ id: `${fallbackId}-${cells.length}`, title: name }),
     );

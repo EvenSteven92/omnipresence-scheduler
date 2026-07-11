@@ -1,19 +1,21 @@
-import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { StudioBoardCard } from "@/components/studio/StudioBoardCard";
+import {
+  StudioBoardCard,
+  StudioNewBoardTile,
+} from "@/components/studio/StudioBoardCard";
 import type { StudioBoardMeta } from "@/lib/studio-boards";
 import { defaultBoardName } from "@/lib/studio-boards";
 import { cn } from "@/lib/utils";
 
 /**
- * DaVinci Resolve–inspired project gallery: full-width 16:9 board cards.
- * Reusable with a filtered `boards` list (e.g. boards containing a file).
+ * DaVinci Resolve Project Manager–style library:
+ * full-width 16:9 grid, New board as first tile, title under thumb.
  */
 export function StudioBoardPicker({
   boards,
   activeId,
   title = "Boards",
-  subtitle = "Pick up a batch or start a new one. Each board keeps its reels — even after you schedule them.",
+  subtitle = "Open a batch or start a new one — same idea as a project library.",
   showNew = true,
   onOpen,
   onNew,
@@ -32,8 +34,10 @@ export function StudioBoardPicker({
   onMoveToRecent?: (id: string) => void;
   onDelete?: (id: string) => void;
 }) {
-  const [name, setName] = useState(() => defaultBoardName());
   const [showSaved, setShowSaved] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | "new" | null>(
+    activeId,
+  );
 
   const recent = useMemo(
     () => boards.filter((b) => !b.archived),
@@ -43,118 +47,77 @@ export function StudioBoardPicker({
     () => boards.filter((b) => b.archived),
     [boards],
   );
-  const resume = recent.find((b) => b.id === activeId) ?? recent[0] ?? null;
+
+  const selectedBoard =
+    selectedId && selectedId !== "new"
+      ? boards.find((b) => b.id === selectedId)
+      : null;
+
+  function confirmDelete(b: StudioBoardMeta) {
+    if (window.confirm(`Delete “${b.name}”? This cannot be undone.`)) {
+      onDelete?.(b.id);
+    }
+  }
 
   return (
     <div
       data-testid="studio-board-picker"
-      className="flex w-full min-h-0 flex-1 flex-col animate-fade-in"
+      className="flex w-full min-h-0 flex-1 flex-col animate-fade-in bg-background"
     >
-      <header className="flex shrink-0 flex-wrap items-end justify-between gap-4 border-b border-line bg-card px-6 py-5 md:px-8">
-        <div className="min-w-0 max-w-2xl">
+      {/* Top bar — light chrome, Resolve-like project strip */}
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-card px-5 py-3 md:px-8">
+        <div className="min-w-0">
           <p className="text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            Library
+            Projects
           </p>
-          <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+          <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
             {title}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
         </div>
-        {showNew && onNew ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={defaultBoardName()}
-              className="w-44 rounded-md border border-line bg-paper-2 px-3 py-2 text-sm focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15 sm:w-56"
-              data-testid="board-new-name"
-            />
-            <button
-              type="button"
-              onClick={() => onNew(name.trim() || defaultBoardName())}
-              className="btn-action btn-action-primary inline-flex items-center gap-2 !text-white"
-              data-testid="board-new-create"
-            >
-              <Plus className="h-4 w-4" />
-              New board
-            </button>
-          </div>
-        ) : null}
+        <p className="hidden max-w-md text-right text-xs text-muted-foreground sm:block">
+          {subtitle}
+        </p>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8">
-        {resume ? (
-          <section className="mb-8">
-            <p className="mb-3 text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              Continue
-            </p>
-            <div className="grid max-w-md grid-cols-1">
-              <StudioBoardCard
-                board={resume}
-                isActive={resume.id === activeId}
-                onOpen={() => onOpen(resume.id)}
-                onSave={onSave ? () => onSave(resume.id) : undefined}
-                onDelete={
-                  onDelete
-                    ? () => {
-                        if (
-                          window.confirm(
-                            `Delete “${resume.name}”? This cannot be undone.`,
-                          )
-                        ) {
-                          onDelete(resume.id);
-                        }
-                      }
-                    : undefined
-                }
-              />
-            </div>
-          </section>
-        ) : null}
+      {/* Main grid — fills width like Resolve */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 md:px-8 md:py-8">
+        <StudioBoardGrid>
+          {showNew && onNew ? (
+            <StudioNewBoardTile
+              selected={selectedId === "new"}
+              onClick={() => {
+                setSelectedId("new");
+                onNew(defaultBoardName());
+              }}
+            />
+          ) : null}
 
-        <section>
-          <p className="mb-3 text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Recent
+          {recent.map((b) => (
+            <StudioBoardCard
+              key={b.id}
+              board={b}
+              isActive={b.id === activeId}
+              selected={selectedId === b.id}
+              onSelect={() => setSelectedId(b.id)}
+              onOpen={() => onOpen(b.id)}
+              onSave={onSave ? () => onSave(b.id) : undefined}
+              onDelete={onDelete ? () => confirmDelete(b) : undefined}
+            />
+          ))}
+        </StudioBoardGrid>
+
+        {recent.length === 0 && !showNew ? (
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            No boards yet.
           </p>
-          {recent.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-line px-4 py-12 text-center text-sm text-muted-foreground">
-              No boards yet — create one with <strong>New board</strong>.
-            </p>
-          ) : (
-            <StudioBoardGrid>
-              {recent.map((b) => (
-                <StudioBoardCard
-                  key={b.id}
-                  board={b}
-                  isActive={b.id === activeId}
-                  onOpen={() => onOpen(b.id)}
-                  onSave={onSave ? () => onSave(b.id) : undefined}
-                  onDelete={
-                    onDelete
-                      ? () => {
-                          if (
-                            window.confirm(
-                              `Delete “${b.name}”? This cannot be undone.`,
-                            )
-                          ) {
-                            onDelete(b.id);
-                          }
-                        }
-                      : undefined
-                  }
-                />
-              ))}
-            </StudioBoardGrid>
-          )}
-        </section>
+        ) : null}
 
         {saved.length > 0 ? (
           <section className="mt-10">
             <button
               type="button"
               onClick={() => setShowSaved((v) => !v)}
-              className="mb-3 text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+              className="mb-4 text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
             >
               Saved boards · {saved.length}{" "}
               <span className="font-normal normal-case tracking-normal">
@@ -168,23 +131,13 @@ export function StudioBoardPicker({
                     key={b.id}
                     board={b}
                     saved
+                    selected={selectedId === b.id}
+                    onSelect={() => setSelectedId(b.id)}
                     onOpen={() => onOpen(b.id)}
                     onMoveToRecent={
                       onMoveToRecent ? () => onMoveToRecent(b.id) : undefined
                     }
-                    onDelete={
-                      onDelete
-                        ? () => {
-                            if (
-                              window.confirm(
-                                `Delete “${b.name}”? This cannot be undone.`,
-                              )
-                            ) {
-                              onDelete(b.id);
-                            }
-                          }
-                        : undefined
-                    }
+                    onDelete={onDelete ? () => confirmDelete(b) : undefined}
                   />
                 ))}
               </StudioBoardGrid>
@@ -192,11 +145,43 @@ export function StudioBoardPicker({
           </section>
         ) : null}
       </div>
+
+      {/* Bottom bar — Resolve Export/Import + New/Open */}
+      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-line bg-card px-5 py-3 md:px-8">
+        <p className="text-xs text-muted-foreground">
+          {selectedBoard
+            ? `Selected: ${selectedBoard.name}`
+            : selectedId === "new"
+              ? "New board"
+              : "Select a board"}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {showNew && onNew ? (
+            <button
+              type="button"
+              onClick={() => onNew(defaultBoardName())}
+              className="btn-action btn-action-secondary min-h-9"
+              data-testid="board-new-create"
+            >
+              New board
+            </button>
+          ) : null}
+          <button
+            type="button"
+            disabled={!selectedBoard}
+            onClick={() => selectedBoard && onOpen(selectedBoard.id)}
+            className="btn-action btn-action-primary min-h-9 !text-white disabled:opacity-40"
+            data-testid="board-open"
+          >
+            Open
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }
 
-/** Shared grid — full main width, DaVinci-style multi-column. */
+/** Full-width multi-column grid (≈5 across on large screens, like Resolve). */
 export function StudioBoardGrid({
   children,
   className,
@@ -207,7 +192,7 @@ export function StudioBoardGrid({
   return (
     <div
       className={cn(
-        "grid w-full grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+        "grid w-full grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-6",
         className,
       )}
     >
