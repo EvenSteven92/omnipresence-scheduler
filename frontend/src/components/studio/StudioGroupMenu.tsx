@@ -54,7 +54,7 @@ export function StudioGroupMenu({
     <div
       data-testid="studio-group-menu"
       className={cn(
-        "pointer-events-auto absolute top-20 z-40 flex max-w-[min(96vw,36rem)] flex-wrap items-center gap-1 rounded-lg border border-line bg-card/95 p-1.5 shadow-[var(--shadow-card)] backdrop-blur-sm",
+        "pointer-events-auto absolute top-20 z-40 flex max-w-[min(96vw,44rem)] flex-row flex-nowrap items-center gap-1 overflow-x-auto rounded-lg border border-line bg-card/95 p-1.5 shadow-[var(--shadow-card)] backdrop-blur-sm",
         "transition-[transform,opacity] duration-200 ease-out",
       )}
       style={{
@@ -65,7 +65,7 @@ export function StudioGroupMenu({
             : "translateX(-50%)",
       }}
     >
-      <span className="px-2 text-caption font-semibold text-foreground">
+      <span className="shrink-0 whitespace-nowrap px-2 text-caption font-semibold text-foreground">
         {count} selected
       </span>
       {items.map((item) => {
@@ -78,7 +78,7 @@ export function StudioGroupMenu({
             disabled={item.disabled || isBusy}
             onClick={() => onTool(item.id)}
             className={cn(
-              "inline-flex h-8 items-center gap-1 rounded-md px-2 text-caption font-semibold transition-colors duration-150 disabled:opacity-40",
+              "inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 text-caption font-semibold transition-colors duration-150 disabled:opacity-40",
               item.danger
                 ? "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 : item.primary
@@ -98,7 +98,7 @@ export function StudioGroupMenu({
       <button
         type="button"
         onClick={onClear}
-        className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+        className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
         aria-label="Clear selection"
       >
         <X className="h-4 w-4" />
