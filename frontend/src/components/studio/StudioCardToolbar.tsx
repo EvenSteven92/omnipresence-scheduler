@@ -12,21 +12,27 @@ import { hasScriptSource, isCaptionReady, studioStage } from "@/lib/studio-layou
 import { cn } from "@/lib/utils";
 
 export type StudioTool =
+  | "prepare"
   | "transcript"
   | "cta"
   | "caption"
-  | "prepare"
   | "schedule"
   | "remove";
 
+/**
+ * Contextual tools — horizontal under media.
+ * Order: AI all first, then compose steps, schedule, remove.
+ */
 export function StudioCardToolbar({
   draft,
   busy,
   onTool,
+  className,
 }: {
   draft: DraftPost;
   busy?: StudioTool | null;
   onTool: (tool: StudioTool) => void;
+  className?: string;
 }) {
   const stage = studioStage(draft);
   const canCaption = hasScriptSource(draft);
@@ -41,8 +47,15 @@ export function StudioCardToolbar({
     title?: string;
   }> = [
     {
+      id: "prepare",
+      label: "AI all",
+      icon: Sparkles,
+      primary: true,
+      title: "AI prepare: transcript → CTA (if event) → caption",
+    },
+    {
       id: "transcript",
-      label: "Transcript",
+      label: "Script",
       icon: FileText,
       primary: stage === "media",
     },
@@ -50,33 +63,23 @@ export function StudioCardToolbar({
       id: "cta",
       label: "CTA",
       icon: Megaphone,
-      primary: stage === "media",
     },
     {
       id: "caption",
       label: "Caption",
       icon: Type,
-      primary: canCaption && !canSchedule,
       disabled: !canCaption,
       title: canCaption
-        ? "Generate caption + hashtags from transcript & CTA"
-        : "Add a transcript or call to action first",
-    },
-    {
-      id: "prepare",
-      label: "AI all",
-      icon: Sparkles,
-      primary: stage === "media" || stage === "script",
-      title: "AI prepare: transcript → CTA (if event) → caption",
+        ? "Generate caption + hashtags"
+        : "Add transcript or CTA first",
     },
     {
       id: "schedule",
       label: "Schedule",
       icon: CalendarClock,
-      primary: canSchedule,
       disabled: !canSchedule,
       title: canSchedule
-        ? "Set destinations and times"
+        ? "Open schedule shelf"
         : "Add caption and hashtags first",
     },
     {
@@ -89,19 +92,17 @@ export function StudioCardToolbar({
   return (
     <div
       data-testid={`studio-toolbar-${draft.id}`}
-      className="absolute -left-[3.25rem] top-8 z-20 flex w-12 flex-col gap-1 rounded-lg border border-line bg-card p-1 shadow-[var(--shadow-card)] sm:-left-[9.5rem] sm:w-[9rem]"
+      className={cn(
+        "flex flex-wrap items-center gap-0.5 rounded-md border border-line bg-card/95 p-0.5 shadow-[var(--shadow-card)] backdrop-blur-sm",
+        "origin-bottom opacity-100 transition-[opacity,transform] duration-150 ease-out",
+        className,
+      )}
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
       {items.map((item) => {
         const Icon = item.icon;
         const isBusy = busy === item.id;
-        const open =
-          (item.id === "transcript" && draft.studioOpen?.transcript) ||
-          (item.id === "cta" && draft.studioOpen?.cta) ||
-          (item.id === "caption" && draft.studioOpen?.caption) ||
-          (item.id === "schedule" && draft.studioOpen?.schedule);
-
         return (
           <button
             key={item.id}
@@ -111,24 +112,20 @@ export function StudioCardToolbar({
             onClick={() => onTool(item.id)}
             title={item.title ?? item.label}
             className={cn(
-              "flex items-center gap-2 rounded-md px-2 py-2 text-left text-caption font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+              "inline-flex h-8 items-center gap-1 rounded px-2 text-[0.65rem] font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40",
               item.id === "remove"
                 ? "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                : open
-                  ? "bg-secondary text-foreground"
-                  : item.primary
-                    ? "bg-primary text-white hover:bg-[#262626]"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                : item.primary
+                  ? "bg-primary text-white hover:bg-[#262626]"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground",
             )}
           >
             {isBusy ? (
-              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-            ) : item.id === "caption" && item.primary ? (
-              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
             )}
-            <span className="hidden min-w-0 truncate sm:inline">{item.label}</span>
+            <span className="hidden sm:inline">{item.label}</span>
           </button>
         );
       })}

@@ -63,7 +63,10 @@ export function StudioCard({
       data-testid={`studio-card-${draft.id}`}
       data-stage={stage}
       data-studio-card={draft.id}
-      className={cn("absolute will-change-transform", multiSelected && "z-30")}
+      className={cn(
+        "absolute will-change-transform",
+        multiSelected && "z-30",
+      )}
       style={{
         left: draft.canvasX ?? 48,
         top: draft.canvasY ?? 48,
@@ -72,21 +75,19 @@ export function StudioCard({
           ox !== 0 || oy !== 0 ? `translate3d(${ox}px, ${oy}px, 0)` : undefined,
       }}
     >
-      {selected ? (
-        <StudioCardToolbar draft={draft} busy={busy} onTool={onTool} />
-      ) : null}
-
       <article
         className={cn(
-          "overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] transition-[box-shadow,border-color] duration-150 select-none",
+          "overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] select-none",
+          "transition-[border-color,box-shadow,transform] duration-150 ease-out",
           multiSelected
-            ? "border-brand ring-2 ring-brand ring-offset-2 ring-offset-paper-2"
-            : "border-line hover:border-foreground/30",
+            ? "border-brand shadow-[0_0_0_2px_color-mix(in_oklab,var(--brand)_35%,transparent)]"
+            : "border-line hover:border-foreground/25",
+          selected && "scale-[1.01]",
         )}
       >
         <div
           className={cn(
-            "touch-none",
+            "relative touch-none",
             canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-default",
           )}
           onPointerDown={(e) => {
@@ -104,6 +105,11 @@ export function StudioCard({
           }}
         >
           <StudioCardMedia draft={draft} />
+          {selected ? (
+            <div className="absolute inset-x-1.5 bottom-1.5 z-10">
+              <StudioCardToolbar draft={draft} busy={busy} onTool={onTool} />
+            </div>
+          ) : null}
         </div>
 
         <div
@@ -118,10 +124,10 @@ export function StudioCard({
           </p>
           <p className="mt-0.5 text-caption text-muted-foreground">
             {stage === "caption"
-              ? "Caption ready — open Schedule"
+              ? "Caption ready"
               : stage === "script"
-                ? "Script started — generate caption"
-                : "New reel — transcript & CTA"}
+                ? "Script started"
+                : "New reel"}
           </p>
           {eventTitle ? (
             <p className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded border border-line bg-paper-2 px-1.5 py-0.5 text-[0.65rem] font-medium text-foreground">
@@ -131,42 +137,43 @@ export function StudioCard({
           ) : null}
         </div>
 
-        {selected || open.transcript ? (
+        {/* Accordion: only expanded sections */}
+        {open.transcript ? (
           <StudioTranscriptSection
-            open={Boolean(open.transcript)}
+            open
             value={draft.transcript}
             busy={busy === "transcript"}
-            onToggle={() => patchOpen("transcript", !open.transcript)}
+            onToggle={() => patchOpen("transcript", false)}
             onChange={(transcript) => onChange((d) => ({ ...d, transcript }))}
             onGenerate={onGenerateTranscript}
           />
         ) : null}
 
-        {selected || open.cta ? (
+        {open.cta ? (
           <StudioCtaSection
-            open={Boolean(open.cta)}
+            open
             value={draft.callToAction ?? ""}
-            onToggle={() => patchOpen("cta", !open.cta)}
+            onToggle={() => patchOpen("cta", false)}
             onChange={(callToAction) => onChange((d) => ({ ...d, callToAction }))}
           />
         ) : null}
 
-        {selected || open.title || open.caption ? (
+        {open.title ? (
           <StudioTitleSection
-            open={Boolean(open.title ?? open.caption)}
+            open
             value={draft.title ?? ""}
-            onToggle={() => patchOpen("title", !(open.title ?? open.caption))}
+            onToggle={() => patchOpen("title", false)}
             onChange={(title) => onChange((d) => ({ ...d, title }))}
           />
         ) : null}
 
-        {selected || open.caption ? (
+        {open.caption ? (
           <StudioCaptionSection
-            open={Boolean(open.caption)}
+            open
             caption={draft.caption}
             hashtags={draft.hashtags}
             busy={busy === "caption"}
-            onToggle={() => patchOpen("caption", !open.caption)}
+            onToggle={() => patchOpen("caption", false)}
             onCaption={(caption) => onChange((d) => ({ ...d, caption }))}
             onHashtags={(hashtags) => onChange((d) => ({ ...d, hashtags }))}
             onGenerate={onGenerateCaption}

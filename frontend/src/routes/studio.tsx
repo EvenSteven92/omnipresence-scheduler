@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Plus, Sparkles, Upload, X } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -11,6 +11,8 @@ import { StudioCard } from "@/components/studio/StudioCard";
 import type { StudioTool } from "@/components/studio/StudioCardToolbar";
 import { StudioConnectionLayer } from "@/components/studio/StudioConnectionLayer";
 import { StudioEventCard } from "@/components/studio/StudioEventCard";
+import { StudioGroupMenu } from "@/components/studio/StudioGroupMenu";
+import { StudioLayersPanel } from "@/components/studio/StudioLayersPanel";
 import { StudioScheduleShelf } from "@/components/studio/StudioScheduleShelf";
 import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
 import {
@@ -35,6 +37,11 @@ import {
   generateTranscript,
   prepareStudioCardWithAi,
 } from "@/lib/studio-ai";
+import {
+  addBoardEventId,
+  readBoardEventIds,
+  removeBoardEventId,
+} from "@/lib/studio-board-events";
 import {
   cardBounds,
   cascadePosition,
@@ -82,6 +89,10 @@ function StudioPage() {
 
   const [drafts, setDrafts] = useState<DraftPost[]>([]);
   const [eventLayout, setEventLayout] = useState<EventLayoutMap>({});
+  /** Opt-in: only these workspace events appear as board cards. */
+  const [boardEventIds, setBoardEventIds] = useState<string[]>([]);
+  const [layersOpen, setLayersOpen] = useState(false);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -102,20 +113,38 @@ function StudioPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<Viewport>({ panX: 0, panY: 0, zoom: 1 });
+  const draftsRef = useRef(drafts);
+  draftsRef.current = drafts;
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2800);
   }, []);
 
+  const boardEvents = useMemo(
+    () =>
+      boardEventIds
+        .map((id) => events.find((e) => e.id === id))
+        .filter((e): e is ContentEvent => e != null),
+    [boardEventIds, events],
+  );
+
+  const offBoardEvents = useMemo(() => {
+    const on = new Set(boardEventIds);
+    return events.filter((e) => !on.has(e.id));
+  }, [events, boardEventIds]);
+
   useEffect(() => {
     const shelf = readComposerShelf(workspaceId);
     const merged = ensureCanvasPositions([...shelf.drafting, ...shelf.ready]);
     setDrafts(merged);
     setEventLayout(readEventLayout(workspaceId));
+    setBoardEventIds(readBoardEventIds(workspaceId));
     setSelectedIds(new Set());
     setFocusId(null);
     setSelectedEventId(null);
+    setHiddenIds(new Set());
+    setLayersOpen(false);
   }, [workspaceId]);
 
   useEffect(() => {
@@ -128,14 +157,18 @@ function StudioPage() {
     writeComposerShelf(workspaceId, drafting, ready, shelf.savedDrafts);
   }, [workspaceId, drafts]);
 
-  // Seed event positions for events missing layout
+  // Layout only for events already on the board (never auto-place workspace history)
   useEffect(() => {
+    if (boardEventIds.length === 0) return;
     let map = { ...eventLayout };
     let changed = false;
     let i = 0;
-    for (const ev of events) {
-      if (!map[ev.id]) {
-        map[ev.id] = { x: 80 + (i % 3) * 300, y: 520 + Math.floor(i / 3) * 160 };
+    for (const id of boardEventIds) {
+      if (!map[id]) {
+        map[id] = {
+          x: 80 + (i % 3) * 300,
+          y: 520 + Math.floor(i / 3) * 160,
+        };
         changed = true;
         i += 1;
       }
@@ -144,7 +177,7 @@ function StudioPage() {
       writeEventLayout(workspaceId, map);
       setEventLayout(map);
     }
-  }, [events, workspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [boardEventIds, workspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateDraft = useCallback((id: string, updater: (d: DraftPost) => DraftPost) => {
     setDrafts((cur) => cur.map((d) => (d.id === id ? updater(d) : d)));
@@ -408,16 +441,94 @@ function StudioPage() {
     }
   }
 
-  function selectCard(id: string) {
+  function selectCard(id: string, additive = false) {
+    setSelectedEventId(null);
+    if (additive) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      setFocusId(id);
+      return;
+    }
     setSelectedIds(new Set([id]));
     setFocusId(id);
-    setSelectedEventId(null);
   }
 
   function selectEvent(id: string) {
     setSelectedEventId(id);
     setSelectedIds(new Set());
     setFocusId(null);
+  }
+
+  function toggleHidden(id: string) {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function removeEventFromBoard(eventId: string) {
+    const next = removeBoardEventId(workspaceId, eventId);
+    setBoardEventIds(next);
+    if (selectedEventId === eventId) setSelectedEventId(null);
+    setHiddenIds((prev) => {
+      const n = new Set(prev);
+      n.delete(`event:${eventId}`);
+      return n;
+    });
+    showToast("Event removed from board (not deleted)");
+  }
+
+  async function handleGroupTool(tool: StudioTool) {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+
+    if (tool === "remove") {
+      for (const id of ids) removeDraft(id);
+      return;
+    }
+    if (tool === "prepare") {
+      await aiPrepareSelected();
+      return;
+    }
+    if (tool === "schedule") {
+      openScheduleShelf(ids);
+      return;
+    }
+    if (tool === "transcript") {
+      for (const id of ids) {
+        updateDraft(id, (d) => ({
+          ...d,
+          studioOpen: { ...d.studioOpen, transcript: true },
+        }));
+        const d = draftsRef.current.find((x) => x.id === id);
+        if (!d?.transcript?.trim()) await runTranscript(id);
+      }
+      return;
+    }
+    if (tool === "cta") {
+      for (const id of ids) {
+        updateDraft(id, (d) => ({
+          ...d,
+          studioOpen: { ...d.studioOpen, cta: true },
+        }));
+      }
+      return;
+    }
+    if (tool === "caption") {
+      for (const id of ids) {
+        updateDraft(id, (d) => ({
+          ...d,
+          studioOpen: { ...d.studioOpen, caption: true, title: true },
+        }));
+        await runCaption(id);
+      }
+    }
   }
 
   function onReelDragStart(id: string, e: React.PointerEvent) {
@@ -589,13 +700,38 @@ function StudioPage() {
       kind: "sunday_sermon",
     };
     await addEvent(event);
-    const n = Object.keys(eventLayout).length;
+    const nextIds = addBoardEventId(workspaceId, id);
+    setBoardEventIds(nextIds);
+    const n = nextIds.length - 1;
     const pos = { x: 100 + (n % 3) * 40, y: 100 + (n % 4) * 40 };
     const map = setEventPosition(workspaceId, id, pos.x, pos.y);
     setEventLayout(map);
     setSelectedEventId(id);
     setSelectedIds(new Set());
-    showToast("Event card added — attach reels with stringing");
+    setLayersOpen(true);
+    showToast("Event on board — attach reels, or post later anytime");
+  }
+
+  /** Place an existing workspace event onto the board (late content). */
+  function placeEventOnBoard(eventId: string) {
+    if (boardEventIds.includes(eventId)) {
+      selectEvent(eventId);
+      return;
+    }
+    const next = addBoardEventId(workspaceId, eventId);
+    setBoardEventIds(next);
+    if (!eventLayout[eventId]) {
+      const n = next.length - 1;
+      const map = setEventPosition(
+        workspaceId,
+        eventId,
+        100 + (n % 3) * 40,
+        100 + (n % 4) * 40,
+      );
+      setEventLayout(map);
+    }
+    selectEvent(eventId);
+    showToast("Event placed on board");
   }
 
   async function assignEventToSelection(eventId: string) {
@@ -698,13 +834,14 @@ function StudioPage() {
   }, [events]);
 
   const emptyOverlay =
-    drafts.length === 0 && events.length === 0 ? (
+    drafts.length === 0 && boardEvents.length === 0 ? (
       <div className="w-[min(90vw,22rem)] text-center">
         <p className="font-serif-accent text-2xl text-foreground md:text-3xl">
           Drop reels onto the board
         </p>
         <p className="mt-3 text-body-sm text-muted-foreground">
-          Prepare cards, string to events, then open Schedule from the toolbar.
+          Events appear only when you add them. Prepare reels, string to events,
+          schedule from the shelf.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <button
@@ -783,17 +920,20 @@ function StudioPage() {
         onMarqueeEnd={onMarqueeEnd}
         emptyOverlay={emptyOverlay}
         shelfWidth={shelfOpen ? shelfWidth : 0}
+        layersOpen={layersOpen}
+        onToggleLayers={() => setLayersOpen((o) => !o)}
         scheduleDisabled={captionReadySelection.length === 0 && !shelfOpen}
         onOpenSchedule={() => openScheduleShelf()}
         onNewEvent={() => void createEventOnBoard()}
       >
         <StudioConnectionLayer
-          drafts={drafts}
+          drafts={drafts.filter((d) => !hiddenIds.has(d.id))}
           eventLayout={eventLayout}
           liveDrag={liveDrag}
         />
 
-        {events.map((ev) => {
+        {boardEvents.map((ev) => {
+          if (hiddenIds.has(`event:${ev.id}`)) return null;
           const pos = eventLayout[ev.id] ?? { x: 80, y: 520 };
           const linked = drafts.filter((d) => d.eventId === ev.id).length;
           const live =
@@ -822,6 +962,7 @@ function StudioPage() {
         })}
 
         {drafts.map((draft) => {
+          if (hiddenIds.has(draft.id)) return null;
           const isSel = selectedIds.has(draft.id);
           const live =
             liveDrag && liveDrag.ids.includes(draft.id)
@@ -840,7 +981,9 @@ function StudioPage() {
               canDrag={mode === "select"}
               liveOffset={live}
               eventTitle={evTitle}
-              onSelect={() => selectCard(draft.id)}
+              onSelect={(e) =>
+                selectCard(draft.id, e.shiftKey || e.metaKey || e.ctrlKey)
+              }
               onChange={(updater) => updateDraft(draft.id, updater)}
               onTool={(tool) => handleTool(draft.id, tool)}
               onGenerateTranscript={() => void runTranscript(draft.id)}
@@ -851,57 +994,52 @@ function StudioPage() {
         })}
       </StudioCanvas>
 
+      <StudioLayersPanel
+        open={layersOpen}
+        drafts={drafts}
+        boardEvents={boardEvents}
+        offBoardEvents={offBoardEvents}
+        selectedIds={selectedIds}
+        selectedEventId={selectedEventId}
+        hiddenIds={hiddenIds}
+        onClose={() => setLayersOpen(false)}
+        onSelectDraft={(id) => {
+          selectCard(id);
+          setHiddenIds((prev) => {
+            if (!prev.has(id)) return prev;
+            const n = new Set(prev);
+            n.delete(id);
+            return n;
+          });
+        }}
+        onSelectEvent={(id) => {
+          selectEvent(id);
+          setHiddenIds((prev) => {
+            const key = `event:${id}`;
+            if (!prev.has(key)) return prev;
+            const n = new Set(prev);
+            n.delete(key);
+            return n;
+          });
+        }}
+        onToggleHidden={toggleHidden}
+        onRemoveEventFromBoard={removeEventFromBoard}
+        onNewEvent={() => void createEventOnBoard()}
+        onPlaceEvent={placeEventOnBoard}
+      />
+
       {selectedIds.size > 1 ? (
-        <div
-          data-testid="studio-batch-bar"
-          className="absolute left-1/2 top-20 z-40 flex -translate-x-1/2 items-center gap-3 rounded-lg border border-line bg-card px-4 py-2 shadow-[var(--shadow-card)]"
-          style={{
-            transform:
-              shelfOpen && shelfWidth > 0
-                ? `translateX(calc(-50% - ${shelfWidth / 2}px))`
-                : undefined,
+        <StudioGroupMenu
+          count={selectedIds.size}
+          busy={batchAiBusy ? "batch" : busy}
+          scheduleCount={captionReadySelection.length}
+          shelfOffset={shelfOpen ? shelfWidth : 0}
+          onTool={(tool) => void handleGroupTool(tool)}
+          onClear={() => {
+            setSelectedIds(new Set());
+            setFocusId(null);
           }}
-        >
-          <span className="text-sm font-semibold text-foreground">
-            {selectedIds.size} selected
-          </span>
-          <button
-            type="button"
-            className="btn-action btn-action-secondary min-h-8 text-caption disabled:opacity-50"
-            disabled={batchAiBusy}
-            onClick={() => void aiPrepareSelected()}
-            data-testid="batch-ai-prepare"
-          >
-            {batchAiBusy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="h-3.5 w-3.5" />
-            )}
-            AI prepare
-          </button>
-          <button
-            type="button"
-            className="btn-action btn-action-primary !text-white min-h-8 text-caption"
-            disabled={captionReadySelection.length === 0}
-            onClick={() => openScheduleShelf()}
-          >
-            Schedule
-            {captionReadySelection.length > 0
-              ? ` (${captionReadySelection.length})`
-              : ""}
-          </button>
-          <button
-            type="button"
-            className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
-            onClick={() => {
-              setSelectedIds(new Set());
-              setFocusId(null);
-            }}
-            aria-label="Clear selection"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        />
       ) : null}
 
       <StudioScheduleShelf
@@ -924,7 +1062,7 @@ function StudioPage() {
       {toast ? (
         <div
           role="status"
-          className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-line bg-foreground px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-card)] md:bottom-20"
+          className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-line bg-foreground px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-opacity duration-200 md:bottom-20"
         >
           {toast}
         </div>

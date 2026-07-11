@@ -1,6 +1,7 @@
 import {
   CalendarClock,
   Hand,
+  Layers,
   MousePointer2,
   Minus,
   Plus,
@@ -26,6 +27,7 @@ import { cn } from "@/lib/utils";
 
 export type CanvasMode = "select" | "hand";
 
+/** Marquee corners in board/world space */
 export type MarqueeWorld = {
   start: { x: number; y: number };
   current: { x: number; y: number };
@@ -38,9 +40,17 @@ function isTypingTarget(el: EventTarget | null): boolean {
   );
 }
 
+function isUiChrome(el: EventTarget | null): boolean {
+  if (!(el instanceof Element)) return false;
+  return Boolean(
+    el.closest(
+      "[data-studio-card], [data-studio-layers], [data-testid^='studio-toolbar'], [data-testid='studio-group-menu'], [data-testid='studio-schedule-shelf'], button, input, textarea, select, a",
+    ),
+  );
+}
+
 /**
- * Miro-class pan/zoom + marquee host.
- * Viewport exposed via onViewportChange for drag/marquee math.
+ * Pan/zoom canvas + viewport-level marquee (works at any pan/zoom).
  */
 export function StudioCanvas({
   children,
@@ -56,6 +66,8 @@ export function StudioCanvas({
   onMarqueeEnd,
   emptyOverlay,
   shelfWidth = 0,
+  layersOpen,
+  onToggleLayers,
   onOpenSchedule,
   onNewEvent,
   scheduleDisabled,
@@ -69,13 +81,13 @@ export function StudioCanvas({
   onDropFiles?: (files: FileList) => void;
   onViewportChange?: (vp: Viewport) => void;
   marquee?: MarqueeWorld | null;
-  onMarqueeStart?: (world: { x: number; y: number }, e: React.PointerEvent) => void;
+  onMarqueeStart?: (world: { x: number; y: number }) => void;
   onMarqueeMove?: (world: { x: number; y: number }) => void;
   onMarqueeEnd?: () => void;
-  /** Screen-space empty state (not affected by pan/zoom). */
   emptyOverlay?: ReactNode;
-  /** Right shelf width when open — shifts bottom HUD left */
   shelfWidth?: number;
+  layersOpen?: boolean;
+  onToggleLayers?: () => void;
   onOpenSchedule?: () => void;
   onNewEvent?: () => void;
   scheduleDisabled?: boolean;
@@ -87,6 +99,7 @@ export function StudioCanvas({
   const didFit = useRef(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [panning, setPanning] = useState(false);
+  const [marqueeLive, setMarqueeLive] = useState(false);
   const panRef = useRef<{
     startX: number;
     startY: number;
@@ -94,11 +107,15 @@ export function StudioCanvas({
     originY: number;
   } | null>(null);
   const marqueeActive = useRef(false);
+  /** Suppress background click that follows marquee pointerup. */
+  const suppressClickRef = useRef(false);
+  const vpRef = useRef<Viewport>({ panX: 0, panY: 0, zoom: 1 });
 
   const effectiveHand = mode === "hand" || spaceHeld;
-  const vp: Viewport = { panX: pan.x, panY: pan.y, zoom };
 
   useEffect(() => {
+    const vp = { panX: pan.x, panY: pan.y, zoom };
+    vpRef.current = vp;
     onViewportChange?.(vp);
   }, [pan.x, pan.y, zoom, onViewportChange]);
 
@@ -159,6 +176,13 @@ export function StudioCanvas({
     [setZoomAtPoint, zoom],
   );
 
+  function worldFromClient(clientX: number, clientY: number) {
+    const el = rootRef.current;
+    if (!el) return { x: 0, y: 0 };
+    const vp = vpRef.current;
+    return clientToWorld(clientX, clientY, el.getBoundingClientRect(), vp);
+  }
+
   function beginPan(e: React.PointerEvent) {
     const el = rootRef.current;
     if (!el) return;
@@ -172,62 +196,50 @@ export function StudioCanvas({
     };
   }
 
-  function worldFromEvent(e: { clientX: number; clientY: number }) {
-    const el = rootRef.current;
-    if (!el) return { x: 0, y: 0 };
-    return clientToWorld(e.clientX, e.clientY, el.getBoundingClientRect(), {
-      panX: pan.x,
-      panY: pan.y,
-      zoom,
-    });
-  }
-
   function onPointerDown(e: React.PointerEvent) {
     const middle = e.button === 1;
     const right = e.button === 2;
     const primary = e.button === 0;
-    // Never pan with primary click in select mode (marquee uses hit layer)
+
     if (middle || right || (primary && effectiveHand)) {
       if (right) e.preventDefault();
       beginPan(e);
-    }
-  }
-
-  function onBoardHitPointerDown(e: React.PointerEvent) {
-    if (e.button !== 0) return;
-    if (effectiveHand) {
-      beginPan(e);
       return;
     }
-    if (mode !== "select") return;
-    // Marquee: empty board only (this layer sits under cards)
-    e.preventDefault();
-    e.stopPropagation();
-    rootRef.current?.setPointerCapture(e.pointerId);
-    marqueeActive.current = true;
-    const w = worldFromEvent(e);
-    onMarqueeStart?.(w, e);
+
+    // Viewport-level marquee: any empty primary drag in select mode
+    if (primary && mode === "select" && !isUiChrome(e.target)) {
+      e.preventDefault();
+      rootRef.current?.setPointerCapture(e.pointerId);
+      marqueeActive.current = true;
+      setMarqueeLive(true);
+      onMarqueeStart?.(worldFromClient(e.clientX, e.clientY));
+    }
   }
 
   function onPointerMove(e: React.PointerEvent) {
     if (panRef.current) {
-      const dx = e.clientX - panRef.current.startX;
-      const dy = e.clientY - panRef.current.startY;
       setPan({
-        x: panRef.current.originX + dx,
-        y: panRef.current.originY + dy,
+        x: panRef.current.originX + (e.clientX - panRef.current.startX),
+        y: panRef.current.originY + (e.clientY - panRef.current.startY),
       });
       return;
     }
     if (marqueeActive.current) {
-      onMarqueeMove?.(worldFromEvent(e));
+      onMarqueeMove?.(worldFromClient(e.clientX, e.clientY));
     }
   }
 
-  function endPan(e: React.PointerEvent) {
+  function endGesture(e: React.PointerEvent) {
     if (marqueeActive.current) {
       marqueeActive.current = false;
+      setMarqueeLive(false);
+      suppressClickRef.current = true;
       onMarqueeEnd?.();
+      // Clear suppress after the synthetic click that follows pointerup
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 0);
     }
     panRef.current = null;
     setPanning(false);
@@ -259,7 +271,6 @@ export function StudioCanvas({
     });
   }
 
-  // Fit cards once when board loads with existing drafts
   useEffect(() => {
     if (didFit.current) return;
     if (drafts.length === 0) {
@@ -276,9 +287,9 @@ export function StudioCanvas({
   }, [drafts.length]);
 
   const marqueeBox =
-    marquee != null
-      ? normalizeRect(marquee.start, marquee.current)
-      : null;
+    marquee != null ? normalizeRect(marquee.start, marquee.current) : null;
+
+  const hudShift = (shelfWidth > 0 ? shelfWidth / 2 : 0) + (layersOpen ? 80 : 0);
 
   return (
     <div className={cn("relative flex min-h-0 flex-1 flex-col", className)}>
@@ -291,7 +302,7 @@ export function StudioCanvas({
           "bg-[radial-gradient(circle,_#d6d6d6_1px,_transparent_1px)] bg-[size:20px_20px]",
           panning || effectiveHand ? "cursor-grab" : "cursor-default",
           panning && "cursor-grabbing",
-          marqueeActive.current && "cursor-crosshair",
+          marqueeLive && "cursor-crosshair",
         )}
         onWheel={onWheel}
         onDragOver={(e) => {
@@ -304,40 +315,29 @@ export function StudioCanvas({
         }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={endPan}
-        onPointerCancel={endPan}
+        onPointerUp={endGesture}
+        onPointerCancel={endGesture}
         onContextMenu={(e) => {
           if (panning || effectiveHand) e.preventDefault();
         }}
         onClick={(e) => {
-          if (marquee) return;
-          const t = e.target as HTMLElement;
-          if (t === e.currentTarget || t.dataset.boardBg) {
-            onBackgroundClick?.(e);
-          }
+          if (suppressClickRef.current || marquee || marqueeLive) return;
+          if (!isUiChrome(e.target)) onBackgroundClick?.(e);
         }}
         role="application"
         aria-label="Studio whiteboard"
       >
         <div
-          data-board-bg="true"
           className="absolute left-0 top-0 h-[4000px] w-[4000px] origin-top-left will-change-transform"
           style={{
             transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
           }}
         >
-          {/* Under-card hit layer: marquee / pan empty board */}
-          <div
-            data-board-bg="true"
-            data-testid="studio-board-hit"
-            className="absolute inset-0 z-0"
-            onPointerDown={onBoardHitPointerDown}
-          />
-          <div className="relative z-[1]">{children}</div>
-          {marqueeBox && marqueeBox.w + marqueeBox.h > 0 ? (
+          {children}
+          {marqueeBox && marqueeBox.w + marqueeBox.h > 2 ? (
             <div
               data-testid="studio-marquee"
-              className="pointer-events-none absolute border border-brand bg-brand-soft"
+              className="pointer-events-none absolute border border-brand bg-brand-soft/40"
               style={{
                 left: marqueeBox.x,
                 top: marqueeBox.y,
@@ -348,7 +348,6 @@ export function StudioCanvas({
           ) : null}
         </div>
 
-        {/* Screen-space empty welcome — always centered in the viewport */}
         {emptyOverlay ? (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
             <div className="pointer-events-auto">{emptyOverlay}</div>
@@ -357,23 +356,19 @@ export function StudioCanvas({
       </div>
 
       <div
-        className="pointer-events-none absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 flex-wrap items-center justify-center gap-2 transition-transform duration-200 ease-out"
+        className="pointer-events-none absolute bottom-4 left-1/2 z-20 flex flex-wrap items-center justify-center gap-2 transition-transform duration-200 ease-out"
         style={{
-          // Keep tools clear of the schedule shelf
-          transform:
-            shelfWidth > 0
-              ? `translateX(calc(-50% - ${shelfWidth / 2}px))`
-              : "translateX(-50%)",
+          transform: `translateX(calc(-50% - ${hudShift}px))`,
         }}
       >
         <div className="pointer-events-auto flex items-center gap-0.5 rounded-lg border border-line bg-card p-1 shadow-[var(--shadow-card)]">
           <button
             type="button"
-            title="Select (V) — marquee + move cards"
+            title="Select (V) — marquee + move"
             data-testid="canvas-mode-select"
             onClick={() => onModeChange("select")}
             className={cn(
-              "rounded-md p-2 transition-colors",
+              "rounded-md p-2 transition-colors duration-150",
               mode === "select"
                 ? "bg-primary text-white"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -387,13 +382,27 @@ export function StudioCanvas({
             data-testid="canvas-mode-hand"
             onClick={() => onModeChange("hand")}
             className={cn(
-              "rounded-md p-2 transition-colors",
+              "rounded-md p-2 transition-colors duration-150",
               mode === "hand"
                 ? "bg-primary text-white"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground",
             )}
           >
             <Hand className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            title="Layers"
+            data-testid="canvas-layers"
+            onClick={onToggleLayers}
+            className={cn(
+              "rounded-md p-2 transition-colors duration-150",
+              layersOpen
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+            )}
+          >
+            <Layers className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -405,19 +414,16 @@ export function StudioCanvas({
             data-testid="canvas-open-schedule"
             disabled={scheduleDisabled}
             onClick={onOpenSchedule}
-            className={cn(
-              "rounded-md p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-              "text-muted-foreground hover:bg-secondary hover:text-foreground",
-            )}
+            className="rounded-md p-2 text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-foreground disabled:opacity-40"
           >
             <CalendarClock className="h-4 w-4" />
           </button>
           <button
             type="button"
-            title="New event card on board"
+            title="New event on board"
             data-testid="canvas-new-event"
             onClick={onNewEvent}
-            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="rounded-md p-2 text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-foreground"
           >
             <Sparkles className="h-4 w-4" />
           </button>

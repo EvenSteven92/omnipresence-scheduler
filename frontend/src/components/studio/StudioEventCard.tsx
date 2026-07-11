@@ -53,9 +53,10 @@ export function StudioEventCard({
     >
       <article
         className={cn(
-          "overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] transition-colors select-none",
+          "overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] select-none",
+          "transition-[border-color,box-shadow,transform] duration-150 ease-out",
           selected
-            ? "border-brand ring-2 ring-brand ring-offset-2 ring-offset-paper-2"
+            ? "scale-[1.01] border-brand shadow-[0_0_0_2px_color-mix(in_oklab,var(--brand)_35%,transparent)]"
             : "border-line hover:border-foreground/30",
         )}
       >
