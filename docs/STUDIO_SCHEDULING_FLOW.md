@@ -170,11 +170,25 @@ No removal of these routes; copy/nav only elevates Studio.
 7. Assign `eventId` from shelf (picker) for selected reels  
 8. Event chip on reel cards when linked  
 
-### Phase B (follow-up)
-- Drag-to-string connectors  
-- Place selection on calendar day by click  
-- Bulk schedule multi with different days  
-- Persist event canvas positions server-side  
+### Phase B (board polish — AI, live strings, marquee)
+1. **Live connection lines** — strings track cards/events during drag (not only after release)  
+2. **Marquee multi-select hardened** — dedicated under-card hit layer; Select tool drag on empty = marquee  
+3. **AI CTA on event attach** — when reels are stringed to an event, generate editable CTA from event context  
+4. **Caption brief** includes event + transcript + CTA  
+5. **Batch AI prepare** on multi-select bar + per-card “AI all” tool  
+6. (Later) Drag-to-draw new strings; place selection on calendar day; server-side event layout  
+
+---
+
+## Phase B status
+
+| Item | Status |
+|------|--------|
+| Live strings during drag | Implemented (`StudioConnectionLayer` + liveDrag) |
+| Marquee multi-select | Hit layer under cards |
+| AI CTA on attach | `generateCallToAction` after assign |
+| Batch / card AI prepare | Batch bar + toolbar “AI all” |
+| Place-on-day / drag-draw strings | Deferred |
 
 ---
 

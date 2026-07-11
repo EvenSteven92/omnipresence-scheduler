@@ -1,7 +1,7 @@
 /**
- * Studio AI hooks — prepare pipeline only.
+ * Studio AI hooks — prepare pipeline.
  *
- * Pipeline: Transcript + CTA → Caption with hashtags.
+ * Transcript → (CTA when event-linked) → Caption + hashtags.
  * TODO: Generate Transcript → Whisper / real STT later.
  */
 import { aiGenerate } from "@/lib/ai-client";
@@ -44,11 +44,59 @@ export async function generateTranscript(draft: DraftPost): Promise<string> {
   ].join("\n");
 }
 
-/** Build AI brief strictly from transcript + CTA (+ title). */
-export function buildCaptionBrief(draft: DraftPost): string {
-  const parts: string[] = [];
+/**
+ * AI call-to-action once a reel is stringed to an event.
+ */
+export async function generateCallToAction(
+  draft: DraftPost,
+  event: ContentEvent,
+  voice?: string,
+): Promise<string> {
   const title = draftDisplayTitle(draft);
-  parts.push(`Title: ${title}`);
+  const eventDate = new Date(event.date).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  try {
+    const text = await aiGenerate({
+      kind: "caption",
+      brief: [
+        `Write ONE short social call-to-action line (max 12 words) for a ministry reel.`,
+        `Event: "${event.title}" (${event.kind.replace(/_/g, " ")}) on ${eventDate}.`,
+        `Reel: "${title}".`,
+        `No hashtags. No quotes. Imperative and warm. Examples: Join us Sunday · Watch the full message · Link in bio.`,
+      ].join("\n"),
+      title,
+      tone: voice,
+    });
+    const line = text
+      .trim()
+      .split("\n")[0]
+      ?.replace(/^["']|["']$/g, "")
+      .trim();
+    if (line) return line.slice(0, 120);
+  } catch {
+    /* mock */
+  }
+  return `Join us for ${event.title}`;
+}
+
+/** Build AI brief: event → title → transcript → CTA. */
+export function buildCaptionBrief(
+  draft: DraftPost,
+  event?: ContentEvent | null,
+): string {
+  const parts: string[] = [];
+  if (event) {
+    parts.push(
+      `Event: "${event.title}" (${event.kind.replace(/_/g, " ")}) — ${new Date(event.date).toLocaleDateString()}`,
+    );
+    if (event.description?.trim()) {
+      parts.push(`Event context: ${event.description.trim()}`);
+    }
+  }
+  parts.push(`Title: ${draftDisplayTitle(draft)}`);
   if (draft.transcript?.trim()) {
     parts.push(`Transcript:\n${draft.transcript.trim()}`);
   }
@@ -72,10 +120,13 @@ export async function generateCaptionWithHashtags(
     throw new Error("Add a transcript or call to action before generating a caption.");
   }
 
-  // Force caption model to see transcript + CTA first (not bare filename)
+  const event = draft.eventId
+    ? opts.events.find((e) => e.id === draft.eventId)
+    : undefined;
+
   const enriched: DraftPost = {
     ...draft,
-    transcript: buildCaptionBrief(draft),
+    transcript: buildCaptionBrief(draft, event),
   };
 
   return prepareCardWithAi(enriched, {
@@ -86,4 +137,58 @@ export async function generateCaptionWithHashtags(
     postingTimes: opts.postingTimes,
     fillTimes: false,
   });
+}
+
+/**
+ * Full AI prepare: transcript (if empty) → CTA if event-linked → caption+hashtags.
+ */
+export async function prepareStudioCardWithAi(
+  draft: DraftPost,
+  opts: {
+    scheduledPosts: ScheduledPost[];
+    queue: DraftPost[];
+    voice?: string;
+    events: ContentEvent[];
+    postingTimes?: WorkspaceProfile["postingTimes"];
+  },
+): Promise<DraftPost> {
+  let next = { ...draft };
+
+  if (!next.transcript?.trim()) {
+    next = {
+      ...next,
+      transcript: await generateTranscript(next),
+      studioOpen: { ...next.studioOpen, transcript: true },
+    };
+  }
+
+  const event = next.eventId
+    ? opts.events.find((e) => e.id === next.eventId)
+    : undefined;
+  if (event && !next.callToAction?.trim()) {
+    next = {
+      ...next,
+      callToAction: await generateCallToAction(next, event, opts.voice),
+      studioOpen: { ...next.studioOpen, cta: true },
+    };
+  }
+
+  if (!next.caption?.trim() || !next.hashtags?.trim()) {
+    if (!hasScriptSource(next)) {
+      next = {
+        ...next,
+        callToAction: next.callToAction || "Watch and share",
+        studioOpen: { ...next.studioOpen, cta: true },
+      };
+    }
+    const { draft: withCopy } = await generateCaptionWithHashtags(next, opts);
+    next = {
+      ...next,
+      caption: withCopy.caption,
+      hashtags: withCopy.hashtags,
+      studioOpen: { ...next.studioOpen, caption: true, title: true },
+    };
+  }
+
+  return next;
 }

@@ -15,6 +15,7 @@ export type StudioTool =
   | "transcript"
   | "cta"
   | "caption"
+  | "prepare"
   | "schedule"
   | "remove";
 
@@ -60,6 +61,13 @@ export function StudioCardToolbar({
       title: canCaption
         ? "Generate caption + hashtags from transcript & CTA"
         : "Add a transcript or call to action first",
+    },
+    {
+      id: "prepare",
+      label: "AI all",
+      icon: Sparkles,
+      primary: stage === "media" || stage === "script",
+      title: "AI prepare: transcript → CTA (if event) → caption",
     },
     {
       id: "schedule",

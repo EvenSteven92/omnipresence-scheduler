@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Upload, X } from "lucide-react";
+import { Loader2, Plus, Sparkles, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/components/studio/StudioCanvas";
 import { StudioCard } from "@/components/studio/StudioCard";
 import type { StudioTool } from "@/components/studio/StudioCardToolbar";
+import { StudioConnectionLayer } from "@/components/studio/StudioConnectionLayer";
 import { StudioEventCard } from "@/components/studio/StudioEventCard";
 import { StudioScheduleShelf } from "@/components/studio/StudioScheduleShelf";
 import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
@@ -28,7 +29,12 @@ import {
 } from "@/lib/draft-storage";
 import { measureMediaFile } from "@/lib/media-aspect";
 import { pendingSlotsFromQueue } from "@/lib/schedule-engine";
-import { generateCaptionWithHashtags, generateTranscript } from "@/lib/studio-ai";
+import {
+  generateCallToAction,
+  generateCaptionWithHashtags,
+  generateTranscript,
+  prepareStudioCardWithAi,
+} from "@/lib/studio-ai";
 import {
   cardBounds,
   cascadePosition,
@@ -81,6 +87,7 @@ function StudioPage() {
   const [focusId, setFocusId] = useState<string | null>(null);
   const [busy, setBusy] = useState<StudioTool | null>(null);
   const [timesBusy, setTimesBusy] = useState(false);
+  const [batchAiBusy, setBatchAiBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [mode, setMode] = useState<CanvasMode>("select");
   const [marquee, setMarquee] = useState<MarqueeWorld | null>(null);
@@ -373,6 +380,29 @@ function StudioPage() {
       void runCaption(id);
       return;
     }
+    if (tool === "prepare") {
+      void (async () => {
+        setBusy("prepare");
+        try {
+          const draft = drafts.find((d) => d.id === id);
+          if (!draft) return;
+          const prepared = await prepareStudioCardWithAi(draft, {
+            scheduledPosts: workspace.scheduledPosts,
+            queue: drafts,
+            voice: workspace.voice,
+            events,
+            postingTimes: workspace.postingTimes,
+          });
+          updateDraft(id, () => prepared);
+          showToast("AI prepare complete");
+        } catch (e) {
+          showToast(e instanceof Error ? e.message : "AI prepare failed");
+        } finally {
+          setBusy(null);
+        }
+      })();
+      return;
+    }
     if (tool === "schedule") {
       openScheduleShelf([id]);
     }
@@ -568,7 +598,7 @@ function StudioPage() {
     showToast("Event card added — attach reels with stringing");
   }
 
-  function assignEventToSelection(eventId: string) {
+  async function assignEventToSelection(eventId: string) {
     const ids =
       selectedIds.size > 0
         ? [...selectedIds]
@@ -579,13 +609,80 @@ function StudioPage() {
       showToast("Select reels first, then attach");
       return;
     }
-    setDrafts((cur) =>
-      cur.map((d) => (ids.includes(d.id) ? { ...d, eventId } : d)),
-    );
     const ev = events.find((e) => e.id === eventId);
-    showToast(
-      `Linked ${ids.length} reel${ids.length === 1 ? "" : "s"} to ${ev?.title ?? "event"}`,
+    if (!ev) {
+      showToast("Event not found");
+      return;
+    }
+
+    // Link first so UI shows strings immediately
+    setDrafts((cur) =>
+      cur.map((d) =>
+        ids.includes(d.id)
+          ? { ...d, eventId, studioOpen: { ...d.studioOpen, cta: true } }
+          : d,
+      ),
     );
+    showToast(
+      `Linked ${ids.length} reel${ids.length === 1 ? "" : "s"} to ${ev.title} — generating CTAs…`,
+    );
+
+    // AI CTA per reel once stringed to the event
+    for (const id of ids) {
+      const draft = drafts.find((d) => d.id === id);
+      if (!draft) continue;
+      try {
+        const cta = await generateCallToAction(
+          { ...draft, eventId },
+          ev,
+          workspace.voice,
+        );
+        updateDraft(id, (d) => ({
+          ...d,
+          eventId,
+          callToAction: cta,
+          studioOpen: { ...d.studioOpen, cta: true },
+        }));
+      } catch {
+        updateDraft(id, (d) => ({
+          ...d,
+          eventId,
+          callToAction: d.callToAction || `Join us for ${ev.title}`,
+          studioOpen: { ...d.studioOpen, cta: true },
+        }));
+      }
+    }
+    showToast("CTAs generated from event — edit if needed, then caption");
+  }
+
+  async function aiPrepareSelected() {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setBatchAiBusy(true);
+    try {
+      let working = drafts;
+      let i = 0;
+      for (const id of ids) {
+        i += 1;
+        showToast(`AI prepare ${i} / ${ids.length}…`);
+        const draft = working.find((d) => d.id === id);
+        if (!draft) continue;
+        const prepared = await prepareStudioCardWithAi(draft, {
+          scheduledPosts: workspace.scheduledPosts,
+          queue: working,
+          voice: workspace.voice,
+          events,
+          postingTimes: workspace.postingTimes,
+        });
+        working = working.map((d) => (d.id === id ? prepared : d));
+        setDrafts(working);
+      }
+      showToast(`AI prepared ${ids.length} reel${ids.length === 1 ? "" : "s"}`);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "AI prepare failed");
+    } finally {
+      setBatchAiBusy(false);
+    }
   }
 
   const primaryId =
@@ -690,34 +787,11 @@ function StudioPage() {
         onOpenSchedule={() => openScheduleShelf()}
         onNewEvent={() => void createEventOnBoard()}
       >
-        {/* Simple string lines: event → linked reels */}
-        <svg
-          className="pointer-events-none absolute inset-0 h-[4000px] w-[4000px] overflow-visible"
-          aria-hidden
-        >
-          {drafts.map((d) => {
-            if (!d.eventId) return null;
-            const ep = eventLayout[d.eventId];
-            if (!ep) return null;
-            const x1 = ep.x + 140;
-            const y1 = ep.y + 60;
-            const x2 = (d.canvasX ?? 48) + 160;
-            const y2 = (d.canvasY ?? 48) + 40;
-            return (
-              <line
-                key={`str-${d.id}`}
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
-                stroke="currentColor"
-                className="text-foreground/20"
-                strokeWidth={2}
-                strokeDasharray="6 4"
-              />
-            );
-          })}
-        </svg>
+        <StudioConnectionLayer
+          drafts={drafts}
+          eventLayout={eventLayout}
+          liveDrag={liveDrag}
+        />
 
         {events.map((ev) => {
           const pos = eventLayout[ev.id] ?? { x: 80, y: 520 };
@@ -740,7 +814,7 @@ function StudioPage() {
               onDragStart={(e) => onEventDragStart(ev.id, e)}
               onAssignSelected={
                 selectedIds.size > 0
-                  ? () => assignEventToSelection(ev.id)
+                  ? () => void assignEventToSelection(ev.id)
                   : undefined
               }
             />
@@ -791,6 +865,20 @@ function StudioPage() {
           <span className="text-sm font-semibold text-foreground">
             {selectedIds.size} selected
           </span>
+          <button
+            type="button"
+            className="btn-action btn-action-secondary min-h-8 text-caption disabled:opacity-50"
+            disabled={batchAiBusy}
+            onClick={() => void aiPrepareSelected()}
+            data-testid="batch-ai-prepare"
+          >
+            {batchAiBusy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            AI prepare
+          </button>
           <button
             type="button"
             className="btn-action btn-action-primary !text-white min-h-8 text-caption"

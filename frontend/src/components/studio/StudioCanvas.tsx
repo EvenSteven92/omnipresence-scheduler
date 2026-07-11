@@ -186,22 +186,27 @@ export function StudioCanvas({
     const middle = e.button === 1;
     const right = e.button === 2;
     const primary = e.button === 0;
+    // Never pan with primary click in select mode (marquee uses hit layer)
     if (middle || right || (primary && effectiveHand)) {
       if (right) e.preventDefault();
       beginPan(e);
+    }
+  }
+
+  function onBoardHitPointerDown(e: React.PointerEvent) {
+    if (e.button !== 0) return;
+    if (effectiveHand) {
+      beginPan(e);
       return;
     }
-    // Select tool: marquee on empty board (not on a card)
-    if (primary && mode === "select") {
-      const t = e.target as HTMLElement;
-      if (t.closest("[data-studio-card]")) return;
-      if (t.closest("[data-testid^='studio-toolbar']")) return;
-      e.preventDefault();
-      rootRef.current?.setPointerCapture(e.pointerId);
-      marqueeActive.current = true;
-      const w = worldFromEvent(e);
-      onMarqueeStart?.(w, e);
-    }
+    if (mode !== "select") return;
+    // Marquee: empty board only (this layer sits under cards)
+    e.preventDefault();
+    e.stopPropagation();
+    rootRef.current?.setPointerCapture(e.pointerId);
+    marqueeActive.current = true;
+    const w = worldFromEvent(e);
+    onMarqueeStart?.(w, e);
   }
 
   function onPointerMove(e: React.PointerEvent) {
@@ -286,7 +291,7 @@ export function StudioCanvas({
           "bg-[radial-gradient(circle,_#d6d6d6_1px,_transparent_1px)] bg-[size:20px_20px]",
           panning || effectiveHand ? "cursor-grab" : "cursor-default",
           panning && "cursor-grabbing",
-          mode === "select" && !effectiveHand && "cursor-crosshair",
+          marqueeActive.current && "cursor-crosshair",
         )}
         onWheel={onWheel}
         onDragOver={(e) => {
@@ -321,8 +326,14 @@ export function StudioCanvas({
             transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
           }}
         >
-          <div data-board-bg="true" className="absolute inset-0" />
-          {children}
+          {/* Under-card hit layer: marquee / pan empty board */}
+          <div
+            data-board-bg="true"
+            data-testid="studio-board-hit"
+            className="absolute inset-0 z-0"
+            onPointerDown={onBoardHitPointerDown}
+          />
+          <div className="relative z-[1]">{children}</div>
           {marqueeBox && marqueeBox.w + marqueeBox.h > 0 ? (
             <div
               data-testid="studio-marquee"
