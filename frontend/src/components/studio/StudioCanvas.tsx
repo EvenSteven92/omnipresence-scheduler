@@ -289,7 +289,8 @@ export function StudioCanvas({
   const marqueeBox =
     marquee != null ? normalizeRect(marquee.start, marquee.current) : null;
 
-  const hudShift = (shelfWidth > 0 ? shelfWidth / 2 : 0) + (layersOpen ? 80 : 0);
+  // Shelf only — layers inset is handled by Studio page padding, not HUD shift
+  const hudShift = shelfWidth > 0 ? shelfWidth / 2 : 0;
 
   return (
     <div className={cn("relative flex min-h-0 flex-1 flex-col", className)}>

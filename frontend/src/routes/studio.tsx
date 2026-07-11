@@ -901,163 +901,171 @@ function StudioPage() {
         />
       </header>
 
-      <StudioCanvas
-        drafts={drafts}
-        mode={mode}
-        onModeChange={setMode}
-        onBackgroundClick={() => {
-          setSelectedIds(new Set());
-          setFocusId(null);
-          setSelectedEventId(null);
-        }}
-        onDropFiles={addFiles}
-        onViewportChange={(vp) => {
-          viewportRef.current = vp;
-        }}
-        marquee={marquee}
-        onMarqueeStart={onMarqueeStart}
-        onMarqueeMove={onMarqueeMove}
-        onMarqueeEnd={onMarqueeEnd}
-        emptyOverlay={emptyOverlay}
-        shelfWidth={shelfOpen ? shelfWidth : 0}
-        layersOpen={layersOpen}
-        onToggleLayers={() => setLayersOpen((o) => !o)}
-        scheduleDisabled={captionReadySelection.length === 0 && !shelfOpen}
-        onOpenSchedule={() => openScheduleShelf()}
-        onNewEvent={() => void createEventOnBoard()}
-      >
-        <StudioConnectionLayer
-          drafts={drafts.filter((d) => !hiddenIds.has(d.id))}
-          eventLayout={eventLayout}
-          liveDrag={liveDrag}
-        />
-
-        {boardEvents.map((ev) => {
-          if (hiddenIds.has(`event:${ev.id}`)) return null;
-          const pos = eventLayout[ev.id] ?? { x: 80, y: 520 };
-          const linked = drafts.filter((d) => d.eventId === ev.id).length;
-          const live =
-            liveDrag && liveDrag.ids.includes(`event:${ev.id}`)
-              ? { x: liveDrag.dx, y: liveDrag.dy }
-              : null;
-          return (
-            <StudioEventCard
-              key={ev.id}
-              event={ev}
-              x={pos.x}
-              y={pos.y}
-              selected={selectedEventId === ev.id}
-              linkedCount={linked}
-              canDrag={mode === "select"}
-              liveOffset={live}
-              onSelect={() => selectEvent(ev.id)}
-              onDragStart={(e) => onEventDragStart(ev.id, e)}
-              onAssignSelected={
-                selectedIds.size > 0
-                  ? () => void assignEventToSelection(ev.id)
-                  : undefined
-              }
-            />
-          );
-        })}
-
-        {drafts.map((draft) => {
-          if (hiddenIds.has(draft.id)) return null;
-          const isSel = selectedIds.has(draft.id);
-          const live =
-            liveDrag && liveDrag.ids.includes(draft.id)
-              ? { x: liveDrag.dx, y: liveDrag.dy }
-              : null;
-          const evTitle = draft.eventId
-            ? eventById.get(draft.eventId)?.title
-            : undefined;
-          return (
-            <StudioCard
-              key={draft.id}
-              draft={draft}
-              selected={primaryId === draft.id && selectedIds.size === 1}
-              multiSelected={isSel}
-              busy={primaryId === draft.id ? busy : null}
-              canDrag={mode === "select"}
-              liveOffset={live}
-              eventTitle={evTitle}
-              onSelect={(e) =>
-                selectCard(draft.id, e.shiftKey || e.metaKey || e.ctrlKey)
-              }
-              onChange={(updater) => updateDraft(draft.id, updater)}
-              onTool={(tool) => handleTool(draft.id, tool)}
-              onGenerateTranscript={() => void runTranscript(draft.id)}
-              onGenerateCaption={() => void runCaption(draft.id)}
-              onDragStart={(e) => onReelDragStart(draft.id, e)}
-            />
-          );
-        })}
-      </StudioCanvas>
-
-      <StudioLayersPanel
-        open={layersOpen}
-        drafts={drafts}
-        boardEvents={boardEvents}
-        offBoardEvents={offBoardEvents}
-        selectedIds={selectedIds}
-        selectedEventId={selectedEventId}
-        hiddenIds={hiddenIds}
-        onClose={() => setLayersOpen(false)}
-        onSelectDraft={(id) => {
-          selectCard(id);
-          setHiddenIds((prev) => {
-            if (!prev.has(id)) return prev;
-            const n = new Set(prev);
-            n.delete(id);
-            return n;
-          });
-        }}
-        onSelectEvent={(id) => {
-          selectEvent(id);
-          setHiddenIds((prev) => {
-            const key = `event:${id}`;
-            if (!prev.has(key)) return prev;
-            const n = new Set(prev);
-            n.delete(key);
-            return n;
-          });
-        }}
-        onToggleHidden={toggleHidden}
-        onRemoveEventFromBoard={removeEventFromBoard}
-        onNewEvent={() => void createEventOnBoard()}
-        onPlaceEvent={placeEventOnBoard}
-      />
-
-      {selectedIds.size > 1 ? (
-        <StudioGroupMenu
-          count={selectedIds.size}
-          busy={batchAiBusy ? "batch" : busy}
-          scheduleCount={captionReadySelection.length}
-          shelfOffset={shelfOpen ? shelfWidth : 0}
-          onTool={(tool) => void handleGroupTool(tool)}
-          onClear={() => {
-            setSelectedIds(new Set());
-            setFocusId(null);
+      {/* Board body: layers dock inside this frame only (not over app nav) */}
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        <StudioLayersPanel
+          open={layersOpen}
+          drafts={drafts}
+          boardEvents={boardEvents}
+          offBoardEvents={offBoardEvents}
+          selectedIds={selectedIds}
+          selectedEventId={selectedEventId}
+          hiddenIds={hiddenIds}
+          onClose={() => setLayersOpen(false)}
+          onSelectDraft={(id) => {
+            selectCard(id);
+            setHiddenIds((prev) => {
+              if (!prev.has(id)) return prev;
+              const n = new Set(prev);
+              n.delete(id);
+              return n;
+            });
           }}
+          onSelectEvent={(id) => {
+            selectEvent(id);
+            setHiddenIds((prev) => {
+              const key = `event:${id}`;
+              if (!prev.has(key)) return prev;
+              const n = new Set(prev);
+              n.delete(key);
+              return n;
+            });
+          }}
+          onToggleHidden={toggleHidden}
+          onRemoveEventFromBoard={removeEventFromBoard}
+          onNewEvent={() => void createEventOnBoard()}
+          onPlaceEvent={placeEventOnBoard}
         />
-      ) : null}
 
-      <StudioScheduleShelf
-        open={shelfOpen}
-        drafts={scheduleTargets}
-        focusId={focusId}
-        committedPosts={workspace.scheduledPosts}
-        events={events}
-        workspacePlatforms={workspace.platforms}
-        busy={timesBusy}
-        onClose={() => setShelfOpen(false)}
-        onFocus={(id) => setFocusId(id)}
-        onChangeDraft={updateDraft}
-        onBestTimes={applyBestTimesToTargets}
-        onCommit={() => void commitScheduleTargets()}
-        onWidthChange={setShelfWidth}
-        onAssignEvent={assignEventToSelection}
-      />
+        <div
+          className="flex min-h-0 min-w-0 flex-1 flex-col transition-[padding] duration-200 ease-out"
+          style={{ paddingLeft: layersOpen ? "15.5rem" : 0 }}
+        >
+          <StudioCanvas
+            drafts={drafts}
+            mode={mode}
+            onModeChange={setMode}
+            onBackgroundClick={() => {
+              setSelectedIds(new Set());
+              setFocusId(null);
+              setSelectedEventId(null);
+            }}
+            onDropFiles={addFiles}
+            onViewportChange={(vp) => {
+              viewportRef.current = vp;
+            }}
+            marquee={marquee}
+            onMarqueeStart={onMarqueeStart}
+            onMarqueeMove={onMarqueeMove}
+            onMarqueeEnd={onMarqueeEnd}
+            emptyOverlay={emptyOverlay}
+            shelfWidth={shelfOpen ? shelfWidth : 0}
+            layersOpen={layersOpen}
+            onToggleLayers={() => setLayersOpen((o) => !o)}
+            scheduleDisabled={captionReadySelection.length === 0 && !shelfOpen}
+            onOpenSchedule={() => openScheduleShelf()}
+            onNewEvent={() => void createEventOnBoard()}
+          >
+            <StudioConnectionLayer
+              drafts={drafts.filter((d) => !hiddenIds.has(d.id))}
+              eventLayout={eventLayout}
+              liveDrag={liveDrag}
+            />
+
+            {boardEvents.map((ev) => {
+              if (hiddenIds.has(`event:${ev.id}`)) return null;
+              const pos = eventLayout[ev.id] ?? { x: 80, y: 520 };
+              const linked = drafts.filter((d) => d.eventId === ev.id).length;
+              const live =
+                liveDrag && liveDrag.ids.includes(`event:${ev.id}`)
+                  ? { x: liveDrag.dx, y: liveDrag.dy }
+                  : null;
+              return (
+                <StudioEventCard
+                  key={ev.id}
+                  event={ev}
+                  x={pos.x}
+                  y={pos.y}
+                  selected={selectedEventId === ev.id}
+                  linkedCount={linked}
+                  canDrag={mode === "select"}
+                  liveOffset={live}
+                  onSelect={() => selectEvent(ev.id)}
+                  onDragStart={(e) => onEventDragStart(ev.id, e)}
+                  onAssignSelected={
+                    selectedIds.size > 0
+                      ? () => void assignEventToSelection(ev.id)
+                      : undefined
+                  }
+                />
+              );
+            })}
+
+            {drafts.map((draft) => {
+              if (hiddenIds.has(draft.id)) return null;
+              const isSel = selectedIds.has(draft.id);
+              const live =
+                liveDrag && liveDrag.ids.includes(draft.id)
+                  ? { x: liveDrag.dx, y: liveDrag.dy }
+                  : null;
+              const evTitle = draft.eventId
+                ? eventById.get(draft.eventId)?.title
+                : undefined;
+              return (
+                <StudioCard
+                  key={draft.id}
+                  draft={draft}
+                  selected={primaryId === draft.id && selectedIds.size === 1}
+                  multiSelected={isSel}
+                  busy={primaryId === draft.id ? busy : null}
+                  canDrag={mode === "select"}
+                  liveOffset={live}
+                  eventTitle={evTitle}
+                  onSelect={(e) =>
+                    selectCard(draft.id, e.shiftKey || e.metaKey || e.ctrlKey)
+                  }
+                  onChange={(updater) => updateDraft(draft.id, updater)}
+                  onTool={(tool) => handleTool(draft.id, tool)}
+                  onGenerateTranscript={() => void runTranscript(draft.id)}
+                  onGenerateCaption={() => void runCaption(draft.id)}
+                  onDragStart={(e) => onReelDragStart(draft.id, e)}
+                />
+              );
+            })}
+          </StudioCanvas>
+        </div>
+
+        {selectedIds.size > 1 ? (
+          <StudioGroupMenu
+            count={selectedIds.size}
+            busy={batchAiBusy ? "batch" : busy}
+            scheduleCount={captionReadySelection.length}
+            shelfOffset={shelfOpen ? shelfWidth : 0}
+            onTool={(tool) => void handleGroupTool(tool)}
+            onClear={() => {
+              setSelectedIds(new Set());
+              setFocusId(null);
+            }}
+          />
+        ) : null}
+
+        <StudioScheduleShelf
+          open={shelfOpen}
+          drafts={scheduleTargets}
+          focusId={focusId}
+          committedPosts={workspace.scheduledPosts}
+          events={events}
+          workspacePlatforms={workspace.platforms}
+          busy={timesBusy}
+          onClose={() => setShelfOpen(false)}
+          onFocus={(id) => setFocusId(id)}
+          onChangeDraft={updateDraft}
+          onBestTimes={applyBestTimesToTargets}
+          onCommit={() => void commitScheduleTargets()}
+          onWidthChange={setShelfWidth}
+          onAssignEvent={assignEventToSelection}
+        />
+      </div>
 
       {toast ? (
         <div

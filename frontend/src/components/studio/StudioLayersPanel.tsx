@@ -45,8 +45,9 @@ export function StudioLayersPanel({
       data-studio-layers="true"
       data-testid="studio-layers-panel"
       className={cn(
-        "fixed bottom-0 left-0 top-14 z-30 flex w-[15.5rem] flex-col border-r border-line bg-card shadow-[4px_0_24px_rgba(0,0,0,0.06)]",
-        "transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] md:top-[4.25rem]",
+        /* Absolute inside Studio board body — never overlays app main nav */
+        "absolute inset-y-0 left-0 z-[25] flex w-[15.5rem] max-w-full flex-col border-r border-line bg-card shadow-[4px_0_24px_rgba(0,0,0,0.06)]",
+        "transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
         open
           ? "translate-x-0 opacity-100"
           : "pointer-events-none -translate-x-full opacity-0",

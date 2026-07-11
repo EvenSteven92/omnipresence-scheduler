@@ -26,8 +26,10 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
         data-testid="workspace-switcher"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-lg border border-line bg-card text-left transition-colors hover:bg-paper-2/60",
-          collapsed ? "justify-center px-2 py-2" : "px-2.5 py-2.5",
+          "flex items-center gap-2.5 rounded-lg border border-line bg-card text-left transition-colors hover:bg-paper-2/60",
+          collapsed
+            ? "h-10 w-10 shrink-0 justify-center p-0"
+            : "w-full px-2.5 py-2.5",
         )}
         aria-expanded={open}
         aria-haspopup="listbox"

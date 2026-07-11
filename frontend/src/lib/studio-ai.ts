@@ -2,9 +2,10 @@
  * Studio AI hooks — prepare pipeline.
  *
  * Transcript → (CTA when event-linked) → Caption + hashtags.
+ * Mock text by default via ai-client (VITE_STUDIO_MOCK_AI=0 for live).
  * TODO: Generate Transcript → Whisper / real STT later.
  */
-import { aiGenerate } from "@/lib/ai-client";
+import { aiGenerate, isStudioMockAi } from "@/lib/ai-client";
 import { prepareCardWithAi, type AiPrepareResult } from "@/lib/ai-schedule";
 import type { DraftPost } from "@/lib/composer-draft";
 import { draftDisplayTitle } from "@/lib/composer-draft";
@@ -12,35 +13,30 @@ import type { ScheduledPost } from "@/lib/mock-data";
 import type { ContentEvent, WorkspaceProfile } from "@/lib/workspaces/types";
 import { hasScriptSource } from "@/lib/studio-layout";
 
+function sleep(ms: number) {
+  return new Promise<void>((r) => window.setTimeout(r, ms));
+}
+
 /**
  * Draft transcript outline. Not real speech-to-text.
  */
 export async function generateTranscript(draft: DraftPost): Promise<string> {
   const title = draftDisplayTitle(draft);
-  try {
-    const text = await aiGenerate({
-      kind: "internal_notes",
-      brief: `Draft a short spoken reel transcript outline (6–10 lines) for a ministry social video titled "${title}". ${
-        draft.callToAction?.trim()
-          ? `Preferred CTA: ${draft.callToAction.trim()}.`
-          : ""
-      } Use approximate timestamps like [0:00], [0:15]. No markdown fences.`,
-      title,
-    });
-    if (text.trim()) return text.trim();
-  } catch {
-    /* offline / no key — mock */
-  }
-
+  const text = await aiGenerate({
+    kind: "internal_notes",
+    brief: `Draft a short spoken reel transcript outline (6–10 lines) for a ministry social video titled "${title}". ${
+      draft.callToAction?.trim()
+        ? `Preferred CTA: ${draft.callToAction.trim()}.`
+        : ""
+    } Use approximate timestamps like [0:00], [0:15]. No markdown fences.`,
+    title,
+  });
+  if (text.trim()) return text.trim();
   return [
     `[0:00] Hook — open with the heart of "${title}".`,
-    `[0:08] Context — who this word is for and why it matters today.`,
-    `[0:20] Main point 1 — truth from Scripture or the message.`,
-    `[0:35] Main point 2 — practical invitation to respond.`,
-    `[0:50] ${draft.callToAction?.trim() || "Call to action — invite a response (pray, come, share)."}`,
-    `[1:05] Close — blessing and next step.`,
-    ``,
-    `// TODO: replace with Whisper / real STT from video audio`,
+    `[0:08] Context — who this is for.`,
+    `[0:50] ${draft.callToAction?.trim() || "Call to action."}`,
+    `[1:05] Close.`,
   ].join("\n");
 }
 
@@ -58,6 +54,13 @@ export async function generateCallToAction(
     month: "long",
     day: "numeric",
   });
+
+  // Deterministic short CTA in mock mode (caption mock is multi-line)
+  if (isStudioMockAi()) {
+    await sleep(220);
+    return `Join us for ${event.title}`.slice(0, 120);
+  }
+
   try {
     const text = await aiGenerate({
       kind: "caption",
@@ -65,7 +68,7 @@ export async function generateCallToAction(
         `Write ONE short social call-to-action line (max 12 words) for a ministry reel.`,
         `Event: "${event.title}" (${event.kind.replace(/_/g, " ")}) on ${eventDate}.`,
         `Reel: "${title}".`,
-        `No hashtags. No quotes. Imperative and warm. Examples: Join us Sunday · Watch the full message · Link in bio.`,
+        `No hashtags. No quotes. Imperative and warm.`,
       ].join("\n"),
       title,
       tone: voice,
@@ -77,7 +80,7 @@ export async function generateCallToAction(
       .trim();
     if (line) return line.slice(0, 120);
   } catch {
-    /* mock */
+    /* fall through */
   }
   return `Join us for ${event.title}`;
 }

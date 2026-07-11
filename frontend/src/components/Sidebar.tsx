@@ -47,7 +47,6 @@ export function Sidebar() {
     [workspace.events, customEvents],
   );
 
-  // Re-read ready shelf when workspace changes or window focuses
   useEffect(() => {
     const bump = () => setReadyTick((n) => n + 1);
     window.addEventListener("focus", bump);
@@ -97,48 +96,66 @@ export function Sidebar() {
       <aside
         data-testid="app-sidebar"
         data-collapsed={collapsed ? "true" : "false"}
-        style={{ width: collapsed ? "var(--sidebar-width-collapsed)" : "var(--sidebar-width)" }}
-        className="relative hidden h-full min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-line bg-paper-2 px-4 py-5 transition-[width] duration-200 md:flex"
+        style={{
+          width: collapsed
+            ? "var(--sidebar-width-collapsed)"
+            : "var(--sidebar-width)",
+        }}
+        className={cn(
+          "relative hidden h-full min-h-0 shrink-0 flex-col overscroll-contain border-r border-line bg-paper-2 py-4 transition-[width] duration-200 ease-out md:flex",
+          /* Icon rail: never bleed labels during width animation */
+          "overflow-x-hidden overflow-y-auto",
+          collapsed ? "px-2" : "px-3",
+        )}
       >
-        <div className="flex items-center justify-between gap-2 px-1">
-          {!collapsed ? (
-            <Link to="/" className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground font-display text-lg font-bold text-background">
-                O
-              </span>
-              <span className="min-w-0 leading-none">
-                <span className="block font-display text-base font-bold tracking-tight text-foreground">
-                  OmniPresence
-                </span>
-                <span className="mt-1 block text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                  By TORCC
-                </span>
-              </span>
-            </Link>
-          ) : (
+        {/* Header: expanded = logo row; collapsed = stacked icon rail */}
+        {collapsed ? (
+          <div className="flex flex-col items-center gap-2">
             <Link
               to="/"
-              className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-foreground font-display text-lg font-bold text-background"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-foreground font-display text-lg font-bold text-background"
               title="OmniPresence"
             >
               O
             </Link>
-          )}
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            {collapsed ? (
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
               <PanelLeft className="h-4 w-4" strokeWidth={1.75} />
-            ) : (
+            </button>
+          </div>
+        ) : (
+          <div className="flex min-w-0 items-center gap-1 px-0.5">
+            <Link to="/" className="flex min-w-0 flex-1 items-center gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-foreground font-display text-lg font-bold text-background">
+                O
+              </span>
+              <span className="min-w-0 leading-none">
+                <span className="block truncate font-display text-base font-bold tracking-tight text-foreground">
+                  OmniPresence
+                </span>
+                <span className="mt-1 block truncate text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  By TORCC
+                </span>
+              </span>
+            </Link>
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label="Collapse sidebar"
+              title="Collapse sidebar"
+              className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
               <PanelLeftClose className="h-4 w-4" strokeWidth={1.75} />
-            )}
-          </button>
-        </div>
+            </button>
+          </div>
+        )}
 
-        <div className="mt-4">
+        <div className={cn("mt-3", collapsed && "flex justify-center")}>
           <WorkspaceSwitcher collapsed={collapsed} />
         </div>
 
@@ -146,9 +163,17 @@ export function Sidebar() {
           <p className="mt-5 px-2 text-caption font-medium uppercase tracking-[0.1em] text-muted-foreground">
             Workspace
           </p>
-        ) : null}
+        ) : (
+          <div className="mt-3" aria-hidden />
+        )}
 
-        <nav className="mt-2 flex flex-1 flex-col gap-1" aria-label="Main">
+        <nav
+          className={cn(
+            "mt-2 flex min-h-0 flex-1 flex-col gap-1",
+            collapsed && "items-stretch",
+          )}
+          aria-label="Main"
+        >
           {nav.map(({ to, label, icon: Icon, countKey }) => (
             <SidebarItem
               key={to}
@@ -162,12 +187,18 @@ export function Sidebar() {
           ))}
         </nav>
 
-        <div className="mt-auto space-y-3 border-t border-line pt-4">
+        <div
+          className={cn(
+            "mt-auto space-y-3 border-t border-line pt-3",
+            collapsed && "flex flex-col items-center",
+          )}
+        >
           <Link
             to="/studio"
+            title={CREATE.card}
             className={cn(
-              "flex items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-4 py-3.5 font-display text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#262626] hover:text-white",
-              collapsed && "px-2",
+              "flex items-center justify-center gap-2 rounded-lg border border-primary bg-primary font-display text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#262626] hover:text-white",
+              collapsed ? "h-10 w-10 p-0" : "w-full px-4 py-3.5",
             )}
           >
             <span className="text-lg leading-none text-white">+</span>
@@ -222,17 +253,21 @@ function SidebarItem({
   badge?: number;
 }) {
   const showBadge = badge !== undefined && badge > 0;
+  const title =
+    collapsed && showBadge ? `${label} (${badge})` : collapsed ? label : undefined;
 
   return (
     <Link
       to={to}
       activeOptions={exact ? { exact: true } : undefined}
       data-testid={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
-      title={collapsed ? label : undefined}
+      title={title}
       className={cn(
-        "group flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 font-display text-sm font-medium text-muted-foreground transition-colors",
+        "group relative flex items-center rounded-lg border border-transparent font-display text-sm font-medium text-muted-foreground transition-colors",
         "hover:bg-background hover:text-foreground",
-        collapsed && "justify-center px-2",
+        collapsed
+          ? "h-10 w-full justify-center px-0"
+          : "gap-3 px-3 py-2.5",
       )}
       activeProps={{
         className: cn(
@@ -247,12 +282,18 @@ function SidebarItem({
           {showBadge ? (
             <span
               data-testid={`nav-badge-${label.toLowerCase()}`}
-              className="shrink-0 rounded-md bg-secondary px-1.5 py-0.5 font-data text-caption font-semibold leading-none tracking-[0.04em] text-foreground group-[.active]:bg-background/15 group-[.active]:text-background"
+              className="shrink-0 rounded-md bg-secondary px-1.5 py-0.5 font-data text-caption font-semibold leading-none tracking-[0.04em] text-foreground"
             >
               {badge}
             </span>
           ) : null}
         </>
+      ) : showBadge ? (
+        <span
+          data-testid={`nav-badge-${label.toLowerCase()}`}
+          className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-brand"
+          aria-hidden
+        />
       ) : null}
     </Link>
   );
