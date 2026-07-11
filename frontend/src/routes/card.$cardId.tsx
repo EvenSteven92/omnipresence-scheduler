@@ -592,6 +592,23 @@ function CardDetailView({
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {canEditCopy ? (
+            <button
+              type="button"
+              disabled={aiBusy != null}
+              onClick={() => void runAiShared("all")}
+              className="btn-action btn-action-secondary inline-flex items-center gap-2"
+              data-testid="card-ai-all"
+              title="Transcript → CTA (if event) → caption + hashtags"
+            >
+              {aiBusy === "all" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              AI all
+            </button>
+          ) : null}
           {canSave ? (
             <button
               type="button"
@@ -1178,16 +1195,35 @@ function CardDetailView({
               </div>
             </section>
 
-            {/* Boards provenance */}
-            <section className="panel p-[18px]">
-              <div className="mb-3 font-mono text-[0.625rem] font-bold tracking-[0.1em] text-muted-foreground">
-                Used on boards
+            {/* Boards provenance — always shown (greyed when unused) */}
+            <section
+              className={cn(
+                "panel p-[18px]",
+                boardsUsed.length === 0 && "opacity-60",
+              )}
+              data-testid="card-appears-on-boards"
+            >
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="font-mono text-[0.625rem] font-bold tracking-[0.1em] text-muted-foreground">
+                  Appears on boards
+                </span>
+                <span className="font-mono text-[0.6rem] font-semibold text-muted-foreground">
+                  {boardsUsed.length === 0
+                    ? "None"
+                    : `${boardsUsed.length} board${boardsUsed.length === 1 ? "" : "s"}`}
+                </span>
               </div>
               {boardsUsed.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Not found on a Studio board yet (board cards keep this id when
-                  scheduled from the whiteboard).
-                </p>
+                <div className="rounded-lg border border-dashed border-line bg-paper-2/50 px-3 py-4 text-center">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Not used on a Studio board
+                  </p>
+                  <p className="mt-1 text-[0.65rem] leading-relaxed text-muted-foreground/80">
+                    Cards prepared on a board keep a link here after scheduling.
+                    Board batch work stays in Boards — this page is library /
+                    calendar only.
+                  </p>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {boardsUsed.map((b) => (
