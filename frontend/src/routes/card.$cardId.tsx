@@ -255,13 +255,16 @@ function CardDetailView({
   const activeDraft = reuseDraft;
   /** Editing the existing scheduled/draft card (not a duplicate session). */
   const workingAsScheduled = !reuseDraft && canEditScheduled;
-  /** Live card from library — can edit post-publish copy, not times/media. */
+  /** Live card — platform overrides only (no shared AI all / shared caption AI). */
   const isLiveEdit = published && !reuseDraft;
-  /** Title, caption, hashtags, transcript, CTA, platform overrides */
-  const canEditCopy = Boolean(reuseDraft) || workingAsScheduled || isLiveEdit;
+  /** Shared title/caption/transcript/CTA — scheduled, draft, or reuse (not live). */
+  const canEditSharedCopy = Boolean(reuseDraft) || workingAsScheduled;
+  /** Per-platform overrides — shared editors + live publish refine */
+  const canEditPlatformCopy = canEditSharedCopy || isLiveEdit;
   /** Platform publish times — only scheduled or reuse draft */
   const canEditTimes = Boolean(reuseDraft) || workingAsScheduled;
-  const canSave = workingAsScheduled || isLiveEdit;
+  /** Header Save for scheduled/draft only; live uses Publishes Save/Cancel */
+  const canSaveHeader = workingAsScheduled;
 
   const slots = useMemo(() => {
     const platforms = activeDraft?.platforms ?? edit.platforms;
@@ -282,8 +285,26 @@ function CardDetailView({
     setReuseDraft((d) => (d ? updater(d) : d));
   }
 
+  const baselineEdit = useMemo(() => postToEditState(post), [post]);
+  const livePublishDirty = useMemo(() => {
+    if (!isLiveEdit) return false;
+    return (
+      JSON.stringify(edit.platformTitles) !==
+        JSON.stringify(baselineEdit.platformTitles) ||
+      JSON.stringify(edit.platformCaptions) !==
+        JSON.stringify(baselineEdit.platformCaptions) ||
+      JSON.stringify(edit.platformHashtags) !==
+        JSON.stringify(baselineEdit.platformHashtags)
+    );
+  }, [isLiveEdit, edit, baselineEdit]);
+
+  function cancelLivePublishEdits() {
+    setEdit(postToEditState(post));
+    showToast("Publish edits discarded");
+  }
+
   async function saveInPlace() {
-    if (!canSave) return;
+    if (!workingAsScheduled && !(isLiveEdit && livePublishDirty)) return;
     const times = edit.platformTimes;
     const isos = edit.platforms
       .map((p) => times[p])
@@ -590,15 +611,15 @@ function CardDetailView({
           <h1 className="page-title mt-2 text-[2.125rem]">{displayTitle}</h1>
           {isLiveEdit ? (
             <p className="mt-2 max-w-xl text-xs text-muted-foreground">
-              You can edit title, caption, hashtags, transcript, and CTA the way
-              networks usually allow after posting. Publish times and media stay
-              fixed. Updates save in OmniPresence — re-sync to social if needed.
-              Use <strong>Duplicate & reuse</strong> to repost.
+              This post is live. Shared caption stays as published history.
+              Expand a network under <strong>Publishes</strong> to refine
+              platform-specific copy (where networks allow edits). Times and
+              media stay fixed. Use <strong>Duplicate & reuse</strong> to repost.
             </p>
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {canEditCopy ? (
+          {canEditSharedCopy ? (
             <button
               type="button"
               disabled={aiBusy != null}
@@ -615,7 +636,7 @@ function CardDetailView({
               AI all
             </button>
           ) : null}
-          {canSave ? (
+          {canSaveHeader ? (
             <button
               type="button"
               onClick={() => void saveInPlace()}
@@ -630,7 +651,7 @@ function CardDetailView({
             onClick={startDuplicateReuse}
             className={cn(
               "btn-action inline-flex items-center gap-2",
-              !canSave && "btn-action-primary",
+              !canSaveHeader && "btn-action-primary",
             )}
             data-testid="card-duplicate-reuse"
           >
@@ -675,7 +696,7 @@ function CardDetailView({
               <input
                 type="text"
                 value={displayTitle}
-                disabled={!canEditCopy}
+                disabled={!canEditSharedCopy}
                 onChange={(e) =>
                   reuseDraft
                     ? patchReuse((d) => ({ ...d, title: e.target.value }))
@@ -712,7 +733,7 @@ function CardDetailView({
                   <div className="space-y-2 px-[18px] pb-[18px]">
                     <textarea
                       value={displayTranscript}
-                      disabled={!canEditCopy}
+                      disabled={!canEditSharedCopy}
                       onChange={(e) =>
                         reuseDraft
                           ? patchReuse((d) => ({
@@ -725,7 +746,7 @@ function CardDetailView({
                       className={cn(fieldClass, "font-mono text-xs")}
                       placeholder="Script / spoken outline…"
                     />
-                    {!!canEditCopy ? (
+                    {canEditSharedCopy ? (
                       <button
                         type="button"
                         disabled={aiBusy != null}
@@ -751,7 +772,7 @@ function CardDetailView({
                 <span className="font-mono text-[0.625rem] font-bold tracking-[0.1em] text-muted-foreground">
                   Caption & hashtags
                 </span>
-                {!!canEditCopy ? (
+                {canEditSharedCopy ? (
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       type="button"
@@ -784,7 +805,7 @@ function CardDetailView({
               </div>
               <textarea
                 value={displayCaption}
-                disabled={!canEditCopy}
+                disabled={!canEditSharedCopy}
                 onChange={(e) =>
                   reuseDraft
                     ? patchReuse((d) => ({ ...d, caption: e.target.value }))
@@ -796,7 +817,7 @@ function CardDetailView({
               <input
                 type="text"
                 value={displayHashtags}
-                disabled={!canEditCopy}
+                disabled={!canEditSharedCopy}
                 onChange={(e) =>
                   reuseDraft
                     ? patchReuse((d) => ({ ...d, hashtags: e.target.value }))
@@ -805,7 +826,7 @@ function CardDetailView({
                 className={fieldClass}
                 placeholder="#hashtags"
               />
-              {!canEditCopy ? (
+              {!canEditSharedCopy ? (
                 <div className="flex flex-wrap gap-1.5">
                   {cardHashtagList(post).map((tag) => (
                     <span
@@ -847,7 +868,7 @@ function CardDetailView({
                     <input
                       type="text"
                       value={displayCta}
-                      disabled={!canEditCopy}
+                      disabled={!canEditSharedCopy}
                       onChange={(e) =>
                         reuseDraft
                           ? patchReuse((d) => ({
@@ -859,7 +880,7 @@ function CardDetailView({
                       className={fieldClass}
                       placeholder="Join us Sunday · Link in bio…"
                     />
-                    {!!canEditCopy && linkedEvent ? (
+                    {canEditSharedCopy && linkedEvent ? (
                       <button
                         type="button"
                         disabled={aiBusy != null}
@@ -936,16 +957,46 @@ function CardDetailView({
               </div>
             </section>
 
-            {/* Publishes accordion */}
+            {/* Publishes accordion — live post-publish copy lives here */}
             <section className="panel p-[18px]">
-              <div className="mb-3.5 flex items-center justify-between">
-                <span className="font-display text-base font-bold text-foreground">
-                  Publishes
-                </span>
+              <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="font-display text-base font-bold text-foreground">
+                    Publishes
+                  </span>
+                  {isLiveEdit ? (
+                    <p className="mt-0.5 text-[0.65rem] text-muted-foreground">
+                      Expand a network to refine copy after posting
+                    </p>
+                  ) : null}
+                </div>
                 <span className="font-mono text-[0.625rem] font-bold text-muted-foreground">
                   {slots.length} TOTAL
                 </span>
               </div>
+              {isLiveEdit && livePublishDirty ? (
+                <div className="mb-3 flex flex-wrap items-center justify-end gap-2 rounded-md border border-line bg-paper-2/80 px-3 py-2">
+                  <span className="mr-auto text-xs text-muted-foreground">
+                    Unpublished edits on this card
+                  </span>
+                  <button
+                    type="button"
+                    onClick={cancelLivePublishEdits}
+                    className="btn-action btn-action-secondary min-h-8 text-caption"
+                    data-testid="card-live-publish-cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void saveInPlace()}
+                    className="btn-action btn-action-primary min-h-8 !text-white text-caption"
+                    data-testid="card-live-publish-save"
+                  >
+                    Save changes
+                  </button>
+                </div>
+              ) : null}
               <div className="flex flex-col gap-2">
                 {slots.map((slot) => {
                   const meta = PLATFORMS_BY_SHORT[slot.platform];
@@ -1071,7 +1122,7 @@ function CardDetailView({
                             <input
                               type="text"
                               value={pTitle ?? ""}
-                              disabled={!canEditCopy}
+                              disabled={!canEditPlatformCopy}
                               onChange={(e) => {
                                 const v = e.target.value;
                                 if (reuseDraft) {
@@ -1101,7 +1152,7 @@ function CardDetailView({
                             </span>
                             <textarea
                               value={pCap ?? ""}
-                              disabled={!canEditCopy}
+                              disabled={!canEditPlatformCopy}
                               rows={3}
                               onChange={(e) => {
                                 const v = e.target.value;
@@ -1132,7 +1183,7 @@ function CardDetailView({
                             <input
                               type="text"
                               value={pTags ?? ""}
-                              disabled={!canEditCopy}
+                              disabled={!canEditPlatformCopy}
                               onChange={(e) => {
                                 const v = e.target.value;
                                 if (reuseDraft) {
@@ -1155,7 +1206,7 @@ function CardDetailView({
                               className={fieldClass}
                             />
                           </label>
-                          {!!canEditCopy ? (
+                          {canEditPlatformCopy ? (
                             <div className="flex flex-wrap gap-1.5">
                               <button
                                 type="button"
