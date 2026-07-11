@@ -1,6 +1,10 @@
 import { Link2 } from "lucide-react";
 import type { DraftPost } from "@/lib/composer-draft";
 import { draftDisplayTitle } from "@/lib/composer-draft";
+import {
+  cardStatusLabel,
+  type CardLifecycleStatus,
+} from "@/lib/card-display";
 import { TrafficLight } from "@/components/ui/TrafficLight";
 import { STUDIO_CARD_WIDTH, studioStage } from "@/lib/studio-layout";
 import { cn } from "@/lib/utils";
@@ -11,6 +15,22 @@ import { StudioCtaSection } from "./StudioCtaSection";
 import { StudioPrepareChips } from "./StudioPrepareChips";
 import { StudioTitleSection } from "./StudioTitleSection";
 import { StudioTranscriptSection } from "./StudioTranscriptSection";
+
+function statusBorderClass(status: CardLifecycleStatus, multiSelected: boolean): string {
+  if (multiSelected) {
+    return "border-brand shadow-[0_0_0_2px_color-mix(in_oklab,var(--brand)_35%,transparent)]";
+  }
+  switch (status) {
+    case "SCHEDULED":
+      return "border-2 border-warning shadow-[0_0_0_1px_color-mix(in_oklab,var(--warning)_25%,transparent)]";
+    case "LIVE":
+      return "border-2 border-success shadow-[0_0_0_1px_color-mix(in_oklab,var(--success)_25%,transparent)]";
+    case "FAILED":
+      return "border-2 border-destructive shadow-[0_0_0_1px_color-mix(in_oklab,var(--destructive)_25%,transparent)]";
+    default:
+      return "border border-line hover:border-foreground/25";
+  }
+}
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
@@ -27,6 +47,7 @@ export function StudioCard({
   canDrag,
   liveOffset,
   eventTitle,
+  lifecycleStatus = "IDLE",
   onSelect,
   onChange,
   onTool,
@@ -41,6 +62,7 @@ export function StudioCard({
   canDrag: boolean;
   liveOffset?: { x: number; y: number } | null;
   eventTitle?: string;
+  lifecycleStatus?: CardLifecycleStatus;
   onSelect: (e: React.MouseEvent | React.PointerEvent) => void;
   onChange: (updater: (d: DraftPost) => DraftPost) => void;
   onTool: (tool: StudioTool) => void;
@@ -79,11 +101,9 @@ export function StudioCard({
     >
       <article
         className={cn(
-          "overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] select-none",
+          "overflow-hidden rounded-lg bg-card shadow-[var(--shadow-card)] select-none",
           "transition-[border-color,box-shadow,transform] duration-150 ease-out",
-          multiSelected
-            ? "border-brand shadow-[0_0_0_2px_color-mix(in_oklab,var(--brand)_35%,transparent)]"
-            : "border-line hover:border-foreground/25",
+          statusBorderClass(lifecycleStatus, multiSelected),
           selected && "scale-[1.01]",
         )}
       >
@@ -125,7 +145,12 @@ export function StudioCard({
             <p className="min-w-0 truncate font-display text-sm font-semibold text-foreground">
               {draftDisplayTitle(draft)}
             </p>
-            <TrafficLight status="IDLE" size="sm" title="Not scheduled yet" />
+            <TrafficLight
+              status={lifecycleStatus}
+              size="sm"
+              showLabel={lifecycleStatus !== "IDLE"}
+              title={cardStatusLabel(lifecycleStatus)}
+            />
           </div>
           <p className="mt-0.5 text-caption text-muted-foreground">
             {stage === "caption"

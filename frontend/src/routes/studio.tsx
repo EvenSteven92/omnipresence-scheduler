@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Upload } from "lucide-react";
+import { Archive, FolderOpen, Plus, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -7,6 +7,7 @@ import {
   type CanvasMode,
   type MarqueeWorld,
 } from "@/components/studio/StudioCanvas";
+import { StudioBoardPicker } from "@/components/studio/StudioBoardPicker";
 import { StudioCard } from "@/components/studio/StudioCard";
 import type { StudioTool } from "@/components/studio/StudioCardToolbar";
 import { StudioConnectionLayer } from "@/components/studio/StudioConnectionLayer";
@@ -22,13 +23,7 @@ import {
   suggestTimesForDraft,
   type DraftPost,
 } from "@/lib/composer-draft";
-import {
-  readComposerShelf,
-  removeFromReady,
-  revokeDraftMediaUrls,
-  stageDraftsAsReady,
-  writeComposerShelf,
-} from "@/lib/draft-storage";
+import { revokeDraftMediaUrls } from "@/lib/draft-storage";
 import { measureMediaFile } from "@/lib/media-aspect";
 import { pendingSlotsFromQueue } from "@/lib/schedule-engine";
 import {
@@ -38,10 +33,21 @@ import {
   prepareStudioCardWithAi,
 } from "@/lib/studio-ai";
 import {
-  addBoardEventId,
-  readBoardEventIds,
-  removeBoardEventId,
-} from "@/lib/studio-board-events";
+  archiveBoard,
+  createBoard,
+  deleteBoard,
+  emptySnapshot,
+  getActiveBoardId,
+  listBoards,
+  migrateLegacyStudioBoard,
+  readBoard,
+  renameBoard,
+  restoreBoard,
+  setActiveBoardId,
+  writeBoard,
+  type StudioBoardId,
+  type StudioBoardMeta,
+} from "@/lib/studio-boards";
 import {
   cardBounds,
   cascadePosition,
@@ -52,14 +58,13 @@ import {
   rectsIntersect,
   type Viewport,
 } from "@/lib/studio-layout";
-import {
-  readEventLayout,
-  setEventPosition,
-  writeEventLayout,
-  type EventLayoutMap,
-} from "@/lib/studio-event-layout";
+import type { EventLayoutMap } from "@/lib/studio-event-layout";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
-import { cardStatusFromPosts } from "@/lib/card-display";
+import {
+  cardStatusFromPost,
+  cardStatusFromPosts,
+  type CardLifecycleStatus,
+} from "@/lib/card-display";
 import { useWorkspace } from "@/lib/workspace-context";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { applyCadencePreset } from "@/lib/schedule-engine";
@@ -112,6 +117,15 @@ function StudioPage() {
   const [shelfWidth, setShelfWidth] = useState(0);
   const [scheduleTargetIds, setScheduleTargetIds] = useState<string[]>([]);
 
+  /** Multi-board session state */
+  const [boards, setBoards] = useState<StudioBoardMeta[]>([]);
+  const [activeBoardId, setActiveBoardIdState] = useState<StudioBoardId | null>(
+    null,
+  );
+  const [pickerOpen, setPickerOpen] = useState(true);
+  const [boardName, setBoardName] = useState("Board");
+  const skipSaveRef = useRef(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<Viewport>({ panX: 0, panY: 0, zoom: 1 });
   const draftsRef = useRef(drafts);
@@ -121,6 +135,10 @@ function StudioPage() {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2800);
   }, []);
+
+  const refreshBoardList = useCallback(() => {
+    setBoards(listBoards(workspaceId));
+  }, [workspaceId]);
 
   const boardEvents = useMemo(
     () =>
@@ -135,28 +153,89 @@ function StudioPage() {
     return events.filter((e) => !on.has(e.id));
   }, [events, boardEventIds]);
 
-  useEffect(() => {
-    const shelf = readComposerShelf(workspaceId);
-    const merged = ensureCanvasPositions([...shelf.drafting, ...shelf.ready]);
-    setDrafts(merged);
-    setEventLayout(readEventLayout(workspaceId));
-    setBoardEventIds(readBoardEventIds(workspaceId));
-    setSelectedIds(new Set());
-    setFocusId(null);
-    setSelectedEventId(null);
-    setHiddenIds(new Set());
-    setLayersOpen(false);
-  }, [workspaceId]);
+  const postById = useMemo(() => {
+    const m = new Map(workspace.scheduledPosts.map((p) => [p.id, p]));
+    return m;
+  }, [workspace.scheduledPosts]);
+
+  function lifecycleForDraft(id: string): CardLifecycleStatus {
+    const post = postById.get(id);
+    if (!post) return "IDLE";
+    return cardStatusFromPost(post);
+  }
+
+  const loadBoard = useCallback(
+    (boardId: StudioBoardId) => {
+      skipSaveRef.current = true;
+      const snap = readBoard(workspaceId, boardId) ?? emptySnapshot();
+      const meta = listBoards(workspaceId).find((b) => b.id === boardId);
+      setActiveBoardId(workspaceId, boardId);
+      setActiveBoardIdState(boardId);
+      setBoardName(meta?.name ?? "Board");
+      setDrafts(ensureCanvasPositions(snap.drafts));
+      setEventLayout(snap.eventLayout ?? {});
+      setBoardEventIds(snap.boardEventIds ?? []);
+      setHiddenIds(new Set(snap.hiddenIds ?? []));
+      setSelectedIds(new Set());
+      setFocusId(null);
+      setSelectedEventId(null);
+      setLayersOpen(false);
+      setShelfOpen(false);
+      setPickerOpen(false);
+      refreshBoardList();
+      window.setTimeout(() => {
+        skipSaveRef.current = false;
+      }, 0);
+    },
+    [workspaceId, refreshBoardList],
+  );
+
+  const saveActiveBoard = useCallback(() => {
+    if (!activeBoardId || skipSaveRef.current) return;
+    writeBoard(
+      workspaceId,
+      activeBoardId,
+      {
+        drafts,
+        boardEventIds,
+        eventLayout,
+        hiddenIds: [...hiddenIds],
+      },
+      workspace.scheduledPosts,
+    );
+    refreshBoardList();
+  }, [
+    activeBoardId,
+    workspaceId,
+    drafts,
+    boardEventIds,
+    eventLayout,
+    hiddenIds,
+    workspace.scheduledPosts,
+    refreshBoardList,
+  ]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const ready = drafts.filter(
-      (d) => d.caption.trim() && (d.previewUrl || d.dropboxUrl || d.filename),
-    );
-    const drafting = drafts.filter((d) => !ready.some((r) => r.id === d.id));
-    const shelf = readComposerShelf(workspaceId);
-    writeComposerShelf(workspaceId, drafting, ready, shelf.savedDrafts);
-  }, [workspaceId, drafts]);
+    migrateLegacyStudioBoard(workspaceId);
+    refreshBoardList();
+    const active = getActiveBoardId(workspaceId);
+    if (active) {
+      loadBoard(active);
+    } else {
+      setActiveBoardIdState(null);
+      setPickerOpen(true);
+      setDrafts([]);
+      setEventLayout({});
+      setBoardEventIds([]);
+      setHiddenIds(new Set());
+    }
+  }, [workspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-save active board snapshot
+  useEffect(() => {
+    if (pickerOpen || !activeBoardId) return;
+    saveActiveBoard();
+  }, [drafts, boardEventIds, eventLayout, hiddenIds, pickerOpen, activeBoardId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Layout only for events already on the board (never auto-place workspace history)
   useEffect(() => {
@@ -175,7 +254,6 @@ function StudioPage() {
       }
     }
     if (changed) {
-      writeEventLayout(workspaceId, map);
       setEventLayout(map);
     }
   }, [boardEventIds, workspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -260,7 +338,6 @@ function StudioPage() {
     const victim = drafts.find((d) => d.id === id);
     if (victim) revokeDraftMediaUrls([victim]);
     setDrafts((cur) => cur.filter((d) => d.id !== id));
-    removeFromReady(workspaceId, [id]);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       next.delete(id);
@@ -268,7 +345,7 @@ function StudioPage() {
     });
     setScheduleTargetIds((ids) => ids.filter((x) => x !== id));
     setFocusId((fid) => (fid === id ? null : fid));
-    showToast("Card removed");
+    showToast("Removed from board (scheduled posts keep in Queue)");
   }
 
   async function runTranscript(id: string) {
@@ -366,22 +443,46 @@ function StudioPage() {
       showToast("Set platforms and times for each reel");
       return;
     }
-    stageDraftsAsReady(
-      workspaceId,
-      posts.map((p) => p.id),
-    );
     await addScheduledPosts(posts);
-    const ids = new Set(posts.map((p) => p.id));
-    removeFromReady(workspaceId, [...ids]);
-    setDrafts((cur) => cur.filter((d) => !ids.has(d.id)));
+    // Keep cards on the board — traffic light + border reflect scheduled/live
     setScheduleTargetIds([]);
     setShelfOpen(false);
     setSelectedIds(new Set());
     showToast(
       posts.length === 1
-        ? "Scheduled — see Queue / Calendar"
-        : `Scheduled ${posts.length} reels`,
+        ? "Scheduled — card stays on board (yellow border)"
+        : `Scheduled ${posts.length} reels — kept on this board`,
     );
+    // Force persist with latest scheduledPosts after add (next tick)
+    window.setTimeout(() => saveActiveBoard(), 0);
+  }
+
+  function handleNewBoard(name: string) {
+    if (activeBoardId) saveActiveBoard();
+    const meta = createBoard(workspaceId, { name });
+    loadBoard(meta.id);
+    showToast(`Started “${meta.name}”`);
+  }
+
+  function handleOpenPicker() {
+    if (activeBoardId) saveActiveBoard();
+    refreshBoardList();
+    setPickerOpen(true);
+  }
+
+  function handleArchiveCurrent() {
+    if (!activeBoardId) return;
+    saveActiveBoard();
+    archiveBoard(workspaceId, activeBoardId);
+    refreshBoardList();
+    const next = getActiveBoardId(workspaceId);
+    if (next) loadBoard(next);
+    else {
+      setActiveBoardIdState(null);
+      setPickerOpen(true);
+      setDrafts([]);
+    }
+    showToast("Board archived");
   }
 
   function handleTool(id: string, tool: StudioTool) {
@@ -474,8 +575,7 @@ function StudioPage() {
   }
 
   function removeEventFromBoard(eventId: string) {
-    const next = removeBoardEventId(workspaceId, eventId);
-    setBoardEventIds(next);
+    setBoardEventIds((ids) => ids.filter((id) => id !== eventId));
     if (selectedEventId === eventId) setSelectedEventId(null);
     setHiddenIds((prev) => {
       const n = new Set(prev);
@@ -648,13 +748,10 @@ function StudioPage() {
         /* ignore */
       }
       if (moved) {
-        const next = setEventPosition(
-          workspaceId,
-          eventId,
-          pos.x + lastDx,
-          pos.y + lastDy,
-        );
-        setEventLayout(next);
+        setEventLayout((prev) => ({
+          ...prev,
+          [eventId]: { x: pos.x + lastDx, y: pos.y + lastDy },
+        }));
       }
       setLiveDrag(null);
     }
@@ -701,12 +798,13 @@ function StudioPage() {
       kind: "sunday_sermon",
     };
     await addEvent(event);
-    const nextIds = addBoardEventId(workspaceId, id);
-    setBoardEventIds(nextIds);
-    const n = nextIds.length - 1;
-    const pos = { x: 100 + (n % 3) * 40, y: 100 + (n % 4) * 40 };
-    const map = setEventPosition(workspaceId, id, pos.x, pos.y);
-    setEventLayout(map);
+    setBoardEventIds((ids) => {
+      const next = [...new Set([...ids, id])];
+      const n = next.length - 1;
+      const pos = { x: 100 + (n % 3) * 40, y: 100 + (n % 4) * 40 };
+      setEventLayout((prev) => ({ ...prev, [id]: pos }));
+      return next;
+    });
     setSelectedEventId(id);
     setSelectedIds(new Set());
     setLayersOpen(true);
@@ -719,18 +817,20 @@ function StudioPage() {
       selectEvent(eventId);
       return;
     }
-    const next = addBoardEventId(workspaceId, eventId);
-    setBoardEventIds(next);
-    if (!eventLayout[eventId]) {
-      const n = next.length - 1;
-      const map = setEventPosition(
-        workspaceId,
-        eventId,
-        100 + (n % 3) * 40,
-        100 + (n % 4) * 40,
-      );
-      setEventLayout(map);
-    }
+    setBoardEventIds((ids) => {
+      const next = [...new Set([...ids, eventId])];
+      if (!eventLayout[eventId]) {
+        const n = next.length - 1;
+        setEventLayout((prev) => ({
+          ...prev,
+          [eventId]: {
+            x: 100 + (n % 3) * 40,
+            y: 100 + (n % 4) * 40,
+          },
+        }));
+      }
+      return next;
+    });
     selectEvent(eventId);
     showToast("Event placed on board");
   }
@@ -864,21 +964,115 @@ function StudioPage() {
       </div>
     ) : null;
 
+  if (pickerOpen || !activeBoardId) {
+    return (
+      <div
+        className="relative flex h-full min-h-0 flex-col overflow-y-auto bg-background"
+        data-testid="studio-page"
+      >
+        <StudioBoardPicker
+          boards={boards}
+          activeId={activeBoardId}
+          onOpen={(id) => {
+            loadBoard(id);
+            showToast("Board opened");
+          }}
+          onNew={handleNewBoard}
+          onArchive={(id) => {
+            archiveBoard(workspaceId, id);
+            refreshBoardList();
+            if (activeBoardId === id) {
+              const next = getActiveBoardId(workspaceId);
+              if (next) loadBoard(next);
+              else setActiveBoardIdState(null);
+            }
+            showToast("Board archived");
+          }}
+          onRestore={(id) => {
+            restoreBoard(workspaceId, id);
+            refreshBoardList();
+            showToast("Board restored");
+          }}
+          onDelete={(id) => {
+            deleteBoard(workspaceId, id);
+            refreshBoardList();
+            if (activeBoardId === id) {
+              const next = getActiveBoardId(workspaceId);
+              if (next) loadBoard(next);
+              else {
+                setActiveBoardIdState(null);
+                setDrafts([]);
+              }
+            }
+            showToast("Board deleted");
+          }}
+        />
+        {toast ? (
+          <div
+            role="status"
+            className="animate-slide-in-up fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-line bg-foreground px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-card)] md:bottom-20"
+          >
+            {toast}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-full min-h-0 flex-col" data-testid="studio-page">
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-card px-4 py-3">
         <div className="min-w-0">
           <p className="text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            Studio
+            Studio board
           </p>
-          <h1 className="font-display text-lg font-bold tracking-tight text-foreground">
-            Board
-          </h1>
+          <input
+            type="text"
+            value={boardName}
+            onChange={(e) => setBoardName(e.target.value)}
+            onBlur={() => {
+              if (activeBoardId && boardName.trim()) {
+                renameBoard(workspaceId, activeBoardId, boardName.trim());
+                refreshBoardList();
+              }
+            }}
+            className="mt-0.5 w-full max-w-md border-0 bg-transparent font-display text-lg font-bold tracking-tight text-foreground outline-none focus:ring-0"
+            data-testid="studio-board-name"
+            aria-label="Board name"
+          />
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Everything is a card — reels, events, schedule from the shelf
+            Scheduled reels stay here with yellow borders · live turns green
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleOpenPicker}
+            className="btn-action btn-action-secondary"
+            data-testid="studio-boards-btn"
+          >
+            <FolderOpen className="h-4 w-4" />
+            Boards
+          </button>
+          <button
+            type="button"
+            onClick={() => handleNewBoard("")}
+            className="btn-action btn-action-secondary"
+            data-testid="studio-new-board"
+          >
+            <Plus className="h-4 w-4" />
+            New board
+          </button>
+          <button
+            type="button"
+            onClick={handleArchiveCurrent}
+            className="btn-action btn-action-secondary"
+            title="Archive this board"
+            data-testid="studio-archive-board"
+          >
+            <Archive className="h-4 w-4" />
+            Archive
+          </button>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -1032,6 +1226,7 @@ function StudioPage() {
                   canDrag={mode === "select"}
                   liveOffset={live}
                   eventTitle={evTitle}
+                  lifecycleStatus={lifecycleForDraft(draft.id)}
                   onSelect={(e) =>
                     selectCard(draft.id, e.shiftKey || e.metaKey || e.ctrlKey)
                   }
