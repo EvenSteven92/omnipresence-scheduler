@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { StudioCanvas, type CanvasMode } from "@/components/studio/StudioCanvas";
+import {
+  StudioCanvas,
+  type CanvasMode,
+  type MarqueeWorld,
+} from "@/components/studio/StudioCanvas";
 import { StudioCard } from "@/components/studio/StudioCard";
 import type { StudioTool } from "@/components/studio/StudioCardToolbar";
 import {
@@ -19,9 +23,13 @@ import {
 import { measureMediaFile } from "@/lib/media-aspect";
 import { generateCaptionWithHashtags, generateTranscript } from "@/lib/studio-ai";
 import {
+  cardBounds,
   cascadePosition,
   ensureCanvasPositions,
   hasScriptSource,
+  rectsIntersect,
+  normalizeRect,
+  type Viewport,
 } from "@/lib/studio-layout";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -40,6 +48,8 @@ export const Route = createFileRoute("/studio")({
   component: StudioPage,
 });
 
+const DRAG_THRESHOLD = 3;
+
 function StudioPage() {
   const { workspace, workspaceId } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
@@ -49,18 +59,20 @@ function StudioPage() {
   );
 
   const [drafts, setDrafts] = useState<DraftPost[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [focusId, setFocusId] = useState<string | null>(null);
   const [busy, setBusy] = useState<StudioTool | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [mode, setMode] = useState<CanvasMode>("select");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragCardRef = useRef<{
-    id: string;
-    startX: number;
-    startY: number;
-    originX: number;
-    originY: number;
+  const [marquee, setMarquee] = useState<MarqueeWorld | null>(null);
+  const [liveDrag, setLiveDrag] = useState<{
+    ids: string[];
+    dx: number;
+    dy: number;
   } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const viewportRef = useRef<Viewport>({ panX: 40, panY: 40, zoom: 1 });
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -71,15 +83,16 @@ function StudioPage() {
     const shelf = readComposerShelf(workspaceId);
     const merged = ensureCanvasPositions([...shelf.drafting, ...shelf.ready]);
     setDrafts(merged);
-    setSelectedId(merged[0]?.id ?? null);
+    if (merged[0]) {
+      setSelectedIds(new Set([merged[0].id]));
+      setFocusId(merged[0].id);
+    }
   }, [workspaceId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const ready = drafts.filter(
-      (d) =>
-        d.caption.trim() &&
-        (d.previewUrl || d.dropboxUrl || d.filename),
+      (d) => d.caption.trim() && (d.previewUrl || d.dropboxUrl || d.filename),
     );
     const drafting = drafts.filter((d) => !ready.some((r) => r.id === d.id));
     const shelf = readComposerShelf(workspaceId);
@@ -108,7 +121,11 @@ function StudioPage() {
           next = [...next, card];
           return card;
         });
-        setSelectedId(created[created.length - 1]?.id ?? null);
+        const last = created[created.length - 1];
+        if (last) {
+          setSelectedIds(new Set([last.id]));
+          setFocusId(last.id);
+        }
         void Promise.all(
           arr.map(async (file, i) => {
             const dims = await measureMediaFile(file);
@@ -134,7 +151,12 @@ function StudioPage() {
     if (victim) revokeDraftMediaUrls([victim]);
     setDrafts((cur) => cur.filter((d) => d.id !== id));
     removeFromReady(workspaceId, [id]);
-    setSelectedId((sid) => (sid === id ? null : sid));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setFocusId((fid) => (fid === id ? null : fid));
     showToast("Card removed");
   }
 
@@ -222,42 +244,128 @@ function StudioPage() {
     }
   }
 
-  function onCardPointerDown(id: string, e: React.PointerEvent) {
-    if (mode !== "select") return;
-    e.stopPropagation();
-    const draft = drafts.find((d) => d.id === id);
-    if (!draft) return;
-    setSelectedId(id);
-    dragCardRef.current = {
-      id,
-      startX: e.clientX,
-      startY: e.clientY,
-      originX: draft.canvasX ?? 48,
-      originY: draft.canvasY ?? 48,
-    };
-
-    function move(ev: PointerEvent) {
-      const d = dragCardRef.current;
-      if (!d) return;
-      const dx = ev.clientX - d.startX;
-      const dy = ev.clientY - d.startY;
-      updateDraft(d.id, (card) => ({
-        ...card,
-        canvasX: d.originX + dx,
-        canvasY: d.originY + dy,
-      }));
+  function selectCard(id: string, e: { shiftKey?: boolean }) {
+    if (e.shiftKey) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      setFocusId(id);
+    } else {
+      setSelectedIds(new Set([id]));
+      setFocusId(id);
     }
-    function up() {
-      dragCardRef.current = null;
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-    }
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
   }
 
+  function onCardDragStartFixed(id: string, e: React.PointerEvent) {
+    if (mode !== "select") return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    let ids = selectedIds.has(id) ? [...selectedIds] : [id];
+    if (!selectedIds.has(id)) {
+      setSelectedIds(new Set([id]));
+      setFocusId(id);
+      ids = [id];
+    }
+
+    const origins = new Map<string, { x: number; y: number }>();
+    for (const d of drafts) {
+      if (ids.includes(d.id)) {
+        origins.set(d.id, { x: d.canvasX ?? 48, y: d.canvasY ?? 48 });
+      }
+    }
+
+    const startClientX = e.clientX;
+    const startClientY = e.clientY;
+    let moved = false;
+    let lastDx = 0;
+    let lastDy = 0;
+    const handle = e.currentTarget as HTMLElement;
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+
+    function onMove(ev: PointerEvent) {
+      const z = viewportRef.current.zoom || 1;
+      const dx = (ev.clientX - startClientX) / z;
+      const dy = (ev.clientY - startClientY) / z;
+      if (!moved && Math.hypot(ev.clientX - startClientX, ev.clientY - startClientY) < DRAG_THRESHOLD) {
+        return;
+      }
+      moved = true;
+      lastDx = dx;
+      lastDy = dy;
+      setLiveDrag({ ids, dx, dy });
+    }
+
+    function onUp(ev: PointerEvent) {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      try {
+        handle.releasePointerCapture(ev.pointerId);
+      } catch {
+        /* ignore */
+      }
+      if (moved) {
+        setDrafts((cur) =>
+          cur.map((d) => {
+            if (!ids.includes(d.id)) return d;
+            const o = origins.get(d.id);
+            if (!o) return d;
+            return { ...d, canvasX: o.x + lastDx, canvasY: o.y + lastDy };
+          }),
+        );
+      }
+      setLiveDrag(null);
+    }
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
+  function onMarqueeStart(world: { x: number; y: number }) {
+    setMarquee({ start: world, current: world });
+  }
+
+  function onMarqueeMove(world: { x: number; y: number }) {
+    setMarquee((m) => (m ? { ...m, current: world } : null));
+  }
+
+  function onMarqueeEnd() {
+    setMarquee((m) => {
+      if (!m) return null;
+      const box = normalizeRect(m.start, m.current);
+      // Click without drag — clear selection
+      if (box.w < 4 && box.h < 4) {
+        setSelectedIds(new Set());
+        setFocusId(null);
+        return null;
+      }
+      const hit = new Set<string>();
+      for (const d of drafts) {
+        const b = cardBounds(d);
+        if (rectsIntersect(box, b)) hit.add(d.id);
+      }
+      setSelectedIds(hit);
+      setFocusId(hit.size > 0 ? [...hit][0]! : null);
+      return null;
+    });
+  }
+
+  const primaryId =
+    focusId && selectedIds.has(focusId)
+      ? focusId
+      : selectedIds.size === 1
+        ? [...selectedIds][0]!
+        : null;
+
   return (
-    <div className="flex h-full min-h-0 flex-col" data-testid="studio-page">
+    <div className="relative flex h-full min-h-0 flex-col" data-testid="studio-page">
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-card px-4 py-3">
         <div className="min-w-0">
           <p className="text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
@@ -267,7 +375,7 @@ function StudioPage() {
             Reel board
           </h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Transcript + CTA → caption. Scheduling comes later.
+            Transcript + CTA → caption. Drag to move · marquee to multi-select.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -298,8 +406,20 @@ function StudioPage() {
         drafts={drafts}
         mode={mode}
         onModeChange={setMode}
-        onBackgroundClick={() => setSelectedId(null)}
+        onBackgroundClick={(e) => {
+          if (!e.shiftKey) {
+            setSelectedIds(new Set());
+            setFocusId(null);
+          }
+        }}
         onDropFiles={addFiles}
+        onViewportChange={(vp) => {
+          viewportRef.current = vp;
+        }}
+        marquee={marquee}
+        onMarqueeStart={onMarqueeStart}
+        onMarqueeMove={onMarqueeMove}
+        onMarqueeEnd={onMarqueeEnd}
       >
         {drafts.length === 0 ? (
           <div className="pointer-events-none absolute left-1/2 top-1/2 w-[min(90vw,22rem)] -translate-x-1/2 -translate-y-1/2 text-center">
@@ -320,22 +440,56 @@ function StudioPage() {
           </div>
         ) : null}
 
-        {drafts.map((draft) => (
-          <StudioCard
-            key={draft.id}
-            draft={draft}
-            selected={selectedId === draft.id}
-            busy={selectedId === draft.id ? busy : null}
-            canDrag={mode === "select"}
-            onSelect={() => setSelectedId(draft.id)}
-            onChange={(updater) => updateDraft(draft.id, updater)}
-            onTool={(tool) => handleTool(draft.id, tool)}
-            onGenerateTranscript={() => void runTranscript(draft.id)}
-            onGenerateCaption={() => void runCaption(draft.id)}
-            onDragStart={(e) => onCardPointerDown(draft.id, e)}
-          />
-        ))}
+        {drafts.map((draft) => {
+          const isSel = selectedIds.has(draft.id);
+          const live =
+            liveDrag && liveDrag.ids.includes(draft.id)
+              ? { x: liveDrag.dx, y: liveDrag.dy }
+              : null;
+          return (
+            <StudioCard
+              key={draft.id}
+              draft={draft}
+              selected={primaryId === draft.id && selectedIds.size === 1}
+              multiSelected={isSel}
+              busy={primaryId === draft.id ? busy : null}
+              canDrag={mode === "select"}
+              liveOffset={live}
+              onSelect={(e) => selectCard(draft.id, e)}
+              onChange={(updater) => updateDraft(draft.id, updater)}
+              onTool={(tool) => handleTool(draft.id, tool)}
+              onGenerateTranscript={() => void runTranscript(draft.id)}
+              onGenerateCaption={() => void runCaption(draft.id)}
+              onDragStart={(e) => onCardDragStartFixed(draft.id, e)}
+            />
+          );
+        })}
       </StudioCanvas>
+
+      {selectedIds.size > 1 ? (
+        <div
+          data-testid="studio-batch-bar"
+          className="absolute left-1/2 top-20 z-40 flex -translate-x-1/2 items-center gap-3 rounded-lg border border-line bg-card px-4 py-2 shadow-[var(--shadow-card)]"
+        >
+          <span className="text-sm font-semibold text-foreground">
+            {selectedIds.size} selected
+          </span>
+          <span className="text-xs text-muted-foreground">
+            Bulk schedule coming later
+          </span>
+          <button
+            type="button"
+            className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            onClick={() => {
+              setSelectedIds(new Set());
+              setFocusId(null);
+            }}
+            aria-label="Clear selection"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ) : null}
 
       {toast ? (
         <div

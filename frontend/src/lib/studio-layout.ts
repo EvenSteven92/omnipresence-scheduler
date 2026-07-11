@@ -93,3 +93,60 @@ export function cardsBoundingBox(drafts: DraftPost[]): {
   }
   return { minX, minY, maxX, maxY };
 }
+
+export type Viewport = { panX: number; panY: number; zoom: number };
+
+/** Client (screen) point → board/world coordinates. */
+export function clientToWorld(
+  clientX: number,
+  clientY: number,
+  rect: DOMRect,
+  vp: Viewport,
+): { x: number; y: number } {
+  return {
+    x: (clientX - rect.left - vp.panX) / vp.zoom,
+    y: (clientY - rect.top - vp.panY) / vp.zoom,
+  };
+}
+
+export function normalizeRect(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+): { x: number; y: number; w: number; h: number } {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return { x, y, w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) };
+}
+
+export function rectsIntersect(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+): boolean {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+/** Approximate card height for hit-tests when DOM not measured. */
+export function estimateCardHeight(draft: DraftPost): number {
+  let h = 48 + 24; // header
+  const open = draft.studioOpen ?? {};
+  // media max-height 320 but aspect varies — use conservative default
+  h += 280;
+  if (open.transcript) h += 200;
+  if (open.cta) h += 80;
+  if (open.caption) h += 180;
+  return h;
+}
+
+export function cardBounds(draft: DraftPost): {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+} {
+  return {
+    x: draft.canvasX ?? 48,
+    y: draft.canvasY ?? 48,
+    w: STUDIO_CARD_WIDTH,
+    h: estimateCardHeight(draft),
+  };
+}

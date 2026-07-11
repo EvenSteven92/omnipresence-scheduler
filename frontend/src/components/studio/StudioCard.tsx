@@ -18,8 +18,10 @@ function isEditableTarget(target: EventTarget | null): boolean {
 export function StudioCard({
   draft,
   selected,
+  multiSelected,
   busy,
   canDrag,
+  liveOffset,
   onSelect,
   onChange,
   onTool,
@@ -29,10 +31,13 @@ export function StudioCard({
 }: {
   draft: DraftPost;
   selected: boolean;
+  /** Part of multi-selection (including when sole selected) */
+  multiSelected: boolean;
   busy?: StudioTool | null;
-  /** When false (hand tool), card cannot be moved */
   canDrag: boolean;
-  onSelect: () => void;
+  /** Live drag translate in board pixels (applied via CSS transform) */
+  liveOffset?: { x: number; y: number } | null;
+  onSelect: (e: React.MouseEvent | React.PointerEvent) => void;
   onChange: (updater: (d: DraftPost) => DraftPost) => void;
   onTool: (tool: StudioTool) => void;
   onGenerateTranscript: () => void;
@@ -41,6 +46,8 @@ export function StudioCard({
 }) {
   const stage = studioStage(draft);
   const open = draft.studioOpen ?? {};
+  const ox = liveOffset?.x ?? 0;
+  const oy = liveOffset?.y ?? 0;
 
   function patchOpen(key: keyof NonNullable<DraftPost["studioOpen"]>, value: boolean) {
     onChange((d) => ({
@@ -53,36 +60,46 @@ export function StudioCard({
     <div
       data-testid={`studio-card-${draft.id}`}
       data-stage={stage}
-      className={cn("absolute", selected && "z-30")}
+      data-studio-card={draft.id}
+      className={cn("absolute will-change-transform", multiSelected && "z-30")}
       style={{
         left: draft.canvasX ?? 48,
         top: draft.canvasY ?? 48,
         width: STUDIO_CARD_WIDTH,
+        transform:
+          ox !== 0 || oy !== 0 ? `translate3d(${ox}px, ${oy}px, 0)` : undefined,
       }}
     >
+      {/* Contextual tools only when this is the sole / primary selected card */}
       {selected ? (
         <StudioCardToolbar draft={draft} busy={busy} onTool={onTool} />
       ) : null}
 
       <article
         className={cn(
-          "overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] transition-[box-shadow,border-color] duration-200",
-          selected
+          "overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] transition-[box-shadow,border-color] duration-150 select-none",
+          multiSelected
             ? "border-brand ring-2 ring-brand ring-offset-2 ring-offset-paper-2"
             : "border-line hover:border-foreground/30",
         )}
       >
-        {/* Drag handle = media only (select mode) */}
         <div
-          className={cn(canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-default")}
+          className={cn(
+            "touch-none",
+            canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-default",
+          )}
           onPointerDown={(e) => {
             if (!canDrag) return;
             if (isEditableTarget(e.target)) return;
+            if (e.button !== 0) return;
+            e.preventDefault();
+            e.stopPropagation();
+            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
             onDragStart(e);
           }}
           onClick={(e) => {
             e.stopPropagation();
-            onSelect();
+            onSelect(e);
           }}
         >
           <StudioCardMedia draft={draft} />
@@ -92,7 +109,7 @@ export function StudioCard({
           className="border-b border-line px-3 py-2.5"
           onClick={(e) => {
             e.stopPropagation();
-            onSelect();
+            onSelect(e);
           }}
         >
           <p className="truncate font-display text-sm font-semibold text-foreground">

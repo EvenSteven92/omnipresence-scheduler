@@ -5,13 +5,23 @@ import {
   useRef,
   useState,
   type ReactNode,
-  type RefObject,
 } from "react";
-import { cardsBoundingBox, clampZoom } from "@/lib/studio-layout";
 import type { DraftPost } from "@/lib/composer-draft";
+import {
+  cardsBoundingBox,
+  clampZoom,
+  clientToWorld,
+  normalizeRect,
+  type Viewport,
+} from "@/lib/studio-layout";
 import { cn } from "@/lib/utils";
 
 export type CanvasMode = "select" | "hand";
+
+export type MarqueeWorld = {
+  start: { x: number; y: number };
+  current: { x: number; y: number };
+};
 
 function isTypingTarget(el: EventTarget | null): boolean {
   if (!(el instanceof Element)) return false;
@@ -21,11 +31,8 @@ function isTypingTarget(el: EventTarget | null): boolean {
 }
 
 /**
- * Miro-class pan/zoom board.
- * - Select (V) / Hand (H)
- * - Space+drag temporary hand (when not typing)
- * - Wheel = pan; ⌘/Ctrl+wheel = zoom toward cursor
- * - Middle-click pan
+ * Miro-class pan/zoom + marquee host.
+ * Viewport exposed via onViewportChange for drag/marquee math.
  */
 export function StudioCanvas({
   children,
@@ -34,17 +41,25 @@ export function StudioCanvas({
   onModeChange,
   onBackgroundClick,
   onDropFiles,
+  onViewportChange,
+  marquee,
+  onMarqueeStart,
+  onMarqueeMove,
+  onMarqueeEnd,
   className,
-  viewportRef,
 }: {
   children: ReactNode;
   drafts: DraftPost[];
   mode: CanvasMode;
   onModeChange: (m: CanvasMode) => void;
-  onBackgroundClick?: () => void;
+  onBackgroundClick?: (e: React.MouseEvent) => void;
   onDropFiles?: (files: FileList) => void;
+  onViewportChange?: (vp: Viewport) => void;
+  marquee?: MarqueeWorld | null;
+  onMarqueeStart?: (world: { x: number; y: number }, e: React.PointerEvent) => void;
+  onMarqueeMove?: (world: { x: number; y: number }) => void;
+  onMarqueeEnd?: () => void;
   className?: string;
-  viewportRef?: RefObject<HTMLDivElement | null>;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState({ x: 40, y: 40 });
@@ -57,10 +72,15 @@ export function StudioCanvas({
     originX: number;
     originY: number;
   } | null>(null);
+  const marqueeActive = useRef(false);
 
   const effectiveHand = mode === "hand" || spaceHeld;
+  const vp: Viewport = { panX: pan.x, panY: pan.y, zoom };
 
-  // Window-level Space for temporary hand (ignore when typing)
+  useEffect(() => {
+    onViewportChange?.(vp);
+  }, [pan.x, pan.y, zoom, onViewportChange]);
+
   useEffect(() => {
     function down(e: KeyboardEvent) {
       if (e.code !== "Space" || e.repeat) return;
@@ -70,11 +90,11 @@ export function StudioCanvas({
     }
     function up(e: KeyboardEvent) {
       if (e.code === "Space") setSpaceHeld(false);
-      if (e.key === "v" || e.key === "V") {
-        if (!isTypingTarget(e.target)) onModeChange("select");
+      if ((e.key === "v" || e.key === "V") && !isTypingTarget(e.target)) {
+        onModeChange("select");
       }
-      if (e.key === "h" || e.key === "H") {
-        if (!isTypingTarget(e.target)) onModeChange("hand");
+      if ((e.key === "h" || e.key === "H") && !isTypingTarget(e.target)) {
+        onModeChange("hand");
       }
     }
     window.addEventListener("keydown", down, { passive: false });
@@ -85,32 +105,25 @@ export function StudioCanvas({
     };
   }, [onModeChange]);
 
-  const setZoomAtPoint = useCallback(
-    (nextZoom: number, clientX: number, clientY: number) => {
-      const el = rootRef.current;
-      if (!el) {
-        setZoom(clampZoom(nextZoom));
-        return;
-      }
-      const rect = el.getBoundingClientRect();
-      const mx = clientX - rect.left;
-      const my = clientY - rect.top;
-      setZoom((prevZ) => {
-        const z = clampZoom(nextZoom);
-        // Keep world point under cursor stable
-        setPan((p) => {
-          const worldX = (mx - p.x) / prevZ;
-          const worldY = (my - p.y) / prevZ;
-          return {
-            x: mx - worldX * z,
-            y: my - worldY * z,
-          };
-        });
-        return z;
+  const setZoomAtPoint = useCallback((nextZoom: number, clientX: number, clientY: number) => {
+    const el = rootRef.current;
+    if (!el) {
+      setZoom(clampZoom(nextZoom));
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
+    setZoom((prevZ) => {
+      const z = clampZoom(nextZoom);
+      setPan((p) => {
+        const worldX = (mx - p.x) / prevZ;
+        const worldY = (my - p.y) / prevZ;
+        return { x: mx - worldX * z, y: my - worldY * z };
       });
-    },
-    [],
-  );
+      return z;
+    });
+  }, []);
 
   const onWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -119,10 +132,7 @@ export function StudioCanvas({
         const factor = Math.exp(-e.deltaY * 0.002);
         setZoomAtPoint(zoom * factor, e.clientX, e.clientY);
       } else {
-        setPan((p) => ({
-          x: p.x - e.deltaX,
-          y: p.y - e.deltaY,
-        }));
+        setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
       }
     },
     [setZoomAtPoint, zoom],
@@ -141,6 +151,16 @@ export function StudioCanvas({
     };
   }
 
+  function worldFromEvent(e: { clientX: number; clientY: number }) {
+    const el = rootRef.current;
+    if (!el) return { x: 0, y: 0 };
+    return clientToWorld(e.clientX, e.clientY, el.getBoundingClientRect(), {
+      panX: pan.x,
+      panY: pan.y,
+      zoom,
+    });
+  }
+
   function onPointerDown(e: React.PointerEvent) {
     const middle = e.button === 1;
     const right = e.button === 2;
@@ -148,20 +168,41 @@ export function StudioCanvas({
     if (middle || right || (primary && effectiveHand)) {
       if (right) e.preventDefault();
       beginPan(e);
+      return;
+    }
+    // Select tool: marquee on empty board (not on a card)
+    if (primary && mode === "select") {
+      const t = e.target as HTMLElement;
+      if (t.closest("[data-studio-card]")) return;
+      if (t.closest("[data-testid^='studio-toolbar']")) return;
+      e.preventDefault();
+      rootRef.current?.setPointerCapture(e.pointerId);
+      marqueeActive.current = true;
+      const w = worldFromEvent(e);
+      onMarqueeStart?.(w, e);
     }
   }
 
   function onPointerMove(e: React.PointerEvent) {
-    if (!panRef.current) return;
-    const dx = e.clientX - panRef.current.startX;
-    const dy = e.clientY - panRef.current.startY;
-    setPan({
-      x: panRef.current.originX + dx,
-      y: panRef.current.originY + dy,
-    });
+    if (panRef.current) {
+      const dx = e.clientX - panRef.current.startX;
+      const dy = e.clientY - panRef.current.startY;
+      setPan({
+        x: panRef.current.originX + dx,
+        y: panRef.current.originY + dy,
+      });
+      return;
+    }
+    if (marqueeActive.current) {
+      onMarqueeMove?.(worldFromEvent(e));
+    }
   }
 
   function endPan(e: React.PointerEvent) {
+    if (marqueeActive.current) {
+      marqueeActive.current = false;
+      onMarqueeEnd?.();
+    }
     panRef.current = null;
     setPanning(false);
     try {
@@ -192,13 +233,10 @@ export function StudioCanvas({
     });
   }
 
-  // Expose viewport for parent if needed
-  useEffect(() => {
-    if (viewportRef && rootRef.current) {
-      (viewportRef as React.MutableRefObject<HTMLDivElement | null>).current =
-        rootRef.current;
-    }
-  }, [viewportRef]);
+  const marqueeBox =
+    marquee != null
+      ? normalizeRect(marquee.start, marquee.current)
+      : null;
 
   return (
     <div className={cn("relative flex min-h-0 flex-1 flex-col", className)}>
@@ -211,6 +249,7 @@ export function StudioCanvas({
           "bg-[radial-gradient(circle,_#d6d6d6_1px,_transparent_1px)] bg-[size:20px_20px]",
           panning || effectiveHand ? "cursor-grab" : "cursor-default",
           panning && "cursor-grabbing",
+          mode === "select" && !effectiveHand && "cursor-crosshair",
         )}
         onWheel={onWheel}
         onDragOver={(e) => {
@@ -229,8 +268,10 @@ export function StudioCanvas({
           if (panning || effectiveHand) e.preventDefault();
         }}
         onClick={(e) => {
-          if (e.target === e.currentTarget || (e.target as HTMLElement).dataset?.boardBg) {
-            onBackgroundClick?.();
+          if (marquee) return;
+          const t = e.target as HTMLElement;
+          if (t === e.currentTarget || t.dataset.boardBg) {
+            onBackgroundClick?.(e);
           }
         }}
         role="application"
@@ -243,29 +284,28 @@ export function StudioCanvas({
             transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
           }}
         >
-          {/* Full-board hit area under cards for hand-mode pan */}
-          <div
-            data-board-bg="true"
-            className="absolute inset-0"
-            onPointerDown={(e) => {
-              if (effectiveHand || e.button === 1) {
-                e.stopPropagation();
-                beginPan(e);
-              } else if (e.button === 0 && e.target === e.currentTarget) {
-                onBackgroundClick?.();
-              }
-            }}
-          />
+          <div data-board-bg="true" className="absolute inset-0" />
           {children}
+          {marqueeBox && marqueeBox.w + marqueeBox.h > 0 ? (
+            <div
+              data-testid="studio-marquee"
+              className="pointer-events-none absolute border border-brand bg-brand-soft"
+              style={{
+                left: marqueeBox.x,
+                top: marqueeBox.y,
+                width: marqueeBox.w,
+                height: marqueeBox.h,
+              }}
+            />
+          ) : null}
         </div>
       </div>
 
-      {/* Nav HUD — Miro-style tools */}
       <div className="pointer-events-none absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 flex-wrap items-center justify-center gap-2">
         <div className="pointer-events-auto flex items-center gap-0.5 rounded-lg border border-line bg-card p-1 shadow-[var(--shadow-card)]">
           <button
             type="button"
-            title="Select (V)"
+            title="Select (V) — marquee + move cards"
             data-testid="canvas-mode-select"
             onClick={() => onModeChange("select")}
             className={cn(
@@ -329,7 +369,7 @@ export function StudioCanvas({
       </div>
 
       <p className="pointer-events-none absolute bottom-4 right-4 hidden rounded-md border border-line bg-card/90 px-2 py-1 text-[0.65rem] text-muted-foreground shadow-sm md:block">
-        V select · H hand · Space pan · Scroll pan · ⌘ scroll zoom
+        Drag empty to marquee · H pan · Space pan · Scroll pan
       </p>
     </div>
   );

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Media frame follows the file’s aspect ratio (object-contain — no forced 9:16 crop).
+ * Native HTML drag disabled so board pointer-drag works.
  */
 export function StudioCardMedia({
   draft,
@@ -24,35 +25,46 @@ export function StudioCardMedia({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-t-lg bg-[#0a0a0a]",
+        "relative w-full overflow-hidden rounded-t-lg bg-[#0a0a0a] select-none",
         className,
       )}
       style={{ aspectRatio, maxHeight: 320 }}
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
     >
       {isVideo && src && playing ? (
         <video
           src={src}
-          className="h-full w-full object-contain"
+          className="pointer-events-auto h-full w-full object-contain"
+          style={{ WebkitUserDrag: "none" } as React.CSSProperties}
+          draggable={false}
           controls
           autoPlay
           playsInline
           onClick={(e) => e.stopPropagation()}
+          onDragStart={(e) => e.preventDefault()}
         />
       ) : (
         <>
           {isVideo && src ? (
             <video
               src={src}
-              className="h-full w-full object-contain"
+              className="pointer-events-none h-full w-full object-contain"
+              style={{ WebkitUserDrag: "none" } as React.CSSProperties}
+              draggable={false}
               muted
               playsInline
               preload="metadata"
+              onDragStart={(e) => e.preventDefault()}
             />
           ) : (
             <img
               src={poster}
               alt=""
-              className="h-full w-full object-contain"
+              draggable={false}
+              className="pointer-events-none h-full w-full object-contain"
+              style={{ WebkitUserDrag: "none" } as React.CSSProperties}
+              onDragStart={(e) => e.preventDefault()}
             />
           )}
           {isVideo && src ? (
