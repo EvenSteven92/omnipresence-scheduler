@@ -200,7 +200,7 @@ function CardDetailView({
   const published = isPublishedPost(post);
   const publishedPost = published ? (post as PublishedPost) : null;
   const scheduled = !published ? (post as ScheduledPost) : null;
-  const canEditInPlace =
+  const canEditScheduled =
     !published &&
     (scheduled?.status === "scheduled" ||
       scheduled?.status === "draft" ||
@@ -247,8 +247,15 @@ function CardDetailView({
   }, [post.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeDraft = reuseDraft;
-  const workingAsScheduled = !reuseDraft && canEditInPlace;
-  const fieldsLocked = published && !reuseDraft;
+  /** Editing the existing scheduled/draft card (not a duplicate session). */
+  const workingAsScheduled = !reuseDraft && canEditScheduled;
+  /** Live card from library — can edit post-publish copy, not times/media. */
+  const isLiveEdit = published && !reuseDraft;
+  /** Title, caption, hashtags, transcript, CTA, platform overrides */
+  const canEditCopy = Boolean(reuseDraft) || workingAsScheduled || isLiveEdit;
+  /** Platform publish times — only scheduled or reuse draft */
+  const canEditTimes = Boolean(reuseDraft) || workingAsScheduled;
+  const canSave = workingAsScheduled || isLiveEdit;
 
   const slots = useMemo(() => {
     const platforms = activeDraft?.platforms ?? edit.platforms;
@@ -270,31 +277,46 @@ function CardDetailView({
   }
 
   async function saveInPlace() {
-    if (!scheduled || !workingAsScheduled) return;
+    if (!canSave) return;
     const times = edit.platformTimes;
     const isos = edit.platforms
       .map((p) => times[p])
       .filter(Boolean) as string[];
-    const date = isos.length
-      ? isos.slice().sort()[0]!
-      : scheduled.date;
+    const baseDate =
+      isos.length > 0
+        ? isos.slice().sort()[0]!
+        : scheduled?.date ?? publishedPost?.date ?? post.date;
+
+    // Live posts: store as scheduled row with status published so library finds updates first
     const next: ScheduledPost = {
-      ...scheduled,
-      title: edit.title.trim() || scheduled.title,
+      id: post.id,
+      title: edit.title.trim() || post.title,
       caption: edit.caption,
       hashtags: edit.hashtags,
       transcript: edit.transcript || undefined,
       callToAction: edit.callToAction || undefined,
       platforms: edit.platforms,
-      platformTimes: edit.platformTimes,
+      platformTimes: canEditTimes ? edit.platformTimes : scheduled?.platformTimes ?? publishedPost?.platformTimes,
       platformTitles: edit.platformTitles,
       platformCaptions: edit.platformCaptions,
       platformHashtags: edit.platformHashtags,
-      eventId: edit.eventId ?? scheduled.eventId,
-      date,
+      eventId: edit.eventId ?? post.eventId,
+      date: canEditTimes ? baseDate : post.date,
+      status: published ? "published" : scheduled?.status ?? "scheduled",
+      dropboxUrl: "dropboxUrl" in post ? post.dropboxUrl : undefined,
+      dropboxDirectUrl: "dropboxDirectUrl" in post ? post.dropboxDirectUrl : undefined,
+      previewUrl: "previewUrl" in post ? post.previewUrl : undefined,
+      sourceCardId:
+        "sourceCardId" in post
+          ? (post as ScheduledPost).sourceCardId
+          : undefined,
     };
     await upsertScheduledPost(next);
-    showToast("Changes saved");
+    showToast(
+      published
+        ? "Copy updated in OmniPresence — re-sync to networks if needed"
+        : "Changes saved",
+    );
   }
 
   function startDuplicateReuse() {
@@ -553,12 +575,24 @@ function CardDetailView({
               <span className="font-mono text-[0.6rem] font-semibold uppercase text-muted-foreground">
                 Editing scheduled card
               </span>
+            ) : isLiveEdit ? (
+              <span className="font-mono text-[0.6rem] font-semibold uppercase text-muted-foreground">
+                Live — copy editable · times fixed
+              </span>
             ) : null}
           </div>
           <h1 className="page-title mt-2 text-[2.125rem]">{displayTitle}</h1>
+          {isLiveEdit ? (
+            <p className="mt-2 max-w-xl text-xs text-muted-foreground">
+              You can edit title, caption, hashtags, transcript, and CTA the way
+              networks usually allow after posting. Publish times and media stay
+              fixed. Updates save in OmniPresence — re-sync to social if needed.
+              Use <strong>Duplicate & reuse</strong> to repost.
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {workingAsScheduled ? (
+          {canSave ? (
             <button
               type="button"
               onClick={() => void saveInPlace()}
@@ -573,7 +607,7 @@ function CardDetailView({
             onClick={startDuplicateReuse}
             className={cn(
               "btn-action inline-flex items-center gap-2",
-              !workingAsScheduled && "btn-action-primary",
+              !canSave && "btn-action-primary",
             )}
             data-testid="card-duplicate-reuse"
           >
@@ -618,7 +652,7 @@ function CardDetailView({
               <input
                 type="text"
                 value={displayTitle}
-                disabled={fieldsLocked}
+                disabled={!canEditCopy}
                 onChange={(e) =>
                   reuseDraft
                     ? patchReuse((d) => ({ ...d, title: e.target.value }))
@@ -655,7 +689,7 @@ function CardDetailView({
                   <div className="space-y-2 px-[18px] pb-[18px]">
                     <textarea
                       value={displayTranscript}
-                      disabled={fieldsLocked}
+                      disabled={!canEditCopy}
                       onChange={(e) =>
                         reuseDraft
                           ? patchReuse((d) => ({
@@ -668,7 +702,7 @@ function CardDetailView({
                       className={cn(fieldClass, "font-mono text-xs")}
                       placeholder="Script / spoken outline…"
                     />
-                    {!fieldsLocked ? (
+                    {!!canEditCopy ? (
                       <button
                         type="button"
                         disabled={aiBusy != null}
@@ -694,7 +728,7 @@ function CardDetailView({
                 <span className="font-mono text-[0.625rem] font-bold tracking-[0.1em] text-muted-foreground">
                   Caption & hashtags
                 </span>
-                {!fieldsLocked ? (
+                {!!canEditCopy ? (
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       type="button"
@@ -727,7 +761,7 @@ function CardDetailView({
               </div>
               <textarea
                 value={displayCaption}
-                disabled={fieldsLocked}
+                disabled={!canEditCopy}
                 onChange={(e) =>
                   reuseDraft
                     ? patchReuse((d) => ({ ...d, caption: e.target.value }))
@@ -739,7 +773,7 @@ function CardDetailView({
               <input
                 type="text"
                 value={displayHashtags}
-                disabled={fieldsLocked}
+                disabled={!canEditCopy}
                 onChange={(e) =>
                   reuseDraft
                     ? patchReuse((d) => ({ ...d, hashtags: e.target.value }))
@@ -748,7 +782,7 @@ function CardDetailView({
                 className={fieldClass}
                 placeholder="#hashtags"
               />
-              {fieldsLocked ? (
+              {!canEditCopy ? (
                 <div className="flex flex-wrap gap-1.5">
                   {cardHashtagList(post).map((tag) => (
                     <span
@@ -790,7 +824,7 @@ function CardDetailView({
                     <input
                       type="text"
                       value={displayCta}
-                      disabled={fieldsLocked}
+                      disabled={!canEditCopy}
                       onChange={(e) =>
                         reuseDraft
                           ? patchReuse((d) => ({
@@ -802,7 +836,7 @@ function CardDetailView({
                       className={fieldClass}
                       placeholder="Join us Sunday · Link in bio…"
                     />
-                    {!fieldsLocked && linkedEvent ? (
+                    {!!canEditCopy && linkedEvent ? (
                       <button
                         type="button"
                         disabled={aiBusy != null}
@@ -893,7 +927,7 @@ function CardDetailView({
                 {slots.map((slot) => {
                   const meta = PLATFORMS_BY_SHORT[slot.platform];
                   const open = expandedPlatform === slot.platform;
-                  const canEditTime = Boolean(reuseDraft) || workingAsScheduled;
+                  const canEditTime = canEditTimes;
                   const pTitle = reuseDraft
                     ? reuseDraft.platformTitles?.[slot.platform] ??
                       reuseDraft.title ??
@@ -1014,7 +1048,7 @@ function CardDetailView({
                             <input
                               type="text"
                               value={pTitle ?? ""}
-                              disabled={fieldsLocked}
+                              disabled={!canEditCopy}
                               onChange={(e) => {
                                 const v = e.target.value;
                                 if (reuseDraft) {
@@ -1044,7 +1078,7 @@ function CardDetailView({
                             </span>
                             <textarea
                               value={pCap ?? ""}
-                              disabled={fieldsLocked}
+                              disabled={!canEditCopy}
                               rows={3}
                               onChange={(e) => {
                                 const v = e.target.value;
@@ -1075,7 +1109,7 @@ function CardDetailView({
                             <input
                               type="text"
                               value={pTags ?? ""}
-                              disabled={fieldsLocked}
+                              disabled={!canEditCopy}
                               onChange={(e) => {
                                 const v = e.target.value;
                                 if (reuseDraft) {
@@ -1098,7 +1132,7 @@ function CardDetailView({
                               className={fieldClass}
                             />
                           </label>
-                          {!fieldsLocked ? (
+                          {!!canEditCopy ? (
                             <div className="flex flex-wrap gap-1.5">
                               <button
                                 type="button"
