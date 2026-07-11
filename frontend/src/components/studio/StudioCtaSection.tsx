@@ -42,6 +42,8 @@ export function StudioCtaSection({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
               className="w-full rounded-md border border-line bg-paper-2 px-2.5 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="e.g. Join us Sunday · Link in bio · Pray with us"
             />

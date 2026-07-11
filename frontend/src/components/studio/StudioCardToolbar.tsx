@@ -1,22 +1,9 @@
-import {
-  CalendarClock,
-  FileText,
-  Loader2,
-  Megaphone,
-  Sparkles,
-  Trash2,
-  Type,
-} from "lucide-react";
+import { FileText, Loader2, Megaphone, Sparkles, Trash2, Type } from "lucide-react";
 import type { DraftPost } from "@/lib/composer-draft";
-import { studioStage } from "@/lib/studio-layout";
+import { hasScriptSource, studioStage } from "@/lib/studio-layout";
 import { cn } from "@/lib/utils";
 
-export type StudioTool =
-  | "transcript"
-  | "cta"
-  | "caption"
-  | "schedule"
-  | "remove";
+export type StudioTool = "transcript" | "cta" | "caption" | "remove";
 
 export function StudioCardToolbar({
   draft,
@@ -28,15 +15,15 @@ export function StudioCardToolbar({
   onTool: (tool: StudioTool) => void;
 }) {
   const stage = studioStage(draft);
-  const hasScript =
-    Boolean(draft.transcript?.trim()) || Boolean(draft.callToAction?.trim());
+  const canCaption = hasScriptSource(draft);
 
   const items: Array<{
     id: StudioTool;
     label: string;
     icon: typeof FileText;
     primary?: boolean;
-    hide?: boolean;
+    disabled?: boolean;
+    title?: string;
   }> = [
     {
       id: "transcript",
@@ -52,15 +39,13 @@ export function StudioCardToolbar({
     },
     {
       id: "caption",
-      label: "Caption",
+      label: canCaption ? "Caption" : "Caption",
       icon: Type,
-      primary: stage === "script" || hasScript,
-    },
-    {
-      id: "schedule",
-      label: "Schedule",
-      icon: CalendarClock,
-      primary: stage === "caption" || stage === "schedule" || stage === "ready",
+      primary: canCaption,
+      disabled: !canCaption && busy !== "caption",
+      title: canCaption
+        ? "Generate caption + hashtags from transcript & CTA"
+        : "Add a transcript or call to action first",
     },
     {
       id: "remove",
@@ -82,18 +67,18 @@ export function StudioCardToolbar({
         const open =
           (item.id === "transcript" && draft.studioOpen?.transcript) ||
           (item.id === "cta" && draft.studioOpen?.cta) ||
-          (item.id === "caption" && draft.studioOpen?.caption) ||
-          (item.id === "schedule" && draft.studioOpen?.schedule);
+          (item.id === "caption" && draft.studioOpen?.caption);
 
         return (
           <button
             key={item.id}
             type="button"
             data-testid={`studio-tool-${item.id}`}
-            disabled={isBusy}
+            disabled={isBusy || (item.id === "caption" && !canCaption && !isBusy)}
             onClick={() => onTool(item.id)}
+            title={item.title ?? item.label}
             className={cn(
-              "flex items-center gap-2 rounded-md px-2 py-2 text-left text-caption font-semibold transition-colors",
+              "flex items-center gap-2 rounded-md px-2 py-2 text-left text-caption font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
               item.id === "remove"
                 ? "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 : open
@@ -102,7 +87,6 @@ export function StudioCardToolbar({
                     ? "bg-primary text-white hover:bg-[#262626]"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground",
             )}
-            title={item.label}
           >
             {isBusy ? (
               <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />

@@ -1,43 +1,42 @@
 import type { DraftPost } from "@/lib/composer-draft";
 import { draftDisplayTitle } from "@/lib/composer-draft";
-import type { Platform } from "@/lib/mock-data";
-import { combineDateAndTime } from "@/lib/schedule-engine";
 import { STUDIO_CARD_WIDTH, studioStage } from "@/lib/studio-layout";
 import { cn } from "@/lib/utils";
 import { StudioCaptionSection } from "./StudioCaptionSection";
 import { StudioCardMedia } from "./StudioCardMedia";
 import { StudioCardToolbar, type StudioTool } from "./StudioCardToolbar";
 import { StudioCtaSection } from "./StudioCtaSection";
-import { StudioScheduleSection } from "./StudioScheduleSection";
 import { StudioTranscriptSection } from "./StudioTranscriptSection";
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest("input, textarea, select, button, [contenteditable='true']"),
+  );
+}
 
 export function StudioCard({
   draft,
   selected,
   busy,
-  workspacePlatforms,
-  canCommit,
+  canDrag,
   onSelect,
   onChange,
   onTool,
   onGenerateTranscript,
   onGenerateCaption,
-  onBestTimes,
-  onCommit,
   onDragStart,
 }: {
   draft: DraftPost;
   selected: boolean;
   busy?: StudioTool | null;
-  workspacePlatforms: Platform[];
-  canCommit: boolean;
+  /** When false (hand tool), card cannot be moved */
+  canDrag: boolean;
   onSelect: () => void;
   onChange: (updater: (d: DraftPost) => DraftPost) => void;
   onTool: (tool: StudioTool) => void;
   onGenerateTranscript: () => void;
   onGenerateCaption: () => void;
-  onBestTimes: () => void;
-  onCommit: () => void;
   onDragStart: (e: React.PointerEvent) => void;
 }) {
   const stage = studioStage(draft);
@@ -54,10 +53,7 @@ export function StudioCard({
     <div
       data-testid={`studio-card-${draft.id}`}
       data-stage={stage}
-      className={cn(
-        "absolute touch-none select-none",
-        selected && "z-30",
-      )}
+      className={cn("absolute", selected && "z-30")}
       style={{
         left: draft.canvasX ?? 48,
         top: draft.canvasY ?? 48,
@@ -69,53 +65,49 @@ export function StudioCard({
       ) : null}
 
       <article
-        role="button"
-        tabIndex={0}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onSelect();
-          }
-        }}
         className={cn(
-          "overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] transition-[box-shadow,border-color,ring-color] duration-200",
+          "overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] transition-[box-shadow,border-color] duration-200",
           selected
             ? "border-brand ring-2 ring-brand ring-offset-2 ring-offset-paper-2"
             : "border-line hover:border-foreground/30",
         )}
       >
+        {/* Drag handle = media only (select mode) */}
         <div
-          className="cursor-grab active:cursor-grabbing"
-          onPointerDown={onDragStart}
+          className={cn(canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-default")}
+          onPointerDown={(e) => {
+            if (!canDrag) return;
+            if (isEditableTarget(e.target)) return;
+            onDragStart(e);
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
         >
           <StudioCardMedia draft={draft} />
         </div>
 
-        <div className="border-b border-line px-3 py-2.5">
+        <div
+          className="border-b border-line px-3 py-2.5"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
+        >
           <p className="truncate font-display text-sm font-semibold text-foreground">
             {draftDisplayTitle(draft)}
           </p>
           <p className="mt-0.5 text-caption text-muted-foreground">
-            {stage === "ready"
-              ? "Ready to schedule"
-              : stage === "schedule"
-                ? "Set destinations"
-                : stage === "caption" || draft.caption
-                  ? "Caption set"
-                  : stage === "script"
-                    ? "Script started"
-                    : "New reel"}
-            {draft.platforms.length > 0
-              ? ` · ${draft.platforms.length} platforms`
-              : ""}
+            {stage === "caption"
+              ? "Caption ready"
+              : stage === "script"
+                ? "Script started — generate caption"
+                : "New reel — transcript & CTA"}
           </p>
         </div>
 
-        {(open.transcript || selected) && (
+        {selected || open.transcript ? (
           <StudioTranscriptSection
             open={Boolean(open.transcript)}
             value={draft.transcript}
@@ -124,18 +116,18 @@ export function StudioCard({
             onChange={(transcript) => onChange((d) => ({ ...d, transcript }))}
             onGenerate={onGenerateTranscript}
           />
-        )}
+        ) : null}
 
-        {(open.cta || selected) && (
+        {selected || open.cta ? (
           <StudioCtaSection
             open={Boolean(open.cta)}
             value={draft.callToAction ?? ""}
             onToggle={() => patchOpen("cta", !open.cta)}
             onChange={(callToAction) => onChange((d) => ({ ...d, callToAction }))}
           />
-        )}
+        ) : null}
 
-        {(open.caption || selected) && (
+        {selected || open.caption ? (
           <StudioCaptionSection
             open={Boolean(open.caption)}
             caption={draft.caption}
@@ -146,28 +138,7 @@ export function StudioCard({
             onHashtags={(hashtags) => onChange((d) => ({ ...d, hashtags }))}
             onGenerate={onGenerateCaption}
           />
-        )}
-
-        {(open.schedule || selected) && (
-          <StudioScheduleSection
-            open={Boolean(open.schedule)}
-            draft={draft}
-            workspacePlatforms={workspacePlatforms}
-            busy={busy === "schedule"}
-            canCommit={canCommit}
-            onToggle={() => patchOpen("schedule", !open.schedule)}
-            onPlatforms={(platforms) => onChange((d) => ({ ...d, platforms }))}
-            onTime={(platform, dateStr, timeStr) => {
-              const iso = combineDateAndTime(dateStr, timeStr);
-              onChange((d) => ({
-                ...d,
-                proposedTimes: { ...(d.proposedTimes ?? {}), [platform]: iso },
-              }));
-            }}
-            onBestTimes={onBestTimes}
-            onCommit={onCommit}
-          />
-        )}
+        ) : null}
       </article>
     </div>
   );

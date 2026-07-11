@@ -49,6 +49,8 @@ export function StudioCaptionSection({
               value={caption}
               onChange={(e) => onCaption(e.target.value)}
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
               rows={4}
               className="w-full resize-y rounded-md border border-line bg-paper-2 px-2.5 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="Caption…"
@@ -58,6 +60,8 @@ export function StudioCaptionSection({
               value={hashtags}
               onChange={(e) => onHashtags(e.target.value)}
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
               className="w-full rounded-md border border-line bg-paper-2 px-2.5 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="#hashtags"
             />

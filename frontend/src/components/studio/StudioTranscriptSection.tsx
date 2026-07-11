@@ -48,6 +48,8 @@ export function StudioTranscriptSection({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
               rows={6}
               className="w-full resize-y rounded-md border border-line bg-paper-2 px-2.5 py-2 font-mono text-xs leading-relaxed text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="[0:00] Hook…"

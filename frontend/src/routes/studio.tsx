@@ -2,30 +2,26 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { StudioCanvas } from "@/components/studio/StudioCanvas";
+import { StudioCanvas, type CanvasMode } from "@/components/studio/StudioCanvas";
 import { StudioCard } from "@/components/studio/StudioCard";
 import type { StudioTool } from "@/components/studio/StudioCardToolbar";
-import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
 import {
   applyMeasuredDimensions,
-  applyProposedTimes,
   defaultDraftFromFile,
-  suggestTimesForDraft,
   type DraftPost,
 } from "@/lib/composer-draft";
 import {
   readComposerShelf,
   removeFromReady,
   revokeDraftMediaUrls,
-  stageDraftsAsReady,
   writeComposerShelf,
 } from "@/lib/draft-storage";
 import { measureMediaFile } from "@/lib/media-aspect";
-import { pendingSlotsFromQueue } from "@/lib/schedule-engine";
 import { generateCaptionWithHashtags, generateTranscript } from "@/lib/studio-ai";
 import {
   cascadePosition,
   ensureCanvasPositions,
+  hasScriptSource,
 } from "@/lib/studio-layout";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -37,7 +33,7 @@ export const Route = createFileRoute("/studio")({
       {
         name: "description",
         content:
-          "Infinite canvas for preparing and scheduling reels — transcript, caption, destinations.",
+          "Whiteboard for preparing reels — transcript, CTA, then caption with hashtags.",
       },
     ],
   }),
@@ -45,7 +41,7 @@ export const Route = createFileRoute("/studio")({
 });
 
 function StudioPage() {
-  const { workspace, workspaceId, addScheduledPosts } = useWorkspace();
+  const { workspace, workspaceId } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
   const events = useMemo(
     () => mergeWorkspaceEvents(workspace.events, customEvents),
@@ -56,6 +52,7 @@ function StudioPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [busy, setBusy] = useState<StudioTool | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [mode, setMode] = useState<CanvasMode>("select");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCardRef = useRef<{
     id: string;
@@ -70,7 +67,6 @@ function StudioPage() {
     window.setTimeout(() => setToast(null), 2800);
   }, []);
 
-  // Load shelf: drafting + ready as one board
   useEffect(() => {
     const shelf = readComposerShelf(workspaceId);
     const merged = ensureCanvasPositions([...shelf.drafting, ...shelf.ready]);
@@ -78,22 +74,17 @@ function StudioPage() {
     setSelectedId(merged[0]?.id ?? null);
   }, [workspaceId]);
 
-  // Persist: drafting = incomplete schedule; ready = captioned with media
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const readyIds = new Set(
-      drafts
-        .filter((d) => d.caption.trim() && (d.previewUrl || d.dropboxUrl || d.filename))
-        .map((d) => d.id),
+    const ready = drafts.filter(
+      (d) =>
+        d.caption.trim() &&
+        (d.previewUrl || d.dropboxUrl || d.filename),
     );
-    // Keep ready shelf for badge counts; drafting holds the rest
+    const drafting = drafts.filter((d) => !ready.some((r) => r.id === d.id));
     const shelf = readComposerShelf(workspaceId);
-    const ready = drafts.filter((d) => readyIds.has(d.id));
-    const drafting = drafts.filter((d) => !readyIds.has(d.id));
     writeComposerShelf(workspaceId, drafting, ready, shelf.savedDrafts);
   }, [workspaceId, drafts]);
-
-  const selected = drafts.find((d) => d.id === selectedId) ?? null;
 
   const updateDraft = useCallback((id: string, updater: (d: DraftPost) => DraftPost) => {
     setDrafts((cur) => cur.map((d) => (d.id === id ? updater(d) : d)));
@@ -169,6 +160,14 @@ function StudioPage() {
   async function runCaption(id: string) {
     const draft = drafts.find((d) => d.id === id);
     if (!draft) return;
+    if (!hasScriptSource(draft)) {
+      showToast("Add a transcript or call to action first");
+      updateDraft(id, (d) => ({
+        ...d,
+        studioOpen: { ...d.studioOpen, transcript: true, cta: true },
+      }));
+      return;
+    }
     setBusy("caption");
     try {
       const { draft: next } = await generateCaptionWithHashtags(draft, {
@@ -184,56 +183,12 @@ function StudioPage() {
         hashtags: next.hashtags,
         studioOpen: { ...d.studioOpen, caption: true },
       }));
-      showToast("Caption generated");
+      showToast("Caption generated from transcript & CTA");
     } catch (e) {
       showToast(e instanceof Error ? e.message : "Caption failed");
     } finally {
       setBusy(null);
     }
-  }
-
-  function runBestTimes(id: string) {
-    const draft = drafts.find((d) => d.id === id);
-    if (!draft || draft.platforms.length === 0) return;
-    setBusy("schedule");
-    try {
-      const assigned = pendingSlotsFromQueue(drafts.filter((d) => d.id !== id));
-      const times = suggestTimesForDraft(
-        draft,
-        workspace.scheduledPosts,
-        assigned,
-        workspace.postingTimes,
-      );
-      updateDraft(id, (d) =>
-        applyProposedTimes(
-          { ...d, studioOpen: { ...d.studioOpen, schedule: true } },
-          times,
-        ),
-      );
-      showToast("Peak times applied");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function commitDraft(id: string) {
-    const draft = drafts.find((d) => d.id === id);
-    if (!draft) return;
-    const post = draftToScheduledPost(draft);
-    if (!post) {
-      showToast("Set platforms and times first");
-      return;
-    }
-    // Ensure on ready shelf then commit
-    stageDraftsAsReady(workspaceId, [id]);
-    await addScheduledPosts([post]);
-    removeFromReady(workspaceId, [id]);
-    if (draft.previewUrl?.startsWith("blob:")) {
-      /* keep preview for calendar if possible */
-    }
-    setDrafts((cur) => cur.filter((d) => d.id !== id));
-    setSelectedId(null);
-    showToast("Scheduled — see Queue / Calendar");
   }
 
   function handleTool(id: string, tool: StudioTool) {
@@ -264,22 +219,15 @@ function StudioPage() {
         studioOpen: { ...d.studioOpen, caption: true },
       }));
       void runCaption(id);
-      return;
-    }
-    if (tool === "schedule") {
-      updateDraft(id, (d) => ({
-        ...d,
-        studioOpen: { ...d.studioOpen, schedule: true },
-      }));
     }
   }
 
   function onCardPointerDown(id: string, e: React.PointerEvent) {
+    if (mode !== "select") return;
     e.stopPropagation();
     const draft = drafts.find((d) => d.id === id);
     if (!draft) return;
     setSelectedId(id);
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     dragCardRef.current = {
       id,
       startX: e.clientX,
@@ -318,6 +266,9 @@ function StudioPage() {
           <h1 className="font-display text-lg font-bold tracking-tight text-foreground">
             Reel board
           </h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Transcript + CTA → caption. Scheduling comes later.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -344,6 +295,9 @@ function StudioPage() {
       </header>
 
       <StudioCanvas
+        drafts={drafts}
+        mode={mode}
+        onModeChange={setMode}
         onBackgroundClick={() => setSelectedId(null)}
         onDropFiles={addFiles}
       >
@@ -353,7 +307,7 @@ function StudioPage() {
               Drop reels onto the board
             </p>
             <p className="mt-3 text-body-sm text-muted-foreground">
-              Upload, then build transcript → caption → schedule on each card.
+              Build transcript and CTA, then generate caption with hashtags.
             </p>
             <button
               type="button"
@@ -366,33 +320,27 @@ function StudioPage() {
           </div>
         ) : null}
 
-        {drafts.map((draft) => {
-          const canCommit = draftToScheduledPost(draft) != null;
-          return (
-            <StudioCard
-              key={draft.id}
-              draft={draft}
-              selected={selectedId === draft.id}
-              busy={selectedId === draft.id ? busy : null}
-              workspacePlatforms={workspace.platforms}
-              canCommit={canCommit}
-              onSelect={() => setSelectedId(draft.id)}
-              onChange={(updater) => updateDraft(draft.id, updater)}
-              onTool={(tool) => handleTool(draft.id, tool)}
-              onGenerateTranscript={() => void runTranscript(draft.id)}
-              onGenerateCaption={() => void runCaption(draft.id)}
-              onBestTimes={() => runBestTimes(draft.id)}
-              onCommit={() => void commitDraft(draft.id)}
-              onDragStart={(e) => onCardPointerDown(draft.id, e)}
-            />
-          );
-        })}
+        {drafts.map((draft) => (
+          <StudioCard
+            key={draft.id}
+            draft={draft}
+            selected={selectedId === draft.id}
+            busy={selectedId === draft.id ? busy : null}
+            canDrag={mode === "select"}
+            onSelect={() => setSelectedId(draft.id)}
+            onChange={(updater) => updateDraft(draft.id, updater)}
+            onTool={(tool) => handleTool(draft.id, tool)}
+            onGenerateTranscript={() => void runTranscript(draft.id)}
+            onGenerateCaption={() => void runCaption(draft.id)}
+            onDragStart={(e) => onCardPointerDown(draft.id, e)}
+          />
+        ))}
       </StudioCanvas>
 
       {toast ? (
         <div
           role="status"
-          className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-line bg-foreground px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-card)] md:bottom-8"
+          className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-line bg-foreground px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-card)] md:bottom-20"
         >
           {toast}
         </div>

@@ -6,19 +6,12 @@ export const STUDIO_CASCADE = 36;
 
 /** Seed positions for cards missing canvas coordinates. */
 export function ensureCanvasPositions(drafts: DraftPost[]): DraftPost[] {
-  let nextX = 48;
-  let nextY = 48;
   let col = 0;
-  return drafts.map((d, i) => {
-    if (d.canvasX != null && d.canvasY != null) {
-      nextX = Math.max(nextX, d.canvasX + STUDIO_CARD_WIDTH + STUDIO_CARD_GAP);
-      return d;
-    }
+  return drafts.map((d) => {
+    if (d.canvasX != null && d.canvasY != null) return d;
     const x = 48 + (col % 3) * (STUDIO_CARD_WIDTH + STUDIO_CARD_GAP);
-    const y = 48 + Math.floor(col / 3) * 420 + (i % 3) * 8;
+    const y = 48 + Math.floor(col / 3) * 420;
     col += 1;
-    nextX = x + STUDIO_CARD_WIDTH + STUDIO_CARD_GAP;
-    nextY = y;
     return { ...d, canvasX: x, canvasY: y };
   });
 }
@@ -36,21 +29,67 @@ export function clampZoom(z: number): number {
   return Math.min(1.5, Math.max(0.4, z));
 }
 
-/** Derive progressive stage for toolbar primacy. */
-export type StudioStage = "media" | "script" | "caption" | "schedule" | "ready";
+/** Prepare-only stages (schedule is a separate future flow). */
+export type StudioStage = "media" | "script" | "caption";
 
 export function studioStage(draft: DraftPost): StudioStage {
   const hasScript =
     Boolean(draft.transcript?.trim()) || Boolean(draft.callToAction?.trim());
   const hasCaption = Boolean(draft.caption?.trim());
-  const hasPlatforms = draft.platforms.length > 0;
-  const times = draft.proposedTimes ?? {};
-  const hasTimes =
-    hasPlatforms && draft.platforms.every((p) => Boolean(times[p]));
-
-  if (hasTimes) return "ready";
-  if (hasPlatforms) return "schedule";
   if (hasCaption) return "caption";
   if (hasScript) return "script";
   return "media";
+}
+
+export function hasScriptSource(draft: DraftPost): boolean {
+  return Boolean(draft.transcript?.trim()) || Boolean(draft.callToAction?.trim());
+}
+
+/** CSS aspect-ratio string from measured pixels or format heuristics. */
+export function mediaAspectRatioCss(draft: DraftPost): string {
+  if (draft.width && draft.height && draft.width > 0 && draft.height > 0) {
+    return `${draft.width} / ${draft.height}`;
+  }
+  const bucket = draft.aspectBucket;
+  const format = draft.format;
+  if (
+    bucket === "portrait_9_16" ||
+    bucket === "portrait_4_5" ||
+    format === "portrait" ||
+    format === "story"
+  ) {
+    return bucket === "portrait_4_5" ? "4 / 5" : "9 / 16";
+  }
+  if (bucket === "square") {
+    return "1 / 1";
+  }
+  if (bucket === "classic_4_3") {
+    return "4 / 3";
+  }
+  if (bucket === "landscape_16_9" || format === "landscape") {
+    return "16 / 9";
+  }
+  return draft.mediaKind === "video" ? "9 / 16" : "1 / 1";
+}
+
+export function cardsBoundingBox(drafts: DraftPost[]): {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+} | null {
+  if (drafts.length === 0) return null;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const d of drafts) {
+    const x = d.canvasX ?? 48;
+    const y = d.canvasY ?? 48;
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x + STUDIO_CARD_WIDTH);
+    maxY = Math.max(maxY, y + 480);
+  }
+  return { minX, minY, maxX, maxY };
 }

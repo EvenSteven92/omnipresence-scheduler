@@ -1,24 +1,22 @@
 /**
- * Studio AI hooks — production-ready boundaries for whiteboard actions.
+ * Studio AI hooks — prepare pipeline only.
  *
- * TODO (future): wire Generate Transcript to Whisper / speech-to-text on the
- * server. v1 drafts a structured outline from title + voice for paste/edit.
+ * Pipeline: Transcript + CTA → Caption with hashtags.
+ * TODO: Generate Transcript → Whisper / real STT later.
  */
 import { aiGenerate } from "@/lib/ai-client";
 import { prepareCardWithAi, type AiPrepareResult } from "@/lib/ai-schedule";
 import type { DraftPost } from "@/lib/composer-draft";
-import type { ScheduledPost } from "@/lib/mock-data";
-import type { ContentEvent } from "@/lib/workspaces/types";
-import type { WorkspaceProfile } from "@/lib/workspaces/types";
 import { draftDisplayTitle } from "@/lib/composer-draft";
+import type { ScheduledPost } from "@/lib/mock-data";
+import type { ContentEvent, WorkspaceProfile } from "@/lib/workspaces/types";
+import { hasScriptSource } from "@/lib/studio-layout";
 
 /**
  * Draft transcript outline. Not real speech-to-text.
- * Returns timestamped placeholder lines the editor can replace.
  */
 export async function generateTranscript(draft: DraftPost): Promise<string> {
   const title = draftDisplayTitle(draft);
-  // Prefer AI expansion when gateway is available; fall back to local outline.
   try {
     const text = await aiGenerate({
       kind: "internal_notes",
@@ -46,6 +44,20 @@ export async function generateTranscript(draft: DraftPost): Promise<string> {
   ].join("\n");
 }
 
+/** Build AI brief strictly from transcript + CTA (+ title). */
+export function buildCaptionBrief(draft: DraftPost): string {
+  const parts: string[] = [];
+  const title = draftDisplayTitle(draft);
+  parts.push(`Title: ${title}`);
+  if (draft.transcript?.trim()) {
+    parts.push(`Transcript:\n${draft.transcript.trim()}`);
+  }
+  if (draft.callToAction?.trim()) {
+    parts.push(`Preferred call to action: ${draft.callToAction.trim()}`);
+  }
+  return parts.join("\n\n");
+}
+
 export async function generateCaptionWithHashtags(
   draft: DraftPost,
   opts: {
@@ -56,17 +68,14 @@ export async function generateCaptionWithHashtags(
     postingTimes?: WorkspaceProfile["postingTimes"];
   },
 ): Promise<AiPrepareResult> {
-  // Fold CTA into transcript context for better captions
+  if (!hasScriptSource(draft)) {
+    throw new Error("Add a transcript or call to action before generating a caption.");
+  }
+
+  // Force caption model to see transcript + CTA first (not bare filename)
   const enriched: DraftPost = {
     ...draft,
-    transcript: [
-      draft.transcript?.trim(),
-      draft.callToAction?.trim()
-        ? `Preferred CTA: ${draft.callToAction.trim()}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join("\n\n"),
+    transcript: buildCaptionBrief(draft),
   };
 
   return prepareCardWithAi(enriched, {
