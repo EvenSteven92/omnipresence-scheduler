@@ -54,6 +54,8 @@ export interface ContentEvent {
   date: string;
   kind: ContentEventKind;
   description?: string;
+  /** Optional sermon/event graphic (blob URL, data URL, or remote). */
+  coverUrl?: string;
 }
 
 /** Per-company bundle — mirrors what the API will return per workspace later. */

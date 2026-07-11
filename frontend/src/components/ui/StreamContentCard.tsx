@@ -42,13 +42,14 @@ export function StreamContentCard({
   const publishes = publishEntriesForPost(post);
   const publishCount = post.platforms.length;
   const albumLabel = resolveAlbumLabel(post, events, resolveEventId);
+  const title = post.title?.trim() || "Untitled";
 
   return (
     <ContentCard
       size="stream"
       testId={testId ?? `stream-card-${post.id}`}
       eyebrow={albumLabel !== "Unassigned" ? albumLabel : undefined}
-      title={post.title}
+      title={title}
       platforms={publishes.map((entry) => (
         <CardPublishChip key={entry.platform} label={entry.label} dotColor={entry.dotColor} />
       ))}
@@ -57,31 +58,31 @@ export function StreamContentCard({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       thumbnail={
-        <div className="relative h-full w-full">
+        <div className="relative h-[86px] w-[86px] shrink-0">
           <CardThumbnail
             post={post}
-            alt={post.title}
+            alt={title}
             layout="square"
             mediaType={mediaType}
             variant="gradient"
           />
-          <span className="absolute left-2 top-2 drop-shadow-sm">
-            <TrafficLight status={status} size="md" />
+          <span className="pointer-events-none absolute left-1.5 top-1.5 drop-shadow-sm">
+            <TrafficLight status={status} size="sm" />
           </span>
         </div>
       }
       trailing={
-        <>
+        <div className="flex shrink-0 flex-col items-end gap-2">
           <CardStatusBadge status={status} />
-          <div className="text-right">
-            <span className="font-display text-[1.375rem] font-bold leading-none text-foreground">
+          <div className="text-right leading-none">
+            <span className="font-display text-[1.375rem] font-bold text-foreground">
               {publishCount}
-            </span>{" "}
-            <span className="font-mono text-caption font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-              {publishCount === 1 ? "where" : "where"}
+            </span>
+            <span className="ml-1 font-mono text-caption font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              where
             </span>
           </div>
-        </>
+        </div>
       }
     />
   );

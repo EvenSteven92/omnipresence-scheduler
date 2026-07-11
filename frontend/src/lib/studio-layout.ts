@@ -70,6 +70,36 @@ export function isScheduleTimed(draft: DraftPost): boolean {
   return draft.platforms.every((p) => Boolean(times[p]));
 }
 
+/** Earliest proposed publish ISO across destinations, or null. */
+export function earliestProposedIso(draft: DraftPost): string | null {
+  const times = Object.values(draft.proposedTimes ?? {}).filter(Boolean) as string[];
+  if (times.length === 0) return null;
+  return times.reduce((a, b) => (+new Date(a) <= +new Date(b) ? a : b));
+}
+
+/** Short label for shelf headers, e.g. "Jul 11 · 11:00 AM". */
+export function formatQueueWhen(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(+d)) return "";
+  const day = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const time = d.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${day} · ${time}`;
+}
+
+/** Timed count for partial progress, e.g. "1/2 timed". */
+export function timedProgressLabel(draft: DraftPost): string {
+  if (draft.platforms.length === 0) return "Needs destinations";
+  const times = draft.proposedTimes ?? {};
+  const n = draft.platforms.filter((p) => Boolean(times[p])).length;
+  if (n === 0) return "Needs times";
+  if (n < draft.platforms.length) return `${n}/${draft.platforms.length} timed`;
+  const iso = earliestProposedIso(draft);
+  return iso ? formatQueueWhen(iso) : "Times set";
+}
+
 /** CSS aspect-ratio string from measured pixels or format heuristics. */
 export function mediaAspectRatioCss(draft: DraftPost): string {
   if (draft.width && draft.height && draft.width > 0 && draft.height > 0) {

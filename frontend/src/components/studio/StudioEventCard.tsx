@@ -1,4 +1,5 @@
-import { CalendarDays, Link2 } from "lucide-react";
+import { useRef } from "react";
+import { CalendarDays, ImagePlus, Link2, X } from "lucide-react";
 import type { ContentEvent, ContentEventKind } from "@/lib/workspaces/types";
 import { TrafficLight } from "@/components/ui/TrafficLight";
 import type { CardLifecycleStatus } from "@/lib/card-display";
@@ -14,7 +15,7 @@ const KINDS: Array<{ value: ContentEventKind; label: string }> = [
 ];
 
 /**
- * Event as a board card — editable when selected (parity with reel fields).
+ * Event as a board card — editable when selected (fields + cover graphic).
  */
 export function StudioEventCard({
   event,
@@ -43,6 +44,7 @@ export function StudioEventCard({
   onAssignSelected?: () => void;
   onChange?: (patch: Partial<ContentEvent>) => void;
 }) {
+  const fileRef = useRef<HTMLInputElement>(null);
   const ox = liveOffset?.x ?? 0;
   const oy = liveOffset?.y ?? 0;
   const dateLabel = new Date(event.date).toLocaleDateString(undefined, {
@@ -51,6 +53,18 @@ export function StudioEventCard({
     day: "numeric",
   });
   const dateInput = event.date.slice(0, 10);
+  const cover = event.coverUrl?.trim() || null;
+
+  function onPickCover(file: File | null) {
+    if (!onChange || !file) return;
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      if (result) onChange({ coverUrl: result });
+    };
+    reader.readAsDataURL(file);
+  }
 
   return (
     <div
@@ -75,6 +89,26 @@ export function StudioEventCard({
             : "border-line hover:border-foreground/30",
         )}
       >
+        {cover ? (
+          <div
+            className="relative h-28 w-full border-b border-line bg-paper-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+          >
+            <img
+              src={cover}
+              alt=""
+              className="h-full w-full object-cover"
+              draggable={false}
+            />
+            <span className="absolute right-2 top-2">
+              <TrafficLight status={trafficStatus} size="sm" />
+            </span>
+          </div>
+        ) : null}
+
         <div
           className={cn(
             "flex items-start gap-3 border-b border-line bg-paper-2 px-3 py-3 touch-none",
@@ -92,12 +126,14 @@ export function StudioEventCard({
             onSelect();
           }}
         >
-          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-line bg-card">
-            <CalendarDays className="h-4 w-4 text-foreground" strokeWidth={1.75} />
-            <span className="absolute -right-1 -top-1">
-              <TrafficLight status={trafficStatus} size="sm" />
+          {!cover ? (
+            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-line bg-card">
+              <CalendarDays className="h-4 w-4 text-foreground" strokeWidth={1.75} />
+              <span className="absolute -right-1 -top-1">
+                <TrafficLight status={trafficStatus} size="sm" />
+              </span>
             </span>
-          </span>
+          ) : null}
           <div className="min-w-0 flex-1">
             <p className="text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
               Event
@@ -115,6 +151,56 @@ export function StudioEventCard({
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >
+            <div>
+              <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Graphic
+              </span>
+              <div className="mt-1 flex items-center gap-2">
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-line bg-paper-2">
+                  {cover ? (
+                    <img src={cover} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-muted-foreground">
+                      <ImagePlus className="h-4 w-4" />
+                    </span>
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="rounded-md border border-line bg-card px-2 py-1.5 text-left text-xs font-semibold text-foreground hover:bg-secondary"
+                  >
+                    {cover ? "Change graphic" : "Add graphic"}
+                  </button>
+                  {cover ? (
+                    <button
+                      type="button"
+                      onClick={() => onChange({ coverUrl: "" })}
+                      className="inline-flex items-center gap-1 text-[0.65rem] font-medium text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                      Remove
+                    </button>
+                  ) : (
+                    <span className="text-[0.6rem] text-muted-foreground">
+                      Sermon art helps spot events on the board
+                    </span>
+                  )}
+                </div>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    onPickCover(e.target.files?.[0] ?? null);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+            </div>
+
             <label className="block">
               <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 Title

@@ -12,7 +12,10 @@ import {
   toTimeInputValue,
 } from "@/lib/schedule-engine";
 import { demoPreviewForPost } from "@/lib/demo-media";
-import { isScheduleTimed } from "@/lib/studio-layout";
+import {
+  isScheduleTimed,
+  timedProgressLabel,
+} from "@/lib/studio-layout";
 import { cn } from "@/lib/utils";
 
 const WIDTH_KEY = "omni.studio.scheduleShelfWidth";
@@ -101,8 +104,7 @@ function DestTimesForDraft({
 }
 
 /**
- * Right schedule shelf — Proposed calendar first; multi-card destinations as a list.
- * Event stringing lives on the whiteboard only.
+ * Right schedule shelf — calendar first; multi accordion fully collapsible.
  */
 export function StudioScheduleShelf({
   open,
@@ -138,18 +140,18 @@ export function StudioScheduleShelf({
     return clampWidth(Number.isFinite(n) ? n : DEFAULT_W);
   });
   const dragRef = useRef<{ startX: number; startW: number } | null>(null);
+  /** Explicit open panels only — never forced by focus. */
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const draftsKey = drafts.map((d) => d.id).join(",");
 
   useEffect(() => {
     onWidthChange?.(open ? width : 0);
   }, [open, width, onWidthChange]);
 
-  // Multi: expand focus by default
+  // New selection set → start fully collapsed (user expands as needed)
   useEffect(() => {
-    if (drafts.length <= 1) return;
-    const id = focusId && drafts.some((d) => d.id === focusId) ? focusId : drafts[0]?.id;
-    if (id) setExpandedIds(new Set([id]));
-  }, [drafts, focusId]);
+    setExpandedIds(new Set());
+  }, [draftsKey]);
 
   const onResizeDown = useCallback(
     (e: React.PointerEvent) => {
@@ -189,6 +191,11 @@ export function StudioScheduleShelf({
   const allTimed = drafts.length > 0 && drafts.every(isScheduleTimed);
   const canCommit = drafts.length > 0 && allTimed;
 
+  const bestTimesLabel =
+    drafts.length <= 1
+      ? "Best times for this reel"
+      : `Best times for all ${drafts.length} reels`;
+
   function toggleExpand(id: string) {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -197,6 +204,14 @@ export function StudioScheduleShelf({
       return next;
     });
     onFocus(id);
+  }
+
+  function expandAll() {
+    setExpandedIds(new Set(drafts.map((d) => d.id)));
+  }
+
+  function collapseAll() {
+    setExpandedIds(new Set());
   }
 
   return (
@@ -249,7 +264,6 @@ export function StudioScheduleShelf({
       </header>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 pl-5 animate-fade-in">
-        {/* Selection strip */}
         {drafts.length > 0 ? (
           <ul className="flex flex-wrap gap-2">
             {drafts.map((d) => {
@@ -295,7 +309,6 @@ export function StudioScheduleShelf({
           </ul>
         ) : null}
 
-        {/* Proposed schedule — always first content block */}
         {drafts.length > 0 ? (
           <ProposedScheduleCalendar
             drafts={drafts}
@@ -310,12 +323,23 @@ export function StudioScheduleShelf({
           </p>
         )}
 
-        {/* Destinations & times — single form or multi stacked panels */}
         {drafts.length === 1 && focus ? (
           <section className="space-y-3 rounded-lg border border-line p-3 animate-slide-in-up">
-            <p className="text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              Destinations & times
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Destinations & times
+              </p>
+              <span
+                className={cn(
+                  "shrink-0 text-xs font-semibold tabular-nums",
+                  isScheduleTimed(focus)
+                    ? "text-foreground"
+                    : "text-muted-foreground",
+                )}
+              >
+                {timedProgressLabel(focus)}
+              </span>
+            </div>
             <DestTimesForDraft
               draft={focus}
               workspacePlatforms={workspacePlatforms}
@@ -326,24 +350,44 @@ export function StudioScheduleShelf({
 
         {multi ? (
           <section className="space-y-2 animate-slide-in-up">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 Destinations & times · per reel
               </p>
-              <p className="text-xs text-muted-foreground">
-                {drafts.filter(isScheduleTimed).length}/{drafts.length} ready
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {drafts.filter(isScheduleTimed).length}/{drafts.length} ready
+                </p>
+                <button
+                  type="button"
+                  onClick={expandAll}
+                  className="text-xs font-semibold text-foreground underline-offset-2 hover:underline"
+                >
+                  Expand all
+                </button>
+                <button
+                  type="button"
+                  onClick={collapseAll}
+                  className="text-xs font-semibold text-muted-foreground underline-offset-2 hover:underline"
+                >
+                  Collapse all
+                </button>
+              </div>
             </div>
             <ul className="space-y-2">
               {drafts.map((d) => {
-                const openPanel = expandedIds.has(d.id) || focus?.id === d.id;
+                const openPanel = expandedIds.has(d.id);
                 const timed = isScheduleTimed(d);
+                const whenLabel = timedProgressLabel(d);
                 return (
                   <li
                     key={d.id}
                     className={cn(
                       "rounded-lg border transition-colors duration-150",
-                      openPanel ? "border-foreground/25 bg-card" : "border-line bg-paper-2",
+                      openPanel
+                        ? "border-foreground/25 bg-card"
+                        : "border-line bg-paper-2",
+                      focus?.id === d.id && "ring-1 ring-foreground/15",
                     )}
                   >
                     <button
@@ -369,13 +413,25 @@ export function StudioScheduleShelf({
                           <TrafficLight
                             status={timed ? "SCHEDULED" : "IDLE"}
                             size="sm"
-                            showLabel
                           />
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          {d.platforms.length} dest
-                          {timed ? " · times set" : " · needs times"}
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {d.platforms.length > 0
+                            ? d.platforms.join(" · ")
+                            : "No destinations"}
+                          {d.platforms.length > 0 ? " · " : ""}
+                          {timed ? "queued" : "incomplete"}
                         </span>
+                      </span>
+                      {/* Queue when — top-right of row, left of chevron */}
+                      <span
+                        className={cn(
+                          "max-w-[7.5rem] shrink-0 text-right text-[0.65rem] font-semibold tabular-nums leading-tight",
+                          timed ? "text-foreground" : "text-muted-foreground",
+                        )}
+                        title={whenLabel}
+                      >
+                        {whenLabel}
                       </span>
                       <ChevronDown
                         className={cn(
@@ -401,30 +457,42 @@ export function StudioScheduleShelf({
         ) : null}
       </div>
 
-      <footer className="flex shrink-0 flex-wrap gap-2 border-t border-line p-4 pl-5">
-        <button
-          type="button"
-          onClick={onBestTimes}
-          disabled={busy || drafts.length === 0}
-          className="btn-action btn-action-secondary min-h-10 flex-1 disabled:opacity-50"
-        >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-          Best times
-        </button>
-        <button
-          type="button"
-          onClick={onCommit}
-          disabled={!canCommit || busy}
-          data-testid="shelf-schedule-commit"
-          title={
-            !allTimed && drafts.length > 0
-              ? "Set destinations and times for every reel"
-              : undefined
-          }
-          className="btn-action btn-action-primary min-h-10 flex-1 !text-white disabled:opacity-50"
-        >
-          Schedule {drafts.length > 1 ? `${drafts.length} reels` : "reel"}
-        </button>
+      <footer className="flex shrink-0 flex-col gap-2 border-t border-line p-4 pl-5">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onBestTimes}
+            disabled={busy || drafts.length === 0}
+            title={
+              drafts.length > 1
+                ? "Fills peak times for every reel in this schedule panel"
+                : "Fills peak times for this reel"
+            }
+            className="btn-action btn-action-secondary min-h-10 flex-1 disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+            {bestTimesLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onCommit}
+            disabled={!canCommit || busy}
+            data-testid="shelf-schedule-commit"
+            title={
+              !allTimed && drafts.length > 0
+                ? "Set destinations and times for every reel"
+                : undefined
+            }
+            className="btn-action btn-action-primary min-h-10 flex-1 !text-white disabled:opacity-50"
+          >
+            Schedule {drafts.length > 1 ? `${drafts.length} reels` : "reel"}
+          </button>
+        </div>
+        {drafts.length > 1 ? (
+          <p className="text-center text-[0.65rem] text-muted-foreground">
+            Best times applies to all {drafts.length} reels in this panel
+          </p>
+        ) : null}
       </footer>
     </aside>
   );

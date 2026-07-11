@@ -93,7 +93,7 @@ export function ContentCard({
           )}
         >
           {thumbnail}
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 overflow-hidden">
             {eyebrow ? (
               <div className="truncate font-mono text-[0.625rem] font-bold uppercase leading-none tracking-[0.06em] text-accent">
                 {eyebrow}
@@ -103,10 +103,12 @@ export function ContentCard({
               {title}
             </div>
             {meta ? <div className="mt-1 text-body-sm text-muted-foreground">{meta}</div> : null}
-            {platforms ? <div className="mt-2.5 flex flex-wrap gap-1.5">{platforms}</div> : null}
+            {platforms ? (
+              <div className="mt-2.5 flex min-w-0 flex-wrap gap-1.5">{platforms}</div>
+            ) : null}
           </div>
           {trailing ? (
-            <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
+            <div className="flex shrink-0 flex-col items-end justify-start gap-2 self-stretch">
               {trailing}
             </div>
           ) : null}

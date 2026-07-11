@@ -320,7 +320,7 @@ export function eventToAlbumDisplayPost(item: EventMediaItem) {
   return rest;
 }
 
-/** Cover image for event album cards — lead media or kind-based stock art. */
+/** Cover image for event album cards — custom graphic, lead media, or kind stock. */
 export function eventAlbumCover(
   workspace: WorkspaceProfile,
   event: ContentEvent,
@@ -328,6 +328,10 @@ export function eventAlbumCover(
     resolveEventId?: (post: Pick<ScheduledPost, "id" | "eventId">) => string | undefined;
   } = {},
 ): { src: string; alt: string } {
+  if (event.coverUrl?.trim()) {
+    return { src: event.coverUrl.trim(), alt: event.title };
+  }
+
   const media = collectEventMedia(workspace, event.id, options);
   const topPublished = [...media]
     .filter((item) => item.status === "published")
