@@ -4,6 +4,7 @@ import { CardPublishChip } from "@/components/ui/CardPublishChip";
 import { CardStatusBadge } from "@/components/ui/CardStatusBadge";
 import { CardThumbnail } from "@/components/ui/CardThumbnail";
 import { ContentCard } from "@/components/ui/ContentCard";
+import { TrafficLight } from "@/components/ui/TrafficLight";
 import {
   cardStatusFromPost,
   inferCardMediaType,
@@ -56,13 +57,18 @@ export function StreamContentCard({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       thumbnail={
-        <CardThumbnail
-          post={post}
-          alt={post.title}
-          layout="square"
-          mediaType={mediaType}
-          variant="gradient"
-        />
+        <div className="relative h-full w-full">
+          <CardThumbnail
+            post={post}
+            alt={post.title}
+            layout="square"
+            mediaType={mediaType}
+            variant="gradient"
+          />
+          <span className="absolute left-2 top-2 drop-shadow-sm">
+            <TrafficLight status={status} size="md" />
+          </span>
+        </div>
       }
       trailing={
         <>

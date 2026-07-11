@@ -1,17 +1,18 @@
-import { GripVertical, Loader2, X } from "lucide-react";
+import { Check, ChevronDown, GripVertical, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProposedScheduleCalendar } from "@/components/schedule/ProposedScheduleCalendar";
 import { PlatformDestinationPicker } from "@/components/composer/PlatformDestinationPicker";
+import { TrafficLight } from "@/components/ui/TrafficLight";
 import type { DraftPost } from "@/lib/composer-draft";
 import { draftDisplayTitle } from "@/lib/composer-draft";
 import type { Platform, ScheduledPost } from "@/lib/mock-data";
-import type { ContentEvent } from "@/lib/workspaces/types";
 import {
   combineDateAndTime,
   toDateInputValue,
   toTimeInputValue,
 } from "@/lib/schedule-engine";
 import { demoPreviewForPost } from "@/lib/demo-media";
+import { isScheduleTimed } from "@/lib/studio-layout";
 import { cn } from "@/lib/utils";
 
 const WIDTH_KEY = "omni.studio.scheduleShelfWidth";
@@ -24,12 +25,90 @@ function clampWidth(w: number) {
   return Math.min(Math.min(MAX_W, window.innerWidth * 0.7), Math.max(MIN_W, w));
 }
 
+function DestTimesForDraft({
+  draft,
+  workspacePlatforms,
+  onChangeDraft,
+}: {
+  draft: DraftPost;
+  workspacePlatforms: Platform[];
+  onChangeDraft: (id: string, updater: (d: DraftPost) => DraftPost) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <PlatformDestinationPicker
+        draft={draft}
+        workspacePlatforms={workspacePlatforms}
+        onChange={(platforms) =>
+          onChangeDraft(draft.id, (d) => ({ ...d, platforms }))
+        }
+      />
+      {draft.platforms.length > 0 ? (
+        <ul className="space-y-2">
+          {draft.platforms.map((p) => {
+            const iso = draft.proposedTimes?.[p];
+            const dateStr = iso ? toDateInputValue(new Date(iso)) : "";
+            const timeStr = iso ? toTimeInputValue(iso) : "";
+            return (
+              <li
+                key={p}
+                className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-paper-2 px-2 py-1.5"
+              >
+                <span className="w-16 shrink-0 text-caption font-semibold">{p}</span>
+                <input
+                  type="date"
+                  value={dateStr}
+                  onChange={(e) => {
+                    const isoNext = combineDateAndTime(
+                      e.target.value,
+                      timeStr || "12:00",
+                    );
+                    onChangeDraft(draft.id, (d) => ({
+                      ...d,
+                      proposedTimes: {
+                        ...(d.proposedTimes ?? {}),
+                        [p]: isoNext,
+                      },
+                    }));
+                  }}
+                  className="min-w-0 flex-1 rounded border border-line bg-card px-1.5 py-1 text-xs focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                />
+                <input
+                  type="time"
+                  value={timeStr}
+                  onChange={(e) => {
+                    const isoNext = combineDateAndTime(
+                      dateStr || toDateInputValue(new Date()),
+                      e.target.value,
+                    );
+                    onChangeDraft(draft.id, (d) => ({
+                      ...d,
+                      proposedTimes: {
+                        ...(d.proposedTimes ?? {}),
+                        [p]: isoNext,
+                      },
+                    }));
+                  }}
+                  className="w-[5.5rem] rounded border border-line bg-card px-1.5 py-1 text-xs focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                />
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Right schedule shelf — Proposed calendar first; multi-card destinations as a list.
+ * Event stringing lives on the whiteboard only.
+ */
 export function StudioScheduleShelf({
   open,
   drafts,
   focusId,
   committedPosts,
-  events,
   workspacePlatforms,
   busy,
   onClose,
@@ -38,13 +117,11 @@ export function StudioScheduleShelf({
   onBestTimes,
   onCommit,
   onWidthChange,
-  onAssignEvent,
 }: {
   open: boolean;
   drafts: DraftPost[];
   focusId: string | null;
   committedPosts: ScheduledPost[];
-  events: ContentEvent[];
   workspacePlatforms: Platform[];
   busy?: boolean;
   onClose: () => void;
@@ -53,7 +130,6 @@ export function StudioScheduleShelf({
   onBestTimes: () => void;
   onCommit: () => void;
   onWidthChange?: (w: number) => void;
-  onAssignEvent: (eventId: string) => void;
 }) {
   const [width, setWidth] = useState(() => {
     if (typeof window === "undefined") return DEFAULT_W;
@@ -62,10 +138,18 @@ export function StudioScheduleShelf({
     return clampWidth(Number.isFinite(n) ? n : DEFAULT_W);
   });
   const dragRef = useRef<{ startX: number; startW: number } | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     onWidthChange?.(open ? width : 0);
   }, [open, width, onWidthChange]);
+
+  // Multi: expand focus by default
+  useEffect(() => {
+    if (drafts.length <= 1) return;
+    const id = focusId && drafts.some((d) => d.id === focusId) ? focusId : drafts[0]?.id;
+    if (id) setExpandedIds(new Set([id]));
+  }, [drafts, focusId]);
 
   const onResizeDown = useCallback(
     (e: React.PointerEvent) => {
@@ -79,8 +163,7 @@ export function StudioScheduleShelf({
   const onResizeMove = useCallback((e: React.PointerEvent) => {
     if (!dragRef.current) return;
     const dx = dragRef.current.startX - e.clientX;
-    const next = clampWidth(dragRef.current.startW + dx);
-    setWidth(next);
+    setWidth(clampWidth(dragRef.current.startW + dx));
   }, []);
 
   const onResizeUp = useCallback(
@@ -102,7 +185,19 @@ export function StudioScheduleShelf({
   );
 
   const focus = drafts.find((d) => d.id === focusId) ?? drafts[0] ?? null;
-  const canCommit = drafts.length > 0;
+  const multi = drafts.length > 1;
+  const allTimed = drafts.length > 0 && drafts.every(isScheduleTimed);
+  const canCommit = drafts.length > 0 && allTimed;
+
+  function toggleExpand(id: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    onFocus(id);
+  }
 
   return (
     <aside
@@ -110,13 +205,12 @@ export function StudioScheduleShelf({
       className={cn(
         "fixed inset-y-0 right-0 z-40 flex flex-col border-l border-line bg-card",
         "shadow-[-8px_0_24px_rgba(0,0,0,0.06)]",
-        "transition-transform duration-200 ease-out",
-        open ? "translate-x-0" : "translate-x-full pointer-events-none",
+        "transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        open ? "translate-x-0" : "pointer-events-none translate-x-full",
       )}
       style={{ width }}
       aria-hidden={!open}
     >
-      {/* Resize handle */}
       <div
         role="separator"
         aria-orientation="vertical"
@@ -154,71 +248,54 @@ export function StudioScheduleShelf({
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 pl-5">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 pl-5 animate-fade-in">
         {/* Selection strip */}
         {drafts.length > 0 ? (
           <ul className="flex flex-wrap gap-2">
-            {drafts.map((d) => (
-              <li key={d.id}>
-                <button
-                  type="button"
-                  onClick={() => onFocus(d.id)}
-                  className={cn(
-                    "flex items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors",
-                    focus?.id === d.id
-                      ? "border-foreground bg-secondary"
-                      : "border-line bg-paper-2 hover:border-foreground/30",
-                  )}
-                >
-                  <span className="h-8 w-8 shrink-0 overflow-hidden rounded border border-line">
-                    <img
-                      src={
-                        d.previewUrl ||
-                        demoPreviewForPost({ id: d.id, title: d.filename })
-                      }
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  </span>
-                  <span className="max-w-[7rem] truncate text-caption font-semibold">
-                    {draftDisplayTitle(d)}
-                  </span>
-                </button>
-              </li>
-            ))}
+            {drafts.map((d) => {
+              const timed = isScheduleTimed(d);
+              return (
+                <li key={d.id}>
+                  <button
+                    type="button"
+                    onClick={() => onFocus(d.id)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors duration-150",
+                      focus?.id === d.id
+                        ? "border-foreground bg-secondary"
+                        : "border-line bg-paper-2 hover:border-foreground/30",
+                    )}
+                  >
+                    <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded border border-line">
+                      <img
+                        src={
+                          d.previewUrl ||
+                          demoPreviewForPost({ id: d.id, title: d.filename })
+                        }
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                      <span className="absolute bottom-0.5 right-0.5">
+                        <TrafficLight
+                          status={timed ? "SCHEDULED" : "IDLE"}
+                          size="sm"
+                        />
+                      </span>
+                    </span>
+                    <span className="max-w-[7rem] truncate text-caption font-semibold">
+                      {draftDisplayTitle(d)}
+                    </span>
+                    {timed ? (
+                      <Check className="h-3.5 w-3.5 shrink-0 text-success" />
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         ) : null}
 
-        {/* Attach to event */}
-        {events.length > 0 && drafts.length > 0 ? (
-          <section className="rounded-lg border border-line bg-paper-2 p-3">
-            <p className="text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              String to event
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Link selected reels to a ministry event card.
-            </p>
-            <select
-              className="mt-2 w-full rounded-md border border-line bg-card px-2 py-2 text-sm focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
-              defaultValue=""
-              onChange={(e) => {
-                if (e.target.value) onAssignEvent(e.target.value);
-                e.target.value = "";
-              }}
-            >
-              <option value="" disabled>
-                Choose event…
-              </option>
-              {events.map((ev) => (
-                <option key={ev.id} value={ev.id}>
-                  {ev.title}
-                </option>
-              ))}
-            </select>
-          </section>
-        ) : null}
-
-        {/* Week / month calendar */}
+        {/* Proposed schedule — always first content block */}
         {drafts.length > 0 ? (
           <ProposedScheduleCalendar
             drafts={drafts}
@@ -233,80 +310,93 @@ export function StudioScheduleShelf({
           </p>
         )}
 
-        {/* Destinations + times for focus card */}
-        {focus ? (
-          <section className="space-y-3 rounded-lg border border-line p-3">
+        {/* Destinations & times — single form or multi stacked panels */}
+        {drafts.length === 1 && focus ? (
+          <section className="space-y-3 rounded-lg border border-line p-3 animate-slide-in-up">
             <p className="text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Destinations & times
             </p>
-            <p className="text-xs text-muted-foreground">
-              Editing:{" "}
-              <span className="font-semibold text-foreground">
-                {draftDisplayTitle(focus)}
-              </span>
-            </p>
-            <PlatformDestinationPicker
+            <DestTimesForDraft
               draft={focus}
               workspacePlatforms={workspacePlatforms}
-              onChange={(platforms) =>
-                onChangeDraft(focus.id, (d) => ({ ...d, platforms }))
-              }
+              onChangeDraft={onChangeDraft}
             />
-            {focus.platforms.length > 0 ? (
-              <ul className="space-y-2">
-                {focus.platforms.map((p) => {
-                  const iso = focus.proposedTimes?.[p];
-                  const dateStr = iso ? toDateInputValue(new Date(iso)) : "";
-                  const timeStr = iso ? toTimeInputValue(iso) : "";
-                  return (
-                    <li
-                      key={p}
-                      className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-paper-2 px-2 py-1.5"
+          </section>
+        ) : null}
+
+        {multi ? (
+          <section className="space-y-2 animate-slide-in-up">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Destinations & times · per reel
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {drafts.filter(isScheduleTimed).length}/{drafts.length} ready
+              </p>
+            </div>
+            <ul className="space-y-2">
+              {drafts.map((d) => {
+                const openPanel = expandedIds.has(d.id) || focus?.id === d.id;
+                const timed = isScheduleTimed(d);
+                return (
+                  <li
+                    key={d.id}
+                    className={cn(
+                      "rounded-lg border transition-colors duration-150",
+                      openPanel ? "border-foreground/25 bg-card" : "border-line bg-paper-2",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(d.id)}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
                     >
-                      <span className="w-16 shrink-0 text-caption font-semibold">
-                        {p}
+                      <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded border border-line">
+                        <img
+                          src={
+                            d.previewUrl ||
+                            demoPreviewForPost({ id: d.id, title: d.filename })
+                          }
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
                       </span>
-                      <input
-                        type="date"
-                        value={dateStr}
-                        onChange={(e) => {
-                          const isoNext = combineDateAndTime(
-                            e.target.value,
-                            timeStr || "12:00",
-                          );
-                          onChangeDraft(focus.id, (d) => ({
-                            ...d,
-                            proposedTimes: {
-                              ...(d.proposedTimes ?? {}),
-                              [p]: isoNext,
-                            },
-                          }));
-                        }}
-                        className="min-w-0 flex-1 rounded border border-line bg-card px-1.5 py-1 text-xs focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-sm font-semibold text-foreground">
+                            {draftDisplayTitle(d)}
+                          </span>
+                          <TrafficLight
+                            status={timed ? "SCHEDULED" : "IDLE"}
+                            size="sm"
+                            showLabel
+                          />
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {d.platforms.length} dest
+                          {timed ? " · times set" : " · needs times"}
+                        </span>
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150",
+                          openPanel && "rotate-180",
+                        )}
                       />
-                      <input
-                        type="time"
-                        value={timeStr}
-                        onChange={(e) => {
-                          const isoNext = combineDateAndTime(
-                            dateStr || toDateInputValue(new Date()),
-                            e.target.value,
-                          );
-                          onChangeDraft(focus.id, (d) => ({
-                            ...d,
-                            proposedTimes: {
-                              ...(d.proposedTimes ?? {}),
-                              [p]: isoNext,
-                            },
-                          }));
-                        }}
-                        className="w-[5.5rem] rounded border border-line bg-card px-1.5 py-1 text-xs focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                      />
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : null}
+                    </button>
+                    {openPanel ? (
+                      <div className="border-t border-line px-3 py-3">
+                        <DestTimesForDraft
+                          draft={d}
+                          workspacePlatforms={workspacePlatforms}
+                          onChangeDraft={onChangeDraft}
+                        />
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
           </section>
         ) : null}
       </div>
@@ -326,6 +416,11 @@ export function StudioScheduleShelf({
           onClick={onCommit}
           disabled={!canCommit || busy}
           data-testid="shelf-schedule-commit"
+          title={
+            !allTimed && drafts.length > 0
+              ? "Set destinations and times for every reel"
+              : undefined
+          }
           className="btn-action btn-action-primary min-h-10 flex-1 !text-white disabled:opacity-50"
         >
           Schedule {drafts.length > 1 ? `${drafts.length} reels` : "reel"}

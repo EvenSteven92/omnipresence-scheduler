@@ -55,7 +55,7 @@ export function StudioGroupMenu({
       data-testid="studio-group-menu"
       className={cn(
         "pointer-events-auto absolute top-20 z-40 flex max-w-[min(96vw,44rem)] flex-row flex-nowrap items-center gap-1 overflow-x-auto rounded-lg border border-line bg-card/95 p-1.5 shadow-[var(--shadow-card)] backdrop-blur-sm",
-        "transition-[transform,opacity] duration-200 ease-out",
+        "animate-slide-in-up",
       )}
       style={{
         left: "50%",

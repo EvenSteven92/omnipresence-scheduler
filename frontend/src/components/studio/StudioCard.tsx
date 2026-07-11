@@ -1,12 +1,14 @@
 import { Link2 } from "lucide-react";
 import type { DraftPost } from "@/lib/composer-draft";
 import { draftDisplayTitle } from "@/lib/composer-draft";
+import { TrafficLight } from "@/components/ui/TrafficLight";
 import { STUDIO_CARD_WIDTH, studioStage } from "@/lib/studio-layout";
 import { cn } from "@/lib/utils";
 import { StudioCaptionSection } from "./StudioCaptionSection";
 import { StudioCardMedia } from "./StudioCardMedia";
 import { StudioCardToolbar, type StudioTool } from "./StudioCardToolbar";
 import { StudioCtaSection } from "./StudioCtaSection";
+import { StudioPrepareChips } from "./StudioPrepareChips";
 import { StudioTitleSection } from "./StudioTitleSection";
 import { StudioTranscriptSection } from "./StudioTranscriptSection";
 
@@ -119,9 +121,12 @@ export function StudioCard({
             onSelect(e);
           }}
         >
-          <p className="truncate font-display text-sm font-semibold text-foreground">
-            {draftDisplayTitle(draft)}
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="min-w-0 truncate font-display text-sm font-semibold text-foreground">
+              {draftDisplayTitle(draft)}
+            </p>
+            <TrafficLight status="IDLE" size="sm" title="Not scheduled yet" />
+          </div>
           <p className="mt-0.5 text-caption text-muted-foreground">
             {stage === "caption"
               ? "Caption ready"
@@ -129,8 +134,9 @@ export function StudioCard({
                 ? "Script started"
                 : "New reel"}
           </p>
+          <StudioPrepareChips draft={draft} className="mt-2" />
           {eventTitle ? (
-            <p className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded border border-line bg-paper-2 px-1.5 py-0.5 text-[0.65rem] font-medium text-foreground">
+            <p className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate rounded border border-line bg-paper-2 px-1.5 py-0.5 text-[0.65rem] font-medium text-foreground">
               <Link2 className="h-3 w-3 shrink-0" />
               <span className="truncate">{eventTitle}</span>
             </p>

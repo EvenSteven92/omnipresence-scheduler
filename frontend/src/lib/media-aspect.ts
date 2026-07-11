@@ -4,8 +4,7 @@ import { PLATFORMS } from "@/lib/platforms";
 
 /**
  * Media aspect buckets for destination gating.
- * Research (2025–26): vertical short-form = 9:16; landscape long-form = 16:9;
- * IG feed prefers 1:1 / 4:5; stories = 9:16.
+ * Soft warn vs hard block — only block when the platform will refuse the asset.
  */
 export type AspectBucket =
   | "portrait_9_16"
@@ -16,6 +15,13 @@ export type AspectBucket =
 
 export type AspectLabel = "9:16" | "4:5" | "1:1" | "4:3" | "16:9";
 
+export type GateLevel = "allowed" | "warn" | "block";
+
+export type PlatformGate = {
+  level: GateLevel;
+  message?: string;
+};
+
 const LABEL: Record<AspectBucket, AspectLabel> = {
   portrait_9_16: "9:16",
   portrait_4_5: "4:5",
@@ -24,30 +30,21 @@ const LABEL: Record<AspectBucket, AspectLabel> = {
   landscape_16_9: "16:9",
 };
 
-/** Platforms allowed for each aspect (hard gate). */
-const ALLOWED: Record<AspectBucket, Platform[]> = {
-  portrait_9_16: ["TIKTOK", "YT SHORTS", "IG", "IG STORY", "FB STORY", "FB"],
-  portrait_4_5: ["IG", "FB", "X"],
-  square: ["IG", "FB", "X"],
-  classic_4_3: ["YT", "RUMBLE", "FB", "X"],
-  landscape_16_9: ["YT", "RUMBLE", "FB", "X"],
-};
-
 /** Preferred defaults when user has not chosen platforms yet. */
 const RECOMMENDED: Record<AspectBucket, Platform[]> = {
   portrait_9_16: ["TIKTOK", "IG", "YT SHORTS"],
   portrait_4_5: ["IG", "FB"],
   square: ["IG", "FB", "X"],
   classic_4_3: ["YT", "FB"],
-  landscape_16_9: ["YT", "RUMBLE", "X"],
+  landscape_16_9: ["YT", "RUMBLE", "X", "IG", "FB"],
 };
 
-const NEEDS_LABEL: Record<AspectBucket, string> = {
-  portrait_9_16: "Needs 9:16 vertical",
-  portrait_4_5: "Needs 4:5 portrait",
-  square: "Needs 1:1 square",
-  classic_4_3: "Needs 4:3 or landscape",
-  landscape_16_9: "Needs 16:9 landscape",
+const PREFERRED: Record<AspectBucket, Platform[]> = {
+  portrait_9_16: ["TIKTOK", "YT SHORTS", "IG", "IG STORY", "FB STORY", "FB"],
+  portrait_4_5: ["IG", "FB", "X"],
+  square: ["IG", "FB", "X"],
+  classic_4_3: ["YT", "RUMBLE", "FB", "X"],
+  landscape_16_9: ["YT", "RUMBLE", "X", "FB"],
 };
 
 export function aspectLabel(bucket: AspectBucket): AspectLabel {
@@ -75,27 +72,91 @@ export function postFormatFromBucket(bucket: AspectBucket): PostFormat {
   return "landscape";
 }
 
-export function platformsForAspect(bucket: AspectBucket): Platform[] {
-  return [...ALLOWED[bucket]];
+/**
+ * Soft vs hard gate.
+ * - block: platform will not accept (e.g. Shorts need 9:16)
+ * - warn: accepted but not preferred (e.g. IG + 16:9)
+ * - allowed: preferred fit
+ */
+export function platformGate(platform: Platform, bucket: AspectBucket): PlatformGate {
+  // Hard: vertical-only platforms refuse non-9:16
+  if (
+    (platform === "YT SHORTS" || platform === "TIKTOK") &&
+    bucket !== "portrait_9_16"
+  ) {
+    return {
+      level: "block",
+      message:
+        platform === "YT SHORTS"
+          ? "YouTube Shorts requires 9:16 vertical"
+          : "TikTok requires 9:16 vertical",
+    };
+  }
+  if (
+    (platform === "IG STORY" || platform === "FB STORY") &&
+    bucket !== "portrait_9_16"
+  ) {
+    return { level: "block", message: "Stories require 9:16 vertical" };
+  }
+
+  // Soft: IG accepts landscape/square variants with preferred ratios
+  if (platform === "IG") {
+    if (bucket === "landscape_16_9" || bucket === "classic_4_3") {
+      return {
+        level: "warn",
+        message: "Preferred 4:5 / 1:1 / 9:16 — 16:9 may letterbox or crop in feed",
+      };
+    }
+    if (bucket === "square" || bucket === "portrait_4_5" || bucket === "portrait_9_16") {
+      return { level: "allowed" };
+    }
+  }
+
+  // FB / X accept most ratios with mild preference
+  if ((platform === "FB" || platform === "X") && bucket === "portrait_9_16") {
+    return { level: "warn", message: "Works, but feed often prefers 4:5 or 1:1" };
+  }
+
+  // YT / Rumble prefer landscape
+  if (
+    (platform === "YT" || platform === "RUMBLE") &&
+    (bucket === "portrait_9_16" || bucket === "portrait_4_5")
+  ) {
+    return {
+      level: "warn",
+      message: "Long-form prefers 16:9 — vertical may pillarbox",
+    };
+  }
+
+  if (PREFERRED[bucket]?.includes(platform)) {
+    return { level: "allowed" };
+  }
+
+  // Default: allow with soft notice rather than block
+  return {
+    level: "warn",
+    message: `Preferred ratio differs from ${LABEL[bucket]} — platform may still accept`,
+  };
 }
 
-export function recommendedPlatforms(bucket: AspectBucket): Platform[] {
-  return RECOMMENDED[bucket].filter((p) => ALLOWED[bucket].includes(p));
-}
-
+/** Selectable if not hard-blocked. */
 export function isPlatformCompatible(platform: Platform, bucket: AspectBucket): boolean {
-  return ALLOWED[bucket].includes(platform);
+  return platformGate(platform, bucket).level !== "block";
 }
 
 export function incompatibilityReason(platform: Platform, bucket: AspectBucket): string {
-  if (isPlatformCompatible(platform, bucket)) return "";
-  // What would this platform prefer?
-  const prefersVertical = (["TIKTOK", "YT SHORTS", "IG STORY", "FB STORY"] as Platform[]).includes(
-    platform,
-  );
-  if (prefersVertical) return "Needs 9:16 vertical";
-  if (platform === "IG" && bucket === "landscape_16_9") return "Prefer 9:16 / 4:5 / 1:1";
-  return NEEDS_LABEL[bucket] || `Incompatible with ${LABEL[bucket]}`;
+  const g = platformGate(platform, bucket);
+  if (g.level === "allowed") return "";
+  return g.message ?? "";
+}
+
+/** Platforms that are not hard-blocked for this aspect. */
+export function platformsForAspect(bucket: AspectBucket): Platform[] {
+  return PLATFORMS.map((p) => p.short).filter((p) => isPlatformCompatible(p, bucket));
+}
+
+export function recommendedPlatforms(bucket: AspectBucket): Platform[] {
+  return RECOMMENDED[bucket].filter((p) => isPlatformCompatible(p, bucket));
 }
 
 export function sanitizePlatformsForAspect(
@@ -105,7 +166,6 @@ export function sanitizePlatformsForAspect(
   return platforms.filter((p) => isPlatformCompatible(p, bucket));
 }
 
-/** Intersection of allowed platforms across multiple cards (bulk schedule). */
 export function platformsIntersection(buckets: AspectBucket[]): Platform[] {
   if (buckets.length === 0) return PLATFORMS.map((p) => p.short);
   let set = new Set(platformsForAspect(buckets[0]!));
@@ -127,11 +187,10 @@ export function humanAspectDescription(bucket: AspectBucket): string {
     case "classic_4_3":
       return "4:3 classic — YouTube, Rumble, feed";
     case "landscape_16_9":
-      return "16:9 landscape — YouTube, Rumble, X, Facebook";
+      return "16:9 landscape — YouTube, Rumble, X, Facebook · IG accepts with notice";
   }
 }
 
-/** Probe image/video file for pixel dimensions. */
 export function measureMediaFile(file: File): Promise<{ width: number; height: number } | null> {
   return new Promise((resolve) => {
     if (file.type.startsWith("image/")) {

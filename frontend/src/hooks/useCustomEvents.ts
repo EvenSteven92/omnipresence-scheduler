@@ -72,5 +72,21 @@ export function useCustomEvents(workspaceId: WorkspaceId) {
     [dbMode, workspaceId, queryClient],
   );
 
-  return { customEvents, addEvent, dbMode };
+  /** Upsert into custom overlay (overrides workspace seed events by id). */
+  const updateEvent = useCallback(
+    (event: ContentEvent) => {
+      setLocalEvents((prev) => {
+        const idx = prev.findIndex((e) => e.id === event.id);
+        const next =
+          idx >= 0
+            ? prev.map((e) => (e.id === event.id ? event : e))
+            : [...prev, event];
+        writeCustomEvents(workspaceId, next);
+        return next;
+      });
+    },
+    [workspaceId],
+  );
+
+  return { customEvents, addEvent, updateEvent, dbMode };
 }

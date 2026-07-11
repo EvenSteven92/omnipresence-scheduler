@@ -35,7 +35,8 @@ export interface ScheduledPost extends CardFileMeta {
   date: string;
   /** Per-platform times — one content card, multiple publishes. */
   platformTimes?: Partial<Record<Platform, string>>;
-  status: "scheduled" | "draft" | "published";
+  /** Publish lifecycle — traffic light maps draft→idle, scheduled→yellow, published→green, failed→red. */
+  status: "scheduled" | "draft" | "published" | "failed";
   /** Associated ministry event — not a tag/label. */
   eventId?: string;
 }

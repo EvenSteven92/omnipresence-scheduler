@@ -32,7 +32,7 @@ export type SavePostPayload = {
   transcript?: string;
   mediaKind?: string;
   format?: string;
-  status?: "draft" | "scheduled" | "published";
+  status?: "draft" | "scheduled" | "published" | "failed";
   eventId?: string | null;
   dropboxUrl?: string | null;
   previewUrl?: string | null;

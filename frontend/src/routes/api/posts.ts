@@ -18,7 +18,7 @@ const postBodySchema = z.object({
   transcript: z.string().optional(),
   mediaKind: z.string().optional(),
   format: z.string().optional(),
-  status: z.enum(["draft", "scheduled", "published"]).optional(),
+  status: z.enum(["draft", "scheduled", "published", "failed"]).optional(),
   eventId: z.string().nullable().optional(),
   dropboxUrl: z.string().nullable().optional(),
   previewUrl: z.string().nullable().optional(),

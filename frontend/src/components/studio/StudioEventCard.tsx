@@ -1,10 +1,20 @@
 import { CalendarDays, Link2 } from "lucide-react";
-import type { ContentEvent } from "@/lib/workspaces/types";
+import type { ContentEvent, ContentEventKind } from "@/lib/workspaces/types";
+import { TrafficLight } from "@/components/ui/TrafficLight";
+import type { CardLifecycleStatus } from "@/lib/card-display";
 import { cn } from "@/lib/utils";
 
+const KINDS: Array<{ value: ContentEventKind; label: string }> = [
+  { value: "sunday_sermon", label: "Sunday sermon" },
+  { value: "worship_night", label: "Worship night" },
+  { value: "youth", label: "Youth" },
+  { value: "campaign", label: "Campaign" },
+  { value: "conference", label: "Conference" },
+  { value: "other", label: "Other" },
+];
+
 /**
- * Event as a board card — “everything is a card.”
- * Reels string to events via eventId on drafts.
+ * Event as a board card — editable when selected (parity with reel fields).
  */
 export function StudioEventCard({
   event,
@@ -12,22 +22,26 @@ export function StudioEventCard({
   y,
   selected,
   linkedCount,
+  trafficStatus = "IDLE",
   canDrag,
   liveOffset,
   onSelect,
   onDragStart,
   onAssignSelected,
+  onChange,
 }: {
   event: ContentEvent;
   x: number;
   y: number;
   selected: boolean;
   linkedCount: number;
+  trafficStatus?: CardLifecycleStatus;
   canDrag: boolean;
   liveOffset?: { x: number; y: number } | null;
   onSelect: () => void;
   onDragStart: (e: React.PointerEvent) => void;
   onAssignSelected?: () => void;
+  onChange?: (patch: Partial<ContentEvent>) => void;
 }) {
   const ox = liveOffset?.x ?? 0;
   const oy = liveOffset?.y ?? 0;
@@ -36,6 +50,7 @@ export function StudioEventCard({
     month: "short",
     day: "numeric",
   });
+  const dateInput = event.date.slice(0, 10);
 
   return (
     <div
@@ -77,8 +92,11 @@ export function StudioEventCard({
             onSelect();
           }}
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-line bg-card">
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-line bg-card">
             <CalendarDays className="h-4 w-4 text-foreground" strokeWidth={1.75} />
+            <span className="absolute -right-1 -top-1">
+              <TrafficLight status={trafficStatus} size="sm" />
+            </span>
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground">
@@ -90,6 +108,72 @@ export function StudioEventCard({
             <p className="mt-0.5 text-caption text-muted-foreground">{dateLabel}</p>
           </div>
         </div>
+
+        {selected && onChange ? (
+          <div
+            className="space-y-2 border-b border-line px-3 py-3 animate-slide-in-up"
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <label className="block">
+              <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Title
+              </span>
+              <input
+                type="text"
+                value={event.title}
+                onChange={(e) => onChange({ title: e.target.value })}
+                className="mt-1 w-full rounded-md border border-line bg-card px-2 py-1.5 text-sm focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Date
+              </span>
+              <input
+                type="date"
+                value={dateInput}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!v) return;
+                  onChange({ date: new Date(v + "T12:00:00").toISOString() });
+                }}
+                className="mt-1 w-full rounded-md border border-line bg-card px-2 py-1.5 text-sm focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Kind
+              </span>
+              <select
+                value={event.kind}
+                onChange={(e) =>
+                  onChange({ kind: e.target.value as ContentEventKind })
+                }
+                className="mt-1 w-full rounded-md border border-line bg-card px-2 py-1.5 text-sm focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
+              >
+                {KINDS.map((k) => (
+                  <option key={k.value} value={k.value}>
+                    {k.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Description
+              </span>
+              <textarea
+                value={event.description ?? ""}
+                onChange={(e) => onChange({ description: e.target.value })}
+                rows={2}
+                placeholder="Optional context for AI & team"
+                className="mt-1 w-full resize-none rounded-md border border-line bg-card px-2 py-1.5 text-sm focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
+              />
+            </label>
+          </div>
+        ) : null}
+
         <div className="flex items-center justify-between gap-2 px-3 py-2.5">
           <span className="text-xs text-muted-foreground">
             {linkedCount} reel{linkedCount === 1 ? "" : "s"} linked
@@ -101,7 +185,7 @@ export function StudioEventCard({
                 e.stopPropagation();
                 onAssignSelected();
               }}
-              className="inline-flex items-center gap-1 rounded-md border border-line bg-card px-2 py-1 text-caption font-semibold text-foreground hover:bg-secondary"
+              className="inline-flex items-center gap-1 rounded-md border border-line bg-card px-2 py-1 text-caption font-semibold text-foreground transition-colors hover:bg-secondary"
             >
               <Link2 className="h-3 w-3" />
               Attach selection

@@ -59,6 +59,7 @@ import {
   type EventLayoutMap,
 } from "@/lib/studio-event-layout";
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
+import { cardStatusFromPosts } from "@/lib/card-display";
 import { useWorkspace } from "@/lib/workspace-context";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { applyCadencePreset } from "@/lib/schedule-engine";
@@ -81,7 +82,7 @@ const DRAG_THRESHOLD = 3;
 
 function StudioPage() {
   const { workspace, workspaceId, addScheduledPosts } = useWorkspace();
-  const { customEvents, addEvent } = useCustomEvents(workspaceId);
+  const { customEvents, addEvent, updateEvent } = useCustomEvents(workspaceId);
   const events = useMemo(
     () => mergeWorkspaceEvents(workspace.events, customEvents),
     [workspace.events, customEvents],
@@ -988,6 +989,15 @@ function StudioPage() {
                   y={pos.y}
                   selected={selectedEventId === ev.id}
                   linkedCount={linked}
+                  trafficStatus={
+                    linked > 0
+                      ? cardStatusFromPosts(
+                          workspace.scheduledPosts.filter(
+                            (p) => p.eventId === ev.id,
+                          ),
+                        )
+                      : "IDLE"
+                  }
                   canDrag={mode === "select"}
                   liveOffset={live}
                   onSelect={() => selectEvent(ev.id)}
@@ -997,6 +1007,7 @@ function StudioPage() {
                       ? () => void assignEventToSelection(ev.id)
                       : undefined
                   }
+                  onChange={(patch) => updateEvent({ ...ev, ...patch })}
                 />
               );
             })}
@@ -1054,7 +1065,6 @@ function StudioPage() {
           drafts={scheduleTargets}
           focusId={focusId}
           committedPosts={workspace.scheduledPosts}
-          events={events}
           workspacePlatforms={workspace.platforms}
           busy={timesBusy}
           onClose={() => setShelfOpen(false)}
@@ -1063,14 +1073,13 @@ function StudioPage() {
           onBestTimes={applyBestTimesToTargets}
           onCommit={() => void commitScheduleTargets()}
           onWidthChange={setShelfWidth}
-          onAssignEvent={assignEventToSelection}
         />
       </div>
 
       {toast ? (
         <div
           role="status"
-          className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-line bg-foreground px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-opacity duration-200 md:bottom-20"
+          className="animate-slide-in-up fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-line bg-foreground px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-card)] md:bottom-20"
         >
           {toast}
         </div>

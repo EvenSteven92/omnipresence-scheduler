@@ -7,7 +7,14 @@ import type { Platform } from "@/lib/mock-data";
 
 export type CardMediaType = "VIDEO" | "IMAGE" | "CAROUSEL" | "STORY";
 
-export type CardLifecycleStatus = "SCHEDULED" | "LIVE" | "DRAFT";
+/**
+ * Site-wide traffic light lifecycle.
+ * idle (grey) · scheduled (yellow) · live (green) · failed (red)
+ */
+export type CardLifecycleStatus = "IDLE" | "SCHEDULED" | "LIVE" | "FAILED";
+
+/** @deprecated use IDLE — kept for any residual DRAFT references */
+export type CardLifecycleStatusLegacy = CardLifecycleStatus | "DRAFT";
 
 const PLATFORM_DOT: Partial<Record<Platform, string>> = {
   YT: "#D43A2F",
@@ -31,14 +38,72 @@ export function inferCardMediaType(title: string, mediaKind?: "image" | "video")
 
 export function cardStatusFromPost(post: ScheduledPost): CardLifecycleStatus {
   if (post.status === "published") return "LIVE";
-  if (post.status === "draft") return "DRAFT";
-  return "SCHEDULED";
+  if (post.status === "failed") return "FAILED";
+  if (post.status === "scheduled") return "SCHEDULED";
+  return "IDLE"; // draft
+}
+
+/** Aggregate traffic light for an event from linked posts. */
+export function cardStatusFromPosts(posts: ScheduledPost[]): CardLifecycleStatus {
+  if (posts.length === 0) return "IDLE";
+  if (posts.some((p) => p.status === "failed")) return "FAILED";
+  if (posts.some((p) => p.status === "scheduled")) return "SCHEDULED";
+  if (posts.every((p) => p.status === "published")) return "LIVE";
+  if (posts.some((p) => p.status === "published")) return "SCHEDULED";
+  return "IDLE";
+}
+
+export function cardStatusLabel(status: CardLifecycleStatus): string {
+  switch (status) {
+    case "LIVE":
+      return "LIVE";
+    case "SCHEDULED":
+      return "SCHEDULED";
+    case "FAILED":
+      return "FAILED";
+    default:
+      return "DRAFT";
+  }
 }
 
 export function cardStatusClass(status: CardLifecycleStatus): string {
-  if (status === "SCHEDULED") return "border border-foreground bg-foreground text-background";
-  if (status === "LIVE") return "bg-success text-white";
-  return "border border-line bg-secondary text-muted-foreground";
+  switch (status) {
+    case "SCHEDULED":
+      return "border border-warning/40 bg-warning text-white";
+    case "LIVE":
+      return "border border-success/40 bg-success text-white";
+    case "FAILED":
+      return "border border-destructive/40 bg-destructive text-white";
+    default:
+      return "border border-line bg-secondary text-muted-foreground";
+  }
+}
+
+/** Dot / ring classes for TrafficLight. */
+export function trafficDotClass(status: CardLifecycleStatus): string {
+  switch (status) {
+    case "SCHEDULED":
+      return "bg-warning";
+    case "LIVE":
+      return "bg-success";
+    case "FAILED":
+      return "bg-destructive";
+    default:
+      return "bg-muted-foreground/35";
+  }
+}
+
+export function trafficRingClass(status: CardLifecycleStatus): string {
+  switch (status) {
+    case "SCHEDULED":
+      return "ring-warning/50";
+    case "LIVE":
+      return "ring-success/50";
+    case "FAILED":
+      return "ring-destructive/50";
+    default:
+      return "ring-line";
+  }
 }
 
 export function platformDotColor(platform: Platform): string {
@@ -82,7 +147,6 @@ export function resolveAlbumLabel(
   return "Unassigned";
 }
 
-/** Neobrutalist stream-card placeholder gradients (Claude Design Cards). */
 const STREAM_GRADIENTS = [
   "linear-gradient(135deg, #6d28d9 0%, #db2777 100%)",
   "linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)",

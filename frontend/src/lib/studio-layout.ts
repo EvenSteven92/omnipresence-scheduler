@@ -50,6 +50,26 @@ export function isCaptionReady(draft: DraftPost): boolean {
   return Boolean(draft.caption?.trim()) && Boolean(draft.hashtags?.trim());
 }
 
+/** Per-field prepare progress for whiteboard chips. */
+export type PrepareField = "transcript" | "cta" | "title" | "caption" | "hashtags";
+
+export function prepareReadiness(draft: DraftPost): Record<PrepareField, boolean> {
+  return {
+    transcript: Boolean(draft.transcript?.trim()),
+    cta: Boolean(draft.callToAction?.trim()),
+    title: Boolean(draft.title?.trim()),
+    caption: Boolean(draft.caption?.trim()),
+    hashtags: Boolean(draft.hashtags?.trim()),
+  };
+}
+
+/** Draft has platforms + a time for each selected destination. */
+export function isScheduleTimed(draft: DraftPost): boolean {
+  if (draft.platforms.length === 0) return false;
+  const times = draft.proposedTimes ?? {};
+  return draft.platforms.every((p) => Boolean(times[p]));
+}
+
 /** CSS aspect-ratio string from measured pixels or format heuristics. */
 export function mediaAspectRatioCss(draft: DraftPost): string {
   if (draft.width && draft.height && draft.width > 0 && draft.height > 0) {
