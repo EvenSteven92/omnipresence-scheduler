@@ -128,6 +128,8 @@ function StudioPage() {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [pendingNewName, setPendingNewName] = useState<string | null>(null);
   const [eventModalOpen, setEventModalOpen] = useState(false);
+  /** Miro-style stack: last interacted card sits above overlapping ones */
+  const [stackFrontId, setStackFrontId] = useState<string | null>(null);
   /** Autosave status for header — Docs/Notion-style affirmation */
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "unsaved"
@@ -591,6 +593,7 @@ function StudioPage() {
 
   function selectCard(id: string, additive = false) {
     setSelectedEventId(null);
+    setStackFrontId(id);
     if (additive) {
       setSelectedIds((prev) => {
         const next = new Set(prev);
@@ -607,6 +610,7 @@ function StudioPage() {
 
   function selectEvent(id: string) {
     setSelectedEventId(id);
+    setStackFrontId(`event:${id}`);
     setSelectedIds(new Set());
     setFocusId(null);
   }
@@ -682,6 +686,7 @@ function StudioPage() {
     if (mode !== "select") return;
     e.preventDefault();
     e.stopPropagation();
+    setStackFrontId(id);
 
     let ids = selectedIds.has(id) ? [...selectedIds] : [id];
     if (!selectedIds.has(id)) {
@@ -755,6 +760,7 @@ function StudioPage() {
     if (mode !== "select") return;
     e.preventDefault();
     e.stopPropagation();
+    setStackFrontId(`event:${eventId}`);
     const pos = eventLayout[eventId] ?? { x: 80, y: 520 };
     const startClientX = e.clientX;
     const startClientY = e.clientY;
@@ -1024,7 +1030,6 @@ function StudioPage() {
             if (id === activeBoardId) {
               saveActiveBoard({ manual: true });
             } else {
-              // Force touch updatedAt by re-writing existing snapshot
               const snap = readBoard(workspaceId, id);
               if (snap) {
                 writeBoard(workspaceId, id, snap, workspace.scheduledPosts);
@@ -1032,6 +1037,12 @@ function StudioPage() {
               }
               showToast("Board saved — your work is safe");
             }
+          }}
+          onRename={(id, name) => {
+            renameBoard(workspaceId, id, name);
+            refreshBoardList();
+            if (id === activeBoardId) setBoardName(name);
+            showToast("Board renamed");
           }}
           onDelete={(id) => {
             deleteBoard(workspaceId, id);
@@ -1291,6 +1302,7 @@ function StudioPage() {
                   y={pos.y}
                   selected={selectedEventId === ev.id}
                   linkedCount={linked}
+                  stackFront={stackFrontId === `event:${ev.id}`}
                   trafficStatus={
                     linked > 0
                       ? cardStatusFromPosts(
@@ -1303,6 +1315,7 @@ function StudioPage() {
                   canDrag={mode === "select"}
                   liveOffset={live}
                   onSelect={() => selectEvent(ev.id)}
+                  onRaise={() => setStackFrontId(`event:${ev.id}`)}
                   onDragStart={(e) => onEventDragStart(ev.id, e)}
                   onAssignSelected={
                     selectedIds.size > 0
@@ -1335,9 +1348,11 @@ function StudioPage() {
                   liveOffset={live}
                   eventTitle={evTitle}
                   lifecycleStatus={lifecycleForDraft(draft.id)}
+                  stackFront={stackFrontId === draft.id}
                   onSelect={(e) =>
                     selectCard(draft.id, e.shiftKey || e.metaKey || e.ctrlKey)
                   }
+                  onRaise={() => setStackFrontId(draft.id)}
                   onChange={(updater) => updateDraft(draft.id, updater)}
                   onTool={(tool) => handleTool(draft.id, tool)}
                   onGenerateTranscript={() => void runTranscript(draft.id)}

@@ -34,12 +34,17 @@ export function StudioTitleSection({
       </button>
       <div
         className={cn(
-          "grid transition-[grid-template-rows] duration-200 ease-out",
+          "grid transition-[grid-template-rows] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
         <div className="min-h-0 overflow-hidden">
-          <div className="space-y-1.5 px-3 pb-3">
+          <div
+            className={cn(
+              "space-y-1.5 px-3 pb-3 transition-opacity duration-150",
+              open ? "opacity-100" : "opacity-0",
+            )}
+          >
             <p className="text-[0.7rem] text-muted-foreground">
               Required for YouTube Shorts and Rumble — keep it clear and searchable.
             </p>

@@ -24,12 +24,14 @@ export function StudioEventCard({
   selected,
   linkedCount,
   trafficStatus = "IDLE",
+  stackFront,
   canDrag,
   liveOffset,
   onSelect,
   onDragStart,
   onAssignSelected,
   onChange,
+  onRaise,
 }: {
   event: ContentEvent;
   x: number;
@@ -37,12 +39,14 @@ export function StudioEventCard({
   selected: boolean;
   linkedCount: number;
   trafficStatus?: CardLifecycleStatus;
+  stackFront?: boolean;
   canDrag: boolean;
   liveOffset?: { x: number; y: number } | null;
   onSelect: () => void;
   onDragStart: (e: React.PointerEvent) => void;
   onAssignSelected?: () => void;
   onChange?: (patch: Partial<ContentEvent>) => void;
+  onRaise?: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const ox = liveOffset?.x ?? 0;
@@ -71,11 +75,12 @@ export function StudioEventCard({
       data-testid={`studio-event-${event.id}`}
       data-studio-card={event.id}
       data-studio-event="true"
-      className={cn("absolute will-change-transform", selected && "z-30")}
+      className="absolute will-change-transform"
       style={{
         left: x,
         top: y,
         width: 280,
+        zIndex: selected || stackFront ? 40 : 1,
         transform:
           ox !== 0 || oy !== 0 ? `translate3d(${ox}px, ${oy}px, 0)` : undefined,
       }}
@@ -118,11 +123,13 @@ export function StudioEventCard({
             if (!canDrag || e.button !== 0) return;
             e.preventDefault();
             e.stopPropagation();
+            onRaise?.();
             (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
             onDragStart(e);
           }}
           onClick={(e) => {
             e.stopPropagation();
+            onRaise?.();
             onSelect();
           }}
         >

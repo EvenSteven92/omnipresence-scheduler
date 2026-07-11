@@ -20,6 +20,7 @@ export function StudioBoardPicker({
   onOpen,
   onNew,
   onSave,
+  onRename,
   onDelete,
 }: {
   boards: StudioBoardMeta[];
@@ -30,6 +31,7 @@ export function StudioBoardPicker({
   onOpen: (id: string) => void;
   onNew?: (name: string) => void;
   onSave?: (id: string) => void;
+  onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | "new" | null>(
@@ -90,6 +92,9 @@ export function StudioBoardPicker({
               onSelect={() => setSelectedId(b.id)}
               onOpen={() => onOpen(b.id)}
               onSave={onSave ? () => onSave(b.id) : undefined}
+              onRename={
+                onRename ? (name) => onRename(b.id, name) : undefined
+              }
               onDelete={onDelete ? () => confirmDelete(b) : undefined}
             />
           ))}

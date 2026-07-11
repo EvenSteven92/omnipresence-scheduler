@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronDown, MoreHorizontal, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import type { StudioBoardMeta } from "@/lib/studio-boards";
 import { formatBoardDate, relativeBoardTime } from "@/lib/studio-boards";
 import { demoPreviewForPost } from "@/lib/demo-media";
@@ -15,22 +15,44 @@ export function StudioBoardCard({
   onOpen,
   onSelect,
   onSave,
+  onRename,
   onDelete,
 }: {
   board: StudioBoardMeta;
   isActive?: boolean;
-  /** Focus ring like Resolve’s selection outline */
   selected?: boolean;
   onOpen: () => void;
   onSelect?: () => void;
   onSave?: () => void;
+  onRename?: (name: string) => void;
   onDelete?: () => void;
 }) {
   const [eventsOpen, setEventsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState(board.name);
+  const inputRef = useRef<HTMLInputElement>(null);
   const previews = board.summary?.previewUrls ?? [];
   const eventTitles = board.summary?.eventTitles ?? [];
   const s = board.summary;
+
+  useEffect(() => {
+    setNameDraft(board.name);
+  }, [board.name]);
+
+  useEffect(() => {
+    if (renaming) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [renaming]);
+
+  function commitRename() {
+    const next = nameDraft.trim();
+    setRenaming(false);
+    if (next && next !== board.name) onRename?.(next);
+    else setNameDraft(board.name);
+  }
 
   return (
     <article
@@ -60,29 +82,56 @@ export function StudioBoardCard({
       </button>
 
       <div className="mt-2 flex items-start gap-1 px-0.5">
-        <button
-          type="button"
-          onClick={() => {
-            onSelect?.();
-            onOpen();
-          }}
-          className="min-w-0 flex-1 text-center"
-        >
-          <h3
-            className={cn(
-              "truncate text-sm font-medium leading-snug",
-              selected || isActive ? "text-foreground" : "text-muted-foreground",
-              "group-hover:text-foreground",
-            )}
+        {renaming ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitRename();
+              if (e.key === "Escape") {
+                setNameDraft(board.name);
+                setRenaming(false);
+              }
+            }}
+            className="min-w-0 flex-1 rounded border border-line bg-card px-1.5 py-0.5 text-center text-sm font-medium text-foreground focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
+            data-testid={`board-rename-input-${board.id}`}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              onSelect?.();
+              onOpen();
+            }}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onRename) setRenaming(true);
+            }}
+            className="min-w-0 flex-1 text-center"
           >
-            {board.name}
-          </h3>
-          <p className="mt-0.5 truncate text-[0.65rem] text-muted-foreground">
-            {relativeBoardTime(board.updatedAt)}
-            {s && s.reelCount > 0 ? ` · ${s.reelCount} reels` : ""}
-          </p>
-        </button>
-        {(onSave || onDelete) && (
+            <h3
+              className={cn(
+                "truncate text-sm font-medium leading-snug",
+                selected || isActive
+                  ? "text-foreground"
+                  : "text-muted-foreground",
+                "group-hover:text-foreground",
+              )}
+            >
+              {board.name}
+            </h3>
+            <p className="mt-0.5 truncate text-[0.65rem] text-muted-foreground">
+              {relativeBoardTime(board.updatedAt)}
+              {s && s.reelCount > 0 ? ` · ${s.reelCount} reels` : ""}
+            </p>
+          </button>
+        )}
+        {(onSave || onRename || onDelete) && !renaming && (
           <div className="relative shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
             <button
               type="button"
@@ -97,6 +146,19 @@ export function StudioBoardCard({
             </button>
             {menuOpen ? (
               <div className="absolute right-0 z-20 mt-1 min-w-[9rem] rounded-md border border-line bg-card py-1 shadow-[var(--shadow-card)]">
+                {onRename ? (
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-xs font-semibold hover:bg-secondary"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setRenaming(true);
+                    }}
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Rename
+                  </button>
+                ) : null}
                 {onSave ? (
                   <button
                     type="button"
@@ -159,7 +221,6 @@ export function StudioBoardCard({
   );
 }
 
-/** First grid cell — Resolve “New Project” tile */
 export function StudioNewBoardTile({
   selected,
   onClick,

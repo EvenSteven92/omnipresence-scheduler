@@ -48,12 +48,14 @@ export function StudioCard({
   liveOffset,
   eventTitle,
   lifecycleStatus = "IDLE",
+  stackFront,
   onSelect,
   onChange,
   onTool,
   onGenerateTranscript,
   onGenerateCaption,
   onDragStart,
+  onRaise,
 }: {
   draft: DraftPost;
   selected: boolean;
@@ -63,17 +65,32 @@ export function StudioCard({
   liveOffset?: { x: number; y: number } | null;
   eventTitle?: string;
   lifecycleStatus?: CardLifecycleStatus;
+  /** Miro-style: card is above others in the stack */
+  stackFront?: boolean;
   onSelect: (e: React.MouseEvent | React.PointerEvent) => void;
   onChange: (updater: (d: DraftPost) => DraftPost) => void;
   onTool: (tool: StudioTool) => void;
   onGenerateTranscript: () => void;
   onGenerateCaption: () => void;
   onDragStart: (e: React.PointerEvent) => void;
+  onRaise?: () => void;
 }) {
   const stage = studioStage(draft);
   const open = draft.studioOpen ?? {};
   const ox = liveOffset?.x ?? 0;
   const oy = liveOffset?.y ?? 0;
+
+  const hasTranscript = Boolean(draft.transcript?.trim());
+  const hasCta = Boolean(draft.callToAction?.trim());
+  const hasTitle = Boolean(draft.title?.trim());
+  const hasCaption =
+    Boolean(draft.caption?.trim()) || Boolean(draft.hashtags?.trim());
+
+  // Keep section chrome visible when content exists; tools expand body
+  const showTranscript = Boolean(open.transcript) || hasTranscript;
+  const showCta = Boolean(open.cta) || hasCta;
+  const showTitle = Boolean(open.title) || hasTitle;
+  const showCaption = Boolean(open.caption) || hasCaption;
 
   function patchOpen(key: keyof NonNullable<DraftPost["studioOpen"]>, value: boolean) {
     onChange((d) => ({
@@ -82,19 +99,30 @@ export function StudioCard({
     }));
   }
 
+  function beginGrab(e: React.PointerEvent) {
+    if (!canDrag) return;
+    if (isEditableTarget(e.target)) return;
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onRaise?.();
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    onDragStart(e);
+  }
+
+  const zIndex = multiSelected || selected || stackFront ? 40 : 1;
+
   return (
     <div
       data-testid={`studio-card-${draft.id}`}
       data-stage={stage}
       data-studio-card={draft.id}
-      className={cn(
-        "absolute will-change-transform",
-        multiSelected && "z-30",
-      )}
+      className="absolute will-change-transform"
       style={{
         left: draft.canvasX ?? 48,
         top: draft.canvasY ?? 48,
         width: STUDIO_CARD_WIDTH,
+        zIndex,
         transform:
           ox !== 0 || oy !== 0 ? `translate3d(${ox}px, ${oy}px, 0)` : undefined,
       }}
@@ -106,21 +134,18 @@ export function StudioCard({
           statusBorderClass(lifecycleStatus, multiSelected),
           selected && "scale-[1.01]",
         )}
+        onPointerDown={(e) => {
+          // Raise on any interaction so buried cards become reachable (Miro)
+          if (e.button === 0) onRaise?.();
+        }}
       >
+        {/* Media drag surface */}
         <div
           className={cn(
             "relative touch-none",
             canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-default",
           )}
-          onPointerDown={(e) => {
-            if (!canDrag) return;
-            if (isEditableTarget(e.target)) return;
-            if (e.button !== 0) return;
-            e.preventDefault();
-            e.stopPropagation();
-            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-            onDragStart(e);
-          }}
+          onPointerDown={beginGrab}
           onClick={(e) => {
             e.stopPropagation();
             onSelect(e);
@@ -134,8 +159,13 @@ export function StudioCard({
           ) : null}
         </div>
 
+        {/* Title chrome — also a grab zone */}
         <div
-          className="border-b border-line px-3 py-2.5"
+          className={cn(
+            "border-b border-line px-3 py-2.5 touch-none",
+            canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-default",
+          )}
+          onPointerDown={beginGrab}
           onClick={(e) => {
             e.stopPropagation();
             onSelect(e);
@@ -168,43 +198,43 @@ export function StudioCard({
           ) : null}
         </div>
 
-        {/* Accordion: only expanded sections */}
-        {open.transcript ? (
+        {/* Sections stay mounted when they have content; body expands with animation */}
+        {showTranscript ? (
           <StudioTranscriptSection
-            open
+            open={Boolean(open.transcript)}
             value={draft.transcript}
             busy={busy === "transcript"}
-            onToggle={() => patchOpen("transcript", false)}
+            onToggle={() => patchOpen("transcript", !open.transcript)}
             onChange={(transcript) => onChange((d) => ({ ...d, transcript }))}
             onGenerate={onGenerateTranscript}
           />
         ) : null}
 
-        {open.cta ? (
+        {showCta ? (
           <StudioCtaSection
-            open
+            open={Boolean(open.cta)}
             value={draft.callToAction ?? ""}
-            onToggle={() => patchOpen("cta", false)}
+            onToggle={() => patchOpen("cta", !open.cta)}
             onChange={(callToAction) => onChange((d) => ({ ...d, callToAction }))}
           />
         ) : null}
 
-        {open.title ? (
+        {showTitle ? (
           <StudioTitleSection
-            open
+            open={Boolean(open.title)}
             value={draft.title ?? ""}
-            onToggle={() => patchOpen("title", false)}
+            onToggle={() => patchOpen("title", !open.title)}
             onChange={(title) => onChange((d) => ({ ...d, title }))}
           />
         ) : null}
 
-        {open.caption ? (
+        {showCaption ? (
           <StudioCaptionSection
-            open
+            open={Boolean(open.caption)}
             caption={draft.caption}
             hashtags={draft.hashtags}
             busy={busy === "caption"}
-            onToggle={() => patchOpen("caption", false)}
+            onToggle={() => patchOpen("caption", !open.caption)}
             onCaption={(caption) => onChange((d) => ({ ...d, caption }))}
             onHashtags={(hashtags) => onChange((d) => ({ ...d, hashtags }))}
             onGenerate={onGenerateCaption}
