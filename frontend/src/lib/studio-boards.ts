@@ -37,11 +37,22 @@ export type StudioBoardMeta = {
   summary?: StudioBoardSummary;
 };
 
+/** Minimal event payload so board events survive when workspace events clear. */
+export type EmbeddedBoardEvent = {
+  id: string;
+  title: string;
+  date: string;
+  kind?: string;
+  description?: string;
+};
+
 export type StudioBoardSnapshot = {
   drafts: DraftPost[];
   boardEventIds: string[];
   eventLayout: EventLayoutMap;
   hiddenIds?: string[];
+  /** Stubs for placed events — used when workspace event list is missing the id. */
+  embeddedEvents?: EmbeddedBoardEvent[];
 };
 
 const INDEX_PREFIX = "omni.studio.boards.index.";
@@ -90,7 +101,13 @@ function writeJson(key: string, value: unknown) {
 }
 
 export function emptySnapshot(): StudioBoardSnapshot {
-  return { drafts: [], boardEventIds: [], eventLayout: {}, hiddenIds: [] };
+  return {
+    drafts: [],
+    boardEventIds: [],
+    eventLayout: {},
+    hiddenIds: [],
+    embeddedEvents: [],
+  };
 }
 
 export function summarizeSnapshot(
@@ -176,6 +193,7 @@ export function readBoard(
     boardEventIds: Array.isArray(snap.boardEventIds) ? snap.boardEventIds : [],
     eventLayout: snap.eventLayout && typeof snap.eventLayout === "object" ? snap.eventLayout : {},
     hiddenIds: Array.isArray(snap.hiddenIds) ? snap.hiddenIds : [],
+    embeddedEvents: Array.isArray(snap.embeddedEvents) ? snap.embeddedEvents : [],
   };
 }
 

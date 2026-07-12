@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/PageHeader";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsUpDown } from "lucide-react";
 
 import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { useEventAssociations } from "@/hooks/useEventAssociations";
@@ -104,6 +104,8 @@ function CalendarPage() {
     navigate({ to: "/calendar", replace: true });
   }, [focusDateParam, navigate]);
 
+  const [jumpOpen, setJumpOpen] = useState(false);
+
   function shiftMonth(delta: number) {
     setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() + delta, 1));
   }
@@ -112,6 +114,11 @@ function CalendarPage() {
     const now = today();
     setViewMonth(new Date(now.getFullYear(), now.getMonth(), 1));
     setSelectedDate(now);
+  }
+
+  function jumpToMonth(year: number, monthIndex: number) {
+    setViewMonth(new Date(year, monthIndex, 1));
+    setJumpOpen(false);
   }
 
   function handleRescheduleDrop(e: React.DragEvent, targetDate: Date) {
@@ -195,7 +202,7 @@ function CalendarPage() {
 
         {/* Toolbar */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="relative flex items-center gap-2">
             <button
               type="button"
               onClick={() => shiftMonth(-1)}
@@ -205,9 +212,16 @@ function CalendarPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <h2 className="min-w-[10rem] text-center font-display text-xl font-bold text-foreground sm:min-w-[14rem]">
+            <button
+              type="button"
+              onClick={() => setJumpOpen((o) => !o)}
+              className="inline-flex min-w-[10rem] items-center justify-center gap-1.5 rounded-lg border border-line bg-card px-3 py-2 font-display text-xl font-bold text-foreground hover:bg-secondary sm:min-w-[14rem]"
+              data-testid="calendar-month-jump"
+              aria-expanded={jumpOpen}
+            >
               {monthLabel}
-            </h2>
+              <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+            </button>
             <button
               type="button"
               onClick={() => shiftMonth(1)}
@@ -217,6 +231,64 @@ function CalendarPage() {
             >
               <ChevronRight className="h-4 w-4" />
             </button>
+            {jumpOpen ? (
+              <div
+                className="absolute left-1/2 top-full z-30 mt-2 w-[min(20rem,90vw)] -translate-x-1/2 rounded-lg border border-line bg-card p-3 shadow-[var(--shadow-card)]"
+                data-testid="calendar-jump-popover"
+              >
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    className="rounded border border-line px-2 py-1 text-xs font-semibold"
+                    onClick={() =>
+                      setViewMonth(
+                        (m) => new Date(m.getFullYear() - 1, m.getMonth(), 1),
+                      )
+                    }
+                  >
+                    ◀ Year
+                  </button>
+                  <span className="font-mono text-sm font-bold">
+                    {focusYear}
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded border border-line px-2 py-1 text-xs font-semibold"
+                    onClick={() =>
+                      setViewMonth(
+                        (m) => new Date(m.getFullYear() + 1, m.getMonth(), 1),
+                      )
+                    }
+                  >
+                    Year ▶
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const label = new Date(focusYear, i, 1).toLocaleDateString(
+                      undefined,
+                      { month: "short" },
+                    );
+                    const active = i === focusMonth;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => jumpToMonth(focusYear, i)}
+                        className={cn(
+                          "rounded-md px-2 py-2 text-xs font-semibold",
+                          active
+                            ? "bg-foreground text-white"
+                            : "bg-paper-2 text-foreground hover:bg-secondary",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">

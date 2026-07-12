@@ -9,6 +9,7 @@ import {
   eventMediaToCardPost,
   type EventMediaItem,
 } from "@/lib/events/display";
+import { openCardDestination } from "@/lib/card-navigation";
 import type { ScheduledPost } from "@/lib/mock-data";
 import type { ContentEvent, WorkspaceProfile } from "@/lib/workspaces/types";
 
@@ -55,11 +56,7 @@ export function AlbumCardsModal({
 
   function openCard(item: EventMediaItem) {
     onClose();
-    navigate({
-      to: "/card/$cardId",
-      params: { cardId: item.id },
-      search: { from: "event" },
-    });
+    openCardDestination(workspaceId, item.id, navigate);
   }
 
   return (

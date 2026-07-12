@@ -9,7 +9,6 @@ import {
   PanelLeftClose,
   PanelLeft,
   Clapperboard,
-  Library,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
@@ -31,7 +30,6 @@ const nav: {
 }[] = [
   { to: "/studio", label: "Boards", icon: Clapperboard, countKey: "ready" },
   { to: "/", label: "Queue", icon: LayoutList, countKey: "queue" },
-  { to: "/library", label: "Library", icon: Library },
   { to: "/calendar", label: "Calendar", icon: CalendarDays, countKey: "calendar" },
   { to: "/events", label: "Events", icon: LayoutGrid, countKey: "events" },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },

@@ -125,9 +125,27 @@ export function StudioBoardCard({
             >
               {board.name}
             </h3>
-            <p className="mt-0.5 truncate text-[0.65rem] text-muted-foreground">
-              {relativeBoardTime(board.updatedAt)}
-              {s && s.reelCount > 0 ? ` · ${s.reelCount} reels` : ""}
+            <p className="mt-1 space-y-0.5 text-left">
+              <span className="block font-mono text-[0.58rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                Created{" "}
+                <span className="font-sans font-medium normal-case tracking-normal text-foreground/80">
+                  {formatBoardDate(board.createdAt) || "—"}
+                </span>
+                <span className="mx-1 text-muted-foreground/50">·</span>
+                Edited{" "}
+                <span className="font-sans font-medium normal-case tracking-normal text-foreground/80">
+                  {relativeBoardTime(board.updatedAt) || "—"}
+                </span>
+              </span>
+              {s && s.reelCount > 0 ? (
+                <span className="block text-[0.65rem] text-muted-foreground">
+                  {s.reelCount} reel{s.reelCount === 1 ? "" : "s"}
+                  {s.scheduledCount > 0
+                    ? ` · ${s.scheduledCount} scheduled`
+                    : ""}
+                  {s.liveCount > 0 ? ` · ${s.liveCount} live` : ""}
+                </span>
+              ) : null}
             </p>
           </button>
         )}

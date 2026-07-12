@@ -1,5 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
+import { openCardDestination } from "@/lib/card-navigation";
+import { useWorkspace } from "@/lib/workspace-context";
 import type { ScheduledPost } from "@/lib/mock-data";
 import type { PostDetailSource } from "@/lib/post-detail";
 import type { ContentEvent } from "@/lib/workspaces/types";
@@ -13,9 +15,10 @@ type DetailReturnContext =
   | { kind: "dayGrid"; value: CalendarDayGrid }
   | { kind: "event"; value: ContentEvent };
 
-/** Shared day grid → card detail navigation with one-level back context. */
+/** Shared day grid → open board that owns the card (card detail retired). */
 export function useCalendarPostSelection() {
   const navigate = useNavigate();
+  const { workspaceId } = useWorkspace();
   const [dayGrid, setDayGrid] = useState<CalendarDayGrid | null>(null);
   const [detailReturn, setDetailReturn] = useState<DetailReturnContext | null>(null);
   const dayGridRef = useRef(dayGrid);
@@ -28,9 +31,9 @@ export function useCalendarPostSelection() {
       const grid = dayGridRef.current;
       if (grid) setDetailReturn({ kind: "dayGrid", value: grid });
       setDayGrid(null);
-      navigate({ to: "/card/$cardId", params: { cardId: post.id }, search: { from: "calendar" } });
+      openCardDestination(workspaceId, post.id, navigate);
     },
-    [navigate],
+    [navigate, workspaceId],
   );
 
   const openPosts = useCallback((posts: ScheduledPost[], date: Date) => {
@@ -44,9 +47,9 @@ export function useCalendarPostSelection() {
   const openDetailFromEvent = useCallback(
     (post: PostDetailSource, event: ContentEvent) => {
       setDetailReturn({ kind: "event", value: event });
-      navigate({ to: "/card/$cardId", params: { cardId: post.id }, search: { from: "event" } });
+      openCardDestination(workspaceId, post.id, navigate);
     },
-    [navigate],
+    [navigate, workspaceId],
   );
 
   const closeDayGrid = useCallback(() => setDayGrid(null), []);

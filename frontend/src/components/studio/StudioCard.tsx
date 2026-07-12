@@ -8,28 +8,38 @@ import {
 import { TrafficLight } from "@/components/ui/TrafficLight";
 import { STUDIO_CARD_WIDTH, studioStage } from "@/lib/studio-layout";
 import { cn } from "@/lib/utils";
+import type { PublishedPost, ScheduledPost } from "@/lib/mock-data";
 import { StudioCaptionSection } from "./StudioCaptionSection";
 import { StudioCardMedia } from "./StudioCardMedia";
 import { StudioCardToolbar, type StudioTool } from "./StudioCardToolbar";
+import { StudioCommittedScheduleSection } from "./StudioCommittedScheduleSection";
 import { StudioCtaSection } from "./StudioCtaSection";
+import { StudioPerformanceSection } from "./StudioPerformanceSection";
 import { StudioPrepareChips } from "./StudioPrepareChips";
 import { StudioTitleSection } from "./StudioTitleSection";
 import { StudioTranscriptSection } from "./StudioTranscriptSection";
 
 function statusBorderClass(status: CardLifecycleStatus, multiSelected: boolean): string {
+  // Keep lifecycle color; selection adds brand inset so status never "disappears".
+  const base = (() => {
+    switch (status) {
+      case "SCHEDULED":
+        return "border-2 border-warning shadow-[0_0_0_1px_color-mix(in_oklab,var(--warning)_25%,transparent)]";
+      case "LIVE":
+        return "border-2 border-success shadow-[0_0_0_1px_color-mix(in_oklab,var(--success)_25%,transparent)]";
+      case "FAILED":
+        return "border-2 border-destructive shadow-[0_0_0_1px_color-mix(in_oklab,var(--destructive)_25%,transparent)]";
+      default:
+        return "border border-line hover:border-foreground/25";
+    }
+  })();
   if (multiSelected) {
-    return "border-brand shadow-[0_0_0_2px_color-mix(in_oklab,var(--brand)_35%,transparent)]";
+    return cn(
+      base,
+      "ring-2 ring-brand ring-offset-1 ring-offset-card",
+    );
   }
-  switch (status) {
-    case "SCHEDULED":
-      return "border-2 border-warning shadow-[0_0_0_1px_color-mix(in_oklab,var(--warning)_25%,transparent)]";
-    case "LIVE":
-      return "border-2 border-success shadow-[0_0_0_1px_color-mix(in_oklab,var(--success)_25%,transparent)]";
-    case "FAILED":
-      return "border-2 border-destructive shadow-[0_0_0_1px_color-mix(in_oklab,var(--destructive)_25%,transparent)]";
-    default:
-      return "border border-line hover:border-foreground/25";
-  }
+  return base;
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -48,6 +58,8 @@ export function StudioCard({
   liveOffset,
   eventTitle,
   lifecycleStatus = "IDLE",
+  sequenceNumber,
+  committedPost,
   stackFront,
   onSelect,
   onChange,
@@ -56,6 +68,7 @@ export function StudioCard({
   onGenerateCaption,
   onDragStart,
   onRaise,
+  onReschedule,
 }: {
   draft: DraftPost;
   selected: boolean;
@@ -65,6 +78,10 @@ export function StudioCard({
   liveOffset?: { x: number; y: number } | null;
   eventTitle?: string;
   lifecycleStatus?: CardLifecycleStatus;
+  /** 1-based post order on this board; omit when unscheduled. */
+  sequenceNumber?: number | null;
+  /** Workspace scheduled/published post for this draft id. */
+  committedPost?: ScheduledPost | PublishedPost | null;
   /** Miro-style: card is above others in the stack */
   stackFront?: boolean;
   onSelect: (e: React.MouseEvent | React.PointerEvent) => void;
@@ -74,6 +91,7 @@ export function StudioCard({
   onGenerateCaption: () => void;
   onDragStart: (e: React.PointerEvent) => void;
   onRaise?: () => void;
+  onReschedule?: () => void;
 }) {
   const stage = studioStage(draft);
   const open = draft.studioOpen ?? {};
@@ -85,6 +103,12 @@ export function StudioCard({
   const hasTitle = Boolean(draft.title?.trim());
   const hasCaption =
     Boolean(draft.caption?.trim()) || Boolean(draft.hashtags?.trim());
+  const showSchedule =
+    lifecycleStatus === "SCHEDULED" ||
+    lifecycleStatus === "LIVE" ||
+    lifecycleStatus === "FAILED" ||
+    Boolean(committedPost);
+  const showPerformance = lifecycleStatus === "LIVE";
 
   // Keep section chrome visible when content exists; tools expand body
   const showTranscript = Boolean(open.transcript) || hasTranscript;
@@ -152,6 +176,15 @@ export function StudioCard({
           }}
         >
           <StudioCardMedia draft={draft} />
+          {sequenceNumber != null && sequenceNumber > 0 ? (
+            <span
+              className="absolute left-1.5 top-1.5 z-10 flex h-6 min-w-6 items-center justify-center rounded-md border border-line bg-card/95 px-1.5 font-mono text-[0.65rem] font-bold tabular-nums text-foreground shadow-sm"
+              data-testid="studio-card-sequence"
+              title={`Post order ${sequenceNumber}`}
+            >
+              {String(sequenceNumber).padStart(2, "0")}
+            </span>
+          ) : null}
           {selected ? (
             <div className="absolute inset-x-1.5 bottom-1.5 z-10">
               <StudioCardToolbar draft={draft} busy={busy} onTool={onTool} />
@@ -238,6 +271,26 @@ export function StudioCard({
             onCaption={(caption) => onChange((d) => ({ ...d, caption }))}
             onHashtags={(hashtags) => onChange((d) => ({ ...d, hashtags }))}
             onGenerate={onGenerateCaption}
+          />
+        ) : null}
+
+        {showSchedule ? (
+          <StudioCommittedScheduleSection
+            open={Boolean(open.schedule)}
+            draft={draft}
+            post={committedPost}
+            onToggle={() => patchOpen("schedule", !open.schedule)}
+            onReschedule={
+              lifecycleStatus !== "LIVE" ? onReschedule : undefined
+            }
+          />
+        ) : null}
+
+        {showPerformance ? (
+          <StudioPerformanceSection
+            open={Boolean(open.performance)}
+            post={committedPost}
+            onToggle={() => patchOpen("performance", !open.performance)}
           />
         ) : null}
       </article>

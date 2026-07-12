@@ -87,12 +87,13 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
         // fall through to local if save failed
       }
 
+      // Upsert by id so re-schedule updates times and board borders refresh.
       setLocalPosts((prev) => {
-        const seen = new Set(prev.map((p) => p.id));
-        const next = [...prev];
+        const byId = new Map(prev.map((p) => [p.id, p]));
         incoming.forEach((p) => {
-          if (!seen.has(p.id)) next.push(p);
+          byId.set(p.id, p);
         });
+        const next = Array.from(byId.values());
         writeLocal(workspaceId, next);
         return next;
       });

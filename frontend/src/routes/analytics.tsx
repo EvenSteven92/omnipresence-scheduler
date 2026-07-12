@@ -53,6 +53,7 @@ import {
 } from "@/lib/timeframe";
 import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/lib/workspace-context";
+import { openCardDestination } from "@/lib/card-navigation";
 import { TOP_PERFORMERS_DISPLAY_LIMIT, TopPerformerCard } from "@/components/post/TopPerformerCard";
 import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import { PlatformChip } from "@/components/post/PlatformChip";
@@ -656,11 +657,7 @@ function AnalyticsPage() {
                       rank={i + 1}
                       events={workspace.events}
                       onOpen={() =>
-                        navigate({
-                          to: "/card/$cardId",
-                          params: { cardId: p.id },
-                          search: { from: "analytics" },
-                        })
+                        openCardDestination(workspaceId, p.id, navigate)
                       }
                     />
                   ))}

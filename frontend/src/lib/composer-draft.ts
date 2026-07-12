@@ -69,7 +69,12 @@ export interface DraftPost {
     title?: boolean;
     caption?: boolean;
     schedule?: boolean;
+    performance?: boolean;
   };
+  /** ISO when draft first appeared on a board (library metadata). */
+  createdAt?: string;
+  /** ISO when draft was last edited on the board. */
+  updatedAt?: string;
 }
 
 export type DraftFileInput = File | { name: string; sizeBytes: number };
@@ -155,6 +160,7 @@ export function defaultDraftFromFile(file: DraftFileInput, allowed: Platform[]):
   const bucket = bucketFromPostFormat(fmt);
   // Platforms chosen on Schedule — leave empty at compose
   void allowed;
+  const now = new Date().toISOString();
   return {
     id: composerUid(),
     filename: name,
@@ -173,6 +179,8 @@ export function defaultDraftFromFile(file: DraftFileInput, allowed: Platform[]):
     hashtags: "",
     transcript: "",
     previewUrl: file instanceof File ? URL.createObjectURL(file) : undefined,
+    createdAt: now,
+    updatedAt: now,
   };
 }
 

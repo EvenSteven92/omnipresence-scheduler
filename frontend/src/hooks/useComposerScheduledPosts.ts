@@ -80,12 +80,11 @@ export function useComposerScheduledPosts(workspaceId: WorkspaceId) {
   const addScheduledPosts = useCallback(
     (posts: ScheduledPost[]) => {
       if (posts.length === 0) return;
+      // Upsert by id so re-schedule updates times and board borders refresh.
       setComposerScheduled((prev) => {
-        const seen = new Set(prev.map((p) => p.id));
-        const next = [...prev];
-        posts.forEach((p) => {
-          if (!seen.has(p.id)) next.push(p);
-        });
+        const byId = new Map(prev.map((p) => [p.id, p]));
+        posts.forEach((p) => byId.set(p.id, p));
+        const next = Array.from(byId.values());
         writeComposerScheduledPosts(workspaceId, next);
         return next;
       });

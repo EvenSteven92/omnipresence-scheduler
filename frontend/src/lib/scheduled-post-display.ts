@@ -159,6 +159,79 @@ export function getUpcomingContentCards(
     .sort((a, b) => +contentCardAnchorDate(a) - +contentCardAnchorDate(b));
 }
 
+/** Agenda time band relative to start of today. */
+export type AgendaBand = "past" | "now" | "later";
+
+/** Now = today through end of day+2 (≈ next 3 calendar days incl. today). */
+export const AGENDA_NOW_DAYS = 3;
+
+export function agendaBandForDate(
+  anchor: Date,
+  fromDayStart: Date,
+  nowDays = AGENDA_NOW_DAYS,
+): AgendaBand {
+  const day = new Date(
+    anchor.getFullYear(),
+    anchor.getMonth(),
+    anchor.getDate(),
+  );
+  const start = new Date(
+    fromDayStart.getFullYear(),
+    fromDayStart.getMonth(),
+    fromDayStart.getDate(),
+  );
+  if (day.getTime() < start.getTime()) return "past";
+  const nowEnd = new Date(start);
+  nowEnd.setDate(start.getDate() + nowDays);
+  if (day.getTime() < nowEnd.getTime()) return "now";
+  return "later";
+}
+
+/**
+ * Full agenda: all posts sorted ascending by anchor (includes published).
+ * Pass a merged list of scheduled + published-as-scheduled rows.
+ */
+export function getAgendaContentCards(posts: ScheduledPost[]): ScheduledPost[] {
+  return [...posts].sort(
+    (a, b) => +contentCardAnchorDate(a) - +contentCardAnchorDate(b),
+  );
+}
+
+export type AgendaDayGroup = {
+  date: Date;
+  band: AgendaBand;
+  isToday: boolean;
+  posts: ScheduledPost[];
+};
+
+export function groupAgendaByDay(
+  posts: ScheduledPost[],
+  fromDayStart: Date,
+): AgendaDayGroup[] {
+  const map = new Map<string, ScheduledPost[]>();
+  for (const post of posts) {
+    const date = contentCardAnchorDate(post);
+    const key = date.toDateString();
+    const bucket = map.get(key) ?? [];
+    bucket.push(post);
+    map.set(key, bucket);
+  }
+  return [...map.entries()]
+    .sort(([a], [b]) => +new Date(a) - +new Date(b))
+    .map(([key, dayPosts]) => {
+      const date = new Date(key);
+      const band = agendaBandForDate(date, fromDayStart);
+      return {
+        date,
+        band,
+        isToday: date.toDateString() === fromDayStart.toDateString(),
+        posts: dayPosts.sort(
+          (a, b) => +contentCardAnchorDate(a) - +contentCardAnchorDate(b),
+        ),
+      };
+    });
+}
+
 export function getQuietDaysInUpcomingWindow(
   posts: ScheduledPost[],
   fromDayStart: Date,

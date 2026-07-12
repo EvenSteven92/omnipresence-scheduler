@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { Sidebar } from "@/components/Sidebar";
 import { BrandTheme } from "@/components/BrandTheme";
+import { CommandPalette } from "@/components/CommandPalette";
 import { WorkspaceProvider } from "@/lib/workspace-context";
 
 function NotFoundComponent() {
@@ -121,6 +122,7 @@ function RootComponent() {
               <Outlet />
             </main>
           </div>
+          <CommandPalette />
         </div>
       </WorkspaceProvider>
     </QueryClientProvider>

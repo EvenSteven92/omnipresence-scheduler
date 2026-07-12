@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
@@ -8,21 +9,10 @@ import { useWorkspace } from "@/lib/workspace-context";
 import { AlbumCardsModal } from "@/components/events/AlbumCardsModal";
 import { EventAlbumCard } from "@/components/events/EventAlbumCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { eventKindLabel, getEventById } from "@/lib/events/display";
-import type { ContentEvent, ContentEventKind } from "@/lib/workspaces/types";
+import { getEventById } from "@/lib/events/display";
+import type { ContentEvent } from "@/lib/workspaces/types";
 import { Layers } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { CREATE } from "@/lib/create-actions";
-
-const CATEGORY_FILTERS: { id: ContentEventKind | "all"; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "sunday_sermon", label: "Sunday sermon" },
-  { id: "worship_night", label: "Worship night" },
-  { id: "youth", label: "Youth" },
-  { id: "campaign", label: "Campaign" },
-  { id: "conference", label: "Conference" },
-  { id: "other", label: "Other" },
-];
 
 type EventsSearch = {
   /** Deep-link to open an event modal. Accepts legacy `album` query. */
@@ -56,7 +46,7 @@ function EventsIndexPage() {
   const { workspace, workspaceId } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
   const createEventFlow = useCreateEventFlow();
-  const [kindFilter, setKindFilter] = useState<ContentEventKind | "all">("all");
+  const [query, setQuery] = useState("");
   const [modalEvent, setModalEvent] = useState<ContentEvent | null>(null);
 
   const events = useMemo(
@@ -64,10 +54,14 @@ function EventsIndexPage() {
     [workspace.events, customEvents],
   );
 
-  const filtered = useMemo(
-    () => (kindFilter === "all" ? events : events.filter((e) => e.kind === kindFilter)),
-    [events, kindFilter],
-  );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return events;
+    return events.filter((e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.date} ${e.kind}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [events, query]);
 
   useEffect(() => {
     if (!eventId) {
@@ -102,39 +96,17 @@ function EventsIndexPage() {
       />
 
       <div className="page-content">
-        <div
-          data-testid="event-category-filter"
-          className="mb-6 flex flex-wrap gap-2"
-          role="tablist"
-          aria-label="Filter by event type"
-        >
-          {CATEGORY_FILTERS.map((filter) => {
-            const count =
-              filter.id === "all"
-                ? events.length
-                : events.filter((e) => e.kind === filter.id).length;
-            const active = kindFilter === filter.id;
-            return (
-              <button
-                key={filter.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setKindFilter(filter.id)}
-                data-testid={`event-filter-${filter.id}`}
-                className={cn(
-                  "rounded-md border px-3 py-1.5 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.06em] transition-colors",
-                  active
-                    ? "border-primary bg-primary text-background"
-                    : "border-line bg-card text-muted-foreground hover:bg-secondary",
-                )}
-              >
-                {filter.label}
-                <span className="ml-1.5 opacity-80">{count}</span>
-              </button>
-            );
-          })}
-        </div>
+        <label className="relative mb-6 block max-w-md">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search events…"
+            className="w-full rounded-md border border-line bg-card py-2 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
+            data-testid="events-search"
+          />
+        </label>
 
         {events.length === 0 ? (
           <EmptyState
@@ -155,11 +127,15 @@ function EventsIndexPage() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Layers}
-            title={`No ${eventKindLabel(kindFilter as ContentEventKind).toLowerCase()} events`}
-            description="Try another category or create a new event."
+            title="No events match"
+            description="Try a different search, or clear the field to see all events."
             action={
-              <button type="button" onClick={() => setKindFilter("all")} className="btn-action">
-                Show all events
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="btn-action"
+              >
+                Clear search
               </button>
             }
           />
@@ -189,7 +165,8 @@ function EventsIndexPage() {
           onClose={closeEventModal}
         />
       ) : null}
-      {/* createEventFlow.modal is rendered by NewEventPostActions */}
+
+      {createEventFlow.modal}
     </>
   );
 }

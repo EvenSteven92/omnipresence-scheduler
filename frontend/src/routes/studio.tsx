@@ -46,9 +46,11 @@ import {
   renameBoard,
   setActiveBoardId,
   writeBoard,
+  type EmbeddedBoardEvent,
   type StudioBoardId,
   type StudioBoardMeta,
 } from "@/lib/studio-boards";
+import type { PublishedPost, ScheduledPost } from "@/lib/mock-data";
 import {
   cardBounds,
   cascadePosition,
@@ -70,7 +72,64 @@ import { useWorkspace } from "@/lib/workspace-context";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { applyCadencePreset } from "@/lib/schedule-engine";
 
+const LIBRARY_TABS = ["all", "boards", "cards"] as const;
+const LIBRARY_SORTS = [
+  "edited",
+  "created",
+  "name",
+  "scheduled",
+  "published",
+] as const;
+const LIBRARY_STATUS = [
+  "all",
+  "draft",
+  "scheduled",
+  "live",
+  "failed",
+] as const;
+
+export type StudioSearch = {
+  board?: string;
+  focusCard?: string;
+  library?: (typeof LIBRARY_TABS)[number];
+  q?: string;
+  sort?: (typeof LIBRARY_SORTS)[number];
+  dir?: "asc" | "desc";
+  status?: (typeof LIBRARY_STATUS)[number];
+  picker?: "1";
+};
+
 export const Route = createFileRoute("/studio")({
+  validateSearch: (search: Record<string, unknown>): StudioSearch => {
+    const library =
+      typeof search.library === "string" &&
+      (LIBRARY_TABS as readonly string[]).includes(search.library)
+        ? (search.library as StudioSearch["library"])
+        : undefined;
+    const sort =
+      typeof search.sort === "string" &&
+      (LIBRARY_SORTS as readonly string[]).includes(search.sort)
+        ? (search.sort as StudioSearch["sort"])
+        : undefined;
+    const dir =
+      search.dir === "asc" || search.dir === "desc" ? search.dir : undefined;
+    const status =
+      typeof search.status === "string" &&
+      (LIBRARY_STATUS as readonly string[]).includes(search.status)
+        ? (search.status as StudioSearch["status"])
+        : undefined;
+    return {
+      board: typeof search.board === "string" ? search.board : undefined,
+      focusCard:
+        typeof search.focusCard === "string" ? search.focusCard : undefined,
+      library,
+      q: typeof search.q === "string" ? search.q : undefined,
+      sort,
+      dir,
+      status,
+      picker: search.picker === "1" ? "1" : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Studio — TORCC OmniPresence" },
@@ -84,9 +143,23 @@ export const Route = createFileRoute("/studio")({
   component: StudioPage,
 });
 
+function earliestScheduleIso(
+  draft: DraftPost,
+  post: ScheduledPost | PublishedPost | undefined,
+): string | null {
+  const times = [
+    ...Object.values(post?.platformTimes ?? {}),
+    ...Object.values(draft.proposedTimes ?? {}),
+    post?.date,
+  ].filter(Boolean) as string[];
+  if (times.length === 0) return null;
+  return times.slice().sort()[0] ?? null;
+}
+
 const DRAG_THRESHOLD = 3;
 
 function StudioPage() {
+  const studioSearch = Route.useSearch();
   const { workspace, workspaceId, addScheduledPosts } = useWorkspace();
   const { customEvents, addEvent, updateEvent } = useCustomEvents(workspaceId);
   const events = useMemo(
@@ -98,6 +171,9 @@ function StudioPage() {
   const [eventLayout, setEventLayout] = useState<EventLayoutMap>({});
   /** Opt-in: only these workspace events appear as board cards. */
   const [boardEventIds, setBoardEventIds] = useState<string[]>([]);
+  const [embeddedEvents, setEmbeddedEvents] = useState<EmbeddedBoardEvent[]>(
+    [],
+  );
   const [layersOpen, setLayersOpen] = useState(false);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -151,13 +227,38 @@ function StudioPage() {
     setBoards(listBoards(workspaceId));
   }, [workspaceId]);
 
-  const boardEvents = useMemo(
-    () =>
-      boardEventIds
-        .map((id) => events.find((e) => e.id === id))
-        .filter((e): e is ContentEvent => e != null),
-    [boardEventIds, events],
-  );
+  const embeddedById = useMemo(() => {
+    const m = new Map(embeddedEvents.map((e) => [e.id, e]));
+    return m;
+  }, [embeddedEvents]);
+
+  /** Live workspace events + embedded stubs so cards survive session loss. */
+  const boardEvents = useMemo(() => {
+    return boardEventIds
+      .map((id) => {
+        const live = events.find((e) => e.id === id);
+        if (live) return live;
+        const stub = embeddedById.get(id);
+        if (!stub) {
+          // Ghost event so user can remove orphan ids
+          return {
+            id,
+            title: "Event unavailable",
+            date: new Date().toISOString(),
+            kind: "other" as const,
+            description: "This event is no longer in the workspace. Remove it from the board.",
+          } satisfies ContentEvent;
+        }
+        return {
+          id: stub.id,
+          title: stub.title,
+          date: stub.date,
+          kind: (stub.kind as ContentEvent["kind"]) || "other",
+          description: stub.description,
+        } satisfies ContentEvent;
+      })
+      .filter((e): e is ContentEvent => e != null);
+  }, [boardEventIds, events, embeddedById]);
 
   const offBoardEvents = useMemo(() => {
     const on = new Set(boardEventIds);
@@ -165,18 +266,48 @@ function StudioPage() {
   }, [events, boardEventIds]);
 
   const postById = useMemo(() => {
-    const m = new Map(workspace.scheduledPosts.map((p) => [p.id, p]));
+    const m = new Map<string, ScheduledPost | PublishedPost>();
+    for (const p of workspace.publishedPosts ?? []) {
+      m.set(p.id, p);
+    }
+    for (const p of workspace.scheduledPosts) {
+      m.set(p.id, p);
+    }
     return m;
-  }, [workspace.scheduledPosts]);
+  }, [workspace.scheduledPosts, workspace.publishedPosts]);
 
   function lifecycleForDraft(id: string): CardLifecycleStatus {
     const post = postById.get(id);
     if (!post) return "IDLE";
-    return cardStatusFromPost(post);
+    if ("status" in post && post.status) return cardStatusFromPost(post);
+    if ("engagementRate" in post) return "LIVE";
+    return "IDLE";
   }
 
+  const sequenceByDraftId = useMemo(() => {
+    const ranked = drafts
+      .map((d) => {
+        const status = lifecycleForDraft(d.id);
+        if (status === "IDLE") return null;
+        const post = postById.get(d.id);
+        const iso = earliestScheduleIso(d, post);
+        return {
+          id: d.id,
+          iso: iso ?? post?.date ?? "9999",
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x != null)
+      .sort((a, b) => {
+        const t = +new Date(a.iso) - +new Date(b.iso);
+        return t !== 0 ? t : a.id.localeCompare(b.id);
+      });
+    const map = new Map<string, number>();
+    ranked.forEach((row, i) => map.set(row.id, i + 1));
+    return map;
+  }, [drafts, postById]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const loadBoard = useCallback(
-    (boardId: StudioBoardId) => {
+    (boardId: StudioBoardId, opts?: { focusCard?: string }) => {
       skipSaveRef.current = true;
       const snap = readBoard(workspaceId, boardId) ?? emptySnapshot();
       const meta = listBoards(workspaceId).find((b) => b.id === boardId);
@@ -186,9 +317,12 @@ function StudioPage() {
       setDrafts(ensureCanvasPositions(snap.drafts));
       setEventLayout(snap.eventLayout ?? {});
       setBoardEventIds(snap.boardEventIds ?? []);
+      setEmbeddedEvents(snap.embeddedEvents ?? []);
       setHiddenIds(new Set(snap.hiddenIds ?? []));
-      setSelectedIds(new Set());
-      setFocusId(null);
+      setSelectedIds(
+        opts?.focusCard ? new Set([opts.focusCard]) : new Set(),
+      );
+      setFocusId(opts?.focusCard ?? null);
       setSelectedEventId(null);
       setLayersOpen(false);
       setShelfOpen(false);
@@ -206,8 +340,34 @@ function StudioPage() {
       if (!activeBoardId || skipSaveRef.current) return;
       setSaveStatus("saving");
       const eventTitles = boardEventIds
-        .map((id) => events.find((e) => e.id === id)?.title)
+        .map(
+          (id) =>
+            events.find((e) => e.id === id)?.title ??
+            embeddedById.get(id)?.title,
+        )
         .filter((t): t is string => Boolean(t));
+      // Refresh embedded stubs from live events
+      const nextEmbedded: EmbeddedBoardEvent[] = boardEventIds.map((id) => {
+        const live = events.find((e) => e.id === id);
+        const prev = embeddedById.get(id);
+        if (live) {
+          return {
+            id: live.id,
+            title: live.title,
+            date: live.date,
+            kind: live.kind,
+            description: live.description,
+          };
+        }
+        return (
+          prev ?? {
+            id,
+            title: "Event unavailable",
+            date: new Date().toISOString(),
+            kind: "other",
+          }
+        );
+      });
       writeBoard(
         workspaceId,
         activeBoardId,
@@ -216,10 +376,12 @@ function StudioPage() {
           boardEventIds,
           eventLayout,
           hiddenIds: [...hiddenIds],
+          embeddedEvents: nextEmbedded,
         },
         workspace.scheduledPosts,
         { eventTitles },
       );
+      setEmbeddedEvents(nextEmbedded);
       refreshBoardList();
       const now = Date.now();
       setLastSavedAt(now);
@@ -238,6 +400,7 @@ function StudioPage() {
       boardEventIds,
       eventLayout,
       hiddenIds,
+      embeddedById,
       workspace.scheduledPosts,
       events,
       refreshBoardList,
@@ -254,15 +417,43 @@ function StudioPage() {
     setDrafts([]);
     setEventLayout({});
     setBoardEventIds([]);
+    setEmbeddedEvents([]);
     setHiddenIds(new Set());
     setSaveStatus("idle");
   }, [workspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Deep links: ?board=&focusCard= or force picker
+  useEffect(() => {
+    if (studioSearch.board) {
+      const exists = listBoards(workspaceId).some(
+        (b) => b.id === studioSearch.board,
+      );
+      if (exists) {
+        loadBoard(studioSearch.board, {
+          focusCard: studioSearch.focusCard,
+        });
+        return;
+      }
+      showToast("Board not found");
+      setPickerOpen(true);
+      return;
+    }
+    if (studioSearch.picker === "1" || studioSearch.library) {
+      setPickerOpen(true);
+    }
+  }, [
+    studioSearch.board,
+    studioSearch.focusCard,
+    studioSearch.picker,
+    studioSearch.library,
+    workspaceId,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-save active board snapshot while on canvas
   useEffect(() => {
     if (pickerOpen || !activeBoardId) return;
     saveActiveBoard();
-  }, [drafts, boardEventIds, eventLayout, hiddenIds, pickerOpen, activeBoardId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [drafts, boardEventIds, eventLayout, hiddenIds, embeddedEvents, pickerOpen, activeBoardId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Layout only for events already on the board (never auto-place workspace history)
   useEffect(() => {
@@ -286,7 +477,18 @@ function StudioPage() {
   }, [boardEventIds, workspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateDraft = useCallback((id: string, updater: (d: DraftPost) => DraftPost) => {
-    setDrafts((cur) => cur.map((d) => (d.id === id ? updater(d) : d)));
+    const now = new Date().toISOString();
+    setDrafts((cur) =>
+      cur.map((d) => {
+        if (d.id !== id) return d;
+        const next = updater(d);
+        return {
+          ...next,
+          createdAt: next.createdAt ?? d.createdAt ?? now,
+          updatedAt: now,
+        };
+      }),
+    );
   }, []);
 
   const captionReadySelection = useMemo(
@@ -471,7 +673,19 @@ function StudioPage() {
       return;
     }
     await addScheduledPosts(posts);
-    // Keep cards on the board — traffic light + border reflect scheduled/live
+    const scheduledIds = new Set(posts.map((p) => p.id));
+    // Keep cards on the board; open Schedule section so times are visible
+    setDrafts((cur) =>
+      cur.map((d) =>
+        scheduledIds.has(d.id)
+          ? {
+              ...d,
+              studioOpen: { ...d.studioOpen, schedule: true },
+              updatedAt: new Date().toISOString(),
+            }
+          : d,
+      ),
+    );
     setScheduleTargetIds([]);
     setShelfOpen(false);
     setSelectedIds(new Set());
@@ -626,6 +840,12 @@ function StudioPage() {
 
   function removeEventFromBoard(eventId: string) {
     setBoardEventIds((ids) => ids.filter((id) => id !== eventId));
+    setEmbeddedEvents((prev) => prev.filter((e) => e.id !== eventId));
+    setEventLayout((prev) => {
+      const next = { ...prev };
+      delete next[eventId];
+      return next;
+    });
     if (selectedEventId === eventId) setSelectedEventId(null);
     setHiddenIds((prev) => {
       const n = new Set(prev);
@@ -845,6 +1065,19 @@ function StudioPage() {
 
   async function placeCreatedEventOnBoard(event: ContentEvent) {
     await addEvent(event);
+    setEmbeddedEvents((prev) => {
+      if (prev.some((e) => e.id === event.id)) return prev;
+      return [
+        ...prev,
+        {
+          id: event.id,
+          title: event.title,
+          date: event.date,
+          kind: event.kind,
+          description: event.description,
+        },
+      ];
+    });
     setBoardEventIds((ids) => {
       const next = [...new Set([...ids, event.id])];
       const n = next.length - 1;
@@ -864,6 +1097,22 @@ function StudioPage() {
     if (boardEventIds.includes(eventId)) {
       selectEvent(eventId);
       return;
+    }
+    const live = events.find((e) => e.id === eventId);
+    if (live) {
+      setEmbeddedEvents((prev) => {
+        if (prev.some((e) => e.id === eventId)) return prev;
+        return [
+          ...prev,
+          {
+            id: live.id,
+            title: live.title,
+            date: live.date,
+            kind: live.kind,
+            description: live.description,
+          },
+        ];
+      });
     }
     setBoardEventIds((ids) => {
       const next = [...new Set([...ids, eventId])];
@@ -1021,9 +1270,25 @@ function StudioPage() {
         <StudioBoardPicker
           boards={boards}
           activeId={activeBoardId}
+          workspaceId={workspaceId}
+          scheduledPosts={workspace.scheduledPosts}
+          publishedPosts={workspace.publishedPosts}
+          initialLibrary={studioSearch.library ?? "all"}
+          initialQuery={studioSearch.q ?? ""}
+          initialSort={studioSearch.sort ?? "edited"}
+          initialDir={studioSearch.dir ?? "desc"}
+          initialStatus={studioSearch.status ?? "all"}
           onOpen={(id) => {
             loadBoard(id);
             showToast("Board opened");
+          }}
+          onOpenCard={(card) => {
+            if (card.boardId) {
+              loadBoard(card.boardId, { focusCard: card.id });
+              showToast(`Opened on ${card.boardName}`);
+            } else {
+              showToast("Card is not on a board yet");
+            }
           }}
           onNew={handleNewBoard}
           onSave={(id) => {
@@ -1348,6 +1613,8 @@ function StudioPage() {
                   liveOffset={live}
                   eventTitle={evTitle}
                   lifecycleStatus={lifecycleForDraft(draft.id)}
+                  sequenceNumber={sequenceByDraftId.get(draft.id) ?? null}
+                  committedPost={postById.get(draft.id) ?? null}
                   stackFront={stackFrontId === draft.id}
                   onSelect={(e) =>
                     selectCard(draft.id, e.shiftKey || e.metaKey || e.ctrlKey)
@@ -1358,6 +1625,7 @@ function StudioPage() {
                   onGenerateTranscript={() => void runTranscript(draft.id)}
                   onGenerateCaption={() => void runCaption(draft.id)}
                   onDragStart={(e) => onReelDragStart(draft.id, e)}
+                  onReschedule={() => openScheduleShelf([draft.id])}
                 />
               );
             })}

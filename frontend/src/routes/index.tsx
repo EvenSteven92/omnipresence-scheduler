@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Upcoming content cards grouped by day — schedule and publish across every channel.",
+          "Full agenda of past, present, and upcoming posts — scroll history and plan ahead.",
       },
     ],
   }),
@@ -40,8 +40,8 @@ function QueuePage() {
     <div>
       <PageHeader
         eyebrow="Queue"
-        title="Up next"
-        description="Your scheduled reels — open Calendar to plan the week."
+        title="Agenda"
+        description="Past, now, and later — scroll for history; open Calendar to jump by month."
         actions={headerActions}
       />
 
