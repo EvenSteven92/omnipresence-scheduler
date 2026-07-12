@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowDownUp, Search } from "lucide-react";
 import {
   StudioBoardCard,
@@ -68,6 +68,7 @@ export function StudioBoardPicker({
   onSave,
   onRename,
   onDelete,
+  onLibraryStateChange,
 }: {
   boards: StudioBoardMeta[];
   activeId: string | null;
@@ -88,6 +89,14 @@ export function StudioBoardPicker({
   onSave?: (id: string) => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
+  /** Keep URL in sync for shareable library filters. */
+  onLibraryStateChange?: (state: {
+    library: LibraryTypeTab;
+    q: string;
+    sort: LibrarySortKey;
+    dir: LibrarySortDir;
+    status: LibraryStatusFilter;
+  }) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | "new" | null>(
     activeId,
@@ -98,6 +107,38 @@ export function StudioBoardPicker({
   const [sort, setSort] = useState<LibrarySortKey>(initialSort);
   const [dir, setDir] = useState<LibrarySortDir>(initialDir);
   const [status, setStatus] = useState<LibraryStatusFilter>(initialStatus);
+
+  // Sync from URL when parent search changes (deep link / back)
+  useEffect(() => {
+    setTypeTab(initialLibrary);
+  }, [initialLibrary]);
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+  useEffect(() => {
+    setSort(initialSort);
+  }, [initialSort]);
+  useEffect(() => {
+    setDir(initialDir);
+  }, [initialDir]);
+  useEffect(() => {
+    setStatus(initialStatus);
+  }, [initialStatus]);
+
+  // Push library chrome state to URL (debounced for search typing)
+  useEffect(() => {
+    if (!onLibraryStateChange) return;
+    const t = window.setTimeout(() => {
+      onLibraryStateChange({
+        library: typeTab,
+        q: query,
+        sort,
+        dir,
+        status,
+      });
+    }, query ? 250 : 0);
+    return () => window.clearTimeout(t);
+  }, [typeTab, query, sort, dir, status, onLibraryStateChange]);
 
   const allCards = useMemo(
     () =>

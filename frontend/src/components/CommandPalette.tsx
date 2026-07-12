@@ -41,8 +41,15 @@ export function CommandPalette() {
       }
       if (e.key === "Escape") setOpen(false);
     }
+    function onOpen() {
+      setOpen(true);
+    }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("omni:open-command-palette", onOpen);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("omni:open-command-palette", onOpen);
+    };
   }, []);
 
   useEffect(() => {
@@ -167,19 +174,22 @@ export function CommandPalette() {
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-4 right-4 z-40 hidden items-center gap-2 rounded-lg border border-line bg-card px-3 py-2 text-xs font-semibold text-muted-foreground shadow-[var(--shadow-card)] hover:text-foreground md:inline-flex"
-        data-testid="command-palette-trigger"
-        title="Search (⌘K)"
-      >
-        <Search className="h-3.5 w-3.5" />
-        Search
-        <kbd className="rounded border border-line bg-paper-2 px-1.5 py-0.5 font-mono text-[0.6rem]">
-          ⌘K
-        </kbd>
-      </button>
+      <>
+        {/* Sticky top-right search affordance (always reachable) */}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="fixed right-3 top-3 z-40 inline-flex items-center gap-2 rounded-lg border border-line bg-card/95 px-2.5 py-1.5 text-xs font-semibold text-muted-foreground shadow-[var(--shadow-card)] backdrop-blur-sm hover:text-foreground md:right-5 md:top-4"
+          data-testid="command-palette-trigger"
+          title="Search (⌘K)"
+        >
+          <Search className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Search</span>
+          <kbd className="hidden rounded border border-line bg-paper-2 px-1.5 py-0.5 font-mono text-[0.6rem] sm:inline">
+            ⌘K
+          </kbd>
+        </button>
+      </>
     );
   }
 

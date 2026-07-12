@@ -10,20 +10,49 @@ function storageKey(workspaceId: WorkspaceId): string {
   return `${STORAGE_PREFIX}${workspaceId}`;
 }
 
+/**
+ * Prefer localStorage (survives tab close). One-time migrate from legacy sessionStorage.
+ */
 function readCustomEvents(workspaceId: WorkspaceId): ContentEvent[] {
   if (typeof window === "undefined") return [];
+  const key = storageKey(workspaceId);
   try {
-    const raw = window.sessionStorage.getItem(storageKey(workspaceId));
-    if (!raw) return [];
-    return JSON.parse(raw) as ContentEvent[];
+    const local = window.localStorage.getItem(key);
+    if (local) {
+      return JSON.parse(local) as ContentEvent[];
+    }
   } catch {
-    return [];
+    /* ignore */
   }
+  try {
+    const session = window.sessionStorage.getItem(key);
+    if (session) {
+      const parsed = JSON.parse(session) as ContentEvent[];
+      try {
+        window.localStorage.setItem(key, session);
+        window.sessionStorage.removeItem(key);
+      } catch {
+        /* quota — still return session data this session */
+      }
+      return parsed;
+    }
+  } catch {
+    /* ignore */
+  }
+  return [];
 }
 
 function writeCustomEvents(workspaceId: WorkspaceId, events: ContentEvent[]) {
+  const key = storageKey(workspaceId);
+  const raw = JSON.stringify(events);
   try {
-    window.sessionStorage.setItem(storageKey(workspaceId), JSON.stringify(events));
+    window.localStorage.setItem(key, raw);
+  } catch {
+    /* quota */
+  }
+  try {
+    // Clear legacy session key so we don't re-migrate stale data
+    window.sessionStorage.removeItem(key);
   } catch {
     /* ignore */
   }

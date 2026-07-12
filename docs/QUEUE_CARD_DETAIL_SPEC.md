@@ -1,11 +1,15 @@
 # Spec — Match Queue UI, file-card detail page, and hover behavior to Claude Design
 
+> **Historical / partially superseded (2026-07-12).**  
+> Single-card detail (`/card/$cardId`) and Library are **retired**. Cards open on their **board** or expand **inline on Queue**. Browse cards in **Boards library** (All / Boards / Cards). Prefer `docs/CARD_DETAIL_MEDIA_UX_RESEARCH.md` for research context and the current product plan over implementing this page again.  
+> Still useful: Queue stream card chrome, hover lift (`.card-pop`), and shared `ui/*` primitives.
+
 > **For Grok.** Match the build to the Claude Design "OmniPresence — Cards" source. The palette, fonts
 > (Hanken Grotesk / Bricolage Grotesque / JetBrains Mono), 1.5px ink borders, and the `ui/*` card
 > primitives (`ContentCard`, `StreamContentCard`, `CardThumbnail`, `CardPublishChip`,
 > `CardStatusBadge`, `lib/card-display.ts`) already exist and are correct — **reuse them, don't
 > rebuild the design system.** Three things, all grounded in owner-provided screenshots: (1) hover
-> behavior, (2) the Queue screen, (3) the file-card detail page.
+> behavior, (2) the Queue screen, (3) the file-card detail page *(retired — see note above)*.
 
 ## 1. Hover behavior — hover-only lift (NOT a persistent shadow, NOT a press-down)
 

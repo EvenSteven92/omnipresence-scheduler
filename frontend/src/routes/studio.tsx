@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Check, FolderOpen, Loader2, Plus, Save, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -160,6 +160,7 @@ const DRAG_THRESHOLD = 3;
 
 function StudioPage() {
   const studioSearch = Route.useSearch();
+  const navigate = useNavigate();
   const { workspace, workspaceId, addScheduledPosts } = useWorkspace();
   const { customEvents, addEvent, updateEvent } = useCustomEvents(workspaceId);
   const events = useMemo(
@@ -1278,6 +1279,20 @@ function StudioPage() {
           initialSort={studioSearch.sort ?? "edited"}
           initialDir={studioSearch.dir ?? "desc"}
           initialStatus={studioSearch.status ?? "all"}
+          onLibraryStateChange={(state) => {
+            void navigate({
+              to: "/studio",
+              search: {
+                library: state.library,
+                q: state.q || undefined,
+                sort: state.sort === "edited" ? undefined : state.sort,
+                dir: state.dir === "desc" ? undefined : state.dir,
+                status: state.status === "all" ? undefined : state.status,
+                picker: "1",
+              },
+              replace: true,
+            });
+          }}
           onOpen={(id) => {
             loadBoard(id);
             showToast("Board opened");
@@ -1544,6 +1559,19 @@ function StudioPage() {
             scheduleDisabled={captionReadySelection.length === 0 && !shelfOpen}
             onOpenSchedule={() => openScheduleShelf()}
             onNewEvent={openEventModal}
+            focusWorld={
+              focusId
+                ? (() => {
+                    const d = drafts.find((x) => x.id === focusId);
+                    if (!d) return null;
+                    return {
+                      x: d.canvasX ?? 48,
+                      y: d.canvasY ?? 48,
+                      key: `${activeBoardId ?? ""}:${focusId}`,
+                    };
+                  })()
+                : null
+            }
           >
             <StudioConnectionLayer
               drafts={drafts.filter((d) => !hiddenIds.has(d.id))}

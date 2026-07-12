@@ -71,6 +71,8 @@ export function StudioCanvas({
   onOpenSchedule,
   onNewEvent,
   scheduleDisabled,
+  /** When set, pan so this world-space point (card top-left) is centered. */
+  focusWorld,
   className,
 }: {
   children: ReactNode;
@@ -91,6 +93,7 @@ export function StudioCanvas({
   onOpenSchedule?: () => void;
   onNewEvent?: () => void;
   scheduleDisabled?: boolean;
+  focusWorld?: { x: number; y: number; key?: string } | null;
   className?: string;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -118,6 +121,23 @@ export function StudioCanvas({
     vpRef.current = vp;
     onViewportChange?.(vp);
   }, [pan.x, pan.y, zoom, onViewportChange]);
+
+  // Center viewport on a focused card (deep link / library open)
+  useEffect(() => {
+    if (!focusWorld) return;
+    const el = rootRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const z = Math.max(zoom, 0.85);
+    // Card ~320×~420; center media-ish region in view
+    const cx = focusWorld.x + 160;
+    const cy = focusWorld.y + 200;
+    setZoom(z);
+    setPan({
+      x: rect.width / 2 - cx * z,
+      y: rect.height / 2 - cy * z,
+    });
+  }, [focusWorld?.key, focusWorld?.x, focusWorld?.y]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     function down(e: KeyboardEvent) {

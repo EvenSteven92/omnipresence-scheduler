@@ -1,12 +1,18 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { CalendarClock } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { CalendarClock, ChevronDown, ExternalLink } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StreamContentCard } from "@/components/ui/StreamContentCard";
 import { useWorkspace } from "@/lib/workspace-context";
 import { todayStart } from "@/lib/demo-clock";
-import { openCardDestination } from "@/lib/card-navigation";
+import {
+  openCardDestination,
+  resolveCardDestination,
+} from "@/lib/card-navigation";
+import { cardPerformance, formatPublishWhen } from "@/lib/card-detail";
+import { isPublishedPost, type PostDetailSource } from "@/lib/post-detail";
+import { PLATFORMS_BY_SHORT } from "@/lib/platforms";
 import {
   contentCardAnchorDate,
   getAgendaContentCards,
@@ -37,6 +43,10 @@ function mergeAgendaPosts(
     eventId?: string;
     caption?: string;
     hashtags?: string;
+    views?: number;
+    likes?: number;
+    shares?: number;
+    engagementRate?: number;
   }[],
 ): ScheduledPost[] {
   const byId = new Map<string, ScheduledPost>();
@@ -51,7 +61,15 @@ function mergeAgendaPosts(
       eventId: p.eventId,
       caption: p.caption,
       hashtags: p.hashtags,
-    });
+      ...(p.views != null
+        ? {
+            views: p.views,
+            likes: p.likes,
+            shares: p.shares,
+            engagementRate: p.engagementRate,
+          }
+        : {}),
+    } as ScheduledPost);
   }
   for (const p of scheduled) {
     byId.set(p.id, p);
@@ -59,10 +77,132 @@ function mergeAgendaPosts(
   return getAgendaContentCards(Array.from(byId.values()));
 }
 
+function QueueCardInlineExpand({
+  post,
+  published,
+  onOpenBoard,
+  onFindInLibrary,
+}: {
+  post: ScheduledPost;
+  published: PostDetailSource | null;
+  onOpenBoard?: () => void;
+  onFindInLibrary?: () => void;
+}) {
+  const platforms = post.platforms;
+  const source = (published ?? post) as PostDetailSource;
+  const perf = cardPerformance(source);
+  const isLive =
+    post.status === "published" || (published != null && isPublishedPost(published));
+
+  return (
+    <div
+      className="animate-fade-in border-t border-line bg-paper-2/60 px-4 py-3"
+      data-testid={`queue-inline-${post.id}`}
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <p className="font-mono text-[0.6rem] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+            Schedule
+          </p>
+          {platforms.length === 0 ? (
+            <p className="mt-1.5 text-xs text-muted-foreground">No platforms</p>
+          ) : (
+            <ul className="mt-1.5 space-y-1">
+              {platforms.map((p) => {
+                const iso = post.platformTimes?.[p] ?? post.date;
+                const meta = PLATFORMS_BY_SHORT[p];
+                return (
+                  <li
+                    key={p}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-card px-2 py-1.5 text-xs"
+                  >
+                    <span className="font-semibold text-foreground">
+                      {meta?.full ?? p}
+                    </span>
+                    <span className="font-mono text-[0.65rem] text-muted-foreground">
+                      {formatPublishWhen(iso)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {post.caption?.trim() ? (
+            <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+              {post.caption.trim()}
+            </p>
+          ) : null}
+        </div>
+        <div>
+          <p className="font-mono text-[0.6rem] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+            Performance
+          </p>
+          {!isLive ? (
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Metrics appear after go-live.
+            </p>
+          ) : (
+            <div className="mt-1.5 grid grid-cols-2 gap-2">
+              {(
+                [
+                  ["Views", perf.views],
+                  ["Engagement", perf.engagement],
+                  ["Likes", perf.likes],
+                  ["Shares", perf.shares],
+                ] as const
+              ).map(([label, value]) => (
+                <div
+                  key={label}
+                  className="rounded-md border border-line bg-card px-2 py-1.5"
+                >
+                  <div className="font-display text-sm font-bold text-foreground">
+                    {value}
+                  </div>
+                  <div className="font-mono text-[0.55rem] font-semibold uppercase text-muted-foreground">
+                    {label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {onOpenBoard ? (
+          <button
+            type="button"
+            onClick={onOpenBoard}
+            className="btn-action btn-action-primary min-h-8 inline-flex items-center gap-1.5 !text-white text-caption"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Open on board
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onFindInLibrary}
+            className="btn-action btn-action-secondary min-h-8 text-caption"
+          >
+            Find in Boards library
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function DashboardUpNextQueue() {
   const navigate = useNavigate();
   const { workspace, workspaceId } = useWorkspace();
   const todayRef = useRef<HTMLElement | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const publishedById = useMemo(() => {
+    const m = new Map(
+      (workspace.publishedPosts ?? []).map((p) => [p.id, p as PostDetailSource]),
+    );
+    return m;
+  }, [workspace.publishedPosts]);
 
   const agenda = useMemo(
     () =>
@@ -79,14 +219,23 @@ export function DashboardUpNextQueue() {
   );
 
   useEffect(() => {
-    // Scroll so today / first "now" group is in view (past above)
     if (todayRef.current) {
-      todayRef.current.scrollIntoView({ block: "start", behavior: "instant" as ScrollBehavior });
+      todayRef.current.scrollIntoView({
+        block: "start",
+        behavior: "instant" as ScrollBehavior,
+      });
     }
   }, [dayGroups.length]);
 
-  function openCard(cardId: string) {
-    openCardDestination(workspaceId, cardId, navigate);
+  function handleOpen(cardId: string) {
+    const dest = resolveCardDestination(workspaceId, cardId);
+    if (dest.kind === "board") {
+      // Has a board — jump there (Details chevron still expands in place)
+      openCardDestination(workspaceId, cardId, navigate);
+      return;
+    }
+    // No board — inline expand schedule/perf (never dead-end card detail)
+    setExpandedId((id) => (id === cardId ? null : cardId));
   }
 
   let lastBand: AgendaBand | null = null;
@@ -124,7 +273,11 @@ export function DashboardUpNextQueue() {
             return (
               <section
                 key={group.date.toISOString()}
-                ref={group.isToday || (group.band === "now" && showBandHeader) ? todayRef : undefined}
+                ref={
+                  group.isToday || (group.band === "now" && showBandHeader)
+                    ? todayRef
+                    : undefined
+                }
                 className={cn(group.band === "past" && "opacity-70")}
                 data-agenda-band={group.band}
               >
@@ -172,14 +325,72 @@ export function DashboardUpNextQueue() {
                   </span>
                 </div>
                 <div className="flex flex-col gap-3">
-                  {group.posts.map((post) => (
-                    <StreamContentCard
-                      key={post.id}
-                      post={post}
-                      testId={`up-next-${post.id}`}
-                      onOpen={() => openCard(post.id)}
-                    />
-                  ))}
+                  {group.posts.map((post) => {
+                    const expanded = expandedId === post.id;
+                    const dest = resolveCardDestination(workspaceId, post.id);
+                    return (
+                      <div
+                        key={post.id}
+                        className={cn(
+                          "overflow-hidden rounded-lg border border-line bg-card",
+                          expanded && "ring-1 ring-foreground/15",
+                        )}
+                      >
+                        <div className="relative">
+                          <StreamContentCard
+                            post={post}
+                            testId={`up-next-${post.id}`}
+                            onOpen={() => handleOpen(post.id)}
+                          />
+                          <button
+                            type="button"
+                            className="absolute bottom-2 right-2 z-10 inline-flex items-center gap-1 rounded-md border border-line bg-card/95 px-2 py-1 font-mono text-[0.55rem] font-bold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedId((id) =>
+                                id === post.id ? null : post.id,
+                              );
+                            }}
+                            data-testid={`queue-expand-${post.id}`}
+                          >
+                            <ChevronDown
+                              className={cn(
+                                "h-3 w-3 transition-transform",
+                                expanded && "rotate-180",
+                              )}
+                            />
+                            {expanded ? "Less" : "Details"}
+                          </button>
+                        </div>
+                        {expanded ? (
+                          <QueueCardInlineExpand
+                            post={post}
+                            published={publishedById.get(post.id) ?? null}
+                            onOpenBoard={
+                              dest.kind === "board"
+                                ? () =>
+                                    openCardDestination(
+                                      workspaceId,
+                                      post.id,
+                                      navigate,
+                                    )
+                                : undefined
+                            }
+                            onFindInLibrary={
+                              dest.kind === "library"
+                                ? () =>
+                                    openCardDestination(
+                                      workspaceId,
+                                      post.id,
+                                      navigate,
+                                    )
+                                : undefined
+                            }
+                          />
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             );

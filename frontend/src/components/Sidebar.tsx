@@ -9,6 +9,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Clapperboard,
+  Search,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
@@ -158,6 +159,32 @@ export function Sidebar() {
         <div className={cn("mt-3", collapsed && "flex justify-center")}>
           <WorkspaceSwitcher collapsed={collapsed} />
         </div>
+
+        {/* Cmd+K affordance in nav rail */}
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(new Event("omni:open-command-palette"));
+          }}
+          className={cn(
+            "mt-3 flex items-center gap-2 rounded-md border border-line bg-card text-muted-foreground transition-colors hover:border-foreground/25 hover:text-foreground",
+            collapsed ? "mx-auto h-9 w-9 justify-center p-0" : "w-full px-2.5 py-2",
+          )}
+          title="Search (⌘K)"
+          data-testid="sidebar-search"
+        >
+          <Search className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+          {!collapsed ? (
+            <>
+              <span className="flex-1 text-left text-xs font-semibold">
+                Search
+              </span>
+              <kbd className="rounded border border-line bg-paper-2 px-1 py-0.5 font-mono text-[0.55rem]">
+                ⌘K
+              </kbd>
+            </>
+          ) : null}
+        </button>
 
         {!collapsed ? (
           <p className="mt-5 px-2 text-caption font-medium uppercase tracking-[0.1em] text-muted-foreground">
