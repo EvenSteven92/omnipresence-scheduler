@@ -14,7 +14,6 @@ import { CalendarDayCell } from "@/components/calendar/CalendarDayCell";
 import { CalendarDayPanel } from "@/components/calendar/CalendarDayPanel";
 import { NewEventPostActions } from "@/components/NewEventPostActions";
 import { useCreateEventFlow } from "@/hooks/useCreateEventFlow";
-import { EventAssociateModal } from "@/components/events/EventAssociateModal";
 import { groupEventsByCalendarDay } from "@/lib/events/display";
 import type { ContentEvent } from "@/lib/workspaces/types";
 import { WorkspaceEyebrow } from "@/components/WorkspaceSwitcher";
@@ -61,11 +60,15 @@ function CalendarPage() {
     () => mergeWorkspaceEvents(workspace.events, customEvents),
     [workspace.events, customEvents],
   );
-  const { isAssociated, resolveEventId, associate } = useEventAssociations(workspaceId);
+  const { resolveEventId, associate } = useEventAssociations(workspaceId);
   const [draggingPostId, setDraggingPostId] = useState<string | null>(null);
-  const [showUnlinkedOnly, setShowUnlinkedOnly] = useState(false);
-  const [associateTarget, setAssociateTarget] = useState<ScheduledPost | null>(null);
   const [eventPostsModal, setEventPostsModal] = useState<ContentEvent | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    window.setTimeout(() => setToast(null), 2400);
+  }
 
   const { selectFromGrid } = useCalendarPostSelection();
   const [viewMonth, setViewMonth] = useState(() => {
@@ -156,26 +159,16 @@ function CalendarPage() {
     ? (byDay.get(selectedDayKey) ?? [])
     : [];
 
-  const monthPosts = useMemo(() => {
-    const all: ScheduledPost[] = [];
-    byDay.forEach((arr) => all.push(...arr));
-    return all;
-  }, [byDay]);
-
-  const unassociatedCount = useMemo(
-    () => monthPosts.filter((p) => !isAssociated(p)).length,
-    [monthPosts, isAssociated],
-  );
-
   const now = today();
   const monthLabel = viewMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const weekCount = weeks.length;
 
   return (
-    <div className="min-h-full">
+    <div className="flex min-h-full flex-col">
       <PageHeader
         eyebrow={<WorkspaceEyebrow />}
         title="Calendar"
-        description="Plan the month. Open a day to link cards to events."
+        description="Plan the month. Nest cards under events — drag to associate."
         actions={
           <>
             <QueueCalendarToggle active="calendar" />
@@ -190,7 +183,7 @@ function CalendarPage() {
         }
       />
 
-      <div className="page-content mx-auto max-w-[1440px]">
+      <div className="page-content mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col pb-6">
         {deepLinkNotice ? (
           <p
             data-testid="calendar-deep-link-notice"
@@ -292,43 +285,34 @@ function CalendarPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              data-testid="filter-unlinked-toggle"
-              onClick={() => setShowUnlinkedOnly((v) => !v)}
-              className={cn(
-                "rounded-lg border border-line px-3 py-2 text-body-sm font-semibold transition-colors",
-                showUnlinkedOnly
-                  ? "bg-warning/20 text-foreground "
-                  : "bg-card text-muted-foreground hover:bg-secondary hover:text-foreground",
-              )}
-            >
-              Unlinked only
-              {unassociatedCount > 0 ? (
-                <span className="ml-1.5 font-data">({unassociatedCount})</span>
-              ) : null}
-            </button>
             {draggingPostId ? (
-              <span className="text-body-sm font-medium text-accent">Drop on a day to reschedule</span>
+              <span className="text-body-sm font-medium text-accent">
+                Drop on a day to reschedule · or onto an event in the panel to nest
+              </span>
             ) : (
               <span className="hidden text-body-sm text-muted-foreground lg:inline">
-                Click a day · drag cards to move
+                Click a day · drag cards to reschedule or nest under events
               </span>
             )}
           </div>
         </div>
 
-        {/* Split: clean month + day panel */}
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        {/* Split: tall month + day panel fills viewport */}
+        <div
+          className="grid min-h-[calc(100dvh-14rem)] flex-1 items-stretch gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]"
+          data-testid="calendar-split"
+        >
           <div
             data-testid="calendar-month-grid"
-            className="min-w-0 overflow-hidden rounded-lg border border-line bg-foreground shadow-[var(--shadow-card)]"
+            className="flex min-h-[32rem] min-w-0 flex-col overflow-hidden rounded-lg border border-line bg-foreground shadow-[var(--shadow-card)]"
             onDragEnd={() => setDraggingPostId(null)}
           >
-            {/* minmax(0,1fr) — default minmax(auto) lets thumb content blow out the grid */}
             <div
-              className="grid gap-px bg-foreground"
-              style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
+              className="grid min-h-0 flex-1 gap-px bg-foreground"
+              style={{
+                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+                gridTemplateRows: `auto repeat(${weekCount}, minmax(0, 1fr))`,
+              }}
             >
               {CALENDAR_DOW.map((d) => (
                 <div
@@ -347,10 +331,6 @@ function CalendarPage() {
                     !c.muted &&
                     selectedDate != null &&
                     isSameCalendarDay(c.date, selectedDate);
-                  const visiblePosts =
-                    showUnlinkedOnly && posts
-                      ? posts.filter((p) => !isAssociated(p))
-                      : posts;
 
                   return (
                     <CalendarDayCell
@@ -361,10 +341,11 @@ function CalendarPage() {
                       isToday={isToday}
                       isSelected={isSelected}
                       events={dayEvents}
-                      posts={visiblePosts}
+                      posts={posts}
                       dropActive={Boolean(draggingPostId && !c.muted)}
                       onDropPost={handleRescheduleDrop}
                       onSelect={() => setSelectedDate(c.date)}
+                      fillHeight
                     />
                   );
                 }),
@@ -372,32 +353,41 @@ function CalendarPage() {
             </div>
           </div>
 
-          <CalendarDayPanel
-            date={selectedInView ? selectedDate : null}
-            events={panelEvents}
-            posts={panelPosts}
-            resolveEventId={resolveEventId}
-            showUnlinkedOnly={showUnlinkedOnly}
-            onClose={() => setSelectedDate(null)}
-            onOpenPost={(post) => selectFromGrid(post)}
-            onOpenEvent={(event) => setEventPostsModal(event)}
-            onAssociatePost={(post) => setAssociateTarget(post)}
-            onCreateEvent={() => {
-              if (selectedDate) createEventFlow.openCreateEvent(selectedDate);
-              else createEventFlow.openCreateEvent();
-            }}
-          />
+          <div className="min-h-[28rem] xl:min-h-0 xl:h-full">
+            <CalendarDayPanel
+              date={selectedInView ? selectedDate : null}
+              events={panelEvents}
+              posts={panelPosts}
+              resolveEventId={resolveEventId}
+              onClose={() => setSelectedDate(null)}
+              onOpenPost={(post) => selectFromGrid(post)}
+              onOpenEvent={(event) => setEventPostsModal(event)}
+              onAssociateToEvent={(postId, eventId) => {
+                associate(postId, eventId);
+                const ev = events.find((e) => e.id === eventId);
+                showToast(
+                  ev
+                    ? `Added to ${ev.title}`
+                    : "Card nested under event",
+                );
+              }}
+              onCreateEvent={() => {
+                if (selectedDate) createEventFlow.openCreateEvent(selectedDate);
+                else createEventFlow.openCreateEvent();
+              }}
+              onCardDragState={setDraggingPostId}
+            />
+          </div>
         </div>
       </div>
 
-      {associateTarget ? (
-        <EventAssociateModal
-          post={associateTarget}
-          events={events}
-          currentEventId={resolveEventId(associateTarget)}
-          onAssociate={(eventId) => associate(associateTarget.id, eventId)}
-          onClose={() => setAssociateTarget(null)}
-        />
+      {toast ? (
+        <div
+          role="status"
+          className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-line bg-foreground px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-card)] md:bottom-8"
+        >
+          {toast}
+        </div>
       ) : null}
 
       {eventPostsModal ? (

@@ -213,6 +213,10 @@ function StudioPage() {
   >("idle");
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const skipSaveRef = useRef(false);
+  /** Fingerprint of last written snapshot — skip no-op autosaves that caused status flicker. */
+  const lastSavedFingerprintRef = useRef<string>("");
+  const autosaveTimerRef = useRef<number | null>(null);
+  const savedIdleTimerRef = useRef<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<Viewport>({ panX: 0, panY: 0, zoom: 1 });
@@ -310,6 +314,7 @@ function StudioPage() {
   const loadBoard = useCallback(
     (boardId: StudioBoardId, opts?: { focusCard?: string }) => {
       skipSaveRef.current = true;
+      lastSavedFingerprintRef.current = "";
       const snap = readBoard(workspaceId, boardId) ?? emptySnapshot();
       const meta = listBoards(workspaceId).find((b) => b.id === boardId);
       setActiveBoardId(workspaceId, boardId);
@@ -328,6 +333,7 @@ function StudioPage() {
       setLayersOpen(false);
       setShelfOpen(false);
       setPickerOpen(false);
+      setSaveStatus("idle");
       refreshBoardList();
       window.setTimeout(() => {
         skipSaveRef.current = false;
@@ -339,7 +345,7 @@ function StudioPage() {
   const saveActiveBoard = useCallback(
     (opts?: { manual?: boolean }) => {
       if (!activeBoardId || skipSaveRef.current) return;
-      setSaveStatus("saving");
+
       const eventTitles = boardEventIds
         .map(
           (id) =>
@@ -347,7 +353,7 @@ function StudioPage() {
             embeddedById.get(id)?.title,
         )
         .filter((t): t is string => Boolean(t));
-      // Refresh embedded stubs from live events
+      // Refresh embedded stubs from live events (stable when nothing changed)
       const nextEmbedded: EmbeddedBoardEvent[] = boardEventIds.map((id) => {
         const live = events.find((e) => e.id === id);
         const prev = embeddedById.get(id);
@@ -360,15 +366,35 @@ function StudioPage() {
             description: live.description,
           };
         }
-        return (
-          prev ?? {
-            id,
-            title: "Event unavailable",
-            date: new Date().toISOString(),
-            kind: "other",
-          }
-        );
+        if (prev) return prev;
+        return {
+          id,
+          title: "Event unavailable",
+          date: "1970-01-01T00:00:00.000Z",
+          kind: "other",
+        };
       });
+
+      const hiddenSorted = [...hiddenIds].sort();
+      const snapshot = {
+        drafts,
+        boardEventIds,
+        eventLayout,
+        hiddenIds: hiddenSorted,
+        embeddedEvents: nextEmbedded,
+      };
+      // Include schedule ids/status so summary counts refresh when posts change
+      const scheduleSig = workspace.scheduledPosts
+        .map((p) => `${p.id}:${p.status}`)
+        .sort()
+        .join(",");
+      const fingerprint = `${JSON.stringify(snapshot)}|${scheduleSig}|${eventTitles.join(",")}`;
+
+      if (!opts?.manual && fingerprint === lastSavedFingerprintRef.current) {
+        return;
+      }
+
+      setSaveStatus("saving");
       writeBoard(
         workspaceId,
         activeBoardId,
@@ -376,13 +402,18 @@ function StudioPage() {
           drafts,
           boardEventIds,
           eventLayout,
-          hiddenIds: [...hiddenIds],
+          hiddenIds: hiddenSorted,
           embeddedEvents: nextEmbedded,
         },
         workspace.scheduledPosts,
         { eventTitles },
       );
-      setEmbeddedEvents(nextEmbedded);
+      lastSavedFingerprintRef.current = fingerprint;
+
+      // Avoid setState when embedded content is unchanged — that was re-firing autosave.
+      setEmbeddedEvents((prev) =>
+        JSON.stringify(prev) === JSON.stringify(nextEmbedded) ? prev : nextEmbedded,
+      );
       refreshBoardList();
       const now = Date.now();
       setLastSavedAt(now);
@@ -390,8 +421,12 @@ function StudioPage() {
       if (opts?.manual) {
         showToast("Board saved — your work is safe");
       }
-      window.setTimeout(() => {
+      if (savedIdleTimerRef.current != null) {
+        window.clearTimeout(savedIdleTimerRef.current);
+      }
+      savedIdleTimerRef.current = window.setTimeout(() => {
         setSaveStatus((s) => (s === "saved" ? "idle" : s));
+        savedIdleTimerRef.current = null;
       }, 2500);
     },
     [
@@ -450,11 +485,23 @@ function StudioPage() {
     workspaceId,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-save active board snapshot while on canvas
+  // Debounced auto-save while on canvas (avoid save → setState → save flicker)
   useEffect(() => {
     if (pickerOpen || !activeBoardId) return;
-    saveActiveBoard();
-  }, [drafts, boardEventIds, eventLayout, hiddenIds, embeddedEvents, pickerOpen, activeBoardId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (autosaveTimerRef.current != null) {
+      window.clearTimeout(autosaveTimerRef.current);
+    }
+    autosaveTimerRef.current = window.setTimeout(() => {
+      autosaveTimerRef.current = null;
+      saveActiveBoard();
+    }, 450);
+    return () => {
+      if (autosaveTimerRef.current != null) {
+        window.clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+    };
+  }, [drafts, boardEventIds, eventLayout, hiddenIds, embeddedEvents, pickerOpen, activeBoardId, saveActiveBoard]);
 
   // Layout only for events already on the board (never auto-place workspace history)
   useEffect(() => {
