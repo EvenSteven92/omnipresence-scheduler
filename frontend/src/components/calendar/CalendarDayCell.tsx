@@ -18,7 +18,6 @@ export function CalendarDayCell({
   events = [],
   posts = [],
   dropActive = false,
-  fillHeight = false,
   onSelect,
   onDropPost,
 }: {
@@ -30,8 +29,6 @@ export function CalendarDayCell({
   events?: ContentEvent[];
   posts?: ScheduledPost[];
   dropActive?: boolean;
-  /** Stretch to fill equal-height week rows in the month grid. */
-  fillHeight?: boolean;
   onSelect: () => void;
   onDropPost?: (e: React.DragEvent, date: Date) => void;
 }) {
@@ -67,10 +64,7 @@ export function CalendarDayCell({
       }
       className={cn(
         /* min-w-0 is required so CSS grid children can shrink below content size */
-        "group relative flex min-w-0 w-full flex-col overflow-hidden p-1.5 text-left transition-colors sm:p-2",
-        fillHeight
-          ? "h-full min-h-[5.5rem]"
-          : "h-[6.75rem] sm:h-[7.25rem]",
+        "group relative flex h-[6.75rem] min-w-0 w-full flex-col overflow-hidden p-1.5 text-left transition-colors sm:h-[7.25rem] sm:p-2",
         muted
           ? "cursor-default bg-paper-2/60 text-muted-foreground/40"
           : "cursor-pointer bg-card hover:bg-paper-2/50",

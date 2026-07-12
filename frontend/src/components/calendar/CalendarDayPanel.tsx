@@ -104,7 +104,7 @@ export function CalendarDayPanel({
     return (
       <aside
         data-testid="calendar-day-panel-empty"
-        className="flex h-full min-h-[20rem] flex-col items-center justify-center rounded-lg border border-line bg-card p-8 text-center shadow-[var(--shadow-card)]"
+        className="flex h-full min-h-[28rem] flex-col items-center justify-center rounded-lg border border-line bg-card p-8 text-center shadow-[var(--shadow-card)]"
       >
         <p className="page-kicker">Day detail</p>
         <h2 className="mt-2 font-display text-xl font-bold text-foreground">
@@ -127,7 +127,7 @@ export function CalendarDayPanel({
   return (
     <aside
       data-testid="calendar-day-panel"
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-card shadow-[var(--shadow-card)]"
+      className="flex h-full min-h-[28rem] flex-col overflow-hidden rounded-lg border border-line bg-card shadow-[var(--shadow-card)]"
     >
       <header className="flex shrink-0 items-start justify-between gap-3 border-b border-line px-5 py-4">
         <div className="min-w-0">
