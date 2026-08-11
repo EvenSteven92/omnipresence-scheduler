@@ -21,6 +21,20 @@ npm run dev
 
 Open **http://localhost:3000**
 
+### One-click launch (macOS)
+
+Double-click either:
+
+- **Desktop → `OmniPresence`** (app icon), or  
+- **`Start OmniPresence.command`** in this folder  
+
+That opens Terminal, starts the local server, and opens the browser.  
+If the server is already running, it only opens the browser.
+
+Stop with **Ctrl+C** in Terminal, or double-click **`Stop OmniPresence.command`**.
+
+You can drag the Desktop app to the Dock for always-on-hand access.
+
 | Feature | Storage |
 |---------|---------|
 | Queue / scheduled posts | `sessionStorage` |

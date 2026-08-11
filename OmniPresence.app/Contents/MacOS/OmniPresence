@@ -1,0 +1,75 @@
+#!/bin/bash
+# OmniPresence — one-click local launcher
+set -u
+
+# Resolve project root: OmniPresence.app/Contents/MacOS -> repo root
+APP_MACOS="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$APP_MACOS/../../.." && pwd)"
+FRONTEND="$ROOT/frontend"
+URL="http://localhost:3000"
+LOG="/tmp/omnipresence-dev.log"
+
+notify() {
+  osascript -e "display notification \"$2\" with title \"$1\"" 2>/dev/null || true
+}
+
+port_up() {
+  lsof -nP -iTCP:3000 -sTCP:LISTEN >/dev/null 2>&1
+}
+
+open_app() {
+  open "$URL"
+}
+
+if [[ ! -d "$FRONTEND" ]]; then
+  osascript -e "display alert \"OmniPresence\" message \"Could not find frontend at:\n$FRONTEND\""
+  exit 1
+fi
+
+# Already running → just open the browser
+if port_up; then
+  open_app
+  notify "OmniPresence" "Already running — opened $URL"
+  exit 0
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  osascript -e "display alert \"OmniPresence\" message \"npm not found. Install Node.js 22+ from https://nodejs.org and try again.\""
+  exit 1
+fi
+
+# Install deps on first run if missing
+if [[ ! -d "$FRONTEND/node_modules" ]]; then
+  notify "OmniPresence" "Installing dependencies (first run)…"
+  (
+    cd "$FRONTEND" || exit 1
+    npm install >>"$LOG" 2>&1
+  ) || {
+    osascript -e "display alert \"OmniPresence\" message \"npm install failed. See $LOG\""
+    exit 1
+  }
+fi
+
+notify "OmniPresence" "Starting local server…"
+
+# Start server in Terminal so logs are visible and Ctrl+C works
+FRONTEND_Q=$(printf '%q' "$FRONTEND")
+osascript <<EOF
+tell application "Terminal"
+  activate
+  do script "cd $FRONTEND_Q && unset DATABASE_URL && echo 'OmniPresence — local server' && echo 'Stop with Ctrl+C' && echo '' && npm run dev"
+end tell
+EOF
+
+# Wait for ready, then open browser
+for _ in $(seq 1 90); do
+  if curl -sf -o /dev/null "$URL/" 2>/dev/null; then
+    open_app
+    notify "OmniPresence" "Ready at $URL"
+    exit 0
+  fi
+  sleep 0.5
+done
+
+osascript -e "display alert \"OmniPresence\" message \"Server did not become ready on port 3000.\nCheck the Terminal window or $LOG\""
+exit 1
