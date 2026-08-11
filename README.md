@@ -25,15 +25,14 @@ Open **http://localhost:3000**
 
 Double-click either:
 
-- **Desktop → `OmniPresence`** (app icon), or  
+- **Desktop → `OmniPresence`**, or  
 - **`Start OmniPresence.command`** in this folder  
 
-That opens Terminal, starts the local server, and opens the browser.  
-If the server is already running, it only opens the browser.
+That opens **OmniPresence in its own app window** (not Safari/Chrome), starts the local server in the background, and loads the UI there. Closing the app window stops the server.
 
-Stop with **Ctrl+C** in Terminal, or double-click **`Stop OmniPresence.command`**.
+Stop with **`Stop OmniPresence.command`**, or quit the app (⌘Q).
 
-You can drag the Desktop app to the Dock for always-on-hand access.
+Drag the Desktop app to the Dock for always-on-hand access.
 
 | Feature | Storage |
 |---------|---------|
