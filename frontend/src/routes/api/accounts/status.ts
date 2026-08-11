@@ -1,17 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { getWorkspaceAccountsStatus } from "@/server/accounts/status";
-import { DEFAULT_WORKSPACE_ID } from "@/server/youtube/config";
-
+/** Local-only: OAuth / connected accounts require a cloud DB (removed). */
 export const Route = createFileRoute("/api/accounts/status")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const workspaceId =
-          new URL(request.url).searchParams.get("workspace") ?? DEFAULT_WORKSPACE_ID;
-        const status = await getWorkspaceAccountsStatus(workspaceId);
-        return Response.json(status);
-      },
+      GET: async () =>
+        Response.json({
+          livePlatforms: ["YT", "FB", "IG"],
+          connections: [
+            { platform: "YT", status: "disconnected" },
+            { platform: "FB", status: "disconnected" },
+            { platform: "IG", status: "disconnected" },
+          ],
+          youtube: { connected: false },
+          meta: {
+            facebook: { connected: false },
+            instagram: { connected: false },
+          },
+        }),
     },
   },
 });

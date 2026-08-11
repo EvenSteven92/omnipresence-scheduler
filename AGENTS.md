@@ -8,60 +8,52 @@ Guidance for AI coding agents working in this repository.
 |------|--------|
 | **Local clone** | `/Users/stephen/glance-schedule-go` |
 | **GitHub** | https://github.com/EvenSteven92/omnipresence-scheduler |
-| **Production** | https://omnipresence-three.vercel.app/ |
-| **Vercel root** | `frontend` (not repo root) |
 
 The folder name (`glance-schedule-go`) and GitHub repo name (`omnipresence-scheduler`) differ — both refer to the same project.
 
 ## What this is
 
-**TORCC OmniPresence** is a multi-platform social scheduling and analytics app for ministry/content teams. Users compose content cards, schedule per-platform publish times, group media into event albums, and view cross-platform performance.
+**TORCC OmniPresence** is a multi-platform social scheduling app for ministry/content teams. Users compose content cards, schedule per-platform publish times, and group media into event albums.
 
-**Stack (active path):**
+**Stack (local-only):**
 
-- **Frontend + API:** TanStack Start (React 19, file-based routes) in `frontend/`
-- **Deploy:** Vercel (Nitro preset, `framework: tanstack-start`)
-- **DB:** Neon Postgres via Drizzle (`frontend/src/server/db/`)
-- **Live integrations:** YouTube OAuth + Meta (Facebook Login for Business) with daily cron sync
+- **Frontend + light API:** TanStack Start (React 19, file-based routes) in `frontend/`
+- **Persistence:** browser `sessionStorage` / `localStorage` (no cloud DB)
 - **Charts:** Recharts; **styling:** Tailwind CSS v4
+- **Optional:** FastAPI news ticker in `backend/`; AI copy via `/api/ai/generate`
 
-**Legacy / optional:** `backend/` is a FastAPI app (port 8001) used locally for RSS news (`/api/news`) and health checks. Most product APIs live in TanStack server routes under `frontend/src/routes/api/`.
+Cloud paths (Vercel, Neon/Drizzle, YouTube/Meta OAuth + sync) were **removed**. API stubs under `/api/accounts`, `/api/youtube`, `/api/meta`, `/api/posts`, `/api/events` return disconnected/503 shapes so the UI still loads.
 
 ## Repository layout
 
 ```
 glance-schedule-go/
-├── AGENTS.md                 ← this file
-├── README.md                 ← local dev quick start
-├── docs/PROJECT_LAYOUT.md    ← historical blueprint (partially outdated)
-├── memory/PRD.md             ← product notes
+├── AGENTS.md
+├── README.md
+├── docs/                     ← product specs (some historical cloud notes)
 ├── frontend/                 ← **primary codebase — work here**
 │   ├── src/
-│   │   ├── routes/           ← pages + API routes (TanStack file routing)
-│   │   ├── components/       ← UI components
-│   │   ├── hooks/            ← React hooks
-│   │   ├── lib/              ← client utilities, mock data, live-metrics merge
-│   │   └── server/           ← server-only: OAuth, DB, sync, AI
-│   ├── scripts/              ← SQL migrations (init-db.sql, etc.)
-│   ├── vercel.json           ← Vercel cron (YouTube + Meta sync)
-│   └── vite.config.ts        ← Nitro/Vercel preset; dev proxy for news/health
-└── backend/                  ← optional FastAPI (Python)
+│   │   ├── routes/           ← pages + API routes
+│   │   ├── components/
+│   │   ├── hooks/            ← local persistence hooks
+│   │   ├── lib/
+│   │   └── server/ai/        ← optional LLM generate
+│   └── vite.config.ts
+└── backend/                  ← optional FastAPI (news)
 ```
 
 ## Commands
-
-Run from `frontend/` unless noted.
 
 ```bash
 cd frontend
 npm install
 npm run dev          # http://localhost:3000
-npm run build        # production build (run before claiming success)
+npm run build
+npm run typecheck
 npm run lint
-npm run format
 ```
 
-Optional backend (separate terminal):
+Optional news backend:
 
 ```bash
 cd backend
@@ -73,130 +65,26 @@ uvicorn server:app --host 127.0.0.1 --port 8001
 
 ### Routing
 
-- **Pages:** `frontend/src/routes/*.tsx` — **Studio** (`/studio`) is primary (whiteboard). Queue/Calendar/Events are linear views. Legacy `/scheduler` and `/schedule` redirect to `/studio`. Design: `docs/STUDIO_SCHEDULING_FLOW.md`.
-- **API:** `frontend/src/routes/api/**/*.ts` — OAuth callbacks, metrics, sync, team session, AI generate
-- **Shell:** `frontend/src/routes/__root.tsx` — sidebar, sync status bar, workspace provider
+- **Pages:** `frontend/src/routes/*.tsx` — Studio (`/studio`) is primary
+- **API:** AI generate, Dropbox resolve; cloud OAuth/metrics/posts stubs return empty/503
+- **Shell:** `frontend/src/routes/__root.tsx`
 
-### Data sources (hybrid)
+### Data (browser-local)
 
-| Concern | Source |
-|---------|--------|
-| Workspaces, scheduled/published posts, events | `frontend/src/lib/workspaces/` + `mock-data.ts` (client state) |
-| Live YouTube / Meta KPIs | Neon DB + `/api/youtube/metrics`, `/api/meta/metrics` |
-| Merged dashboard/analytics | `frontend/src/lib/live-metrics.ts` overlays live data on mock base |
-| OAuth tokens | Encrypted in Postgres (`frontend/src/server/crypto/tokens.ts`) |
-
-When changing KPIs or growth matrix, check **both** mock workspace data and `live-metrics.ts` merge logic.
-
-### Key modules
-
-| Area | Files |
+| Data | Where |
 |------|--------|
-| Platforms (icons, colors, peak times) | `frontend/src/lib/platforms.ts` |
-| Time ranges (dashboard + analytics) | `frontend/src/lib/timeframe.ts` |
-| Event albums | `frontend/src/lib/events/` |
-| Scheduler / compose | `frontend/src/routes/scheduler.tsx`, `ComposerCard.tsx` |
-| Calendar interactions | `frontend/src/routes/calendar.tsx`, `calendar-day-click.ts` |
-| OAuth YouTube | `frontend/src/server/youtube/` |
-| OAuth Meta | `frontend/src/server/meta/` |
-| Admin / workspaces | `frontend/src/routes/workspaces.tsx`, `ConnectPlatformSection.tsx` |
+| Scheduled / queue posts | `sessionStorage` (`usePersistedPosts`) |
+| Studio boards | `localStorage` |
+| Custom events | `localStorage` (`useCustomEvents`) |
+| Active workspace id | `localStorage` |
 
-### Vercel cron (Hobby-safe: daily)
+### Do not reintroduce without explicit user ask
 
-Defined in `frontend/vercel.json`:
+- `@neondatabase/serverless`, `drizzle-orm`, `DATABASE_URL`
+- `vercel.json`, `.vercel/`, Vercel project linking
+- Lovable / Emergent packages or configs
+- Server-side posts repository or OAuth token storage
 
-- `0 6 * * *` → `/api/youtube/sync`
-- `30 6 * * *` → `/api/meta/sync`
+## Git
 
-Do not add sub-hourly crons without checking Vercel plan limits.
-
-## Environment variables
-
-Set in Vercel project settings (and locally in `frontend/.env` if needed). Never commit secrets.
-
-| Variable | Purpose |
-|----------|---------|
-| `DATABASE_URL` | Neon Postgres (required for OAuth + live metrics) |
-| `SESSION_SECRET` | OAuth state signing (optional; has dev fallback) |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | YouTube OAuth |
-| `GOOGLE_REDIRECT_URI` | Optional override; defaults from `VERCEL_URL` |
-| `META_APP_ID`, `META_APP_SECRET` | Meta OAuth |
-| `META_LOGIN_CONFIG_ID` | Facebook Login for Business config |
-| `META_OAUTH_SCOPES` | Optional scope override |
-| `META_REDIRECT_URI` | Optional override |
-| `APP_BASE_URL` | Canonical app URL for OAuth redirects |
-| `DEFAULT_WORKSPACE_ID` | Default workspace slug (default: `torcc`) |
-| `AI_GATEWAY_MODEL` | AI copy generation model |
-| `EMERGENT_LLM_KEY` | Legacy AI key (if used) |
-
-## UI / UX conventions
-
-**Brand design system:** `docs/TORCC_OMNIPRESENCE_DESIGN_SYSTEM.md`  
-Tokens live in `frontend/src/styles.css` (Satoshi + Instrument Serif; black primary CTAs; `--brand` purple for focus/selection).
-
-1. **Use sentence case** for labels, section titles, buttons, and empty states — not `snake_case` or `SCREAMING_UNDERSCORES`.
-2. **Dashboard vs Analytics:** Dashboard is action-first (upcoming schedule, gaps, 3 KPIs, growth matrix). Analytics holds the full 7-KPI grid, timeframe picker, and deep charts.
-3. **CTA hierarchy:** Primary actions are **black fill** (Schedule, Mark ready, New post). Purple is for focus/active nav only — not every button.
-4. **Nav:** Sidebar active state uses brand-soft wash (`Sidebar.tsx`).
-5. **Platform identity:** Use brand colors from `platforms.ts` (left borders on growth matrix cards, analytics table rows).
-6. **Sync status:** Top bar is `SyncStatusBar.tsx` (meaningful sync info), not the old opaque news ticker.
-7. **Serif accents:** `font-serif-accent` only on empty-state headlines / brand moments — never calendar cells or form labels.
-
-### Preserve unless explicitly asked to change
-
-- Collapsible growth matrix UX (`GrowthMatrixChart.tsx` + `CollapsibleSection`)
-- Event performer / top performer rail card layout (`TopPerformerCard`, flex-wrap album grids)
-- Narrow icon-only sidebar with hover tooltips
-- Nitro/Vercel output paths in `vite.config.ts` — do not duplicate TanStack/Cloudflare plugins from `@lovable.dev/vite-tanstack-config`
-- Live YouTube/Meta wiring in dashboard and analytics KPI paths
-
-## Making changes
-
-### Scope
-
-- **Default edit location:** `frontend/src/`
-- **Avoid drive-by refactors** in unrelated files
-- **Do not edit** `frontend/src/routeTree.gen.ts` (generated)
-- **SQL migrations:** `frontend/scripts/` — run manually against Neon when schema changes
-
-### Verification
-
-Before marking work complete:
-
-```bash
-cd frontend && npm run build
-```
-
-Fix TypeScript and build errors. There is no dedicated test suite in `frontend/` today; rely on build + manual smoke of affected routes.
-
-### Git
-
-- Default branch: `main`
-- Commit with clear messages; push when the user expects deploy (Vercel auto-deploys from `main`)
-- Run `git status` / `git diff` before committing
-
-## Common tasks
-
-| Task | Where to start |
-|------|----------------|
-| New page | `frontend/src/routes/<name>.tsx` |
-| New API route | `frontend/src/routes/api/<path>.ts` |
-| Platform rules | `frontend/src/lib/platforms.ts` |
-| Dashboard layout | `frontend/src/routes/index.tsx` |
-| Analytics charts | `frontend/src/routes/analytics.tsx` |
-| OAuth / sync bug | `frontend/src/server/youtube/` or `server/meta/` |
-| Connect UI | `frontend/src/components/ConnectPlatformSection.tsx`, `workspaces.tsx` |
-| Design / label pass | Grep for `label-mono` with underscore strings |
-
-## Out of scope unless requested
-
-- Rewriting `docs/PROJECT_LAYOUT.md` or `memory/PRD.md`
-- Migrating off mock scheduled posts to full Postgres CRUD (planned, not complete)
-- X/TikTok publish workers
-- Replacing Vercel with another host
-
-## References
-
-- `README.md` — local dev
-- `docs/PROJECT_LAYOUT.md` — long-term product/schema vision (some sections predate YouTube/Meta live metrics)
-- Design critique implementation: natural-language labels, dashboard/analytics split, scheduler workflow steps (see recent commits on `main`)
+- Commit with clear messages; push when work is finished (user preference: always commit to GitHub)

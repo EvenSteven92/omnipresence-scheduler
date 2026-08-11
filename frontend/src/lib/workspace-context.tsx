@@ -17,7 +17,7 @@ interface WorkspaceContextValue {
   workspace: WorkspaceProfile;
   workspaces: WorkspaceProfile[];
   setWorkspaceId: (id: WorkspaceId) => void;
-  /** True when posts are stored in Postgres via /api/posts. */
+  /** Always false in local-only builds. Kept for call-site compatibility. */
   postsDbMode: boolean;
   postsLoading: boolean;
   addScheduledPosts: (posts: ScheduledPost[]) => void | Promise<void>;
@@ -36,7 +36,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [workspaceId, setWorkspaceIdState] = useState<WorkspaceId>(initialWorkspaceId);
   const {
     posts: persistedPosts,
-    dbMode: postsDbMode,
     isLoading: postsLoading,
     addScheduledPosts,
     upsertScheduledPost,
@@ -51,28 +50,22 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const associatePost = useCallback(
     async (postId: string, eventId: string | undefined) => {
-      // Local mode: clone seed card into session with eventId so merge wins over base.
-      // DB mode: PATCH /api/posts/:id with eventId.
-      if (!postsDbMode) {
-        const base = getWorkspace(workspaceId);
-        const scheduled = mergeScheduledPosts(base.scheduledPosts, persistedPosts);
-        const post = scheduled.find((p) => p.id === postId);
-        if (post) {
-          await upsertScheduledPost({ ...post, eventId: eventId || undefined });
-          return true;
-        }
+      // Clone seed card into session with eventId so merge wins over base.
+      const base = getWorkspace(workspaceId);
+      const scheduled = mergeScheduledPosts(base.scheduledPosts, persistedPosts);
+      const post = scheduled.find((p) => p.id === postId);
+      if (post) {
+        await upsertScheduledPost({ ...post, eventId: eventId || undefined });
+        return true;
       }
       return associatePostId(postId, eventId);
     },
-    [workspaceId, postsDbMode, persistedPosts, upsertScheduledPost, associatePostId],
+    [workspaceId, persistedPosts, upsertScheduledPost, associatePostId],
   );
 
   const value = useMemo<WorkspaceContextValue>(() => {
     const base = getWorkspace(workspaceId);
-    // DB mode: use only remote posts (no seed schedule). Local mode: seed + session posts.
-    const scheduledPosts = postsDbMode
-      ? persistedPosts
-      : mergeScheduledPosts(base.scheduledPosts, persistedPosts);
+    const scheduledPosts = mergeScheduledPosts(base.scheduledPosts, persistedPosts);
 
     const workspace: WorkspaceProfile = {
       ...base,
@@ -83,7 +76,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       workspace,
       workspaces: listWorkspaces(),
       setWorkspaceId,
-      postsDbMode,
+      postsDbMode: false,
       postsLoading,
       addScheduledPosts,
       upsertScheduledPost,
@@ -94,7 +87,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     workspaceId,
     setWorkspaceId,
     persistedPosts,
-    postsDbMode,
     postsLoading,
     addScheduledPosts,
     upsertScheduledPost,
