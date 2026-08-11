@@ -1,6 +1,6 @@
 /**
  * Legacy remote posts/events API helpers.
- * Local-only builds never hit a DB; hooks use sessionStorage / localStorage.
+ * Local-only builds never hit a DB; hooks use localStorage.
  * These remain as thin stubs for any residual imports.
  */
 

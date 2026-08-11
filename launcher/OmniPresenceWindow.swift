@@ -94,7 +94,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     window.isReleasedWhenClosed = false
 
     let config = WKWebViewConfiguration()
+    // Persistent store so localStorage survives quit/relaunch (not ephemeral).
+    config.websiteDataStore = .default()
     config.preferences.setValue(true, forKey: "developerExtrasEnabled")
+    if #available(macOS 11.0, *) {
+      config.defaultWebpagePreferences.allowsContentJavaScript = true
+    }
     webView = WKWebView(frame: rect, configuration: config)
     webView.navigationDelegate = self
     webView.allowsBackForwardNavigationGestures = true

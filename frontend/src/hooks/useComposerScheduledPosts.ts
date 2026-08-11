@@ -3,43 +3,14 @@ import type { DraftPost } from "@/lib/composer-draft";
 import { draftDisplayTitle } from "@/lib/composer-draft";
 import type { ScheduledPost } from "@/lib/mock-data";
 import type { WorkspaceId } from "@/lib/workspaces/types";
+import {
+  markPostDeleted,
+  mergeScheduledPosts,
+  readScheduledPosts,
+  writeScheduledPosts,
+} from "@/lib/scheduled-posts-storage";
 
-const STORAGE_PREFIX = "torcc.composerScheduled.";
-
-function storageKey(workspaceId: WorkspaceId): string {
-  return `${STORAGE_PREFIX}${workspaceId}`;
-}
-
-function readComposerScheduledPosts(workspaceId: WorkspaceId): ScheduledPost[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.sessionStorage.getItem(storageKey(workspaceId));
-    if (!raw) return [];
-    return JSON.parse(raw) as ScheduledPost[];
-  } catch {
-    return [];
-  }
-}
-
-function writeComposerScheduledPosts(workspaceId: WorkspaceId, posts: ScheduledPost[]) {
-  try {
-    window.sessionStorage.setItem(storageKey(workspaceId), JSON.stringify(posts));
-  } catch {
-    /* ignore */
-  }
-}
-
-export function mergeScheduledPosts(
-  base: ScheduledPost[],
-  custom: ScheduledPost[],
-): ScheduledPost[] {
-  // Custom (session / edits) wins over seed when IDs match — needed for
-  // event associations and caption edits on demo seed cards.
-  const byId = new Map<string, ScheduledPost>();
-  base.forEach((p) => byId.set(p.id, p));
-  custom.forEach((p) => byId.set(p.id, p));
-  return [...byId.values()].sort((a, b) => +new Date(a.date) - +new Date(b.date));
-}
+export { mergeScheduledPosts };
 
 export function draftToScheduledPost(draft: DraftPost): ScheduledPost | null {
   if (draft.platforms.length === 0) return null;
@@ -68,24 +39,24 @@ export function draftToScheduledPost(draft: DraftPost): ScheduledPost | null {
   };
 }
 
+/** @deprecated Prefer usePersistedPosts — kept for any residual call sites. */
 export function useComposerScheduledPosts(workspaceId: WorkspaceId) {
   const [composerScheduled, setComposerScheduled] = useState<ScheduledPost[]>(() =>
-    readComposerScheduledPosts(workspaceId),
+    readScheduledPosts(workspaceId),
   );
 
   useEffect(() => {
-    setComposerScheduled(readComposerScheduledPosts(workspaceId));
+    setComposerScheduled(readScheduledPosts(workspaceId));
   }, [workspaceId]);
 
   const addScheduledPosts = useCallback(
     (posts: ScheduledPost[]) => {
       if (posts.length === 0) return;
-      // Upsert by id so re-schedule updates times and board borders refresh.
       setComposerScheduled((prev) => {
         const byId = new Map(prev.map((p) => [p.id, p]));
         posts.forEach((p) => byId.set(p.id, p));
         const next = Array.from(byId.values());
-        writeComposerScheduledPosts(workspaceId, next);
+        writeScheduledPosts(workspaceId, next);
         return next;
       });
     },
@@ -97,7 +68,7 @@ export function useComposerScheduledPosts(workspaceId: WorkspaceId) {
       setComposerScheduled((prev) => {
         const idx = prev.findIndex((p) => p.id === post.id);
         const next = idx === -1 ? [...prev, post] : prev.map((p, i) => (i === idx ? post : p));
-        writeComposerScheduledPosts(workspaceId, next);
+        writeScheduledPosts(workspaceId, next);
         return next;
       });
     },
@@ -108,9 +79,10 @@ export function useComposerScheduledPosts(workspaceId: WorkspaceId) {
     (postId: string) => {
       setComposerScheduled((prev) => {
         const next = prev.filter((p) => p.id !== postId);
-        writeComposerScheduledPosts(workspaceId, next);
+        writeScheduledPosts(workspaceId, next);
         return next;
       });
+      markPostDeleted(workspaceId, postId);
     },
     [workspaceId],
   );

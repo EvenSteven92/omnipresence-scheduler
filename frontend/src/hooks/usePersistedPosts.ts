@@ -1,58 +1,56 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ScheduledPost } from "@/lib/mock-data";
 import type { WorkspaceId } from "@/lib/workspaces/types";
-
-const STORAGE_PREFIX = "torcc.composerScheduled.";
-
-function storageKey(workspaceId: WorkspaceId): string {
-  return `${STORAGE_PREFIX}${workspaceId}`;
-}
-
-function readLocal(workspaceId: WorkspaceId): ScheduledPost[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.sessionStorage.getItem(storageKey(workspaceId));
-    if (!raw) return [];
-    return JSON.parse(raw) as ScheduledPost[];
-  } catch {
-    return [];
-  }
-}
-
-function writeLocal(workspaceId: WorkspaceId, posts: ScheduledPost[]) {
-  try {
-    window.sessionStorage.setItem(storageKey(workspaceId), JSON.stringify(posts));
-  } catch {
-    /* ignore */
-  }
-}
+import {
+  markPostDeleted,
+  readDeletedPostIds,
+  readScheduledPosts,
+  writeDeletedPostIds,
+  writeScheduledPosts,
+} from "@/lib/scheduled-posts-storage";
 
 /**
- * Scheduled cards for a workspace — browser-only (sessionStorage).
- * No remote DB / API path.
+ * Scheduled cards for a workspace — browser-local, survives app restarts
+ * via localStorage (with one-time migrate from sessionStorage).
  */
 export function usePersistedPosts(workspaceId: WorkspaceId) {
-  const [localPosts, setLocalPosts] = useState<ScheduledPost[]>(() => readLocal(workspaceId));
+  const [localPosts, setLocalPosts] = useState<ScheduledPost[]>(() =>
+    readScheduledPosts(workspaceId),
+  );
+  const [deletedIds, setDeletedIds] = useState<string[]>(() => readDeletedPostIds(workspaceId));
 
   useEffect(() => {
-    setLocalPosts(readLocal(workspaceId));
+    setLocalPosts(readScheduledPosts(workspaceId));
+    setDeletedIds(readDeletedPostIds(workspaceId));
   }, [workspaceId]);
+
+  const clearDeleted = useCallback(
+    (ids: string[]) => {
+      setDeletedIds((prev) => {
+        const drop = new Set(ids);
+        const next = prev.filter((id) => !drop.has(id));
+        if (next.length !== prev.length) writeDeletedPostIds(workspaceId, next);
+        return next;
+      });
+    },
+    [workspaceId],
+  );
 
   const addScheduledPosts = useCallback(
     async (incoming: ScheduledPost[]) => {
       if (incoming.length === 0) return;
-      // Upsert by id so re-schedule updates times and board borders refresh.
       setLocalPosts((prev) => {
         const byId = new Map(prev.map((p) => [p.id, p]));
         incoming.forEach((p) => {
           byId.set(p.id, p);
         });
         const next = Array.from(byId.values());
-        writeLocal(workspaceId, next);
+        writeScheduledPosts(workspaceId, next);
         return next;
       });
+      clearDeleted(incoming.map((p) => p.id));
     },
-    [workspaceId],
+    [workspaceId, clearDeleted],
   );
 
   const upsertScheduledPost = useCallback(
@@ -60,20 +58,23 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
       setLocalPosts((prev) => {
         const idx = prev.findIndex((p) => p.id === post.id);
         const next = idx === -1 ? [...prev, post] : prev.map((p, i) => (i === idx ? post : p));
-        writeLocal(workspaceId, next);
+        writeScheduledPosts(workspaceId, next);
         return next;
       });
+      clearDeleted([post.id]);
     },
-    [workspaceId],
+    [workspaceId, clearDeleted],
   );
 
   const removeScheduledPost = useCallback(
     async (postId: string) => {
       setLocalPosts((prev) => {
         const next = prev.filter((p) => p.id !== postId);
-        writeLocal(workspaceId, next);
+        writeScheduledPosts(workspaceId, next);
         return next;
       });
+      markPostDeleted(workspaceId, postId);
+      setDeletedIds((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
     },
     [workspaceId],
   );
@@ -84,7 +85,7 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
         const next = prev.map((p) =>
           p.id === postId ? { ...p, eventId: eventId || undefined } : p,
         );
-        writeLocal(workspaceId, next);
+        writeScheduledPosts(workspaceId, next);
         return next;
       });
       return true;
@@ -94,6 +95,7 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
 
   return {
     posts: localPosts,
+    deletedIds,
     /** Always false — local-only build has no Postgres path. */
     dbMode: false as const,
     isLoading: false,
@@ -102,7 +104,8 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
     removeScheduledPost,
     associatePost,
     refetch: () => {
-      setLocalPosts(readLocal(workspaceId));
+      setLocalPosts(readScheduledPosts(workspaceId));
+      setDeletedIds(readDeletedPostIds(workspaceId));
     },
   };
 }

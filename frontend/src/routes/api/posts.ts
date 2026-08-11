@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-/** Local-only: posts live in the browser (sessionStorage). No cloud DB. */
+/** Local-only: posts live in the browser (localStorage). No cloud DB. */
 export const Route = createFileRoute("/api/posts")({
   server: {
     handlers: {
@@ -9,13 +9,13 @@ export const Route = createFileRoute("/api/posts")({
           {
             source: "local",
             posts: [],
-            detail: "Browser-local mode — posts are stored in sessionStorage",
+            detail: "Browser-local mode — posts are stored in localStorage",
           },
           { status: 503 },
         ),
       POST: async () =>
         Response.json(
-          { detail: "Browser-local mode — posts are stored in sessionStorage" },
+          { detail: "Browser-local mode — posts are stored in localStorage" },
           { status: 503 },
         ),
     },

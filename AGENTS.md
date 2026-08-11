@@ -73,8 +73,10 @@ uvicorn server:app --host 127.0.0.1 --port 8001
 
 | Data | Where |
 |------|--------|
-| Scheduled / queue posts | `sessionStorage` (`usePersistedPosts`) |
+| Scheduled / queue posts | `localStorage` (`usePersistedPosts` / `scheduled-posts-storage`) |
+| Deleted seed post ids | `localStorage` (so removals stick across restarts) |
 | Studio boards | `localStorage` |
+| Composer drafts | `localStorage` |
 | Custom events | `localStorage` (`useCustomEvents`) |
 | Active workspace id | `localStorage` |
 

@@ -9,7 +9,7 @@ import {
   type WorkspaceProfile,
 } from "@/lib/workspaces";
 import type { ScheduledPost } from "@/lib/mock-data";
-import { mergeScheduledPosts } from "@/hooks/useComposerScheduledPosts";
+import { mergeScheduledPosts } from "@/lib/scheduled-posts-storage";
 import { usePersistedPosts } from "@/hooks/usePersistedPosts";
 
 interface WorkspaceContextValue {
@@ -36,6 +36,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [workspaceId, setWorkspaceIdState] = useState<WorkspaceId>(initialWorkspaceId);
   const {
     posts: persistedPosts,
+    deletedIds,
     isLoading: postsLoading,
     addScheduledPosts,
     upsertScheduledPost,
@@ -50,9 +51,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const associatePost = useCallback(
     async (postId: string, eventId: string | undefined) => {
-      // Clone seed card into session with eventId so merge wins over base.
+      // Clone seed card into localStorage with eventId so merge wins over base.
       const base = getWorkspace(workspaceId);
-      const scheduled = mergeScheduledPosts(base.scheduledPosts, persistedPosts);
+      const scheduled = mergeScheduledPosts(base.scheduledPosts, persistedPosts, deletedIds);
       const post = scheduled.find((p) => p.id === postId);
       if (post) {
         await upsertScheduledPost({ ...post, eventId: eventId || undefined });
@@ -60,12 +61,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }
       return associatePostId(postId, eventId);
     },
-    [workspaceId, persistedPosts, upsertScheduledPost, associatePostId],
+    [workspaceId, persistedPosts, deletedIds, upsertScheduledPost, associatePostId],
   );
 
   const value = useMemo<WorkspaceContextValue>(() => {
     const base = getWorkspace(workspaceId);
-    const scheduledPosts = mergeScheduledPosts(base.scheduledPosts, persistedPosts);
+    const scheduledPosts = mergeScheduledPosts(base.scheduledPosts, persistedPosts, deletedIds);
 
     const workspace: WorkspaceProfile = {
       ...base,
@@ -87,6 +88,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     workspaceId,
     setWorkspaceId,
     persistedPosts,
+    deletedIds,
     postsLoading,
     addScheduledPosts,
     upsertScheduledPost,

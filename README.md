@@ -34,12 +34,14 @@ Stop with **`Stop OmniPresence.command`**, or quit the app (⌘Q).
 
 Drag the Desktop app to the Dock for always-on-hand access.
 
-| Feature | Storage |
+| Feature | Storage (survives app restart) |
 |---------|---------|
-| Queue / scheduled posts | `sessionStorage` |
-| Studio boards | `localStorage` |
+| Queue / scheduled posts | `localStorage` |
+| Composer drafts / ready shelf | `localStorage` |
+| Studio boards & layouts | `localStorage` |
 | Custom events | `localStorage` |
-| Seed demo content | In-code workspace data |
+| Active workspace | `localStorage` |
+| Seed demo content | In-code (overridden by your local edits) |
 
 ## Optional: news backend (port 8001)
 

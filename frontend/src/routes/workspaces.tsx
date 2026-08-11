@@ -99,10 +99,9 @@ function WorkspacesPage() {
           className="rounded-lg border border-line bg-paper-2 px-4 py-3 text-body-sm text-muted-foreground"
           data-testid="posts-storage-mode"
         >
-          <span className="font-semibold text-foreground">Browser-local mode</span> — scheduled
-          cards use <code className="font-data text-foreground">sessionStorage</code>; boards and
-          custom events use <code className="font-data text-foreground">localStorage</code>. No cloud
-          database.
+          <span className="font-semibold text-foreground">Saved on this Mac</span> — schedules,
+          boards, drafts, and events stay in local storage and come back when you reopen the app.
+          No cloud database.
         </div>
         {banner ? (
           <div
