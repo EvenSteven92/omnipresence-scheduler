@@ -1,99 +1,89 @@
-# TORCC OmniPresence Scheduler (glance-schedule-go)
+# TORCC OmniPresence Scheduler
 
-TanStack Start frontend + FastAPI backend for scheduling and composing social posts.
+Local-first multi-platform social scheduling app (TanStack Start + React).
 
-## Local development
+## Local-only (recommended for day-to-day)
+
+**No Vercel, Neon, Lovable, or Emergent required.**
 
 ### Prerequisites
 
-- Node.js 22+ (22.13 works)
-- Python 3.11+
+- Node.js **22+**
+- Optional: Python 3.11+ (news ticker only)
 
-### 1. Backend (port 8001)
+### Run the app on port 3000
+
+```bash
+cd frontend
+
+# Pure local: do NOT set DATABASE_URL
+# (posts → sessionStorage, boards → localStorage)
+
+rm -rf node_modules .tanstack .output dist
+npm install
+npm run dev
+```
+
+Open **http://localhost:3000**
+
+| Feature | Local storage |
+|---------|----------------|
+| Queue / scheduled posts | `sessionStorage` |
+| Studio boards | `localStorage` |
+| Custom events | `localStorage` |
+| Seed demo content | In-code workspace data |
+
+### Optional: news backend (port 8001)
 
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
-pip install fastapi uvicorn python-dotenv pydantic feedparser
-# Optional: pip install emergentintegrations  # for /api/ai/generate
+pip install -r requirements.txt
 uvicorn server:app --host 127.0.0.1 --port 8001
 ```
 
-Optional `.env` in `backend/`:
+Vite proxies `/api/news` and `/api/health` to that process. The app UI works without it.
 
-```env
-EMERGENT_LLM_KEY=your-key-here
-```
+### Optional: AI copy
 
-### 2. Frontend (port 3000)
+Frontend route `POST /api/ai/generate` uses the Vercel AI SDK. Without API keys, Studio AI falls back to deterministic/mock helpers. No Emergent package.
+
+### Optional: Postgres without Neon
+
+Point `DATABASE_URL` at any Postgres (e.g. Docker), then run `frontend/scripts/migrate-posts-events.sql`. Omit it for browser-only mode.
+
+### Dropbox media
+
+Paste public Dropbox share links on cards; resolved via `POST /api/dropbox/resolve` (no Dropbox app key).
+
+## Scripts
 
 ```bash
 cd frontend
-npm install
-npm run dev
+npm run dev        # http://localhost:3000
+npm run build      # production bundle (node-server Nitro preset by default)
+npm run preview    # preview build on :3000
+npm run typecheck
 ```
 
-Open **http://localhost:3000**. Vite proxies `/api/*` to the backend.
+## Production (optional cloud)
 
-### What works locally without extra keys
-
-- Dashboard, scheduler, calendar, analytics (mock data in `frontend/src/lib/mock-data.ts`)
-- News ticker (`GET /api/news/headlines`)
-
-### What needs extra setup
-
-- **AI copy** (`POST /api/ai/generate`): `emergentintegrations` package + `EMERGENT_LLM_KEY`
-- **Real scheduling / X publish**: not implemented yet (see `memory/PRD.md`)
-
-## Production
+Production may still deploy via Vercel + Neon (`DATABASE_URL`). That is **optional** and separate from the local-first workflow above.
 
 | | |
 |---|---|
-| **Live app (this project)** | https://omnipresence-torcc.vercel.app |
-| **Vercel project** | `torcc/omnipresence` (GitHub: `EvenSteven92/omnipresence-scheduler`) |
-| **Root directory** | `frontend` |
+| Cloud deploy | Vercel project `torcc/omnipresence` |
+| Root directory | `frontend` |
+| DB | Neon when `DATABASE_URL` is set |
 
-### Database-backed posts (shared schedule)
+## Project layout
 
-When `DATABASE_URL` (Neon / Vercel Postgres) is set on the Vercel project:
-
-1. Run `frontend/scripts/migrate-posts-events.sql` in the Neon SQL editor (once).
-2. Redeploy (or wait for next push).
-3. Compose → **Schedule** writes to Postgres via `POST /api/posts`.
-4. Calendar / queue load from `GET /api/posts?workspace=…`.
-
-Without `DATABASE_URL`, the app keeps working in **local demo mode** (seed data + sessionStorage).
-
-### Dropbox media links
-
-On **Compose**, each card can store a **public Dropbox share link** (`dropbox.com/s/…` or `/scl/fi/…`). The app normalizes it to a direct `dl=1` URL via `POST /api/dropbox/resolve` (no Dropbox app key). Share + direct URL persist with the post when scheduling (Postgres or sessionStorage). Card detail shows the link under Source file.
-
-**Team tip:** use “anyone with the link” shares so a future publish worker can fetch media.
-
-> **Domain note:** `omnipresence.vercel.app` is a *different* product (not this repo).  
-> Use **omnipresence-torcc.vercel.app**, or in Vercel → Project → Settings → Domains assign a custom domain / rename the production alias to this project.
-
-### Deploy to Vercel (frontend demo)
-
-The UI runs on Vercel with mock workspace data. The FastAPI backend (news ticker, AI) is optional and not included in the Vercel deploy.
-
-1. Push this repo to GitHub (production deploys from `main`).
-2. In [Vercel → New Project](https://vercel.com/new), import the repository (or use the existing `torcc/omnipresence` project).
-3. Set **Root Directory** to `frontend`.
-4. Framework should auto-detect **TanStack Start** (Nitro + `vercel` preset in `vite.config.ts`).
-5. Deploy — no env vars required for the mock-data demo.
-
-To attach `your-domain.com` or reclaim a `*.vercel.app` name for **this** project:
-
-1. Open [Vercel Dashboard](https://vercel.com/torcc/omnipresence/settings/domains) for **omnipresence**.
-2. **Add** the domain (or remove it from the other project first if it’s already assigned).
-3. Confirm DNS if using a custom domain.
-
-Local Vercel-shaped build:
-
-```bash
-cd frontend
-npm install
-npm run build
+```
+glance-schedule-go/
+├── frontend/          # TanStack Start app (UI + API routes)
+│   ├── src/routes/    # pages + /api/*
+│   ├── src/server/    # server-side db/oauth helpers
+│   └── vite.config.ts # clean Vite config (no Lovable)
+└── backend/           # optional FastAPI news ticker only
 ```
