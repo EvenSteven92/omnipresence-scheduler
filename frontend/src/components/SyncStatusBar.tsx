@@ -90,7 +90,7 @@ export function SyncStatusBar() {
         <span className="truncate text-muted-foreground">{message}</span>
       </div>
       <Link
-        to="/workspaces"
+        to="/clients"
         hash="connect-platform"
         className="shrink-0 font-semibold text-foreground underline decoration-accent decoration-2 underline-offset-2 hover:text-accent"
       >

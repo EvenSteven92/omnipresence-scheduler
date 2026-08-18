@@ -21,7 +21,7 @@ export function DashboardChannelHealth({
             : "Connect YouTube or Meta to replace sample metrics."
         }
         action={
-          <Link to="/workspaces" hash="connect-platform" className="text-body-sm text-accent">
+          <Link to="/clients" hash="connect-platform" className="text-body-sm text-accent">
             Add channel
           </Link>
         }

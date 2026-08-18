@@ -260,7 +260,7 @@ export function StudioEventCard({
                 value={event.description ?? ""}
                 onChange={(e) => onChange({ description: e.target.value })}
                 rows={2}
-                placeholder="Optional context for AI & team"
+                placeholder="Optional context for AI"
                 className="mt-1 w-full resize-none rounded-md border border-line bg-card px-2 py-1.5 text-sm focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/15"
               />
             </label>

@@ -62,16 +62,16 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
       {open && (
         <div
           role="listbox"
-          aria-label="Select workspace"
+          aria-label="Select client"
           className={cn(
             "absolute z-50 overflow-hidden rounded-lg border border-line bg-card shadow-[var(--shadow-card)]",
             collapsed ? "left-full top-0 ml-2 w-64" : "left-2 right-2 top-full mt-1",
           )}
         >
           <div className="border-b border-line px-3 py-2.5">
-            <p className="text-sm font-semibold text-foreground">Workspaces</p>
+            <p className="text-sm font-semibold text-foreground">Clients</p>
             <p className="mt-0.5 text-body-sm text-muted-foreground">
-              Each company has its own platforms and content.
+              TORCC, First Love, Open Eyes, KEKA — each stays isolated.
             </p>
           </div>
           <ul className="max-h-72 overflow-y-auto py-1">
@@ -126,7 +126,7 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
           </ul>
           <div className="border-t border-line p-2">
             <Link
-              to="/workspaces"
+              to="/clients"
               onClick={() => setOpen(false)}
               className="flex w-full items-center justify-center gap-2 rounded-lg border border-line bg-card px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
             >

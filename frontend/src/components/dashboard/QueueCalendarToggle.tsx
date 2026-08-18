@@ -7,7 +7,7 @@ export function QueueCalendarToggle({ active = "queue" }: { active?: "queue" | "
       data-testid="queue-calendar-toggle"
     >
       <Link
-        to="/"
+        to="/queue"
         className={`px-3.5 py-2 font-mono text-[0.6875rem] font-semibold uppercase transition-colors hover:bg-secondary ${
           active === "queue" ? "bg-primary text-background" : "text-foreground"
         }`}

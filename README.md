@@ -1,8 +1,8 @@
-# TORCC OmniPresence Scheduler
+# OmniPresence
 
-Browser-local multi-platform social scheduling app (TanStack Start + React).
+Personal multi-client social ops console for **TORCC, First Love, Open Eyes, and KEKA** (TanStack Start + React + macOS app).
 
-**No Vercel, Neon, Lovable, Emergent, or cloud database required.**
+**Day-to-day:** Mac-local. No Vercel/Neon required for the UI. Armed auto-post + inbox sync use a local worker (scaffold in `worker/`).
 
 ## Prerequisites
 

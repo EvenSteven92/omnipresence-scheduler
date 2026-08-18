@@ -10,6 +10,8 @@ import {
   PanelLeft,
   Clapperboard,
   Search,
+  LayoutDashboard,
+  Inbox,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
@@ -29,12 +31,14 @@ const nav: {
   icon: LucideIcon;
   countKey?: SidebarNavCountKey;
 }[] = [
+  { to: "/", label: "Overview", icon: LayoutDashboard },
+  { to: "/engage", label: "Engage", icon: Inbox },
   { to: "/studio", label: "Boards", icon: Clapperboard, countKey: "ready" },
-  { to: "/", label: "Queue", icon: LayoutList, countKey: "queue" },
+  { to: "/queue", label: "Queue", icon: LayoutList, countKey: "queue" },
   { to: "/calendar", label: "Calendar", icon: CalendarDays, countKey: "calendar" },
   { to: "/events", label: "Events", icon: LayoutGrid, countKey: "events" },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/workspaces", label: "Admin", icon: Settings2 },
+  { to: "/clients", label: "Clients", icon: Settings2 },
 ];
 
 export function Sidebar() {
@@ -188,7 +192,7 @@ export function Sidebar() {
 
         {!collapsed ? (
           <p className="mt-5 px-2 text-caption font-medium uppercase tracking-[0.1em] text-muted-foreground">
-            Workspace
+            Navigate
           </p>
         ) : (
           <div className="mt-3" aria-hidden />

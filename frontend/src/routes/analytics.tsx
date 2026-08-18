@@ -199,7 +199,7 @@ function AnalyticsPage() {
             title="No analytics yet"
             description="Connect YouTube or Meta to pull live metrics, or publish posts to see performance here."
             action={
-              <Link to="/workspaces" className="btn-action-primary btn-action">
+              <Link to="/clients" className="btn-action-primary btn-action">
                 Connect a channel
               </Link>
             }
@@ -577,7 +577,7 @@ function AnalyticsPage() {
                       Schedule similar <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                     <Link
-                      to="/workspaces"
+                      to="/clients"
                       hash="connect-platform"
                       className="btn-action btn-action-secondary w-full justify-center"
                     >

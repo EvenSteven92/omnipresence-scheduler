@@ -28,7 +28,7 @@ export function OnboardingChecklist({ className }: { className?: string }) {
       done: hasChannel,
       icon: Link2,
       title: "Connect a channel",
-      href: "/workspaces",
+      href: "/clients",
       hash: "connect-platform",
     },
     {

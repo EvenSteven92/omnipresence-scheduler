@@ -204,7 +204,7 @@ export function ScheduleEventModal({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Anything the team should know…"
+              placeholder="Optional context for scheduling…"
               data-testid="event-description-input"
               rows={2}
               className={`${fieldClass} resize-y leading-relaxed`}

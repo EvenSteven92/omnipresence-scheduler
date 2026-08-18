@@ -64,6 +64,18 @@ export function CommandPalette() {
     const q = query.trim().toLowerCase();
     const nav: PaletteItem[] = [
       {
+        id: "nav-overview",
+        group: "Navigate",
+        label: "Overview",
+        run: () => navigate({ to: "/" }),
+      },
+      {
+        id: "nav-engage",
+        group: "Navigate",
+        label: "Engage",
+        run: () => navigate({ to: "/engage" }),
+      },
+      {
         id: "nav-boards",
         group: "Navigate",
         label: "Boards",
@@ -73,7 +85,7 @@ export function CommandPalette() {
         id: "nav-queue",
         group: "Navigate",
         label: "Queue",
-        run: () => navigate({ to: "/" }),
+        run: () => navigate({ to: "/queue" }),
       },
       {
         id: "nav-calendar",
@@ -92,6 +104,12 @@ export function CommandPalette() {
         group: "Navigate",
         label: "Analytics",
         run: () => navigate({ to: "/analytics" }),
+      },
+      {
+        id: "nav-clients",
+        group: "Navigate",
+        label: "Clients",
+        run: () => navigate({ to: "/clients" }),
       },
     ];
 

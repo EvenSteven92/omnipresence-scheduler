@@ -35,7 +35,7 @@ export function OnboardingStepper() {
       title: "Connect a channel",
       description: "Link YouTube or Meta for live metrics and publishing.",
       cta: "Connect channel",
-      href: "/workspaces",
+      href: "/clients",
       hash: "connect-platform",
       anchor: "connect-platform",
     },

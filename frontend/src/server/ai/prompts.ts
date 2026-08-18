@@ -41,7 +41,7 @@ export const PROMPTS: Record<AiKind, string> = {
     "You write punchy YouTube titles (max 70 chars) that earn clicks without clickbait. " +
     "Output ONLY the title — no quotes, no numbering, no markdown. One line.",
   internal_notes:
-    "You summarise post intent for an internal social team. " +
+    "You summarise post intent for a social media operator managing ministry brands. " +
     "Output 3-5 short bullet points (use '- '): goal, primary platform, success metric, any caveats. " +
     "Plain text only.",
   weekly_summary:
