@@ -17,7 +17,7 @@ Guidance for AI coding agents working in this repository.
 
 **Direction (approved plan):** Mac-local always-on worker + UI for armed auto-post, engage (comments/messages), and Overview attention — YouTube, Meta, TikTok, X, Rumble (phased; Rumble best-effort).
 
-**Today:** Scheduling UI + Overview/Engage shells; **Phase 1 worker** on `:8787` with SQLite, YouTube/Meta OAuth + metrics sync. Armed publish + inbox reply still Phase 2–3.
+**Today:** Personal multi-client UI; worker on `:8787` with SQLite, YouTube/Meta OAuth + metrics, and **armed Meta (FB/IG) auto-post**. YouTube upload + Engage inbox still next.
 
 ## Stack
 

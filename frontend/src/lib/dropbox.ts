@@ -1,6 +1,6 @@
 /**
  * Dropbox share-link helpers (v1 — no Dropbox app key).
- * Team pastes public share links; we normalize to a downloadable direct URL.
+ * Paste public share links; we normalize to a downloadable direct URL.
  */
 
 const DROPBOX_HOST =

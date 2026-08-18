@@ -8,10 +8,10 @@ import {
   writeDeletedPostIds,
   writeScheduledPosts,
 } from "@/lib/scheduled-posts-storage";
+import { syncScheduleToWorker } from "@/lib/worker-schedule";
 
 /**
- * Scheduled cards for a workspace — browser-local, survives app restarts
- * via localStorage (with one-time migrate from sessionStorage).
+ * Scheduled cards — localStorage + mirror to Mac worker for armed Meta auto-post.
  */
 export function usePersistedPosts(workspaceId: WorkspaceId) {
   const [localPosts, setLocalPosts] = useState<ScheduledPost[]>(() =>
@@ -20,8 +20,10 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
   const [deletedIds, setDeletedIds] = useState<string[]>(() => readDeletedPostIds(workspaceId));
 
   useEffect(() => {
-    setLocalPosts(readScheduledPosts(workspaceId));
+    const posts = readScheduledPosts(workspaceId);
+    setLocalPosts(posts);
     setDeletedIds(readDeletedPostIds(workspaceId));
+    if (posts.length > 0) void syncScheduleToWorker(workspaceId, posts);
   }, [workspaceId]);
 
   const clearDeleted = useCallback(
@@ -36,6 +38,15 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
     [workspaceId],
   );
 
+  const persist = useCallback(
+    (next: ScheduledPost[]) => {
+      writeScheduledPosts(workspaceId, next);
+      void syncScheduleToWorker(workspaceId, next);
+      return next;
+    },
+    [workspaceId],
+  );
+
   const addScheduledPosts = useCallback(
     async (incoming: ScheduledPost[]) => {
       if (incoming.length === 0) return;
@@ -44,13 +55,11 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
         incoming.forEach((p) => {
           byId.set(p.id, p);
         });
-        const next = Array.from(byId.values());
-        writeScheduledPosts(workspaceId, next);
-        return next;
+        return persist(Array.from(byId.values()));
       });
       clearDeleted(incoming.map((p) => p.id));
     },
-    [workspaceId, clearDeleted],
+    [persist, clearDeleted],
   );
 
   const upsertScheduledPost = useCallback(
@@ -58,25 +67,23 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
       setLocalPosts((prev) => {
         const idx = prev.findIndex((p) => p.id === post.id);
         const next = idx === -1 ? [...prev, post] : prev.map((p, i) => (i === idx ? post : p));
-        writeScheduledPosts(workspaceId, next);
-        return next;
+        return persist(next);
       });
       clearDeleted([post.id]);
     },
-    [workspaceId, clearDeleted],
+    [persist, clearDeleted],
   );
 
   const removeScheduledPost = useCallback(
     async (postId: string) => {
       setLocalPosts((prev) => {
         const next = prev.filter((p) => p.id !== postId);
-        writeScheduledPosts(workspaceId, next);
-        return next;
+        return persist(next);
       });
       markPostDeleted(workspaceId, postId);
       setDeletedIds((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
     },
-    [workspaceId],
+    [workspaceId, persist],
   );
 
   const associatePost = useCallback(
@@ -85,18 +92,16 @@ export function usePersistedPosts(workspaceId: WorkspaceId) {
         const next = prev.map((p) =>
           p.id === postId ? { ...p, eventId: eventId || undefined } : p,
         );
-        writeScheduledPosts(workspaceId, next);
-        return next;
+        return persist(next);
       });
       return true;
     },
-    [workspaceId],
+    [persist],
   );
 
   return {
     posts: localPosts,
     deletedIds,
-    /** Always false — local-only build has no Postgres path. */
     dbMode: false as const,
     isLoading: false,
     addScheduledPosts,

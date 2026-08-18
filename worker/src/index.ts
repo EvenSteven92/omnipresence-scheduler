@@ -7,6 +7,8 @@ import { loadEnvFiles, workerPort, appBaseUrl } from "./lib/env.js";
 import { accountsRoutes } from "./routes/accounts.js";
 import { youtubeRoutes } from "./routes/youtube.js";
 import { metaRoutes } from "./routes/meta.js";
+import { postsRoutes } from "./routes/posts.js";
+import { runPublishDueOnce } from "./publish/loop.js";
 
 loadEnvFiles();
 initSchema();
@@ -25,15 +27,23 @@ app.get("/api/ops/health", (c) => {
   touchHeartbeat();
   return c.json({
     online: true,
-    detail: "Local OmniPresence worker running (SQLite + OAuth + metrics sync)",
-    version: "0.1.0",
+    detail: "Local OmniPresence worker — OAuth, metrics, armed Meta publish",
+    version: "0.2.0",
     lastTickAt: getMeta("last_tick_at"),
+    lastPublishRunAt: getMeta("last_publish_run_at"),
   });
+});
+
+app.post("/api/ops/publish-due", async (c) => {
+  const result = await runPublishDueOnce();
+  touchHeartbeat();
+  return c.json(result);
 });
 
 app.route("/api/accounts", accountsRoutes);
 app.route("/api/youtube", youtubeRoutes);
 app.route("/api/meta", metaRoutes);
+app.route("/api/posts", postsRoutes);
 
 app.get("/", (c) =>
   c.json({
@@ -48,7 +58,18 @@ serve({ fetch: app.fetch, port, hostname: "127.0.0.1" }, () => {
   console.log(`App UI expected at ${appBaseUrl()}`);
 });
 
-// Periodic heartbeat + future publish/inbox loops
 setInterval(() => {
   touchHeartbeat();
 }, 15_000);
+
+// Armed auto-post: poll due FB/IG targets about every 30s
+setInterval(() => {
+  void runPublishDueOnce().catch((err) => {
+    console.error("[publish-due]", err);
+  });
+}, 30_000);
+
+// Kick once shortly after boot
+setTimeout(() => {
+  void runPublishDueOnce().catch(() => null);
+}, 5_000);

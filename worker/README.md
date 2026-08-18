@@ -30,6 +30,11 @@ The Desktop **OmniPresence** app also starts this worker when you open it.
 | `POST /api/youtube/sync` | Refresh YT from API |
 | `GET /api/meta/metrics` | Cached Meta metrics |
 | `POST /api/meta/sync` | Refresh Meta from API |
+| `POST /api/posts/schedule` | Mirror UI schedules into SQLite |
+| `POST /api/posts/client-ops` | Armed / kill-switch flags |
+| `POST /api/ops/publish-due` | Run armed Meta publish pass now |
+
+Armed **Facebook / Instagram** targets fire automatically about every 30s when due. YouTube upload is next.
 
 The UI on `:3000` proxies these paths via TanStack route handlers.
 

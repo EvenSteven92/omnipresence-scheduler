@@ -82,7 +82,7 @@ function OverviewPage() {
       <PageHeader
         eyebrow="Overview"
         title="Command center"
-        description={`Personal ops for ${workspace.name} — and ${workspaces.length} clients total. Armed auto-post; no approval queue.`}
+        description={`Your ops console for ${workspace.name} (${workspaces.length} clients). Armed auto-post — no approval step.`}
         actions={
           <>
             <Link to="/engage" className="btn-action btn-action-secondary">

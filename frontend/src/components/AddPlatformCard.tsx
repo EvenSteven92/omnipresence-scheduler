@@ -20,7 +20,7 @@ export function AddPlatformCard({
 
   return (
     <Link
-      to="/workspaces"
+      to="/clients"
       hash="connect-platform"
       data-testid={testId}
       className={cn(

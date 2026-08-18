@@ -5,8 +5,8 @@ import { useWorkspace } from "@/lib/workspace-context";
 import { cn } from "@/lib/utils";
 
 /**
- * Compact setup checklist for non-admin surfaces (e.g. dashboard rail).
- * Admin page uses the fuller OnboardingStepper instead.
+ * Compact setup checklist for secondary surfaces.
+ * Clients page uses the fuller OnboardingStepper.
  */
 export function OnboardingChecklist({ className }: { className?: string }) {
   const { workspace, workspaceId } = useWorkspace();

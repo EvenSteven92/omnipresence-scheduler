@@ -25,6 +25,33 @@ CREATE TABLE IF NOT EXISTS connected_accounts (
   UNIQUE (client_id, platform)
 );
 
+CREATE TABLE IF NOT EXISTS posts (
+  id TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  caption TEXT NOT NULL DEFAULT '',
+  hashtags TEXT NOT NULL DEFAULT '',
+  dropbox_url TEXT,
+  preview_url TEXT,
+  status TEXT NOT NULL DEFAULT 'draft',
+  armed INTEGER NOT NULL DEFAULT 1,
+  event_id TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS post_targets (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  platform TEXT NOT NULL,
+  scheduled_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'scheduled',
+  external_post_id TEXT,
+  error_message TEXT,
+  published_at TEXT,
+  UNIQUE (post_id, platform)
+);
+
 CREATE TABLE IF NOT EXISTS youtube_channel_snapshots (
   client_id TEXT PRIMARY KEY REFERENCES clients(id) ON DELETE CASCADE,
   channel_id TEXT NOT NULL,

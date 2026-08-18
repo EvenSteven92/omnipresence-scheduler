@@ -17,7 +17,7 @@ export function DashboardChannelHealth({
         title="Channel health"
         description={
           youtubeLive
-            ? "YouTube is live. Connect more channels on Workspaces."
+            ? "YouTube is live. Connect more channels under Clients."
             : "Connect YouTube or Meta to replace sample metrics."
         }
         action={

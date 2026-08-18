@@ -12,7 +12,9 @@ cp .env.example .env   # add Google / Meta OAuth secrets
 ./start.sh             # http://127.0.0.1:8787
 ```
 
-The Desktop app starts the worker automatically. UI proxies account/metrics APIs to it.
+The Desktop app starts the worker automatically. UI proxies account/metrics/schedule APIs to it.
+
+**Armed auto-post (Meta):** schedule FB/IG cards with a Dropbox media link → leave the worker running → they publish at the set time with no approval. Reconnect Meta after updating publish scopes in `worker/.env`.
 
 ## Prerequisites
 

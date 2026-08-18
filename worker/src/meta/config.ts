@@ -1,19 +1,24 @@
 import { appBaseUrl } from "../lib/env.js";
 
+/** Read-only connect (metrics). Prefer FULL when publishing. */
 export const META_SCOPES_MINIMAL = ["pages_show_list", "business_management"] as const;
 
+/** Metrics + armed auto-post (FB Page + IG). Reconnect after changing scopes. */
 export const META_SCOPES_FULL = [
   "pages_show_list",
   "business_management",
   "pages_read_engagement",
+  "pages_manage_posts",
   "instagram_basic",
+  "instagram_content_publish",
   "instagram_manage_insights",
 ] as const;
 
 export function getMetaOAuthScopes() {
   const raw = process.env.META_OAUTH_SCOPES?.trim();
   if (raw) return raw.split(/[,\s]+/).filter(Boolean);
-  return [...META_SCOPES_MINIMAL];
+  // Default to publish-capable scopes for personal armed auto-post
+  return [...META_SCOPES_FULL];
 }
 
 export function getMetaLoginConfigId() {

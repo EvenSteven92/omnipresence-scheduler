@@ -131,7 +131,7 @@ export function WorkspaceSwitcher({ collapsed = false }: { collapsed?: boolean }
               className="flex w-full items-center justify-center gap-2 rounded-lg border border-line bg-card px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
             >
               <Plus className="h-3.5 w-3.5" />
-              Manage workspaces
+              Manage clients
             </Link>
           </div>
         </div>

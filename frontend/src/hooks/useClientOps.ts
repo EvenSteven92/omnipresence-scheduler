@@ -9,6 +9,7 @@ import {
   setClientPublishPaused,
   setGlobalArmed,
 } from "@/lib/client-ops";
+import { syncClientOpsToWorker } from "@/lib/worker-schedule";
 
 const EVT = "omni:client-ops-changed";
 
@@ -36,9 +37,14 @@ export function useClientOps(clientId: WorkspaceId) {
   const paused = isClientPublishPaused(clientId);
   const autoPublish = canAutoPublish(clientId);
 
+  useEffect(() => {
+    void syncClientOpsToWorker(clientId);
+  }, [clientId, tick]);
+
   const setArmed = useCallback(
     (next: boolean) => {
       setClientArmed(clientId, next);
+      void syncClientOpsToWorker(clientId);
       bump();
     },
     [clientId],
@@ -47,15 +53,20 @@ export function useClientOps(clientId: WorkspaceId) {
   const setPaused = useCallback(
     (next: boolean) => {
       setClientPublishPaused(clientId, next);
+      void syncClientOpsToWorker(clientId);
       bump();
     },
     [clientId],
   );
 
-  const setMasterArmed = useCallback((next: boolean) => {
-    setGlobalArmed(next);
-    bump();
-  }, []);
+  const setMasterArmed = useCallback(
+    (next: boolean) => {
+      setGlobalArmed(next);
+      void syncClientOpsToWorker(clientId);
+      bump();
+    },
+    [clientId],
+  );
 
   return {
     globalArmed,

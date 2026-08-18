@@ -1,11 +1,13 @@
 # TORCC OmniPresence Scheduler — Complete Project Layout
 
+> **Superseded (2026-08):** OmniPresence is now a **personal** multi-client ops console (TORCC / First Love / Open Eyes / KEKA). Team auth, invites, members, and approval queues are **out of scope**. Prefer `README.md` + `AGENTS.md` + `worker/` for the live architecture. This file is historical.
+
 **Repo:** [glance-schedule-go](https://github.com/EvenSteven92/glance-schedule-go)  
-**Product name (UI):** TORCC OmniPresence Scheduler  
-**Audience:** Small team (TORCC / ministry social workflow)  
+**Product name (UI):** OmniPresence  
+**Audience:** Single operator, four clients  
 **Media strategy:** Dropbox share links (no app-owned video storage in v1)
 
-This document is the single blueprint for what exists today, what we are building toward, and how the pieces connect.
+This document was an early blueprint. Sections about team/invite auth are obsolete.
 
 ---
 

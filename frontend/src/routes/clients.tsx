@@ -6,7 +6,7 @@ import { useWorkspace } from "@/lib/workspace-context";
 import { useOAuthAutoSync } from "@/hooks/useOAuthAutoSync";
 import { useClientOps } from "@/hooks/useClientOps";
 import { OnboardingStepper } from "@/components/workspaces/OnboardingStepper";
-import { ArrowRight, Building2, FilePlus, Link2 } from "lucide-react";
+import { ArrowRight, Building2, FilePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { CREATE } from "@/lib/create-actions";
@@ -226,15 +226,9 @@ function ClientsPage() {
                   );
                 })}
               </div>
-              <button
-                type="button"
-                disabled
-                className="btn-action btn-action-secondary mt-3 w-full justify-center gap-2 opacity-50"
-                title="Available when backend onboarding ships"
-              >
-                <Link2 className="h-3 w-3" />
-                Add company (soon)
-              </button>
+              <p className="mt-3 text-[0.7rem] text-muted-foreground">
+                Fixed clients: TORCC, First Love, Open Eyes, KEKA — personal use only.
+              </p>
             </section>
 
             {/* How it works */}

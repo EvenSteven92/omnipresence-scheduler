@@ -27,6 +27,8 @@ import { Route as ApiPostsRouteImport } from './routes/api/posts'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
 import { Route as ApiYoutubeSyncRouteImport } from './routes/api/youtube/sync'
 import { Route as ApiYoutubeMetricsRouteImport } from './routes/api/youtube/metrics'
+import { Route as ApiPostsScheduleRouteImport } from './routes/api/posts/schedule'
+import { Route as ApiPostsClientOpsRouteImport } from './routes/api/posts/client-ops'
 import { Route as ApiPostsPostIdRouteImport } from './routes/api/posts.$postId'
 import { Route as ApiOpsHealthRouteImport } from './routes/api/ops/health'
 import { Route as ApiMetaSyncRouteImport } from './routes/api/meta/sync'
@@ -129,6 +131,16 @@ const ApiYoutubeMetricsRoute = ApiYoutubeMetricsRouteImport.update({
   path: '/api/youtube/metrics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPostsScheduleRoute = ApiPostsScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => ApiPostsRoute,
+} as any)
+const ApiPostsClientOpsRoute = ApiPostsClientOpsRouteImport.update({
+  id: '/client-ops',
+  path: '/client-ops',
+  getParentRoute: () => ApiPostsRoute,
+} as any)
 const ApiPostsPostIdRoute = ApiPostsPostIdRouteImport.update({
   id: '/$postId',
   path: '/$postId',
@@ -211,6 +223,8 @@ export interface FileRoutesByFullPath {
   '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/ops/health': typeof ApiOpsHealthRoute
   '/api/posts/$postId': typeof ApiPostsPostIdRoute
+  '/api/posts/client-ops': typeof ApiPostsClientOpsRoute
+  '/api/posts/schedule': typeof ApiPostsScheduleRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
   '/api/accounts/meta/callback': typeof ApiAccountsMetaCallbackRoute
@@ -241,6 +255,8 @@ export interface FileRoutesByTo {
   '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/ops/health': typeof ApiOpsHealthRoute
   '/api/posts/$postId': typeof ApiPostsPostIdRoute
+  '/api/posts/client-ops': typeof ApiPostsClientOpsRoute
+  '/api/posts/schedule': typeof ApiPostsScheduleRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
   '/api/accounts/meta/callback': typeof ApiAccountsMetaCallbackRoute
@@ -273,6 +289,8 @@ export interface FileRoutesById {
   '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/ops/health': typeof ApiOpsHealthRoute
   '/api/posts/$postId': typeof ApiPostsPostIdRoute
+  '/api/posts/client-ops': typeof ApiPostsClientOpsRoute
+  '/api/posts/schedule': typeof ApiPostsScheduleRoute
   '/api/youtube/metrics': typeof ApiYoutubeMetricsRoute
   '/api/youtube/sync': typeof ApiYoutubeSyncRoute
   '/api/accounts/meta/callback': typeof ApiAccountsMetaCallbackRoute
@@ -306,6 +324,8 @@ export interface FileRouteTypes {
     | '/api/meta/sync'
     | '/api/ops/health'
     | '/api/posts/$postId'
+    | '/api/posts/client-ops'
+    | '/api/posts/schedule'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
     | '/api/accounts/meta/callback'
@@ -336,6 +356,8 @@ export interface FileRouteTypes {
     | '/api/meta/sync'
     | '/api/ops/health'
     | '/api/posts/$postId'
+    | '/api/posts/client-ops'
+    | '/api/posts/schedule'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
     | '/api/accounts/meta/callback'
@@ -367,6 +389,8 @@ export interface FileRouteTypes {
     | '/api/meta/sync'
     | '/api/ops/health'
     | '/api/posts/$postId'
+    | '/api/posts/client-ops'
+    | '/api/posts/schedule'
     | '/api/youtube/metrics'
     | '/api/youtube/sync'
     | '/api/accounts/meta/callback'
@@ -533,6 +557,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiYoutubeMetricsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/posts/schedule': {
+      id: '/api/posts/schedule'
+      path: '/schedule'
+      fullPath: '/api/posts/schedule'
+      preLoaderRoute: typeof ApiPostsScheduleRouteImport
+      parentRoute: typeof ApiPostsRoute
+    }
+    '/api/posts/client-ops': {
+      id: '/api/posts/client-ops'
+      path: '/client-ops'
+      fullPath: '/api/posts/client-ops'
+      preLoaderRoute: typeof ApiPostsClientOpsRouteImport
+      parentRoute: typeof ApiPostsRoute
+    }
     '/api/posts/$postId': {
       id: '/api/posts/$postId'
       path: '/$postId'
@@ -626,10 +664,14 @@ const EventsRouteWithChildren =
 
 interface ApiPostsRouteChildren {
   ApiPostsPostIdRoute: typeof ApiPostsPostIdRoute
+  ApiPostsClientOpsRoute: typeof ApiPostsClientOpsRoute
+  ApiPostsScheduleRoute: typeof ApiPostsScheduleRoute
 }
 
 const ApiPostsRouteChildren: ApiPostsRouteChildren = {
   ApiPostsPostIdRoute: ApiPostsPostIdRoute,
+  ApiPostsClientOpsRoute: ApiPostsClientOpsRoute,
+  ApiPostsScheduleRoute: ApiPostsScheduleRoute,
 }
 
 const ApiPostsRouteWithChildren = ApiPostsRoute._addFileChildren(
