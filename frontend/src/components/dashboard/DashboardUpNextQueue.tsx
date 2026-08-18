@@ -20,6 +20,7 @@ import {
   type AgendaBand,
 } from "@/lib/scheduled-post-display";
 import { cn } from "@/lib/utils";
+import { smoothScrollElementIntoView } from "@/lib/smooth-scroll";
 
 function bandLabel(band: AgendaBand): string {
   switch (band) {
@@ -195,6 +196,7 @@ export function DashboardUpNextQueue() {
   const navigate = useNavigate();
   const { workspace, workspaceId } = useWorkspace();
   const todayRef = useRef<HTMLElement | null>(null);
+  const didScrollToToday = useRef(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const publishedById = useMemo(() => {
@@ -219,12 +221,14 @@ export function DashboardUpNextQueue() {
   );
 
   useEffect(() => {
-    if (todayRef.current) {
-      todayRef.current.scrollIntoView({
-        block: "start",
-        behavior: "instant" as ScrollBehavior,
-      });
-    }
+    if (didScrollToToday.current || !todayRef.current || dayGroups.length === 0) return;
+    // Soft ease-in-out glide to Today/Now — once per visit (no aggressive snap).
+    didScrollToToday.current = true;
+    const el = todayRef.current;
+    const id = window.requestAnimationFrame(() => {
+      smoothScrollElementIntoView(el, { durationMs: 720, offset: 16 });
+    });
+    return () => window.cancelAnimationFrame(id);
   }, [dayGroups.length]);
 
   function handleOpen(cardId: string) {
