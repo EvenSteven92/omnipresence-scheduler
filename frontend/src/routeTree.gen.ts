@@ -33,6 +33,8 @@ import { Route as ApiPostsPostIdRouteImport } from './routes/api/posts.$postId'
 import { Route as ApiOpsHealthRouteImport } from './routes/api/ops/health'
 import { Route as ApiMetaSyncRouteImport } from './routes/api/meta/sync'
 import { Route as ApiMetaMetricsRouteImport } from './routes/api/meta/metrics'
+import { Route as ApiMediaUploadRouteImport } from './routes/api/media/upload'
+import { Route as ApiMediaMediaIdRouteImport } from './routes/api/media.$mediaId'
 import { Route as ApiDropboxResolveRouteImport } from './routes/api/dropbox/resolve'
 import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
 import { Route as ApiAccountsStatusRouteImport } from './routes/api/accounts/status'
@@ -161,6 +163,16 @@ const ApiMetaMetricsRoute = ApiMetaMetricsRouteImport.update({
   path: '/api/meta/metrics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMediaUploadRoute = ApiMediaUploadRouteImport.update({
+  id: '/api/media/upload',
+  path: '/api/media/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMediaMediaIdRoute = ApiMediaMediaIdRouteImport.update({
+  id: '/api/media/$mediaId',
+  path: '/api/media/$mediaId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDropboxResolveRoute = ApiDropboxResolveRouteImport.update({
   id: '/api/dropbox/resolve',
   path: '/api/dropbox/resolve',
@@ -219,6 +231,8 @@ export interface FileRoutesByFullPath {
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/dropbox/resolve': typeof ApiDropboxResolveRoute
+  '/api/media/$mediaId': typeof ApiMediaMediaIdRoute
+  '/api/media/upload': typeof ApiMediaUploadRoute
   '/api/meta/metrics': typeof ApiMetaMetricsRoute
   '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/ops/health': typeof ApiOpsHealthRoute
@@ -251,6 +265,8 @@ export interface FileRoutesByTo {
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/dropbox/resolve': typeof ApiDropboxResolveRoute
+  '/api/media/$mediaId': typeof ApiMediaMediaIdRoute
+  '/api/media/upload': typeof ApiMediaUploadRoute
   '/api/meta/metrics': typeof ApiMetaMetricsRoute
   '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/ops/health': typeof ApiOpsHealthRoute
@@ -285,6 +301,8 @@ export interface FileRoutesById {
   '/api/accounts/status': typeof ApiAccountsStatusRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/dropbox/resolve': typeof ApiDropboxResolveRoute
+  '/api/media/$mediaId': typeof ApiMediaMediaIdRoute
+  '/api/media/upload': typeof ApiMediaUploadRoute
   '/api/meta/metrics': typeof ApiMetaMetricsRoute
   '/api/meta/sync': typeof ApiMetaSyncRoute
   '/api/ops/health': typeof ApiOpsHealthRoute
@@ -320,6 +338,8 @@ export interface FileRouteTypes {
     | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/dropbox/resolve'
+    | '/api/media/$mediaId'
+    | '/api/media/upload'
     | '/api/meta/metrics'
     | '/api/meta/sync'
     | '/api/ops/health'
@@ -352,6 +372,8 @@ export interface FileRouteTypes {
     | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/dropbox/resolve'
+    | '/api/media/$mediaId'
+    | '/api/media/upload'
     | '/api/meta/metrics'
     | '/api/meta/sync'
     | '/api/ops/health'
@@ -385,6 +407,8 @@ export interface FileRouteTypes {
     | '/api/accounts/status'
     | '/api/ai/generate'
     | '/api/dropbox/resolve'
+    | '/api/media/$mediaId'
+    | '/api/media/upload'
     | '/api/meta/metrics'
     | '/api/meta/sync'
     | '/api/ops/health'
@@ -418,6 +442,8 @@ export interface RootRouteChildren {
   ApiAccountsStatusRoute: typeof ApiAccountsStatusRoute
   ApiAiGenerateRoute: typeof ApiAiGenerateRoute
   ApiDropboxResolveRoute: typeof ApiDropboxResolveRoute
+  ApiMediaMediaIdRoute: typeof ApiMediaMediaIdRoute
+  ApiMediaUploadRoute: typeof ApiMediaUploadRoute
   ApiMetaMetricsRoute: typeof ApiMetaMetricsRoute
   ApiMetaSyncRoute: typeof ApiMetaSyncRoute
   ApiOpsHealthRoute: typeof ApiOpsHealthRoute
@@ -599,6 +625,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMetaMetricsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/media/upload': {
+      id: '/api/media/upload'
+      path: '/api/media/upload'
+      fullPath: '/api/media/upload'
+      preLoaderRoute: typeof ApiMediaUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/media/$mediaId': {
+      id: '/api/media/$mediaId'
+      path: '/api/media/$mediaId'
+      fullPath: '/api/media/$mediaId'
+      preLoaderRoute: typeof ApiMediaMediaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/dropbox/resolve': {
       id: '/api/dropbox/resolve'
       path: '/api/dropbox/resolve'
@@ -697,6 +737,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAccountsStatusRoute: ApiAccountsStatusRoute,
   ApiAiGenerateRoute: ApiAiGenerateRoute,
   ApiDropboxResolveRoute: ApiDropboxResolveRoute,
+  ApiMediaMediaIdRoute: ApiMediaMediaIdRoute,
+  ApiMediaUploadRoute: ApiMediaUploadRoute,
   ApiMetaMetricsRoute: ApiMetaMetricsRoute,
   ApiMetaSyncRoute: ApiMetaSyncRoute,
   ApiOpsHealthRoute: ApiOpsHealthRoute,

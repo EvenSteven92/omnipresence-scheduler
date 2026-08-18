@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS posts (
   hashtags TEXT NOT NULL DEFAULT '',
   dropbox_url TEXT,
   preview_url TEXT,
+  local_media_id TEXT,
   status TEXT NOT NULL DEFAULT 'draft',
   armed INTEGER NOT NULL DEFAULT 1,
   event_id TEXT,

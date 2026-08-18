@@ -19,12 +19,14 @@ export interface CardFileMeta {
   durationSec?: number;
   sizeMB?: number;
   createdAt?: string;
-  /** Dropbox share link as pasted by the editor. */
+  /** Optional Dropbox share link — prefer localMediaId for Mac files. */
   dropboxUrl?: string;
-  /** Direct/download-style URL for preview or future publish worker. */
+  /** Direct/download-style URL for preview. */
   dropboxDirectUrl?: string;
-  /** Local blob or Dropbox direct preview. */
+  /** Preview URL (worker media path or blob). */
   previewUrl?: string;
+  /** OmniPresence worker media vault id for local Mac files. */
+  localMediaId?: string;
 }
 
 export interface ScheduledPost extends CardFileMeta {

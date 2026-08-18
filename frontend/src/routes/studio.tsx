@@ -593,22 +593,54 @@ function StudioPage() {
         }
         void Promise.all(
           arr.map(async (file, i) => {
-            const dims = await measureMediaFile(file);
-            if (!dims) return;
             const id = created[i]?.id;
             if (!id) return;
-            setDrafts((c) =>
-              c.map((d) =>
-                d.id === id ? applyMeasuredDimensions(d, dims.width, dims.height) : d,
-              ),
-            );
+            const dims = await measureMediaFile(file);
+            if (dims) {
+              setDrafts((c) =>
+                c.map((d) =>
+                  d.id === id ? applyMeasuredDimensions(d, dims.width, dims.height) : d,
+                ),
+              );
+            }
+            // Persist on the Mac worker so armed auto-post can read the real file
+            try {
+              const { uploadLocalMedia, localMediaPreviewUrl } = await import("@/lib/local-media");
+              const uploaded = await uploadLocalMedia(file, workspaceId);
+              setDrafts((c) =>
+                c.map((d) => {
+                  if (d.id !== id) return d;
+                  if (d.previewUrl?.startsWith("blob:")) {
+                    try {
+                      URL.revokeObjectURL(d.previewUrl);
+                    } catch {
+                      /* ignore */
+                    }
+                  }
+                  return {
+                    ...d,
+                    localMediaId: uploaded.mediaId,
+                    previewUrl: localMediaPreviewUrl(uploaded.mediaId),
+                    filename: uploaded.filename || d.filename,
+                    mediaKind:
+                      uploaded.kind === "unknown" ? d.mediaKind : (uploaded.kind as "image" | "video"),
+                  };
+                }),
+              );
+            } catch (err) {
+              showToast(
+                err instanceof Error
+                  ? `Local save failed: ${err.message}`
+                  : "Could not save media to local worker — is it running?",
+              );
+            }
           }),
         );
         return next;
       });
-      showToast(`Added ${arr.length} reel${arr.length === 1 ? "" : "s"}`);
+      showToast(`Added ${arr.length} file${arr.length === 1 ? "" : "s"} from this Mac`);
     },
-    [workspace.platforms, showToast],
+    [workspace.platforms, workspaceId, showToast],
   );
 
   function removeDraft(id: string) {

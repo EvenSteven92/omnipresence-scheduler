@@ -14,7 +14,7 @@ cp .env.example .env   # add Google / Meta OAuth secrets
 
 The Desktop app starts the worker automatically. UI proxies account/metrics/schedule APIs to it.
 
-**Armed auto-post (Meta):** schedule FB/IG cards with a Dropbox media link → leave the worker running → they publish at the set time with no approval. Reconnect Meta after updating publish scopes in `worker/.env`.
+**Armed auto-post (Meta):** drop local Mac files onto Boards — they’re stored in the worker media vault and published to FB/IG when due (no Dropbox required). Optional Dropbox links still work. Reconnect Meta after updating publish scopes in `worker/.env`.
 
 ## Prerequisites
 

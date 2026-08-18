@@ -47,9 +47,11 @@ export interface DraftPost {
   savedAt?: number;
   /** Associated event — groups this file with related ministry media. */
   eventId?: string;
-  /** Object URL for the uploaded file — set in scheduler addFiles. */
+  /** Preview URL — local worker `/api/media/...` or temporary blob while uploading. */
   previewUrl?: string;
-  /** Dropbox share link (public). */
+  /** Worker media vault id for Mac-local files (preferred for auto-post). */
+  localMediaId?: string;
+  /** Optional Dropbox share link (public) — not required when using local media. */
   dropboxUrl?: string;
   /** Normalized dl=1 / direct URL for workers + preview. */
   dropboxDirectUrl?: string;

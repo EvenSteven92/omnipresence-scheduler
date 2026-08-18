@@ -8,10 +8,13 @@ import { accountsRoutes } from "./routes/accounts.js";
 import { youtubeRoutes } from "./routes/youtube.js";
 import { metaRoutes } from "./routes/meta.js";
 import { postsRoutes } from "./routes/posts.js";
+import { mediaRoutes } from "./routes/media.js";
 import { runPublishDueOnce } from "./publish/loop.js";
+import { ensureMediaSchema } from "./media/store.js";
 
 loadEnvFiles();
 initSchema();
+ensureMediaSchema();
 touchHeartbeat();
 
 const app = new Hono();
@@ -44,6 +47,7 @@ app.route("/api/accounts", accountsRoutes);
 app.route("/api/youtube", youtubeRoutes);
 app.route("/api/meta", metaRoutes);
 app.route("/api/posts", postsRoutes);
+app.route("/api/media", mediaRoutes);
 
 app.get("/", (c) =>
   c.json({

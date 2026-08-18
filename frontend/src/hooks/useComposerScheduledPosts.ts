@@ -36,6 +36,7 @@ export function draftToScheduledPost(draft: DraftPost): ScheduledPost | null {
     dropboxUrl: draft.dropboxUrl,
     dropboxDirectUrl: draft.dropboxDirectUrl,
     previewUrl: draft.previewUrl ?? draft.dropboxDirectUrl,
+    localMediaId: draft.localMediaId,
   };
 }
 

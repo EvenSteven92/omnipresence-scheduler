@@ -23,7 +23,10 @@ export async function proxyToWorker(request: Request, workerPath: string): Promi
   };
 
   if (request.method !== "GET" && request.method !== "HEAD") {
+    // Preserve multipart boundaries for local media uploads
     init.body = await request.arrayBuffer();
+    // duplex required by some runtimes when forwarding a body
+    (init as RequestInit & { duplex?: string }).duplex = "half";
   }
 
   try {

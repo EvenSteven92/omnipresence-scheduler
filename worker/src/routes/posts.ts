@@ -10,6 +10,7 @@ type IncomingPost = {
   hashtags?: string;
   dropboxUrl?: string | null;
   previewUrl?: string | null;
+  localMediaId?: string | null;
   armed?: boolean;
   status?: string;
   eventId?: string | null;
@@ -35,15 +36,16 @@ postsRoutes.post("/schedule", async (c) => {
   const db = getDb();
   const upsertPost = db.prepare(
     `INSERT INTO posts (
-      id, client_id, title, caption, hashtags, dropbox_url, preview_url,
+      id, client_id, title, caption, hashtags, dropbox_url, preview_url, local_media_id,
       status, armed, event_id, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     ON CONFLICT(id) DO UPDATE SET
       title = excluded.title,
       caption = excluded.caption,
       hashtags = excluded.hashtags,
       dropbox_url = excluded.dropbox_url,
       preview_url = excluded.preview_url,
+      local_media_id = excluded.local_media_id,
       status = excluded.status,
       armed = excluded.armed,
       event_id = excluded.event_id,
@@ -78,6 +80,7 @@ postsRoutes.post("/schedule", async (c) => {
         post.hashtags ?? "",
         post.dropboxUrl ?? null,
         post.previewUrl ?? null,
+        post.localMediaId ?? null,
         status,
         armed,
         post.eventId ?? null,

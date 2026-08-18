@@ -21,6 +21,7 @@ export async function syncScheduleToWorker(
           hashtags: p.hashtags ?? "",
           dropboxUrl: p.dropboxUrl ?? null,
           previewUrl: p.previewUrl ?? p.dropboxDirectUrl ?? null,
+          localMediaId: p.localMediaId ?? null,
           status: p.status ?? "scheduled",
           armed: canAutoPublish(clientId),
           eventId: p.eventId ?? null,

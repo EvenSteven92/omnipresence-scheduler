@@ -80,7 +80,7 @@ export function DropboxLinkField({
       <label className="block space-y-1.5">
         <span className="flex items-center gap-1.5 text-caption font-medium uppercase tracking-[0.06em] text-muted-foreground">
           <Link2 className="h-3.5 w-3.5" strokeWidth={2} />
-          Dropbox link
+          Dropbox link (optional)
         </span>
         <div className="relative">
           <input
@@ -111,8 +111,8 @@ export function DropboxLinkField({
         </div>
       </label>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Public share link to the reel or image. Anyone with the link can view — required for later
-        auto-publish.
+        Not needed if you added a local file from this Mac. Dropbox remains optional for remote
+        assets.
       </p>
       {error ? (
         <p className="text-xs font-medium text-destructive" data-testid="dropbox-link-error">

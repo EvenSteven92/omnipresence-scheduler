@@ -34,7 +34,9 @@ The Desktop **OmniPresence** app also starts this worker when you open it.
 | `POST /api/posts/client-ops` | Armed / kill-switch flags |
 | `POST /api/ops/publish-due` | Run armed Meta publish pass now |
 
-Armed **Facebook / Instagram** targets fire automatically about every 30s when due. YouTube upload is next.
+Armed **Facebook / Instagram** targets fire automatically about every 30s when due.
+
+**Local Mac media:** drop files on Boards → `POST /api/media/upload` stores them under `worker/data/media/`. Publish reads those files (no Dropbox required). YouTube upload is next.
 
 The UI on `:3000` proxies these paths via TanStack route handlers.
 

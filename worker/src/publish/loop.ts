@@ -10,6 +10,7 @@ type DueRow = {
   caption: string | null;
   dropbox_url: string | null;
   preview_url: string | null;
+  local_media_id: string | null;
   armed: number;
   publish_paused: number;
   client_armed: number;
@@ -57,6 +58,7 @@ export async function runPublishDueOnce(): Promise<{
         p.caption AS caption,
         p.dropbox_url AS dropbox_url,
         p.preview_url AS preview_url,
+        p.local_media_id AS local_media_id,
         p.armed AS armed,
         c.publish_paused AS publish_paused,
         c.armed AS client_armed
@@ -90,6 +92,7 @@ export async function runPublishDueOnce(): Promise<{
         caption: row.caption ?? "",
         dropboxUrl: row.dropbox_url,
         previewUrl: row.preview_url,
+        localMediaId: row.local_media_id,
         title: row.title,
       });
 
