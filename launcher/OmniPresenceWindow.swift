@@ -6,11 +6,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
   var window: NSWindow!
   var webView: WKWebView!
   var serverProcess: Process?
+  var workerProcess: Process?
   var pollTimer: Timer?
   var statusLabel: NSTextField!
 
   let url = URL(string: "http://127.0.0.1:3000/")!
   let frontendPath: String
+  let workerPath: String
   let projectRoot: String
 
   override init() {
@@ -52,6 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
     self.projectRoot = resolved
     self.frontendPath = (resolved as NSString).appendingPathComponent("frontend")
+    self.workerPath = (resolved as NSString).appendingPathComponent("worker")
     super.init()
   }
 
@@ -61,7 +64,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     window.makeKeyAndOrderFront(nil)
     NSApp.activate(ignoringOtherApps: true)
 
-    if isPortOpen() {
+    startWorkerIfNeeded()
+
+    if isPortOpen(3000) {
       loadApp()
     } else {
       showStatus("Starting OmniPresence…")
@@ -75,6 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
   func applicationWillTerminate(_ notification: Notification) {
     pollTimer?.invalidate()
     stopServer()
+    stopWorker()
   }
 
   // MARK: - UI
@@ -149,10 +155,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
   // MARK: - Server
 
-  func isPortOpen() -> Bool {
+  func isPortOpen(_ port: Int) -> Bool {
     let task = Process()
     task.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
-    task.arguments = ["-nP", "-iTCP:3000", "-sTCP:LISTEN"]
+    task.arguments = ["-nP", "-iTCP:\(port)", "-sTCP:LISTEN"]
     task.standardOutput = FileHandle.nullDevice
     task.standardError = FileHandle.nullDevice
     do {
@@ -162,6 +168,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     } catch {
       return false
     }
+  }
+
+  func startWorkerIfNeeded() {
+    guard FileManager.default.fileExists(atPath: (workerPath as NSString).appendingPathComponent("package.json")) else {
+      return
+    }
+    if isPortOpen(8787) { return }
+
+    let modules = (workerPath as NSString).appendingPathComponent("node_modules")
+    if !FileManager.default.fileExists(atPath: modules) {
+      let install = Process()
+      install.currentDirectoryURL = URL(fileURLWithPath: workerPath)
+      install.executableURL = URL(fileURLWithPath: "/bin/bash")
+      install.arguments = ["-lc", "npm install"]
+      install.environment = ProcessInfo.processInfo.environment
+      try? install.run()
+      install.waitUntilExit()
+    }
+
+    let process = Process()
+    process.currentDirectoryURL = URL(fileURLWithPath: workerPath)
+    process.executableURL = URL(fileURLWithPath: "/bin/bash")
+    process.arguments = ["-lc", "npm run init-db && npm start"]
+    process.environment = ProcessInfo.processInfo.environment
+    let logPath = "/tmp/omnipresence-worker.log"
+    FileManager.default.createFile(atPath: logPath, contents: nil)
+    if let log = FileHandle(forWritingAtPath: logPath) {
+      process.standardOutput = log
+      process.standardError = log
+    }
+    do {
+      try process.run()
+      workerProcess = process
+    } catch {
+      /* UI still works offline; Overview shows worker Attention */
+    }
+  }
+
+  func stopWorker() {
+    if let process = workerProcess, process.isRunning {
+      process.terminate()
+    }
+    workerProcess = nil
+    killPort(8787)
   }
 
   func startServer() {
@@ -223,22 +273,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
   func stopServer() {
     guard let process = serverProcess, process.isRunning else {
-      // Also clear orphan listeners if we started them
-      killPort3000()
+      killPort(3000)
       return
     }
     process.terminate()
-    // Give npm a moment, then force-kill tree on 3000
     DispatchQueue.global().asyncAfter(deadline: .now() + 0.4) {
-      self.killPort3000()
+      self.killPort(3000)
     }
     serverProcess = nil
   }
 
-  func killPort3000() {
+  func killPort(_ port: Int) {
     let task = Process()
     task.executableURL = URL(fileURLWithPath: "/bin/bash")
-    task.arguments = ["-lc", "PIDS=$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null); [ -n \"$PIDS\" ] && kill $PIDS 2>/dev/null; sleep 0.2; PIDS=$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null); [ -n \"$PIDS\" ] && kill -9 $PIDS 2>/dev/null; true"]
+    task.arguments = [
+      "-lc",
+      "PIDS=$(lsof -tiTCP:\(port) -sTCP:LISTEN 2>/dev/null); [ -n \"$PIDS\" ] && kill $PIDS 2>/dev/null; sleep 0.2; PIDS=$(lsof -tiTCP:\(port) -sTCP:LISTEN 2>/dev/null); [ -n \"$PIDS\" ] && kill -9 $PIDS 2>/dev/null; true",
+    ]
     try? task.run()
     task.waitUntilExit()
   }
@@ -248,7 +299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     pollTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] timer in
       guard let self else { timer.invalidate(); return }
       attempts += 1
-      if self.isPortOpen() {
+      if self.isPortOpen(3000) {
         timer.invalidate()
         self.pollTimer = nil
         self.loadApp()

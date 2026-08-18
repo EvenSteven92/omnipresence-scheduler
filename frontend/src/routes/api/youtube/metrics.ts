@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { proxyToWorker } from "@/server/ops/proxy";
 
-/** Local-only: live YouTube metrics require OAuth + DB (removed). */
 export const Route = createFileRoute("/api/youtube/metrics")({
   server: {
     handlers: {
-      GET: async () => Response.json({ connected: false, channel: null, videos: [] }),
+      GET: async ({ request }) => proxyToWorker(request, "/api/youtube/metrics"),
     },
   },
 });

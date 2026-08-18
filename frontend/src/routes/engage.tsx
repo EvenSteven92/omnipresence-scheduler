@@ -45,7 +45,7 @@ function EngagePage() {
           title="Engage hub is ready for wiring"
           description="Once YouTube and Meta are connected on this Mac, this page will list comments and messages so you can reply without leaving OmniPresence."
           action={
-            <Link to="/clients#connect-platform" className="btn-action-primary btn-action">
+            <Link to="/clients" hash="connect-platform" className="btn-action-primary btn-action">
               Open Clients
             </Link>
           }

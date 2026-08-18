@@ -1,14 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { proxyToWorker } from "@/server/ops/proxy";
 
-/** Local-only: Meta OAuth + DB storage removed. */
 export const Route = createFileRoute("/api/accounts/meta/callback")({
   server: {
     handlers: {
-      GET: async () =>
-        Response.json(
-          { detail: "Local-only mode — Meta OAuth is not available without a cloud DB" },
-          { status: 503 },
-        ),
+      GET: async ({ request }) => proxyToWorker(request, "/api/accounts/meta/callback"),
     },
   },
 });

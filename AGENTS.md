@@ -17,13 +17,13 @@ Guidance for AI coding agents working in this repository.
 
 **Direction (approved plan):** Mac-local always-on worker + UI for armed auto-post, engage (comments/messages), and Overview attention — YouTube, Meta, TikTok, X, Rumble (phased; Rumble best-effort).
 
-**Today:** Strong scheduling UI (Studio / Queue / Calendar) with localStorage persistence; Overview + Engage shells; OAuth/publish/inbox still scaffold/stubbed after local hard-clean.
+**Today:** Scheduling UI + Overview/Engage shells; **Phase 1 worker** on `:8787` with SQLite, YouTube/Meta OAuth + metrics sync. Armed publish + inbox reply still Phase 2–3.
 
 ## Stack
 
 - **UI:** TanStack Start (React 19) in `frontend/` + native `OmniPresence.app`
-- **Persistence (UI):** `localStorage` / session overlays
-- **Ops backbone (next):** `worker/` SQLite schema + Launch Agent (scaffold)
+- **Persistence (UI):** `localStorage` for schedules/boards
+- **Ops backbone:** `worker/` (Hono + better-sqlite3) — OAuth tokens, metrics; UI proxies `/api/accounts|youtube|meta|ops`
 - **Optional:** FastAPI news ticker in `backend/`
 
 ## Nav (target IA)

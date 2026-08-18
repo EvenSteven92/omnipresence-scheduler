@@ -95,7 +95,7 @@ export function buildAttentionItems(input: {
       severity: "warning",
       title: `Connect channels for ${input.clientName}`,
       detail: "YouTube / Meta (and later X, TikTok, Rumble) unlock live metrics, comments, and publishing.",
-      href: "/clients#connect-platform",
+      href: "/clients",
     });
   }
   if (input.failedCount > 0) {

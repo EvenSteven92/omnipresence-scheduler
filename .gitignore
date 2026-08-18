@@ -31,3 +31,9 @@ backend/__pycache__/
 frontend/public/design-reference.html
 .vercel
 .env*
+
+# Local worker
+worker/node_modules/
+worker/data/
+worker/.env
+worker/.env.local

@@ -9,84 +9,39 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
-import { Route as CalendarRouteImport } from './routes/calendar'
-import { Route as ClientsRouteImport } from './routes/clients'
-import { Route as EngageRouteImport } from './routes/engage'
-import { Route as EventsRouteImport } from './routes/events'
-import { Route as LibraryRouteImport } from './routes/library'
-import { Route as QueueRouteImport } from './routes/queue'
-import { Route as ScheduleRouteImport } from './routes/schedule'
-import { Route as SchedulerRouteImport } from './routes/scheduler'
-import { Route as StudioRouteImport } from './routes/studio'
 import { Route as WorkspacesRouteImport } from './routes/workspaces'
-import { Route as ApiEventsRouteImport } from './routes/api/events'
-import { Route as ApiPostsRouteImport } from './routes/api/posts'
-import { Route as CardCardIdRouteImport } from './routes/card.$cardId'
+import { Route as StudioRouteImport } from './routes/studio'
+import { Route as SchedulerRouteImport } from './routes/scheduler'
+import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as QueueRouteImport } from './routes/queue'
+import { Route as LibraryRouteImport } from './routes/library'
+import { Route as EventsRouteImport } from './routes/events'
+import { Route as EngageRouteImport } from './routes/engage'
+import { Route as ClientsRouteImport } from './routes/clients'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
-import { Route as ApiAccountsStatusRouteImport } from './routes/api/accounts/status'
-import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
-import { Route as ApiDropboxResolveRouteImport } from './routes/api/dropbox/resolve'
-import { Route as ApiMetaMetricsRouteImport } from './routes/api/meta/metrics'
-import { Route as ApiMetaSyncRouteImport } from './routes/api/meta/sync'
-import { Route as ApiOpsHealthRouteImport } from './routes/api/ops/health'
-import { Route as ApiPostsPostIdRouteImport } from './routes/api/posts.$postId'
-import { Route as ApiYoutubeMetricsRouteImport } from './routes/api/youtube/metrics'
+import { Route as CardCardIdRouteImport } from './routes/card.$cardId'
+import { Route as ApiPostsRouteImport } from './routes/api/posts'
+import { Route as ApiEventsRouteImport } from './routes/api/events'
 import { Route as ApiYoutubeSyncRouteImport } from './routes/api/youtube/sync'
-import { Route as ApiAccountsMetaCallbackRouteImport } from './routes/api/accounts/meta/callback'
-import { Route as ApiAccountsMetaConnectRouteImport } from './routes/api/accounts/meta/connect'
-import { Route as ApiAccountsYoutubeCallbackRouteImport } from './routes/api/accounts/youtube/callback'
+import { Route as ApiYoutubeMetricsRouteImport } from './routes/api/youtube/metrics'
+import { Route as ApiPostsPostIdRouteImport } from './routes/api/posts.$postId'
+import { Route as ApiOpsHealthRouteImport } from './routes/api/ops/health'
+import { Route as ApiMetaSyncRouteImport } from './routes/api/meta/sync'
+import { Route as ApiMetaMetricsRouteImport } from './routes/api/meta/metrics'
+import { Route as ApiDropboxResolveRouteImport } from './routes/api/dropbox/resolve'
+import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
+import { Route as ApiAccountsStatusRouteImport } from './routes/api/accounts/status'
 import { Route as ApiAccountsYoutubeConnectRouteImport } from './routes/api/accounts/youtube/connect'
+import { Route as ApiAccountsYoutubeCallbackRouteImport } from './routes/api/accounts/youtube/callback'
+import { Route as ApiAccountsMetaConnectRouteImport } from './routes/api/accounts/meta/connect'
+import { Route as ApiAccountsMetaCallbackRouteImport } from './routes/api/accounts/meta/callback'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CalendarRoute = CalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ClientsRoute = ClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EngageRoute = EngageRouteImport.update({
-  id: '/engage',
-  path: '/engage',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EventsRoute = EventsRouteImport.update({
-  id: '/events',
-  path: '/events',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LibraryRoute = LibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QueueRoute = QueueRouteImport.update({
-  id: '/queue',
-  path: '/queue',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScheduleRoute = ScheduleRouteImport.update({
-  id: '/schedule',
-  path: '/schedule',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SchedulerRoute = SchedulerRouteImport.update({
-  id: '/scheduler',
-  path: '/scheduler',
+const WorkspacesRoute = WorkspacesRouteImport.update({
+  id: '/workspaces',
+  path: '/workspaces',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudioRoute = StudioRouteImport.update({
@@ -94,24 +49,54 @@ const StudioRoute = StudioRouteImport.update({
   path: '/studio',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspacesRoute = WorkspacesRouteImport.update({
-  id: '/workspaces',
-  path: '/workspaces',
+const SchedulerRoute = SchedulerRouteImport.update({
+  id: '/scheduler',
+  path: '/scheduler',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiEventsRoute = ApiEventsRouteImport.update({
-  id: '/api/events',
-  path: '/api/events',
+const ScheduleRoute = ScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPostsRoute = ApiPostsRouteImport.update({
-  id: '/api/posts',
-  path: '/api/posts',
+const QueueRoute = QueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CardCardIdRoute = CardCardIdRouteImport.update({
-  id: '/card/$cardId',
-  path: '/card/$cardId',
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EngageRoute = EngageRouteImport.update({
+  id: '/engage',
+  path: '/engage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientsRoute = ClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsIndexRoute = EventsIndexRouteImport.update({
@@ -119,44 +104,19 @@ const EventsIndexRoute = EventsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => EventsRoute,
 } as any)
-const ApiAccountsStatusRoute = ApiAccountsStatusRouteImport.update({
-  id: '/api/accounts/status',
-  path: '/api/accounts/status',
+const CardCardIdRoute = CardCardIdRouteImport.update({
+  id: '/card/$cardId',
+  path: '/card/$cardId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAiGenerateRoute = ApiAiGenerateRouteImport.update({
-  id: '/api/ai/generate',
-  path: '/api/ai/generate',
+const ApiPostsRoute = ApiPostsRouteImport.update({
+  id: '/api/posts',
+  path: '/api/posts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiDropboxResolveRoute = ApiDropboxResolveRouteImport.update({
-  id: '/api/dropbox/resolve',
-  path: '/api/dropbox/resolve',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiMetaMetricsRoute = ApiMetaMetricsRouteImport.update({
-  id: '/api/meta/metrics',
-  path: '/api/meta/metrics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiMetaSyncRoute = ApiMetaSyncRouteImport.update({
-  id: '/api/meta/sync',
-  path: '/api/meta/sync',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiOpsHealthRoute = ApiOpsHealthRouteImport.update({
-  id: '/api/ops/health',
-  path: '/api/ops/health',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPostsPostIdRoute = ApiPostsPostIdRouteImport.update({
-  id: '/$postId',
-  path: '/$postId',
-  getParentRoute: () => ApiPostsRoute,
-} as any)
-const ApiYoutubeMetricsRoute = ApiYoutubeMetricsRouteImport.update({
-  id: '/api/youtube/metrics',
-  path: '/api/youtube/metrics',
+const ApiEventsRoute = ApiEventsRouteImport.update({
+  id: '/api/events',
+  path: '/api/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiYoutubeSyncRoute = ApiYoutubeSyncRouteImport.update({
@@ -164,28 +124,68 @@ const ApiYoutubeSyncRoute = ApiYoutubeSyncRouteImport.update({
   path: '/api/youtube/sync',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAccountsMetaCallbackRoute = ApiAccountsMetaCallbackRouteImport.update({
-  id: '/api/accounts/meta/callback',
-  path: '/api/accounts/meta/callback',
+const ApiYoutubeMetricsRoute = ApiYoutubeMetricsRouteImport.update({
+  id: '/api/youtube/metrics',
+  path: '/api/youtube/metrics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAccountsMetaConnectRoute = ApiAccountsMetaConnectRouteImport.update({
-  id: '/api/accounts/meta/connect',
-  path: '/api/accounts/meta/connect',
+const ApiPostsPostIdRoute = ApiPostsPostIdRouteImport.update({
+  id: '/$postId',
+  path: '/$postId',
+  getParentRoute: () => ApiPostsRoute,
+} as any)
+const ApiOpsHealthRoute = ApiOpsHealthRouteImport.update({
+  id: '/api/ops/health',
+  path: '/api/ops/health',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAccountsYoutubeCallbackRoute =
-  ApiAccountsYoutubeCallbackRouteImport.update({
-    id: '/api/accounts/youtube/callback',
-    path: '/api/accounts/youtube/callback',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+const ApiMetaSyncRoute = ApiMetaSyncRouteImport.update({
+  id: '/api/meta/sync',
+  path: '/api/meta/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMetaMetricsRoute = ApiMetaMetricsRouteImport.update({
+  id: '/api/meta/metrics',
+  path: '/api/meta/metrics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDropboxResolveRoute = ApiDropboxResolveRouteImport.update({
+  id: '/api/dropbox/resolve',
+  path: '/api/dropbox/resolve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiGenerateRoute = ApiAiGenerateRouteImport.update({
+  id: '/api/ai/generate',
+  path: '/api/ai/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAccountsStatusRoute = ApiAccountsStatusRouteImport.update({
+  id: '/api/accounts/status',
+  path: '/api/accounts/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAccountsYoutubeConnectRoute =
   ApiAccountsYoutubeConnectRouteImport.update({
     id: '/api/accounts/youtube/connect',
     path: '/api/accounts/youtube/connect',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAccountsYoutubeCallbackRoute =
+  ApiAccountsYoutubeCallbackRouteImport.update({
+    id: '/api/accounts/youtube/callback',
+    path: '/api/accounts/youtube/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAccountsMetaConnectRoute = ApiAccountsMetaConnectRouteImport.update({
+  id: '/api/accounts/meta/connect',
+  path: '/api/accounts/meta/connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAccountsMetaCallbackRoute = ApiAccountsMetaCallbackRouteImport.update({
+  id: '/api/accounts/meta/callback',
+  path: '/api/accounts/meta/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -407,74 +407,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/calendar': {
-      id: '/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof CalendarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/clients': {
-      id: '/clients'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof ClientsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/engage': {
-      id: '/engage'
-      path: '/engage'
-      fullPath: '/engage'
-      preLoaderRoute: typeof EngageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/events': {
-      id: '/events'
-      path: '/events'
-      fullPath: '/events'
-      preLoaderRoute: typeof EventsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/library': {
-      id: '/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/queue': {
-      id: '/queue'
-      path: '/queue'
-      fullPath: '/queue'
-      preLoaderRoute: typeof QueueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/schedule': {
-      id: '/schedule'
-      path: '/schedule'
-      fullPath: '/schedule'
-      preLoaderRoute: typeof ScheduleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/scheduler': {
-      id: '/scheduler'
-      path: '/scheduler'
-      fullPath: '/scheduler'
-      preLoaderRoute: typeof SchedulerRouteImport
+    '/workspaces': {
+      id: '/workspaces'
+      path: '/workspaces'
+      fullPath: '/workspaces'
+      preLoaderRoute: typeof WorkspacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/studio': {
@@ -484,32 +421,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/workspaces': {
-      id: '/workspaces'
-      path: '/workspaces'
-      fullPath: '/workspaces'
-      preLoaderRoute: typeof WorkspacesRouteImport
+    '/scheduler': {
+      id: '/scheduler'
+      path: '/scheduler'
+      fullPath: '/scheduler'
+      preLoaderRoute: typeof SchedulerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/events': {
-      id: '/api/events'
-      path: '/api/events'
-      fullPath: '/api/events'
-      preLoaderRoute: typeof ApiEventsRouteImport
+    '/schedule': {
+      id: '/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof ScheduleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/posts': {
-      id: '/api/posts'
-      path: '/api/posts'
-      fullPath: '/api/posts'
-      preLoaderRoute: typeof ApiPostsRouteImport
+    '/queue': {
+      id: '/queue'
+      path: '/queue'
+      fullPath: '/queue'
+      preLoaderRoute: typeof QueueRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/card/$cardId': {
-      id: '/card/$cardId'
-      path: '/card/$cardId'
-      fullPath: '/card/$cardId'
-      preLoaderRoute: typeof CardCardIdRouteImport
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/engage': {
+      id: '/engage'
+      path: '/engage'
+      fullPath: '/engage'
+      preLoaderRoute: typeof EngageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clients': {
+      id: '/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof ClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events/': {
@@ -519,60 +498,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsIndexRouteImport
       parentRoute: typeof EventsRoute
     }
-    '/api/accounts/status': {
-      id: '/api/accounts/status'
-      path: '/api/accounts/status'
-      fullPath: '/api/accounts/status'
-      preLoaderRoute: typeof ApiAccountsStatusRouteImport
+    '/card/$cardId': {
+      id: '/card/$cardId'
+      path: '/card/$cardId'
+      fullPath: '/card/$cardId'
+      preLoaderRoute: typeof CardCardIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/ai/generate': {
-      id: '/api/ai/generate'
-      path: '/api/ai/generate'
-      fullPath: '/api/ai/generate'
-      preLoaderRoute: typeof ApiAiGenerateRouteImport
+    '/api/posts': {
+      id: '/api/posts'
+      path: '/api/posts'
+      fullPath: '/api/posts'
+      preLoaderRoute: typeof ApiPostsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/dropbox/resolve': {
-      id: '/api/dropbox/resolve'
-      path: '/api/dropbox/resolve'
-      fullPath: '/api/dropbox/resolve'
-      preLoaderRoute: typeof ApiDropboxResolveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/meta/metrics': {
-      id: '/api/meta/metrics'
-      path: '/api/meta/metrics'
-      fullPath: '/api/meta/metrics'
-      preLoaderRoute: typeof ApiMetaMetricsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/meta/sync': {
-      id: '/api/meta/sync'
-      path: '/api/meta/sync'
-      fullPath: '/api/meta/sync'
-      preLoaderRoute: typeof ApiMetaSyncRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/ops/health': {
-      id: '/api/ops/health'
-      path: '/api/ops/health'
-      fullPath: '/api/ops/health'
-      preLoaderRoute: typeof ApiOpsHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/posts/$postId': {
-      id: '/api/posts/$postId'
-      path: '/$postId'
-      fullPath: '/api/posts/$postId'
-      preLoaderRoute: typeof ApiPostsPostIdRouteImport
-      parentRoute: typeof ApiPostsRoute
-    }
-    '/api/youtube/metrics': {
-      id: '/api/youtube/metrics'
-      path: '/api/youtube/metrics'
-      fullPath: '/api/youtube/metrics'
-      preLoaderRoute: typeof ApiYoutubeMetricsRouteImport
+    '/api/events': {
+      id: '/api/events'
+      path: '/api/events'
+      fullPath: '/api/events'
+      preLoaderRoute: typeof ApiEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/youtube/sync': {
@@ -582,18 +526,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiYoutubeSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/accounts/meta/callback': {
-      id: '/api/accounts/meta/callback'
-      path: '/api/accounts/meta/callback'
-      fullPath: '/api/accounts/meta/callback'
-      preLoaderRoute: typeof ApiAccountsMetaCallbackRouteImport
+    '/api/youtube/metrics': {
+      id: '/api/youtube/metrics'
+      path: '/api/youtube/metrics'
+      fullPath: '/api/youtube/metrics'
+      preLoaderRoute: typeof ApiYoutubeMetricsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/accounts/meta/connect': {
-      id: '/api/accounts/meta/connect'
-      path: '/api/accounts/meta/connect'
-      fullPath: '/api/accounts/meta/connect'
-      preLoaderRoute: typeof ApiAccountsMetaConnectRouteImport
+    '/api/posts/$postId': {
+      id: '/api/posts/$postId'
+      path: '/$postId'
+      fullPath: '/api/posts/$postId'
+      preLoaderRoute: typeof ApiPostsPostIdRouteImport
+      parentRoute: typeof ApiPostsRoute
+    }
+    '/api/ops/health': {
+      id: '/api/ops/health'
+      path: '/api/ops/health'
+      fullPath: '/api/ops/health'
+      preLoaderRoute: typeof ApiOpsHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/meta/sync': {
+      id: '/api/meta/sync'
+      path: '/api/meta/sync'
+      fullPath: '/api/meta/sync'
+      preLoaderRoute: typeof ApiMetaSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/meta/metrics': {
+      id: '/api/meta/metrics'
+      path: '/api/meta/metrics'
+      fullPath: '/api/meta/metrics'
+      preLoaderRoute: typeof ApiMetaMetricsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/dropbox/resolve': {
+      id: '/api/dropbox/resolve'
+      path: '/api/dropbox/resolve'
+      fullPath: '/api/dropbox/resolve'
+      preLoaderRoute: typeof ApiDropboxResolveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/generate': {
+      id: '/api/ai/generate'
+      path: '/api/ai/generate'
+      fullPath: '/api/ai/generate'
+      preLoaderRoute: typeof ApiAiGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/accounts/status': {
+      id: '/api/accounts/status'
+      path: '/api/accounts/status'
+      fullPath: '/api/accounts/status'
+      preLoaderRoute: typeof ApiAccountsStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/accounts/youtube/connect': {
+      id: '/api/accounts/youtube/connect'
+      path: '/api/accounts/youtube/connect'
+      fullPath: '/api/accounts/youtube/connect'
+      preLoaderRoute: typeof ApiAccountsYoutubeConnectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/accounts/youtube/callback': {
@@ -603,11 +596,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAccountsYoutubeCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/accounts/youtube/connect': {
-      id: '/api/accounts/youtube/connect'
-      path: '/api/accounts/youtube/connect'
-      fullPath: '/api/accounts/youtube/connect'
-      preLoaderRoute: typeof ApiAccountsYoutubeConnectRouteImport
+    '/api/accounts/meta/connect': {
+      id: '/api/accounts/meta/connect'
+      path: '/api/accounts/meta/connect'
+      fullPath: '/api/accounts/meta/connect'
+      preLoaderRoute: typeof ApiAccountsMetaConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/accounts/meta/callback': {
+      id: '/api/accounts/meta/callback'
+      path: '/api/accounts/meta/callback'
+      fullPath: '/api/accounts/meta/callback'
+      preLoaderRoute: typeof ApiAccountsMetaCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -668,3 +668,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

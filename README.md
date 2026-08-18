@@ -2,7 +2,17 @@
 
 Personal multi-client social ops console for **TORCC, First Love, Open Eyes, and KEKA** (TanStack Start + React + macOS app).
 
-**Day-to-day:** Mac-local. No Vercel/Neon required for the UI. Armed auto-post + inbox sync use a local worker (scaffold in `worker/`).
+**Day-to-day:** Mac-local. No Vercel/Neon required for the UI.
+
+### Local worker (Phase 1)
+
+```bash
+cd worker
+cp .env.example .env   # add Google / Meta OAuth secrets
+./start.sh             # http://127.0.0.1:8787
+```
+
+The Desktop app starts the worker automatically. UI proxies account/metrics APIs to it.
 
 ## Prerequisites
 

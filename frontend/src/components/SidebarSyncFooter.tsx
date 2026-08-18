@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { usePlatformConnections } from "@/hooks/usePlatformConnections";
+import { useWorkerHealth } from "@/hooks/useWorkerHealth";
 import { useWorkspace } from "@/lib/workspace-context";
 import { cn } from "@/lib/utils";
 
@@ -25,14 +26,17 @@ const PLATFORM_SHORT: Record<string, string> = {
 export function SidebarSyncFooter({ collapsed }: { collapsed: boolean }) {
   const { workspaceId } = useWorkspace();
   const { data: status } = usePlatformConnections(workspaceId);
+  const { data: worker } = useWorkerHealth();
 
   const label = useMemo(() => {
-    if (!status) return null;
+    const workerPart = worker?.online ? "WORKER ON" : "WORKER OFF";
+
+    if (!status) return workerPart;
 
     const yt = status.youtube.connected;
     const fb = status.meta.facebook.connected;
     const ig = status.meta.instagram.connected;
-    if (!yt && !fb && !ig) return "NOT CONNECTED";
+    if (!yt && !fb && !ig) return `${workerPart} · NOT CONNECTED`;
 
     const syncedAts = [
       status.youtube.syncedAt,
@@ -48,8 +52,9 @@ export function SidebarSyncFooter({ collapsed }: { collapsed: boolean }) {
     if (ig) platforms.push(PLATFORM_SHORT.IG!);
 
     const syncPart = when ? `SYNCED ${when}` : "CONNECTED";
-    return platforms.length > 0 ? `${syncPart} · ${platforms.join(" · ")}` : syncPart;
-  }, [status]);
+    const channels = platforms.length > 0 ? ` · ${platforms.join(" · ")}` : "";
+    return `${workerPart} · ${syncPart}${channels}`;
+  }, [status, worker?.online]);
 
   if (!label) return null;
 
