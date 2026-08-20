@@ -22,6 +22,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
       )
     }
 
+    func remapLegacyRoot(_ root: String) -> String {
+      root.replacingOccurrences(
+        of: "/glance-schedule-go",
+        with: "/omnipresence"
+      )
+    }
+
     var resolved = ""
 
     if let env = ProcessInfo.processInfo.environment["OMNIPRESENCE_ROOT"], looksLikeProject(env) {
@@ -30,9 +37,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
     // Desktop / relocated copies bake the absolute path into Info.plist
     if resolved.isEmpty,
-       let plistRoot = Bundle.main.object(forInfoDictionaryKey: "OmniPresenceProjectRoot") as? String,
-       looksLikeProject(plistRoot) {
-      resolved = plistRoot
+       let plistRoot = Bundle.main.object(forInfoDictionaryKey: "OmniPresenceProjectRoot") as? String {
+      if looksLikeProject(plistRoot) {
+        resolved = plistRoot
+      } else if looksLikeProject(remapLegacyRoot(plistRoot)) {
+        resolved = remapLegacyRoot(plistRoot)
+      }
     }
 
     // App living inside the repo: …/repo/OmniPresence.app/Contents/MacOS
