@@ -9,12 +9,16 @@ import { youtubeRoutes } from "./routes/youtube.js";
 import { metaRoutes } from "./routes/meta.js";
 import { postsRoutes } from "./routes/posts.js";
 import { mediaRoutes } from "./routes/media.js";
+import { engageRoutes } from "./routes/engage.js";
 import { runPublishDueOnce } from "./publish/loop.js";
 import { ensureMediaSchema } from "./media/store.js";
+import { ensureEngageSchema } from "./engage/schema.js";
+import { syncEngageAllClients } from "./engage/sync.js";
 
 loadEnvFiles();
 initSchema();
 ensureMediaSchema();
+ensureEngageSchema();
 touchHeartbeat();
 
 const app = new Hono();
@@ -30,10 +34,11 @@ app.get("/api/ops/health", (c) => {
   touchHeartbeat();
   return c.json({
     online: true,
-    detail: "Local OmniPresence worker — OAuth, metrics, armed Meta publish",
-    version: "0.2.0",
+    detail: "Local OmniPresence worker — OAuth, metrics, Meta publish, engage comments",
+    version: "0.3.0",
     lastTickAt: getMeta("last_tick_at"),
     lastPublishRunAt: getMeta("last_publish_run_at"),
+    lastEngageSyncAt: getMeta("last_engage_sync_at"),
   });
 });
 
@@ -48,6 +53,7 @@ app.route("/api/youtube", youtubeRoutes);
 app.route("/api/meta", metaRoutes);
 app.route("/api/posts", postsRoutes);
 app.route("/api/media", mediaRoutes);
+app.route("/api/engage", engageRoutes);
 
 app.get("/", (c) =>
   c.json({
@@ -77,3 +83,14 @@ setInterval(() => {
 setTimeout(() => {
   void runPublishDueOnce().catch(() => null);
 }, 5_000);
+
+// Engage: sync comments every 2 minutes
+setInterval(() => {
+  void syncEngageAllClients().catch((err) => {
+    console.error("[engage-sync]", err);
+  });
+}, 120_000);
+
+setTimeout(() => {
+  void syncEngageAllClients().catch(() => null);
+}, 12_000);

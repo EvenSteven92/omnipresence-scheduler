@@ -77,6 +77,7 @@ export function buildAttentionItems(input: {
   failedCount: number;
   connected: boolean;
   workerOnline: boolean;
+  unreadComments?: number;
 }): AttentionItem[] {
   const items: AttentionItem[] = [];
   if (!input.workerOnline) {
@@ -94,8 +95,17 @@ export function buildAttentionItems(input: {
       id: `connect-${input.clientId}`,
       severity: "warning",
       title: `Connect channels for ${input.clientName}`,
-      detail: "YouTube / Meta (and later X, TikTok, Rumble) unlock live metrics, comments, and publishing.",
+      detail: "YouTube / Meta unlock live metrics, comments, and publishing.",
       href: "/clients",
+    });
+  }
+  if ((input.unreadComments ?? 0) > 0) {
+    items.push({
+      id: `unread-${input.clientId}`,
+      severity: "warning",
+      title: `${input.unreadComments} unread comment${input.unreadComments === 1 ? "" : "s"}`,
+      detail: "Open Engage to reply from OmniPresence.",
+      href: "/engage",
     });
   }
   if (input.failedCount > 0) {

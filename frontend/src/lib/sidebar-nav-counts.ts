@@ -7,13 +7,13 @@ import {
   UPCOMING_WINDOW_DAYS,
 } from "@/lib/scheduled-post-display";
 
-export type SidebarNavCountKey = "queue" | "calendar" | "events" | "ready";
+export type SidebarNavCountKey = "queue" | "calendar" | "events" | "ready" | "engage";
 
 export function computeSidebarNavCounts(
   scheduledPosts: ScheduledPost[],
   events: ContentEvent[],
   fromDay = todayStart(),
-): Record<Exclude<SidebarNavCountKey, "ready">, number> {
+): Record<Exclude<SidebarNavCountKey, "ready" | "engage">, number> {
   const upcoming = getUpcomingContentCards(scheduledPosts, fromDay, UPCOMING_WINDOW_DAYS);
   const queueDays = new Set(upcoming.map((p) => contentCardAnchorDate(p).toDateString()));
 

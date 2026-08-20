@@ -20,6 +20,7 @@ import { todayStart } from "@/lib/demo-clock";
 import { cn } from "@/lib/utils";
 import { CREATE } from "@/lib/create-actions";
 import { FilePlus } from "lucide-react";
+import { useEngageUnread } from "@/hooks/useEngage";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,6 +41,7 @@ function OverviewPage() {
   const ops = useClientOps(workspaceId);
   const { data: worker } = useWorkerHealth();
   const { data: accounts } = usePlatformConnections(workspaceId);
+  const { data: engageUnread } = useEngageUnread(workspaceId);
 
   const connected = Boolean(
     accounts?.youtube.connected ||
@@ -64,6 +66,8 @@ function OverviewPage() {
     [workspace.scheduledPosts],
   );
 
+  const unreadComments = engageUnread?.unread ?? 0;
+
   const attention = useMemo(
     () =>
       buildAttentionItems({
@@ -73,8 +77,17 @@ function OverviewPage() {
         failedCount,
         connected,
         workerOnline: worker?.online ?? false,
+        unreadComments,
       }),
-    [workspaceId, workspace.name, upcoming.length, failedCount, connected, worker?.online],
+    [
+      workspaceId,
+      workspace.name,
+      upcoming.length,
+      failedCount,
+      connected,
+      worker?.online,
+      unreadComments,
+    ],
   );
 
   return (
@@ -87,7 +100,7 @@ function OverviewPage() {
           <>
             <Link to="/engage" className="btn-action btn-action-secondary">
               <Inbox className="h-3.5 w-3.5" />
-              Engage
+              Engage{unreadComments > 0 ? ` (${unreadComments})` : ""}
             </Link>
             <Link to="/studio" className="btn-action-primary btn-action">
               <FilePlus className="h-3.5 w-3.5" strokeWidth={2} />
@@ -123,10 +136,14 @@ function OverviewPage() {
             detail={worker?.detail ?? "Checking…"}
           />
           <StatusCard
-            label="Unread / inbox"
-            value="—"
-            tone="muted"
-            detail="Engage hub syncs after OAuth (Phase 3)"
+            label="Unread comments"
+            value={String(unreadComments)}
+            tone={unreadComments > 0 ? "warning" : "muted"}
+            detail={
+              unreadComments > 0
+                ? "Open Engage to reply"
+                : "Synced from YouTube · FB · IG"
+            }
           />
           <StatusCard
             label="Next 7 days"

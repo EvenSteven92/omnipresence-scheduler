@@ -36,7 +36,9 @@ The Desktop **OmniPresence** app also starts this worker when you open it.
 
 Armed **Facebook / Instagram** targets fire automatically about every 30s when due.
 
-**Local Mac media:** drop files on Boards → `POST /api/media/upload` stores them under `worker/data/media/`. Publish reads those files (no Dropbox required). YouTube upload is next.
+**Local Mac media:** drop files on Boards → `POST /api/media/upload` stores them under `worker/data/media/`. Publish reads those files (no Dropbox required).
+
+**Engage:** `GET/POST /api/engage/*` syncs YT/FB/IG comments (~2 min) and supports reply. Reconnect accounts after scope updates.
 
 The UI on `:3000` proxies these paths via TanStack route handlers.
 

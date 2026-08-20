@@ -1,7 +1,8 @@
 import { appBaseUrl } from "../lib/env.js";
 
+/** Readonly metrics + comment read/reply. Reconnect YouTube after this change. */
 export const YOUTUBE_SCOPES = [
-  "https://www.googleapis.com/auth/youtube.readonly",
+  "https://www.googleapis.com/auth/youtube.force-ssl",
   "https://www.googleapis.com/auth/yt-analytics.readonly",
 ] as const;
 

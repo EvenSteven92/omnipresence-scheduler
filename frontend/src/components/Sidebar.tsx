@@ -20,6 +20,7 @@ import { useCustomEvents, mergeWorkspaceEvents } from "@/hooks/useCustomEvents";
 import { computeSidebarNavCounts, type SidebarNavCountKey } from "@/lib/sidebar-nav-counts";
 import { countReadyCards } from "@/lib/draft-storage";
 import { useWorkspace } from "@/lib/workspace-context";
+import { useEngageUnread } from "@/hooks/useEngage";
 import { CREATE } from "@/lib/create-actions";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +33,7 @@ const nav: {
   countKey?: SidebarNavCountKey;
 }[] = [
   { to: "/", label: "Overview", icon: LayoutDashboard },
-  { to: "/engage", label: "Engage", icon: Inbox },
+  { to: "/engage", label: "Engage", icon: Inbox, countKey: "engage" },
   { to: "/studio", label: "Boards", icon: Clapperboard, countKey: "ready" },
   { to: "/queue", label: "Queue", icon: LayoutList, countKey: "queue" },
   { to: "/calendar", label: "Calendar", icon: CalendarDays, countKey: "calendar" },
@@ -46,6 +47,7 @@ export function Sidebar() {
   const [readyTick, setReadyTick] = useState(0);
   const { workspace, workspaceId } = useWorkspace();
   const { customEvents } = useCustomEvents(workspaceId);
+  const { data: engageUnread } = useEngageUnread(workspaceId);
 
   const events = useMemo(
     () => mergeWorkspaceEvents(workspace.events, customEvents),
@@ -71,8 +73,9 @@ export function Sidebar() {
     () => ({
       ...computeSidebarNavCounts(workspace.scheduledPosts, events),
       ready: readyCount,
+      engage: engageUnread?.unread ?? 0,
     }),
-    [workspace.scheduledPosts, events, readyCount],
+    [workspace.scheduledPosts, events, readyCount, engageUnread?.unread],
   );
 
   useEffect(() => {

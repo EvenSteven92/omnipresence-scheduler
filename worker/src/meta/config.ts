@@ -9,8 +9,10 @@ export const META_SCOPES_FULL = [
   "business_management",
   "pages_read_engagement",
   "pages_manage_posts",
+  "pages_manage_engagement",
   "instagram_basic",
   "instagram_content_publish",
+  "instagram_manage_comments",
   "instagram_manage_insights",
 ] as const;
 
