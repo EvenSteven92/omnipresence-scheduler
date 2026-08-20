@@ -11,7 +11,7 @@ Guidance for AI coding agents working in this repository.
 
 ## What this is
 
-**OmniPresence** is a **personal** multi-client social ops console (not a multi-user team product).
+**OmniPresence** is a **personal** multi-client social ops console (not a multi-user team product). Product intent: [GOALS.md](./GOALS.md).
 
 **Clients:** TORCC · First Love · Open Eyes · KEKA (`WorkspaceId` in code — treat as client ids).
 

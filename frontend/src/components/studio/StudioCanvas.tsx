@@ -122,22 +122,50 @@ export function StudioCanvas({
     onViewportChange?.(vp);
   }, [pan.x, pan.y, zoom, onViewportChange]);
 
-  // Center viewport on a focused card (deep link / library open)
+  // Center viewport on a focused card (deep link / library open) with ease-in-out
   useEffect(() => {
     if (!focusWorld) return;
     const el = rootRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const z = Math.max(zoom, 0.85);
-    // Card ~320×~420; center media-ish region in view
+    const zEnd = Math.max(zoom, 0.85);
     const cx = focusWorld.x + 160;
     const cy = focusWorld.y + 200;
-    setZoom(z);
-    setPan({
-      x: rect.width / 2 - cx * z,
-      y: rect.height / 2 - cy * z,
-    });
-  }, [focusWorld?.key, focusWorld?.x, focusWorld?.y]); // eslint-disable-line react-hooks/exhaustive-deps
+    const panEnd = {
+      x: rect.width / 2 - cx * zEnd,
+      y: rect.height / 2 - cy * zEnd,
+    };
+
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setZoom(zEnd);
+      setPan(panEnd);
+      return;
+    }
+
+    const zStart = zoom;
+    const panStart = { ...pan };
+    const duration = 320;
+    const t0 = performance.now();
+    let raf = 0;
+    const easeInOut = (t: number) =>
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    function tick(now: number) {
+      const t = Math.min(1, (now - t0) / duration);
+      const k = easeInOut(t);
+      setZoom(zStart + (zEnd - zStart) * k);
+      setPan({
+        x: panStart.x + (panEnd.x - panStart.x) * k,
+        y: panStart.y + (panEnd.y - panStart.y) * k,
+      });
+      if (t < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [focusWorld?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     function down(e: KeyboardEvent) {

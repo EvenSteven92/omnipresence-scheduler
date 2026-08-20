@@ -17,7 +17,7 @@ import { StudioEventCard } from "@/components/studio/StudioEventCard";
 import { StudioGroupMenu } from "@/components/studio/StudioGroupMenu";
 import { StudioLayersPanel } from "@/components/studio/StudioLayersPanel";
 import { StudioScheduleShelf } from "@/components/studio/StudioScheduleShelf";
-import { draftToScheduledPost } from "@/hooks/useComposerScheduledPosts";
+import { draftToScheduledPost } from "@/lib/composer-draft";
 import {
   applyMeasuredDimensions,
   applyProposedTimes,
@@ -662,7 +662,7 @@ function StudioPage() {
     if (!draft) return;
     setBusy("transcript");
     try {
-      const text = await generateTranscript(draft);
+      const text = await generateTranscript(draft, workspace.voice);
       updateDraft(id, (d) => ({
         ...d,
         transcript: text,

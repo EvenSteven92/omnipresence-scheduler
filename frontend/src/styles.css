@@ -102,10 +102,12 @@
   --sidebar-width: 14.75rem;
   /* Icon rail: 16px pad + 40px hit target — no room for labels */
   --sidebar-width-collapsed: 3.5rem;
-  /* Soft, quick product motion */
-  --motion-fast: 150ms;
-  --motion-panel: 200ms;
+  /* Luxury product motion — ease-in-out, never snappy */
+  --motion-fast: 180ms;
+  --motion-panel: 320ms;
+  --motion-sidebar: 280ms;
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-inout-lux: cubic-bezier(0.45, 0, 0.55, 1);
 }
 
 @layer base {
@@ -564,15 +566,15 @@
 }
 
 .animate-fade-in {
-  animation: omni-fade-in var(--motion-fast, 150ms) var(--ease-out-soft) both;
+  animation: omni-fade-in var(--motion-panel, 320ms) var(--ease-inout-lux) both;
 }
 
 .animate-slide-in-up {
-  animation: omni-slide-in-up var(--motion-fast, 150ms) var(--ease-out-soft) both;
+  animation: omni-slide-in-up var(--motion-panel, 320ms) var(--ease-inout-lux) both;
 }
 
 .animate-slide-in-right {
-  animation: omni-slide-in-right var(--motion-panel, 200ms) var(--ease-out-soft) both;
+  animation: omni-slide-in-right var(--motion-panel, 320ms) var(--ease-inout-lux) both;
 }
 
 .pause-on-hover:hover {

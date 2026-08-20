@@ -1,6 +1,6 @@
 /**
- * Frontend helper for POST /api/ai/generate.
- * Served by TanStack server routes (Vercel AI Gateway + Grok on deploy).
+ * Frontend helper for POST /api/ai/generate (local TanStack route).
+ * Optional API key in env — not a cloud app database.
  *
  * Mock mode (default): skip network so Studio prepare/caption/CTA flows
  * can be tested offline. Set VITE_STUDIO_MOCK_AI=0 to use the live API.

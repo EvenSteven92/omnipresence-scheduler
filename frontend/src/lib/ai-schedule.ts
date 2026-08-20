@@ -21,7 +21,10 @@ function buildBrief(draft: DraftPost, events: ContentEvent[]): string {
   const eventContext = event ? `Event: "${event.title}" (${event.kind}). ` : "";
   const transcript = draft.transcript?.trim();
   const caption = draft.caption?.trim();
-  const core = transcript || caption || draft.filename;
+  // Prefer spoken transcript so captions follow the reel, not the filename.
+  const core = transcript
+    ? `Transcript:\n${transcript}`
+    : caption || `Media file: ${draft.filename}`;
   return `${eventContext}${core}`;
 }
 

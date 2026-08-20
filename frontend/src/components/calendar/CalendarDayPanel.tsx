@@ -127,7 +127,7 @@ export function CalendarDayPanel({
   return (
     <aside
       data-testid="calendar-day-panel"
-      className="flex h-full min-h-[28rem] flex-col overflow-hidden rounded-lg border border-line bg-card shadow-[var(--shadow-card)]"
+      className="flex h-full min-h-[28rem] flex-col overflow-hidden rounded-lg border border-line bg-card shadow-[var(--shadow-card)] animate-slide-in-right"
     >
       <header className="flex shrink-0 items-start justify-between gap-3 border-b border-line px-5 py-4">
         <div className="min-w-0">

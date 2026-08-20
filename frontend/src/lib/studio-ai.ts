@@ -20,7 +20,10 @@ function sleep(ms: number) {
 /**
  * Draft transcript outline. Not real speech-to-text.
  */
-export async function generateTranscript(draft: DraftPost): Promise<string> {
+export async function generateTranscript(
+  draft: DraftPost,
+  voice?: string,
+): Promise<string> {
   const title = draftDisplayTitle(draft);
   const text = await aiGenerate({
     kind: "internal_notes",
@@ -28,8 +31,9 @@ export async function generateTranscript(draft: DraftPost): Promise<string> {
       draft.callToAction?.trim()
         ? `Preferred CTA: ${draft.callToAction.trim()}.`
         : ""
-    } Use approximate timestamps like [0:00], [0:15]. No markdown fences.`,
+    } Align tone with this brand voice: ${voice?.trim() || "warm, clear, on-brand"}. Use approximate timestamps like [0:00], [0:15]. No markdown fences.`,
     title,
+    tone: voice,
   });
   if (text.trim()) return text.trim();
   return [
@@ -160,7 +164,7 @@ export async function prepareStudioCardWithAi(
   if (!next.transcript?.trim()) {
     next = {
       ...next,
-      transcript: await generateTranscript(next),
+      transcript: await generateTranscript(next, opts.voice),
       studioOpen: { ...next.studioOpen, transcript: true },
     };
   }

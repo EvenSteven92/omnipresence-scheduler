@@ -2,7 +2,9 @@
 
 Personal multi-client social ops console for **TORCC, First Love, Open Eyes, and KEKA** (TanStack Start + React + macOS app).
 
-**Day-to-day:** Mac-local. No Vercel/Neon required for the UI.
+**Goals:** see [GOALS.md](./GOALS.md) — local-only, AI captions from reel transcripts, brand voice, armed auto-post.
+
+**Day-to-day:** Mac-local. No Vercel/Neon/Lovable/Emergent database.
 
 ### Local worker (Phase 1)
 

@@ -110,7 +110,7 @@ export function Sidebar() {
             : "var(--sidebar-width)",
         }}
         className={cn(
-          "relative hidden h-full min-h-0 shrink-0 flex-col overscroll-contain border-r border-line bg-paper-2 py-4 transition-[width] duration-200 ease-out md:flex",
+          "relative hidden h-full min-h-0 shrink-0 flex-col overscroll-contain border-r border-line bg-paper-2 py-4 transition-[width] duration-[var(--motion-sidebar)] ease-[var(--ease-inout-lux)] md:flex",
           /* Icon rail: never bleed labels during width animation */
           "overflow-x-hidden overflow-y-auto",
           collapsed ? "px-2" : "px-3",

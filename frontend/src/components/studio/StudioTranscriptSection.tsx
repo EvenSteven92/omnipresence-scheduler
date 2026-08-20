@@ -28,26 +28,27 @@ export function StudioTranscriptSection({
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-muted-foreground transition-transform duration-200",
+            "h-4 w-4 text-muted-foreground transition-transform duration-[var(--motion-panel)] ease-[var(--ease-inout-lux)]",
             open && "rotate-180",
           )}
         />
       </button>
       <div
         className={cn(
-          "grid transition-[grid-template-rows] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "grid transition-[grid-template-rows] duration-[var(--motion-panel)] ease-[var(--ease-inout-lux)]",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
         <div className="min-h-0 overflow-hidden">
           <div
             className={cn(
-              "space-y-2 px-3 pb-3 transition-opacity duration-150",
+              "space-y-2 px-3 pb-3 transition-opacity duration-[var(--motion-panel)] ease-[var(--ease-inout-lux)]",
               open ? "opacity-100" : "opacity-0",
             )}
           >
             <p className="text-[0.7rem] text-muted-foreground">
-              Paste notes or generate a draft outline. Real speech-to-text comes later.
+              Paste the reel’s spoken words (or a draft outline). Captions are generated from this
+              transcript and the active brand voice. Automatic speech-to-text is next.
             </p>
             <textarea
               value={value}

@@ -51,6 +51,7 @@ export function StudioEventCard({
   const fileRef = useRef<HTMLInputElement>(null);
   const ox = liveOffset?.x ?? 0;
   const oy = liveOffset?.y ?? 0;
+  const dragging = ox !== 0 || oy !== 0;
   const dateLabel = new Date(event.date).toLocaleDateString(undefined, {
     weekday: "short",
     month: "short",
@@ -76,6 +77,7 @@ export function StudioEventCard({
       data-studio-card={event.id}
       data-studio-event="true"
       className="absolute will-change-transform"
+      data-dragging={dragging ? "true" : "false"}
       style={{
         left: x,
         top: y,
@@ -83,13 +85,15 @@ export function StudioEventCard({
         zIndex: selected || stackFront ? 40 : 1,
         transform:
           ox !== 0 || oy !== 0 ? `translate3d(${ox}px, ${oy}px, 0)` : undefined,
+        transition: dragging ? "none" : undefined,
       }}
     >
       <article
         className={cn(
           "overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)] select-none",
-          "transition-[border-color,box-shadow,transform] duration-150 ease-out",
-          selected
+          !dragging &&
+            "transition-[border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-inout-lux)]",
+          selected && !dragging
             ? "scale-[1.01] border-brand shadow-[0_0_0_2px_color-mix(in_oklab,var(--brand)_35%,transparent)]"
             : "border-line hover:border-foreground/30",
         )}

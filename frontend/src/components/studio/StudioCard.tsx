@@ -97,6 +97,7 @@ export function StudioCard({
   const open = draft.studioOpen ?? {};
   const ox = liveOffset?.x ?? 0;
   const oy = liveOffset?.y ?? 0;
+  const dragging = ox !== 0 || oy !== 0;
 
   const hasTranscript = Boolean(draft.transcript?.trim());
   const hasCta = Boolean(draft.callToAction?.trim());
@@ -142,6 +143,7 @@ export function StudioCard({
       data-stage={stage}
       data-studio-card={draft.id}
       className="absolute will-change-transform"
+      data-dragging={dragging ? "true" : "false"}
       style={{
         left: draft.canvasX ?? 48,
         top: draft.canvasY ?? 48,
@@ -149,14 +151,16 @@ export function StudioCard({
         zIndex,
         transform:
           ox !== 0 || oy !== 0 ? `translate3d(${ox}px, ${oy}px, 0)` : undefined,
+        transition: dragging ? "none" : undefined,
       }}
     >
       <article
         className={cn(
           "overflow-hidden rounded-lg bg-card shadow-[var(--shadow-card)] select-none",
-          "transition-[border-color,box-shadow,transform] duration-150 ease-out",
+          !dragging &&
+            "transition-[border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-inout-lux)]",
           statusBorderClass(lifecycleStatus, multiSelected),
-          selected && "scale-[1.01]",
+          selected && !dragging && "scale-[1.01]",
         )}
         onPointerDown={(e) => {
           // Raise on any interaction so buried cards become reachable (Miro)

@@ -124,8 +124,7 @@ Keep "one uploaded file = one card." Replace the six stacked accordions with a *
 - **Remove nothing.** Every card keeps its data, click target, badges, and metrics. The composer
   keeps every control (just regrouped). Verify against the existing behavior before deleting any
   wrapper component.
-- Don't touch functional/infra: `server/youtube`, `server/meta`, `vite.config.ts`, `vercel.json`,
-  data models in `lib/workspaces/`, `schedule-engine.ts`.
+- Historical note: `vercel.json` and Neon/Lovable paths are gone. See `GOALS.md`.
 - Don't edit `routeTree.gen.ts`.
 
 ## Build order (incremental — build + smoke after each)

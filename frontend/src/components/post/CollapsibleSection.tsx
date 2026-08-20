@@ -34,11 +34,15 @@ export function CollapsibleSection({
         <span className="flex shrink-0 items-center gap-2">
           {badge}
           <ChevronDown
-            className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+            className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-[var(--motion-panel)] ease-[var(--ease-inout-lux)] ${open ? "rotate-180" : ""}`}
           />
         </span>
       </button>
-      {open && children}
+      <div
+        className={`grid transition-[grid-template-rows] duration-[var(--motion-panel)] ease-[var(--ease-inout-lux)] ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+      >
+        <div className="min-h-0 overflow-hidden">{children}</div>
+      </div>
     </section>
   );
 }

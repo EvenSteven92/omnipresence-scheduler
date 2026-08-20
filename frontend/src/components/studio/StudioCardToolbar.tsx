@@ -70,7 +70,7 @@ export function StudioCardToolbar({
       icon: Type,
       disabled: !canCaption,
       title: canCaption
-        ? "Generate caption + hashtags"
+        ? "Generate caption + hashtags from transcript"
         : "Add transcript or CTA first",
     },
     {

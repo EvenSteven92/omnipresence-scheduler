@@ -231,6 +231,35 @@ export function draftDisplayTitle(draft: DraftPost): string {
   return draft.title?.trim() || draft.caption.trim() || titleFromFilename(draft.filename);
 }
 
+/** Commit a timed Studio card to the local schedule (armed auto-post). */
+export function draftToScheduledPost(draft: DraftPost): ScheduledPost | null {
+  if (draft.platforms.length === 0) return null;
+  const times = draft.proposedTimes ?? {};
+  if (!draft.platforms.every((p) => Boolean(times[p]))) return null;
+  const isos = draft.platforms.map((p) => times[p]!).sort();
+  return {
+    id: draft.id,
+    title: draftDisplayTitle(draft),
+    platforms: draft.platforms,
+    date: isos[0]!,
+    platformTimes: times,
+    status: "scheduled",
+    eventId: draft.eventId,
+    caption: draft.caption || undefined,
+    hashtags: draft.hashtags || undefined,
+    transcript: draft.transcript || undefined,
+    callToAction: draft.callToAction || undefined,
+    platformTitles: draft.platformTitles,
+    platformCaptions: draft.platformCaptions,
+    platformHashtags: draft.platformHashtags,
+    sourceCardId: draft.sourceCardId,
+    dropboxUrl: draft.dropboxUrl,
+    dropboxDirectUrl: draft.dropboxDirectUrl,
+    previewUrl: draft.previewUrl ?? draft.dropboxDirectUrl,
+    localMediaId: draft.localMediaId,
+  };
+}
+
 export function draftToPreviewPost(draft: DraftPost): ScheduledPost {
   const times = Object.values(draft.proposedTimes ?? {}).filter(Boolean) as string[];
   const earliest = times.sort()[0];

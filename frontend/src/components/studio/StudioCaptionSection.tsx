@@ -32,21 +32,21 @@ export function StudioCaptionSection({
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-muted-foreground transition-transform duration-200",
+            "h-4 w-4 text-muted-foreground transition-transform duration-[var(--motion-panel)] ease-[var(--ease-inout-lux)]",
             open && "rotate-180",
           )}
         />
       </button>
       <div
         className={cn(
-          "grid transition-[grid-template-rows] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "grid transition-[grid-template-rows] duration-[var(--motion-panel)] ease-[var(--ease-inout-lux)]",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
         <div className="min-h-0 overflow-hidden">
           <div
             className={cn(
-              "space-y-2 px-3 pb-3 transition-opacity duration-150",
+              "space-y-2 px-3 pb-3 transition-opacity duration-[var(--motion-panel)] ease-[var(--ease-inout-lux)]",
               open ? "opacity-100" : "opacity-0",
             )}
           >
@@ -80,7 +80,9 @@ export function StudioCaptionSection({
               className="btn-action btn-action-primary min-h-9 w-full !text-white text-caption disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-              {busy ? "Generating…" : "Generate caption + hashtags"}
+              {busy
+                ? "Generating…"
+                : "Generate from transcript"}
             </button>
           </div>
         </div>

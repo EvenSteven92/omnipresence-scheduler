@@ -47,7 +47,7 @@ export function StudioLayersPanel({
       className={cn(
         /* Absolute inside Studio board body — never overlays app main nav */
         "absolute inset-y-0 left-0 z-[25] flex w-[15.5rem] max-w-full flex-col border-r border-line bg-card shadow-[4px_0_24px_rgba(0,0,0,0.06)]",
-        "transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        "transition-[transform,opacity] duration-[var(--motion-panel)] ease-[var(--ease-inout-lux)]",
         open
           ? "translate-x-0 opacity-100"
           : "pointer-events-none -translate-x-full opacity-0",

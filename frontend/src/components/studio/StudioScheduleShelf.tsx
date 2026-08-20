@@ -220,7 +220,7 @@ export function StudioScheduleShelf({
       className={cn(
         "fixed inset-y-0 right-0 z-40 flex flex-col border-l border-line bg-card",
         "shadow-[-8px_0_24px_rgba(0,0,0,0.06)]",
-        "transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        "transition-transform duration-[var(--motion-panel)] ease-[var(--ease-inout-lux)]",
         open ? "translate-x-0" : "pointer-events-none translate-x-full",
       )}
       style={{ width }}
