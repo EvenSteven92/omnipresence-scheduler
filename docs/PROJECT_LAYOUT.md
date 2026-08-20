@@ -2,7 +2,7 @@
 
 > **Historical.** Canonical goals: [`GOALS.md`](../GOALS.md). Live architecture: `README.md`, `AGENTS.md`, `worker/`. No Lovable/Emergent/Neon. Team auth is out of scope.
 
-**Repo:** [glance-schedule-go](https://github.com/EvenSteven92/glance-schedule-go)  
+**Repo:** [omnipresence-scheduler](https://github.com/EvenSteven92/omnipresence-scheduler)  
 **Product name (UI):** OmniPresence  
 **Audience:** Single operator, four clients  
 **Media strategy:** Dropbox share links (no app-owned video storage in v1)
@@ -84,7 +84,7 @@ flowchart TB
 ## 4. Repository layout
 
 ```
-glance-schedule-go/
+omnipresence/
 ├── docs/
 │   └── PROJECT_LAYOUT.md          ← this file
 ├── memory/

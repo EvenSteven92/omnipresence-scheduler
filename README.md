@@ -96,7 +96,7 @@ npm run typecheck
 ## Project layout
 
 ```
-glance-schedule-go/
+omnipresence/
 ├── frontend/          # TanStack Start app (UI + light API routes)
 │   ├── src/routes/    # pages + /api/* (AI, Dropbox, local stubs)
 │   ├── src/server/ai/ # optional LLM generate

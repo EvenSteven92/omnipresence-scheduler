@@ -49,7 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     }
 
     if resolved.isEmpty {
-      resolved = NSString(string: "~/glance-schedule-go").expandingTildeInPath
+      resolved = NSString(string: "~/omnipresence").expandingTildeInPath
     }
 
     self.projectRoot = resolved

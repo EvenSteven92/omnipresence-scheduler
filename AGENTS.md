@@ -6,7 +6,7 @@ Guidance for AI coding agents working in this repository.
 
 | What | Where |
 |------|--------|
-| **Local clone** | `/Users/stephen/glance-schedule-go` |
+| **Local clone** | `/Users/stephen/omnipresence` |
 | **GitHub** | https://github.com/EvenSteven92/omnipresence-scheduler |
 
 ## What this is

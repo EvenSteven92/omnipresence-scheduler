@@ -1,7 +1,7 @@
-# PRD — TORCC OmniPresence Scheduler (glance-schedule-go)
+# PRD — TORCC OmniPresence Scheduler
 
 ## Problem Statement
-User asked to build/run the repo `glance-schedule-go-main.zip` (originally https://github.com/EvenSteven92/glance-schedule-go) — a TanStack Start + React 19 + Vite + Tailwind CSS v4 + shadcn-style UI app from Lovable. Goal: install dependencies and run.
+User asked to build/run the local project now at `/Users/stephen/omnipresence` (GitHub: `omnipresence-scheduler`). Originally a TanStack Start + React 19 + Vite + Tailwind CSS v4 app. Goal: install dependencies and run.
 
 ## Architecture
 - **Frontend** (`/app/frontend`): TanStack Start (Vite dev server) — TypeScript, React 19, TanStack Router, TanStack Query, Tailwind v4, Radix UI, lucide-react. Runs on port 3000 via `yarn start` → `vite dev --host 0.0.0.0 --port 3000`.
